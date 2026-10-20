@@ -35,7 +35,7 @@ final class WaterModule implements AnimModule {
             // Roll toward the arm that is recovering over the water.
             f.body().ry += 0.30f * Mth.sin(p) * swim;
 
-            float kick = Mth.sin(p * 3f);
+            float kick = Mth.sin(p * 2f);
             kickLeg(f.rightLeg(), s, kick, swim);
             kickLeg(f.leftLeg(), s, -kick, swim);
         }

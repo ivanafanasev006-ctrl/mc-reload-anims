@@ -10,6 +10,9 @@ public final class Modules {
             new WaterModule(),
             new ClimbModule(),
             new CombatModule(),
+            new FistModule(),
+            new RideModule(),
+            new FlightModule(),
             new ReactionModule(),
             new SpellcastModule()
     );

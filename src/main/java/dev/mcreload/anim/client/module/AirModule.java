@@ -11,9 +11,15 @@ import dev.mcreload.anim.config.Cfg;
 import net.minecraft.util.Mth;
 
 /**
- * Airborne poses: a running leap (lead knee driven up, rear leg trailing, opposite arm reaching)
- * or a standing tuck jump, a hang at the apex, windmilling arms and pedalling legs on long falls,
- * and a spring-loaded landing crouch.
+ * Airborne motion.
+ * <ul>
+ *   <li>Jump: the leading leg ALTERNATES every jump (Mo'Bends style). The lead knee starts folded
+ *       and extends, the trailing shin folds up behind as the leap goes on; arms counter-swing;
+ *       the chest leans in as you start to come down. Standing jumps tuck both knees instead.</li>
+ *   <li>Falling: arms thrown up in a Y and flailing, legs kicking back underneath (never forward).</li>
+ *   <li>Long fast fall: skydiver spread, body pitched down, limbs fluttering in the wind.</li>
+ *   <li>Landing: spring-loaded crouch that keeps the feet planted.</li>
+ * </ul>
  */
 final class AirModule implements AnimModule {
     @Override
@@ -30,45 +36,14 @@ final class AirModule implements AnimModule {
         if (Cfg.airborne) {
             float air = m.airW.v * gate;
             if (air > 0.001f) {
-                float rise = m.riseW.v;
-                float fall = m.fallW.v * (1f - rise);
-                float hang = Math.max(0f, 1f - rise - fall);
-                float running = AngleMath.clamp(m.speed.v / 0.2f, 0f, 1f);
-
-                // --- rise: blend standing tuck <-> running leap
-                float wr = air * rise;
-                if (wr > 0.001f) {
-                    float lead = Mth.lerp(running, -0.75f, -1.20f);
-                    float rear = Mth.lerp(running, -0.55f, 0.45f);
-                    leg(f.rightLeg(), s, lead, Mth.lerp(running, 1.25f, 1.45f), wr);
-                    leg(f.leftLeg(), s, rear, Mth.lerp(running, 1.05f, 0.75f), wr);
-                    arm(f.rightArm(), s, Mth.lerp(running, -0.95f, 0.55f), 0.35f * (1f - running), 0.5f, wr * arms);
-                    arm(f.leftArm(), s, Mth.lerp(running, -0.95f, -1.45f), -0.35f * (1f - running), 0.5f, wr * arms);
-                    f.body().rx -= 0.14f * running * wr;
-                    f.head().rx -= 0.12f * running * wr;
-                }
-
-                // --- apex hang: knees up, arms floating out
-                float wh = air * hang;
-                if (wh > 0.001f) {
-                    leg(f.rightLeg(), s, -0.45f, 0.95f, wh);
-                    leg(f.leftLeg(), s, -0.30f, 0.80f, wh);
-                    arm(f.rightArm(), s, -0.55f, 0.45f, 0.4f, wh * arms);
-                    arm(f.leftArm(), s, -0.55f, -0.45f, 0.4f, wh * arms);
-                }
-
-                // --- long fall: arms windmilling overhead, legs pedalling
-                float wf = air * fall;
-                if (wf > 0.001f) {
-                    float t = m.time;
-                    float a = Mth.sin(t * 8f + m.seed), b = Mth.cos(t * 8.7f + m.seed), c = Mth.sin(t * 7f + m.seed);
-                    arm(f.rightArm(), s, -2.25f + 0.45f * a, 0.75f + 0.15f * b, 0.45f, wf * arms);
-                    arm(f.leftArm(), s, -2.25f + 0.45f * b, -0.75f - 0.15f * a, 0.45f, wf * arms);
-                    leg(f.rightLeg(), s, -0.35f + 0.50f * c, 0.55f + 0.55f * Math.max(0f, c), wf);
-                    leg(f.leftLeg(), s, -0.35f - 0.50f * c, 0.55f + 0.55f * Math.max(0f, -c), wf);
-                    f.body().rx += 0.12f * wf;
-                    f.head().rx += 0.10f * wf;
-                }
+                float fall = m.fallW.v;
+                float dive = m.skydiveW.v;
+                float jumpW = air * (1f - fall);
+                float fallW = air * fall * (1f - dive);
+                float diveW = air * fall * dive;
+                if (jumpW > 0.001f) jump(m, f, s, jumpW, arms, pt);
+                if (fallW > 0.001f) fall(m, f, s, fallW, arms);
+                if (diveW > 0.001f) skydive(m, f, s, diveW, arms);
             }
         }
 
@@ -84,6 +59,70 @@ final class AirModule implements AnimModule {
                 Rigging.armsOut(f, 0.25f * land);
             }
         }
+    }
+
+    private static void jump(MotionState m, PoseFrame f, Signs s, float w, float arms, float pt) {
+        float t = m.airTime(pt);
+        boolean fresh = t < 1.2f;
+        // 0 -> 1 over the first half second of the leap (eased like Mo'Bends' relax curve).
+        float relax = fresh ? (float) Math.sqrt(Math.sqrt(AngleMath.clamp(t / 0.5f, 0f, 1f))) : 1f;
+        float run = fresh ? m.takeoffRun : 0.4f;
+
+        boolean rightLeads = m.jumpLeg;
+        PartPose lead = rightLeads ? f.rightLeg() : f.leftLeg();
+        PartPose trail = rightLeads ? f.leftLeg() : f.rightLeg();
+        PartPose leadArm = rightLeads ? f.leftArm() : f.rightArm();   // opposite arm reaches forward
+        PartPose trailArm = rightLeads ? f.rightArm() : f.leftArm();
+        float side = rightLeads ? 1f : -1f;
+
+        // Running leap.
+        float leadThigh = Mth.lerp(run, -0.60f, -0.80f);
+        float trailThigh = Mth.lerp(run, -0.35f, 0.80f);
+        float leadKnee = Mth.lerp(run, 1.10f, 1.40f) * (1f - relax) + Mth.lerp(run, 0.55f, 0.25f);
+        float trailKnee = Mth.lerp(run, 0.80f, 1.22f) * relax + 0.10f;
+        leg(lead, s, leadThigh, leadKnee, w);
+        leg(trail, s, trailThigh, trailKnee, w);
+        Rigging.legsOut(f, 0.09f * w);
+
+        float aw = w * arms;
+        arm(leadArm, s, Mth.lerp(run, -0.60f, -0.87f), leadArm == f.rightArm() ? 0.17f : -0.17f, 0.45f, aw);
+        arm(trailArm, s, Mth.lerp(run, -0.40f, 0.87f), trailArm == f.rightArm() ? 0.25f : -0.25f, 0.40f, aw);
+
+        // Upright on the way up, chest leaning in on the way down.
+        float lean = (AngleMath.clamp(m.vertical, -0.2f, 0.2f) * -100f + 20f) * Mth.DEG_TO_RAD;
+        Rigging.leanTorso(f, s, 0.55f * lean * w);
+        f.head().rx -= 0.45f * lean * w;
+        // Counter-rotation: the lead leg's shoulder swings back.
+        Rigging.twistUpper(f, side * 0.30f * run * w);
+    }
+
+    private static void fall(MotionState m, PoseFrame f, Signs s, float w, float arms) {
+        float t = m.time;
+        float a = Mth.sin(t * 7.0f + m.seed), b = Mth.sin(t * 7.7f + m.seed + 1.7f);
+        float c = Mth.sin(t * 5.5f + m.seed);
+        float aw = w * arms;
+        // Arms thrown up in a Y, flailing.
+        arm(f.rightArm(), s, -2.70f + 0.25f * a, 0.55f + 0.15f * b, 0.35f + 0.25f * Math.max(0f, b), aw);
+        arm(f.leftArm(), s, -2.70f + 0.25f * b, -0.55f - 0.15f * a, 0.35f + 0.25f * Math.max(0f, a), aw);
+        // Legs kick BACK underneath the body, knees bent.
+        leg(f.rightLeg(), s, 0.15f + 0.38f * c, 0.55f + 0.45f * Math.max(0f, c), w);
+        leg(f.leftLeg(), s, 0.15f - 0.38f * c, 0.55f + 0.45f * Math.max(0f, -c), w);
+        Rigging.legsOut(f, 0.12f * w);
+        Rigging.leanTorso(f, s, -0.08f * w);
+    }
+
+    private static void skydive(MotionState m, PoseFrame f, Signs s, float w, float arms) {
+        float t = m.time;
+        float flutter = Mth.sin(t * 13f + m.seed), flutter2 = Mth.sin(t * 11f + m.seed + 2f);
+        // Belly to the ground, arms and legs spread.
+        f.body().rx -= 1.15f * w;
+        f.head().rx -= 1.0f * w;
+        float aw = w * arms;
+        arm(f.rightArm(), s, -0.55f + 0.06f * flutter, 1.25f + 0.06f * flutter2, 0.55f, aw);
+        arm(f.leftArm(), s, -0.55f + 0.06f * flutter2, -1.25f - 0.06f * flutter, 0.55f, aw);
+        leg(f.rightLeg(), s, 0.35f + 0.05f * flutter2, 0.70f, w);
+        leg(f.leftLeg(), s, 0.35f + 0.05f * flutter, 0.70f, w);
+        Rigging.legsOut(f, 0.22f * w);
     }
 
     private static void leg(PartPose leg, Signs s, float x, float knee, float w) {

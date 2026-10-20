@@ -101,27 +101,35 @@ final class LocomotionModule implements AnimModule {
         f.body().rz += 0.035f * a * sin * w;
     }
 
-    /** Cautious creep: low on bent legs, slow high steps, hands ready in front, eyes scanning. */
+    /**
+     * Cautious creep (after Mo'Bends' sneak): the legs swing from the hips with soft knees that
+     * fold alternately each half-step, so every step lifts like tip-toeing; the torso pitches about
+     * 25 degrees and bobs twice per cycle; hands held low in front, ready; head scans when still.
+     */
     private static void sneak(PoseFrame f, Signs s, float w, float arms, float sin, float cos, float a, MotionState m) {
-        // Vanilla's crouch already pitches the torso and moves the hips back; we add soft knees.
-        float crouch = 0.32f;
-        legX(f.rightLeg(), -crouch + 0.38f * a * cos - 0.22f * a * Math.max(0f, sin), w);
-        legX(f.leftLeg(), -crouch - 0.38f * a * cos - 0.22f * a * Math.max(0f, -sin), w);
-        f.rightLeg().bend += s.knee() * (2f * crouch + 0.65f * a * Math.max(0f, sin)) * w;
-        f.leftLeg().bend += s.knee() * (2f * crouch + 0.65f * a * Math.max(0f, -sin)) * w;
-        f.body().py -= 2f * Rigging.LEG_SEGMENT_BLOCKS * (1f - Mth.cos(crouch)) * w;
-        f.body().py -= 0.02f * a * Math.abs(sin) * w;
+        float swing = Math.min(m.player().walkAnimation.speed(0f), 1f) * 1.4f * 1.1f * 0.9f;
+        legX(f.rightLeg(), cos * swing - 0.09f, w);
+        legX(f.leftLeg(), -cos * swing - 0.09f, w);
+        f.rightLeg().targetZ(0.17f, w);
+        f.leftLeg().targetZ(-0.17f, w);
+        float rLift = AngleMath.clamp(0.5f + 2f * sin, 0f, 1f);
+        float lLift = AngleMath.clamp(0.5f - 2f * sin, 0f, 1f);
+        f.rightLeg().bend += s.knee() * (0.17f + 0.61f * rLift * (0.4f + 0.6f * a)) * w;
+        f.leftLeg().bend += s.knee() * (0.17f + 0.61f * lLift * (0.4f + 0.6f * a)) * w;
+
+        // Torso pitched forward, bobbing with each footfall.
+        float cos2 = cos * cos - sin * sin;  // cos(2 * phase)
+        f.torso().targetX(0.44f + 0.09f * cos2 * a, w);
 
         float aw = w * arms;
-        armPose(f.rightArm(), -0.85f + 0.18f * a * cos, 0.22f, aw);
-        armPose(f.leftArm(), -0.85f - 0.18f * a * cos, -0.22f, aw);
-        f.rightArm().bend += s.elbow() * 1.35f * aw;
-        f.leftArm().bend += s.elbow() * 1.35f * aw;
+        armPose(f.rightArm(), -0.55f - 0.30f * cos * a, 0.17f, aw);
+        armPose(f.leftArm(), -0.55f + 0.30f * cos * a, -0.17f, aw);
+        f.rightArm().bend += s.elbow() * 0.75f * aw;
+        f.leftArm().bend += s.elbow() * 0.75f * aw;
 
-        // Weight transfers from foot to foot, shoulders slightly hunched.
-        f.body().rz += 0.07f * a * sin * w;
+        // Weight transfers from foot to foot.
+        f.body().rz += 0.06f * a * sin * w;
         Rigging.twistUpper(f, -cos * 0.08f * a * w);
-        Rigging.leanTorso(f, s, 0.08f * w);
         // Nervous look-around while standing still.
         float still = 1f - a;
         f.head().ry += (0.32f * Mth.sin(m.time * 0.9f + m.seed) + 0.08f * Mth.sin(m.time * 2.3f)) * still * w;

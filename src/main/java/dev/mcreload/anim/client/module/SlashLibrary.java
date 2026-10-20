@@ -44,14 +44,39 @@ final class SlashLibrary {
             new Key(1.00f, -0.70f, 0.40f, 0.20f, 0.40f, 0.15f, -0.05f, -0.40f, 0.15f, 0.60f, -0.20f, 0.40f, 0.10f, 0.30f),
     };
 
-    private static final Key GUARD = new Key(0f, -1.00f, 0.15f, 0.10f, 1.90f, 0f, 0f, -1.10f, 0.10f, 2.00f, -0.10f, 0.30f, 0.15f, 0.30f);
+    // ---------------------------------------------------------------- tools (looping while mining)
 
-    /** Jab from a boxing guard. */
-    static final Key[] PUNCH = {
-            GUARD,
-            new Key(0.30f, -0.85f, 0.35f, 0.25f, 2.10f, 0.35f, 0.03f, -1.10f, 0.10f, 2.00f, -0.10f, 0.30f, 0.15f, 0.30f),
-            new Key(0.55f, -1.62f, -0.12f, -0.05f, 0.00f, -0.45f, -0.15f, -1.15f, 0.10f, 2.00f, -0.35f, 0.60f, 0.25f, 0.35f),
-            new Key(1.00f, -1.00f, 0.15f, 0.10f, 1.90f, 0f, 0f, -1.10f, 0.10f, 2.00f, -0.10f, 0.30f, 0.15f, 0.30f),
+    /** Pickaxe: raise it high, hammer it down into the block. */
+    static final Key[] PICK = {
+            new Key(0f, -1.00f, 0.10f, 0.10f, 0.60f, 0f, 0f, -0.50f, 0.10f, 0.50f, -0.15f, 0.30f, 0.10f, 0.30f),
+            new Key(0.45f, -2.55f, 0.15f, 0.15f, 1.25f, 0.25f, 0.06f, -0.70f, 0.15f, 0.60f, -0.20f, 0.35f, 0.15f, 0.30f),
+            new Key(0.68f, -0.75f, -0.05f, 0.00f, 0.15f, -0.20f, -0.20f, -0.50f, 0.10f, 0.50f, -0.35f, 0.60f, 0.20f, 0.40f),
+            new Key(1.00f, -1.00f, 0.10f, 0.10f, 0.60f, 0f, -0.05f, -0.50f, 0.10f, 0.50f, -0.15f, 0.30f, 0.10f, 0.30f),
+    };
+
+    /** Shovel: bend over, push the blade in, lever the earth up. */
+    static final Key[] SHOVEL = {
+            new Key(0f, -0.80f, 0.00f, 0.05f, 0.50f, 0f, -0.05f, -0.80f, 0.10f, 0.80f, -0.30f, 0.50f, 0.20f, 0.40f),
+            new Key(0.35f, -0.45f, 0.00f, 0.05f, 0.60f, 0.15f, -0.25f, -0.90f, 0.10f, 0.90f, -0.45f, 0.80f, 0.25f, 0.60f),
+            new Key(0.60f, -0.75f, 0.00f, 0.00f, 0.05f, -0.10f, -0.35f, -0.70f, 0.10f, 0.60f, -0.50f, 0.90f, 0.25f, 0.60f),
+            new Key(0.82f, -1.55f, 0.05f, 0.05f, 0.70f, 0.05f, -0.10f, -1.10f, 0.10f, 0.90f, -0.35f, 0.60f, 0.20f, 0.45f),
+            new Key(1.00f, -0.80f, 0.00f, 0.05f, 0.50f, 0f, -0.05f, -0.80f, 0.10f, 0.80f, -0.30f, 0.50f, 0.20f, 0.40f),
+    };
+
+    /** Hoe: chop down at the ground in front of the feet. */
+    static final Key[] HOE = {
+            new Key(0f, -0.90f, 0.05f, 0.05f, 0.50f, 0f, -0.05f, -0.60f, 0.10f, 0.60f, -0.25f, 0.45f, 0.15f, 0.35f),
+            new Key(0.42f, -2.10f, 0.10f, 0.10f, 1.00f, 0.20f, 0.02f, -0.80f, 0.10f, 0.70f, -0.25f, 0.45f, 0.15f, 0.35f),
+            new Key(0.66f, -0.35f, -0.05f, 0.00f, 0.10f, -0.15f, -0.35f, -0.50f, 0.10f, 0.50f, -0.45f, 0.80f, 0.25f, 0.55f),
+            new Key(1.00f, -0.90f, 0.05f, 0.05f, 0.50f, 0f, -0.10f, -0.60f, 0.10f, 0.60f, -0.25f, 0.45f, 0.15f, 0.35f),
+    };
+
+    /** Axe on wood: diagonal chop from over the shoulder. */
+    static final Key[] CHOP = {
+            new Key(0f, -0.90f, 0.20f, 0.15f, 0.55f, 0f, 0f, -0.50f, 0.15f, 0.60f, -0.20f, 0.35f, 0.15f, 0.30f),
+            new Key(0.42f, -2.20f, 0.70f, 0.50f, 1.10f, 0.50f, 0.04f, -0.80f, 0.20f, 0.80f, -0.25f, 0.40f, 0.15f, 0.30f),
+            new Key(0.66f, -1.20f, -0.50f, -0.10f, 0.10f, -0.40f, -0.15f, -0.40f, 0.30f, 0.50f, -0.45f, 0.75f, 0.25f, 0.45f),
+            new Key(1.00f, -0.90f, 0.20f, 0.15f, 0.55f, 0f, 0f, -0.50f, 0.15f, 0.60f, -0.20f, 0.35f, 0.15f, 0.30f),
     };
 
     static Key[] forKind(int kind) {
@@ -59,7 +84,11 @@ final class SlashLibrary {
             case 0 -> HORIZONTAL;
             case 1 -> VERTICAL;
             case 2 -> BACKHAND;
-            default -> PUNCH;
+            case 5 -> PICK;
+            case 6 -> SHOVEL;
+            case 7 -> HOE;
+            case 8 -> CHOP;
+            default -> HORIZONTAL;
         };
     }
 

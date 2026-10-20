@@ -10,6 +10,7 @@ public final class Cfg {
     public static volatile boolean enabled = true;
     public static volatile boolean otherPlayers = true;
     public static volatile float intensity = 1f;
+    public static volatile float liveliness = 0.6f;
 
     public static volatile boolean locomotion = true, idle = true, airborne = true, landing = true,
             water = true, climbing = true, combat = true, reactions = true;
@@ -29,6 +30,7 @@ public final class Cfg {
         enabled = ClientConfig.ENABLED.get();
         otherPlayers = ClientConfig.OTHER_PLAYERS.get();
         intensity = ClientConfig.INTENSITY.get().floatValue();
+        liveliness = ClientConfig.LIVELINESS.get().floatValue();
 
         locomotion = ClientConfig.LOCOMOTION.get();
         idle = ClientConfig.IDLE.get();

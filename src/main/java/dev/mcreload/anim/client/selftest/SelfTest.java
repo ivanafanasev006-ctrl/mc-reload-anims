@@ -195,6 +195,7 @@ public final class SelfTest {
 
     private static final ScriptedInput INPUT = new ScriptedInput();
     private static int framesInWindow;
+    private static int currentWindow = -1;
     private static long lastShotNanos;
     private static int shotCounter;
     private static int fpsLogTimer;
@@ -203,37 +204,71 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("01_idle", 50, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY), (mc, t) -> {},
                 new Window(25, 50, 2, 0.6f)));
         SCENARIOS.add(new Scenario("02_walk", 45, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, true, false, false, false), new Window(20, 45, 8, 0.07f)));
+                (mc, t) -> move(mc, true, false, false, false), new Window(20, 45, 6, 0.07f)));
         SCENARIOS.add(new Scenario("03_sprint", 45, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, true, true, false, false), new Window(20, 45, 8, 0.05f)));
-        SCENARIOS.add(new Scenario("04_sneak_walk", 55, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, true, false, true, false), new Window(25, 55, 6, 0.15f)));
-        SCENARIOS.add(new Scenario("05_sneak_idle", 60, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, false, false, true, false), new Window(25, 60, 3, 0.4f)));
-        SCENARIOS.add(new Scenario("06_sprint_jump", 45, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, true, true, false, t >= 20 && t <= 21), new Window(19, 36, 8, 0.06f)));
-        SCENARIOS.add(new Scenario("07_fall_and_land", 75, sp -> place(sp, 2, Y + 18, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, false, false, false, false), new Window(8, 60, 10, 0.12f)));
-        SCENARIOS.add(new Scenario("08a_slash_1", 20, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
-                (mc, t) -> { if (t == 10) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 20, 8, 0.03f)));
-        // Next two swings follow within the combo window, so they play attacks 2 and 3.
-        SCENARIOS.add(new Scenario("08b_slash_2", 14, sp -> {},
-                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 14, 8, 0.03f)));
-        SCENARIOS.add(new Scenario("08c_slash_3", 20, sp -> {},
-                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 8, 0.03f)));
-        SCENARIOS.add(new Scenario("09_slash_running", 35, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> { move(mc, true, true, false, false); if (t == 22) mc.player.swing(InteractionHand.MAIN_HAND); },
-                new Window(22, 32, 5, 0.04f)));
-        SCENARIOS.add(new Scenario("10_punch", 25, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> { if (t == 10) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 20, 5, 0.04f)));
+                (mc, t) -> move(mc, true, true, false, false), new Window(20, 45, 6, 0.05f)));
+        SCENARIOS.add(new Scenario("04_sneak_walk", 60, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, true, false, true, false), new Window(25, 60, 6, 0.15f)));
+        SCENARIOS.add(new Scenario("05_sneak_idle", 50, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, false, false, true, false), new Window(25, 50, 2, 0.4f)));
+        // Two sprint jumps in a row: the leading leg must switch.
+        SCENARIOS.add(new Scenario("06_sprint_jump_x2", 70, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, true, true, false, (t >= 20 && t <= 21) || (t >= 42 && t <= 43)),
+                new Window(21, 34, 5, 0.06f), new Window(43, 56, 5, 0.06f)));
+        SCENARIOS.add(new Scenario("07_fall_short", 60, sp -> place(sp, 2, Y + 12, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, false, false, false, false), new Window(8, 45, 6, 0.12f)));
+        SCENARIOS.add(new Scenario("07b_skydive", 110, sp -> place(sp, 2, Y + 70, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, false, false, false, false), new Window(30, 85, 5, 0.3f)));
+        SCENARIOS.add(new Scenario("08a_slash_1", 25, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
+                (mc, t) -> { if (t == 10) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 25, 6, 0.03f)));
+        SCENARIOS.add(new Scenario("08b_slash_2", 16, sp -> {},
+                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 6, 0.03f)));
+        SCENARIOS.add(new Scenario("08c_slash_3", 22, sp -> {},
+                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 20, 6, 0.03f)));
+        SCENARIOS.add(new Scenario("10_punches", 50, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> { if (t == 8 || t == 16 || t == 24 || t == 32) mc.player.swing(InteractionHand.MAIN_HAND); },
+                new Window(8, 40, 10, 0.04f)));
+        SCENARIOS.add(new Scenario("15_pickaxe", 45, sp -> placeLook(sp, 2, Y, 0, -90, 55, new ItemStack(Items.IRON_PICKAXE)),
+                (mc, t) -> { if (t >= 8 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 40, 8, 0.05f)));
+        SCENARIOS.add(new Scenario("16_shovel", 45, sp -> placeLook(sp, 2, Y, 0, -90, 60, new ItemStack(Items.IRON_SHOVEL)),
+                (mc, t) -> { if (t >= 8 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 40, 8, 0.05f)));
+        SCENARIOS.add(new Scenario("17_hoe", 40, sp -> placeLook(sp, 2, Y, 0, -90, 65, new ItemStack(Items.IRON_HOE)),
+                (mc, t) -> { if (t >= 8 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 36, 6, 0.05f)));
         SCENARIOS.add(new Scenario("11_swim", 70, sp -> place(sp, POOL_X + 2, Y - 3, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, t > 5, t > 5, false, false), new Window(40, 70, 8, 0.08f)));
-        SCENARIOS.add(new Scenario("12_tread_water", 45, sp -> place(sp, POOL_X + 11, Y - 1, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, false, false, false, false), new Window(25, 45, 3, 0.3f)));
-        SCENARIOS.add(new Scenario("13_ladder", 50, sp -> place(sp, LADDER_X + 1, Y, 0, 90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, true, false, false, false), new Window(20, 50, 4, 0.25f)));
-        SCENARIOS.add(new Scenario("14_bow", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.BOW)),
-                (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 45, 2, 0.5f)));
+                (mc, t) -> move(mc, t > 5, t > 5, false, false), new Window(40, 70, 6, 0.1f)));
+        SCENARIOS.add(new Scenario("13_ladder", 55, sp -> place(sp, LADDER_X + 1, Y, 0, 90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, true, false, false, false), new Window(15, 55, 6, 0.15f)));
+        SCENARIOS.add(new Scenario("18_boat", 70, SelfTest::boardBoat,
+                (mc, t) -> move(mc, t > 15, false, false, false), new Window(35, 70, 6, 0.12f)));
+        SCENARIOS.add(new Scenario("19_horse", 80, SelfTest::mountHorse,
+                (mc, t) -> move(mc, t > 15, t > 15, false, false), new Window(35, 80, 6, 0.12f)));
+    }
+
+    private static void placeLook(ServerPlayer sp, double x, double y, double z, float yaw, float pitch, ItemStack hand) {
+        place(sp, x, y, z, yaw, hand);
+        sp.teleportTo(sp.serverLevel(), x + 0.5, y, z + 0.5, yaw, pitch);
+    }
+
+    private static void boardBoat(ServerPlayer sp) {
+        sp.stopRiding();
+        place(sp, POOL_X + 3, Y - 1, 0, -90, ItemStack.EMPTY);
+        net.minecraft.world.entity.vehicle.Boat boat = new net.minecraft.world.entity.vehicle.Boat(sp.serverLevel(), POOL_X + 3.5, Y - 1, 0.5);
+        boat.setYRot(-90);
+        sp.serverLevel().addFreshEntity(boat);
+        sp.startRiding(boat, true);
+    }
+
+    private static void mountHorse(ServerPlayer sp) {
+        sp.stopRiding();
+        place(sp, 2, Y, 0, -90, ItemStack.EMPTY);
+        net.minecraft.world.entity.animal.horse.Horse horse =
+                net.minecraft.world.entity.EntityType.HORSE.create(sp.serverLevel());
+        if (horse == null) return;
+        horse.moveTo(2.5, Y, 0.5, -90, 0);
+        horse.setTamed(true);
+        horse.equipSaddle(null);
+        sp.serverLevel().addFreshEntity(horse);
+        sp.startRiding(horse, true);
     }
 
     private static void run(Minecraft mc) {
@@ -262,6 +297,7 @@ public final class SelfTest {
         if (scenarioTick == 0) {
             mc.options.keyUse.setDown(false);
             framesInWindow = 0;
+            currentWindow = -1;
             shotCounter = 0;
             IntegratedServer srv = mc.getSingleplayerServer();
             srv.execute(() -> s.setup().run(srv.getPlayerList().getPlayers().get(0)));
@@ -279,8 +315,13 @@ public final class SelfTest {
         if (phase != Phase.RUNNING || scenarioIndex >= SCENARIOS.size()) return;
         Scenario s = SCENARIOS.get(scenarioIndex);
         int t = scenarioTick;
-        for (Window w : s.windows()) {
+        for (int wi = 0; wi < s.windows().length; wi++) {
+            Window w = s.windows()[wi];
             if (t < w.from() || t > w.to()) continue;
+            if (wi != currentWindow) {
+                currentWindow = wi;
+                framesInWindow = 0;
+            }
             long now = System.nanoTime();
             if (framesInWindow >= w.maxFrames() || (now - lastShotNanos) / 1e9f < w.spacing()) return;
             framesInWindow++;
@@ -292,6 +333,7 @@ public final class SelfTest {
     }
 
     private static void place(ServerPlayer sp, double x, double y, double z, float yaw, ItemStack hand) {
+        if (sp.isPassenger()) sp.stopRiding();
         sp.setItemInHand(InteractionHand.MAIN_HAND, hand.copy());
         sp.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
         sp.getAbilities().flying = false;

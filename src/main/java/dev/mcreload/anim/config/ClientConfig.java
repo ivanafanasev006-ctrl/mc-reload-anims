@@ -9,6 +9,7 @@ public final class ClientConfig {
     public static final ForgeConfigSpec.BooleanValue ENABLED;
     public static final ForgeConfigSpec.BooleanValue OTHER_PLAYERS;
     public static final ForgeConfigSpec.DoubleValue INTENSITY;
+    public static final ForgeConfigSpec.DoubleValue LIVELINESS;
 
     public static final ForgeConfigSpec.BooleanValue LOCOMOTION;
     public static final ForgeConfigSpec.BooleanValue IDLE;
@@ -46,6 +47,8 @@ public final class ClientConfig {
                 .define("animateOtherPlayers", true);
         INTENSITY = b.comment("Global strength of every animation. 0 = vanilla look, 1 = default, 2 = very exaggerated.")
                 .defineInRange("intensity", 1.0, 0.0, 2.0);
+        LIVELINESS = b.comment("Secondary motion: limbs follow through springs, with weight, overshoot and a soft ragdoll wave. 0 = off (rigid), 1 = very floppy.")
+                .defineInRange("liveliness", 0.6, 0.0, 1.0);
         b.pop();
 
         b.push("modules");

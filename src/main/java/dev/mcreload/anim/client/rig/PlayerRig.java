@@ -40,6 +40,8 @@ public final class PlayerRig {
     /** 0..1, smoothed: how much another mod currently animates each part. */
     public final float[] foreign = new float[PoseFrame.COUNT];
     private final float[] yieldFactor = new float[PoseFrame.COUNT];
+    private final LimbSprings springs = new LimbSprings();
+    private final float[] tmp = new float[3];
 
     public PlayerRig(AbstractClientPlayer player) {
         this.player = player;
@@ -70,6 +72,7 @@ public final class PlayerRig {
             if (module.enabled()) module.apply(this, motion, frame, signs, partialTick);
         }
         frame.scale(Cfg.intensity);
+        tuneSprings();
 
         float yieldStrength = Cfg.harmonizer ? Cfg.yield : 0f;
         for (int i = 0; i < PoseFrame.COUNT; i++) {
@@ -77,6 +80,38 @@ public final class PlayerRig {
             // decides how much of our stride to keep.
             yieldFactor[i] = PoseFrame.isLeg(i) ? 0f : foreign[i] * yieldStrength;
         }
+    }
+
+    /** Stiffness per body part for the secondary-motion springs, depending on what is happening. */
+    private void tuneSprings() {
+        springs.beginFrame(motion.dt);
+        float lv = Cfg.liveliness;
+        boolean attacking = motion.slashKind >= 0 && motion.slashKind != MotionState.TOOL && motion.slashProgress() < 1.2f;
+        float air = Math.max(motion.airW.v, Math.max(motion.elytraW.v, motion.flyW.v));
+
+        float armW = lerp(30f, 16f, lv), armZ = lerp(0.95f, 0.55f, lv);
+        if (attacking) { armW = Math.max(armW, 40f); armZ = 0.8f; }
+        // While vanilla poses the arms (using items), follow it tightly.
+        float vanilla = 1f - motion.armsFree.v * (1f - motion.toolSwingW.v);
+        armW = lerp(armW, 60f, vanilla);
+        armZ = lerp(armZ, 1f, vanilla);
+
+        float legW = lerp(lerp(30f, 24f, lv), lerp(24f, 13f, lv), air);
+        float legZ = lerp(0.9f, lerp(0.85f, 0.5f, lv), air);
+        if (attacking) legW = Math.max(legW, 30f);
+
+        springs.omega[PoseFrame.RIGHT_ARM] = springs.omega[PoseFrame.LEFT_ARM] = armW;
+        springs.zeta[PoseFrame.RIGHT_ARM] = springs.zeta[PoseFrame.LEFT_ARM] = armZ;
+        springs.omega[PoseFrame.RIGHT_LEG] = springs.omega[PoseFrame.LEFT_LEG] = legW;
+        springs.zeta[PoseFrame.RIGHT_LEG] = springs.zeta[PoseFrame.LEFT_LEG] = legZ;
+        springs.omega[PoseFrame.TORSO] = attacking ? 34f : lerp(24f, 15f, lv);
+        springs.zeta[PoseFrame.TORSO] = lerp(0.9f, 0.65f, lv);
+        springs.omega[PoseFrame.BODY] = lerp(22f, 13f, lv);
+        springs.zeta[PoseFrame.BODY] = lerp(0.95f, 0.7f, lv);
+    }
+
+    private static float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
     }
 
     Vec3f applyBase(String name, TransformType type, Vec3f v0) {
@@ -115,6 +150,12 @@ public final class PlayerRig {
             default -> {
                 return v0;
             }
+        }
+        if (Cfg.liveliness > 0f && i != PoseFrame.HEAD) {
+            tmp[0] = x; tmp[1] = y; tmp[2] = z;
+            int angles = t == T_ROT ? 0b111 : (t == T_BEND ? 0b001 : 0);
+            springs.filter(i, t, tmp, angles);
+            x = tmp[0]; y = tmp[1]; z = tmp[2];
         }
         float[] out = baseOut[i][t];
         out[0] = x;

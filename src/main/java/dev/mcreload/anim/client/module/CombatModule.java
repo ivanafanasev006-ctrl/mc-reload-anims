@@ -39,15 +39,17 @@ final class CombatModule implements AnimModule {
      */
     private static void swing(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate, float pt) {
         int kind = m.slashKind;
-        if (kind < 0 || kind == MotionState.TOOL) {
+        if (kind == MotionState.TOOL) {
             toolSwing(rig.player, m, f, s, gate, pt);
             return;
         }
+        if (!MotionState.isSlash(kind) && !MotionState.isTool(kind)) return;  // fists: FistModule
         float t = m.slashProgress();
         if (t >= 1.3f) return;
 
         // Envelope: quick blend in, hold, blend out after the recovery.
-        float w = AngleMath.ease(t / 0.10f) * (1f - AngleMath.ease((t - 0.85f) / 0.45f)) * gate;
+        float in = m.slashChained ? 1f : AngleMath.ease(t / 0.10f);
+        float w = in * (1f - AngleMath.ease((t - 0.85f) / 0.45f)) * gate;
         // Better Combat (or any other mod) animating this arm wins.
         int armIndex = m.slashSide > 0 ? PoseFrame.RIGHT_ARM : PoseFrame.LEFT_ARM;
         w *= 1f - rig.foreign[armIndex];
@@ -58,7 +60,9 @@ final class CombatModule implements AnimModule {
 
         PartPose arm = side > 0 ? f.rightArm() : f.leftArm();
         PartPose off = side > 0 ? f.leftArm() : f.rightArm();
-        arm.override(k.armX(), side * k.armY(), side * k.armZ(), w);
+        // Tools aim at the block you look at: lower strikes when looking down.
+        float aim = MotionState.isTool(kind) ? rig.player.getXRot() * Mth.DEG_TO_RAD * 0.5f : 0f;
+        arm.override(k.armX() + aim, side * k.armY(), side * k.armZ(), w);
         arm.overrideBend(s.elbow() * k.elbow(), w);
         off.override(k.offX(), 0f, -side * k.offZ(), w);
         off.overrideBend(s.elbow() * k.offElbow(), w);
