@@ -40,6 +40,8 @@ final class SelfTestOverlay {
             drawPlayer(g, cx, cy, scales[i], views[i], player, pt);
         }
         g.drawString(mc.font, SelfTest.currentLabel, 6, 6, 0xFFFF55);
+        g.flush();
+        SelfTest.onFrameRendered(mc);
     }
 
     private static void drawPlayer(GuiGraphics g, int x, int y, int scale, float viewDeg, LocalPlayer player, float pt) {

@@ -182,7 +182,10 @@ public final class SelfTest {
 
     // ------------------------------------------------------------------ scenarios
 
-    private record Scenario(String name, int length, Setup setup, Driver driver, int[] shots) {}
+    /** Capture every rendered frame between two ticks (at most maxFrames, at least spacing apart). */
+    private record Window(int from, int to, int maxFrames, float spacing) {}
+
+    private record Scenario(String name, int length, Setup setup, Driver driver, Window... windows) {}
 
     @FunctionalInterface
     private interface Setup { void run(ServerPlayer sp); }
@@ -190,67 +193,91 @@ public final class SelfTest {
     @FunctionalInterface
     private interface Driver { void tick(Minecraft mc, int t); }
 
+    private static final ScriptedInput INPUT = new ScriptedInput();
+    private static int framesInWindow;
+    private static long lastShotNanos;
+    private static int shotCounter;
+    private static int fpsLogTimer;
+
     private static void buildScenarios() {
-        int[] cycle = {20, 22, 24, 26, 28, 30};
-        SCENARIOS.add(new Scenario("01_idle", 50, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY), (mc, t) -> {}, new int[]{30, 45}));
-        SCENARIOS.add(new Scenario("02_walk", 40, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> keys(mc, true, false, false, false), cycle));
-        SCENARIOS.add(new Scenario("03_sprint", 40, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> keys(mc, true, true, false, false), cycle));
-        SCENARIOS.add(new Scenario("04_sneak_walk", 50, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> keys(mc, true, false, true, false), new int[]{24, 28, 32, 36, 40}));
+        SCENARIOS.add(new Scenario("01_idle", 50, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY), (mc, t) -> {},
+                new Window(25, 50, 2, 0.6f)));
+        SCENARIOS.add(new Scenario("02_walk", 45, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, true, false, false, false), new Window(20, 45, 8, 0.07f)));
+        SCENARIOS.add(new Scenario("03_sprint", 45, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, true, true, false, false), new Window(20, 45, 8, 0.05f)));
+        SCENARIOS.add(new Scenario("04_sneak_walk", 55, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, true, false, true, false), new Window(25, 55, 6, 0.15f)));
         SCENARIOS.add(new Scenario("05_sneak_idle", 60, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> keys(mc, false, false, true, false), new int[]{30, 45, 58}));
+                (mc, t) -> move(mc, false, false, true, false), new Window(25, 60, 3, 0.4f)));
         SCENARIOS.add(new Scenario("06_sprint_jump", 45, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> keys(mc, true, true, false, t >= 20 && t <= 21), new int[]{19, 22, 25, 28, 31, 34}));
-        SCENARIOS.add(new Scenario("07_fall_and_land", 70, sp -> place(sp, 2, Y + 18, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> {}, new int[]{12, 20, 26, 30, 34, 40}));
-        SCENARIOS.add(new Scenario("08_sword_combo", 60, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
-                (mc, t) -> { if (t == 10 || t == 22 || t == 34) mc.player.swing(InteractionHand.MAIN_HAND); },
-                new int[]{12, 13, 14, 15, 16, 24, 25, 26, 27, 36, 37, 38, 39, 42}));
-        SCENARIOS.add(new Scenario("09_sword_run", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> { keys(mc, true, true, false, false); if (t == 20) mc.player.swing(InteractionHand.MAIN_HAND); },
-                new int[]{22, 24, 26}));
-        SCENARIOS.add(new Scenario("10_punch", 30, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> { if (t == 10) mc.player.swing(InteractionHand.MAIN_HAND); }, new int[]{12, 14, 16, 20}));
-        SCENARIOS.add(new Scenario("11_swim", 60, sp -> place(sp, POOL_X + 2, Y - 3, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> keys(mc, t > 5, t > 5, false, false), new int[]{40, 43, 46, 49, 52, 55}));
+                (mc, t) -> move(mc, true, true, false, t >= 20 && t <= 21), new Window(19, 36, 8, 0.06f)));
+        SCENARIOS.add(new Scenario("07_fall_and_land", 75, sp -> place(sp, 2, Y + 18, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, false, false, false, false), new Window(8, 60, 10, 0.12f)));
+        SCENARIOS.add(new Scenario("08a_slash_1", 20, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
+                (mc, t) -> { if (t == 10) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 20, 8, 0.03f)));
+        // Next two swings follow within the combo window, so they play attacks 2 and 3.
+        SCENARIOS.add(new Scenario("08b_slash_2", 14, sp -> {},
+                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 14, 8, 0.03f)));
+        SCENARIOS.add(new Scenario("08c_slash_3", 20, sp -> {},
+                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 8, 0.03f)));
+        SCENARIOS.add(new Scenario("09_slash_running", 35, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> { move(mc, true, true, false, false); if (t == 22) mc.player.swing(InteractionHand.MAIN_HAND); },
+                new Window(22, 32, 5, 0.04f)));
+        SCENARIOS.add(new Scenario("10_punch", 25, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> { if (t == 10) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 20, 5, 0.04f)));
+        SCENARIOS.add(new Scenario("11_swim", 70, sp -> place(sp, POOL_X + 2, Y - 3, 0, -90, ItemStack.EMPTY),
+                (mc, t) -> move(mc, t > 5, t > 5, false, false), new Window(40, 70, 8, 0.08f)));
         SCENARIOS.add(new Scenario("12_tread_water", 45, sp -> place(sp, POOL_X + 11, Y - 1, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> {}, new int[]{30, 36, 42}));
+                (mc, t) -> move(mc, false, false, false, false), new Window(25, 45, 3, 0.3f)));
         SCENARIOS.add(new Scenario("13_ladder", 50, sp -> place(sp, LADDER_X + 1, Y, 0, 90, ItemStack.EMPTY),
-                (mc, t) -> keys(mc, true, false, false, false), new int[]{25, 30, 35, 40}));
-        SCENARIOS.add(new Scenario("14_bow", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.BOW)),
-                (mc, t) -> mc.options.keyUse.setDown(t > 5), new int[]{15, 30}));
+                (mc, t) -> move(mc, true, false, false, false), new Window(20, 50, 4, 0.25f)));
+        SCENARIOS.add(new Scenario("14_bow", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.BOW)),
+                (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 45, 2, 0.5f)));
     }
 
     private static void run(Minecraft mc) {
         if (scenarioIndex >= SCENARIOS.size()) {
-            keys(mc, false, false, false, false);
+            move(mc, false, false, false, false);
             mc.options.keyUse.setDown(false);
             phase = Phase.DONE;
             timer = 0;
             return;
         }
+        if (mc.player != null && mc.player.input != INPUT) mc.player.input = INPUT;
+        if (++fpsLogTimer % 100 == 0) McReloadAnim.LOG.info("[mcreload] self-test fps: {}", mc.getFps());
+
         Scenario s = SCENARIOS.get(scenarioIndex);
         currentLabel = s.name();
         if (scenarioTick == 0) {
-            keys(mc, false, false, false, false);
             mc.options.keyUse.setDown(false);
+            framesInWindow = 0;
+            shotCounter = 0;
             IntegratedServer srv = mc.getSingleplayerServer();
             srv.execute(() -> s.setup().run(srv.getPlayerList().getPlayers().get(0)));
-        } else if (scenarioTick > 4) {
-            s.driver().tick(mc, scenarioTick);
         }
-        for (int shot : s.shots()) {
-            if (shot == scenarioTick) {
-                String file = s.name() + "_t" + String.format("%03d", scenarioTick) + ".png";
-                Screenshot.grab(mc.gameDirectory, file, mc.getMainRenderTarget(), msg -> {});
-            }
-        }
+        if (scenarioTick > 3) s.driver().tick(mc, scenarioTick);
         scenarioTick++;
         if (scenarioTick > s.length()) {
             scenarioIndex++;
             scenarioTick = 0;
+        }
+    }
+
+    /** Called after every rendered frame (GUI included). */
+    static void onFrameRendered(Minecraft mc) {
+        if (phase != Phase.RUNNING || scenarioIndex >= SCENARIOS.size()) return;
+        Scenario s = SCENARIOS.get(scenarioIndex);
+        int t = scenarioTick;
+        for (Window w : s.windows()) {
+            if (t < w.from() || t > w.to()) continue;
+            long now = System.nanoTime();
+            if (framesInWindow >= w.maxFrames() || (now - lastShotNanos) / 1e9f < w.spacing()) return;
+            framesInWindow++;
+            lastShotNanos = now;
+            String file = s.name() + "_f" + String.format("%02d", shotCounter++) + "_t" + t + ".png";
+            Screenshot.grab(mc.gameDirectory, file, mc.getMainRenderTarget(), msg -> {});
+            return;
         }
     }
 
@@ -264,12 +291,11 @@ public final class SelfTest {
         sp.setYHeadRot(yaw);
     }
 
-    private static void keys(Minecraft mc, boolean forward, boolean sprint, boolean sneak, boolean jump) {
-        mc.options.keyUp.setDown(forward);
-        mc.options.keySprint.setDown(sprint);
-        mc.options.keyShift.setDown(sneak);
-        mc.options.keyJump.setDown(jump);
-        if (mc.player != null && sprint && forward) mc.player.setSprinting(true);
+    private static void move(Minecraft mc, boolean forward, boolean sprint, boolean sneak, boolean jump) {
+        INPUT.forward = forward;
+        INPUT.sneak = sneak;
+        INPUT.jump = jump;
+        if (mc.player != null) mc.player.setSprinting(sprint && forward);
     }
 
     private SelfTest() {}
