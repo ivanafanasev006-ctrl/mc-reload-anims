@@ -1,0 +1,6 @@
+{
+  "key.categories.mcreload": "MC Reload Animations",
+  "key.mcreload.toggle": "Toggle player animations",
+  "message.mcreload.enabled": "MC Reload animations: ON",
+  "message.mcreload.disabled": "MC Reload animations: OFF"
+}
