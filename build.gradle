@@ -23,7 +23,9 @@ minecraft {
         configureEach {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
+            property 'forge.logging.console.level', 'info'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -32,6 +34,11 @@ minecraft {
         }
         client {
             property 'forge.enabledGameTestNamespaces', mod_id
+            if (project.hasProperty('selftest')) {
+                // Automated visual test (CI): see dev.mcreload.anim.client.selftest.SelfTest
+                property 'mcreload.selftest', 'true'
+                args '--width', '1280', '--height', '720'
+            }
         }
     }
 }

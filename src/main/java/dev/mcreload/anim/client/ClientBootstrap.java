@@ -7,6 +7,7 @@ import dev.mcreload.anim.McReloadAnim;
 import dev.mcreload.anim.client.fx.WeaponTrails;
 import dev.mcreload.anim.client.rig.PlayerRig;
 import dev.mcreload.anim.client.rig.RigRegistry;
+import dev.mcreload.anim.client.selftest.SelfTest;
 import dev.mcreload.anim.compat.ModCompat;
 import dev.mcreload.anim.config.Cfg;
 import dev.mcreload.anim.config.ClientConfig;
@@ -33,6 +34,7 @@ public final class ClientBootstrap {
         MinecraftForge.EVENT_BUS.addListener(WeaponTrails::onRenderLevel);
 
         ModCompat.init();
+        if (SelfTest.enabled()) SelfTest.init();
 
         // Every client-side player (you and everyone you can see) gets its own rig: our
         // procedural layer at the bottom of the animation stack and the harmonizer on top.
