@@ -219,7 +219,11 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("07b_skydive", 100, sp -> place(sp, 2, Y + 70, 0, -90, ItemStack.EMPTY),
                 (mc, t) -> move(mc, false, false, false, false), new Window(50, 80, 2, 0.4f)));
         SCENARIOS.add(new Scenario("20_elytra", 70, SelfTest::launchElytra,
-                (mc, t) -> move(mc, false, false, false, false), new Window(25, 60, 4, 0.2f)));
+                (mc, t) -> {
+                    move(mc, false, false, false, false);
+                    if (t == 8 && !mc.player.isFallFlying()) mc.player.connection.send(new net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket(
+                            mc.player, net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action.START_FALL_FLYING));
+                }, new Window(25, 60, 4, 0.2f)));
         SCENARIOS.add(new Scenario("21_sword_stance", 35, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
                 (mc, t) -> move(mc, false, false, false, false), new Window(25, 35, 1, 0.3f)));
         SCENARIOS.add(new Scenario("08a_slash_1", 25, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
@@ -258,9 +262,9 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("25_eat", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.GOLDEN_APPLE, 8)),
                 (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 40, 3, 0.25f)));
         SCENARIOS.add(new Scenario("26_explosion", 50, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> { if (t == 10) explode(mc, 6.5, 0.5); }, new Window(11, 30, 4, 0.08f)));
+                (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 30, 4, 0.08f)));
         SCENARIOS.add(new Scenario("26b_explosion_sword", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> { if (t == 10) explode(mc, 6.5, 0.5); }, new Window(11, 30, 3, 0.1f)));
+                (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 30, 3, 0.1f)));
         SCENARIOS.add(new Scenario("27_totem", 60, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
                 (mc, t) -> { if (t == 8) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.onTotem(); } },
                 new Window(14, 50, 4, 0.25f)));
@@ -285,9 +289,12 @@ public final class SelfTest {
         place(sp, 2, Y + 40, 0, -90, ItemStack.EMPTY);
         sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(Items.ELYTRA));
         sp.teleportTo(sp.serverLevel(), 2.5, Y + 40, 0.5, -90, 10f);
-        sp.setDeltaMovement(1.0, 0, 0);
-        sp.hurtMarked = true;
-        sp.startFallFlying();
+    }
+
+    /** No sound card in CI, so the explosion sound cue never fires: trigger the reaction directly. */
+    private static void blastCue(Minecraft mc) {
+        var rig = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player);
+        if (rig != null) rig.motion.onExplosion(4.0);
     }
 
     private static void shieldUp(ServerPlayer sp) {
@@ -308,7 +315,7 @@ public final class SelfTest {
         lvl.setBlock(head, bed.setValue(net.minecraft.world.level.block.BedBlock.PART,
                 net.minecraft.world.level.block.state.properties.BedPart.HEAD), 3);
         sp.teleportTo(lvl, 5.5, Y, 3.5, -90, 0f);
-        sp.startSleepInBed(head).ifLeft(problem -> McReloadAnim.LOG.warn("[mcreload] self-test bed: {}", problem));
+        sp.startSleeping(head);
     }
 
     private static void placeLook(ServerPlayer sp, double x, double y, double z, float yaw, float pitch, ItemStack hand) {

@@ -50,16 +50,13 @@ final class CombatModule implements AnimModule {
         float two = m.twoHandW.v;
         float breathe = 0.04f * Mth.sin(m.time * 1.8f + m.seed);
 
-        // Blade held up and across the body, point toward the enemy.
-        main.targetX(Mth.lerp(two, -0.85f, -0.95f) + breathe, w);
-        main.targetY(side * Mth.lerp(two, -0.35f, -0.42f), w);
-        main.targetZ(side * 0.08f, w);
-        main.bend += s.elbow() * Mth.lerp(two, 1.00f, 1.05f) * w;
+        // Blade held up and across the body, point toward the enemy (overrides the walk arms).
+        main.override(Mth.lerp(two, -0.85f, -0.95f) + breathe, side * Mth.lerp(two, -0.35f, -0.42f), side * 0.08f, w);
+        main.overrideBend(s.elbow() * Mth.lerp(two, 1.00f, 1.05f), w);
         // Free hand: guarding (one-handed) or on the hilt under the main hand (two-handed).
-        off.targetX(Mth.lerp(two, -0.55f, -1.00f) + breathe, w);
-        off.targetY(side * Mth.lerp(two, 0f, 0.58f), w);
-        off.targetZ(-side * Mth.lerp(two, 0.20f, 0.05f), w);
-        off.bend += s.elbow() * Mth.lerp(two, 0.80f, 1.15f) * w;
+        off.override(Mth.lerp(two, -0.55f, -1.00f) + breathe, side * Mth.lerp(two, 0f, 0.58f),
+                -side * Mth.lerp(two, 0.20f, 0.05f), w);
+        off.overrideBend(s.elbow() * Mth.lerp(two, 0.80f, 1.15f), w);
 
         // Staggered feet, weight low, shoulders turned a little.
         float still = (1f - m.moveF()) * m.groundW.v;
@@ -181,14 +178,10 @@ final class CombatModule implements AnimModule {
             float cs = crossbowSide(rig);
             PartPose holdArm = cs > 0 ? f.rightArm() : f.leftArm();
             PartPose support = cs > 0 ? f.leftArm() : f.rightArm();
-            holdArm.targetX(-0.75f, carry);
-            holdArm.targetY(-cs * 0.55f, carry);
-            holdArm.targetZ(0f, carry);
-            holdArm.bend += s.elbow() * 1.15f * carry;
-            support.targetX(-1.05f, carry);
-            support.targetY(cs * 0.65f, carry);
-            support.targetZ(0f, carry);
-            support.bend += s.elbow() * 1.45f * carry;
+            holdArm.override(-0.75f, -cs * 0.55f, 0f, carry);
+            holdArm.overrideBend(s.elbow() * 1.15f, carry);
+            support.override(-1.05f, cs * 0.65f, 0f, carry);
+            support.overrideBend(s.elbow() * 1.45f, carry);
         }
         // Loaded: shouldered like a rifle, body bladed, feet planted wide.
         float aimC = m.crossAimW.v * gate;

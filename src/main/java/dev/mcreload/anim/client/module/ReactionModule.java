@@ -82,7 +82,8 @@ final class ReactionModule implements AnimModule {
         float tuck = Mth.sin(Mth.PI * Math.min(1f, t * 1.15f)) * gate;
         // Over the head and back onto the feet.
         f.body().rx -= Mth.TWO_PI * spin * gate;
-        f.body().py -= 0.28f * Mth.sin(Mth.PI * t) * gate;
+        // Lift the pivot a little so the tucked head clears the ground upside down.
+        f.body().py += 0.18f * Mth.sin(Mth.PI * t) * gate;
         // Curled into a ball.
         f.rightLeg().override(-2.0f, 0f, 0.05f, tuck);
         f.leftLeg().override(-2.0f, 0f, -0.05f, tuck);
