@@ -50,7 +50,7 @@ jobs:
           echo "tutorialStep:none" >> run/options.txt
           echo "joinedFirstServer:true" >> run/options.txt
           echo "soundCategory_master:0.0" >> run/options.txt
-          timeout 30m xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient -Pselftest --no-daemon --stacktrace 2>&1 | tee runclient.log || true
+          timeout 22m xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient -Pselftest --no-daemon --stacktrace 2>&1 | tee runclient.log || true
 
       - name: Publish screenshots to the 'selftest' branch
         if: always()

@@ -4,12 +4,12 @@ import com.mojang.logging.LogUtils;
 import dev.mcreload.anim.config.ClientConfig;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.IExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.NetworkConstants;
 import org.slf4j.Logger;
 
@@ -29,9 +29,10 @@ public final class McReloadAnim {
                 () -> new IExtensionPoint.DisplayTest(() -> NetworkConstants.IGNORESERVERONLY, (remote, fromServer) -> true));
 
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
-        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> () -> {
+        if (FMLEnvironment.dist == Dist.CLIENT) {
             ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC, MODID + "-client.toml");
+            // Only touched on the client, so the class (and playerAnimator) is never loaded on a server.
             dev.mcreload.anim.client.ClientBootstrap.init(modBus);
-        });
+        }
     }
 }

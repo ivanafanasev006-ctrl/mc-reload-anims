@@ -98,7 +98,7 @@ public final class SelfTest {
             phase = Phase.DONE;
             timer = 0;
         }
-        if (timer > 20 * 60 * 6 && phase != Phase.RUNNING) {
+        if (timer > 20 * 60 * 4 && phase != Phase.RUNNING) {
             McReloadAnim.LOG.error("[mcreload] SELF-TEST TIMEOUT in phase " + phase);
             mc.stop();
         }
