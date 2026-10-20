@@ -45,10 +45,12 @@ final class WaterModule implements AnimModule {
             kickLeg(f.leftLeg(), s, -kick, swim);
         }
 
-        float tread = m.waterW.v * (1f - m.swimW.v) * gate;
+        float water = m.waterW.v * (1f - m.swimW.v) * gate;
+        float paddle = water * m.paddleW.v;
+        float tread = water - paddle;
         if (tread > 0.001f) {
-            // Treading water: arms and legs spread, everything slow. The legs paddle like flippers
-            // just behind the body, the arms sweep a little forward and back in turn.
+            // Treading water on the spot: arms and legs spread, everything slow. The legs paddle
+            // like flippers just behind the body, the arms sweep a little forward and back in turn.
             float t = m.time + m.seed;
             float leg = Mth.sin(t * 1.7f), arm = Mth.sin(t * 1.25f);
             f.rightLeg().override(0.12f + 0.22f * leg, 0f, 0.24f, tread);
@@ -63,8 +65,49 @@ final class WaterModule implements AnimModule {
             f.body().py += 0.03f * Mth.sin(t * 1.7f * 2f) * tread;
             f.body().rz += 0.025f * arm * tread;
         }
+        if (paddle > 0.001f) {
+            // Swimming along at the surface without sprinting: a relaxed dog-paddle. Arms reach
+            // forward in turn and pull back under the chest, legs cycle slowly behind, chest low.
+            float p = m.paddlePhase;
+            float r = Mth.sin(p), l = Mth.sin(p + Mth.PI);
+            float aw = paddle * m.armsFree.v;
+            f.rightArm().override(-1.35f - 0.45f * r, 0f, 0.25f + 0.10f * Math.max(0f, -r), aw);
+            f.leftArm().override(-1.35f - 0.45f * l, 0f, -0.25f - 0.10f * Math.max(0f, -l), aw);
+            f.rightArm().overrideBend(s.elbow() * (0.30f + 0.70f * Math.max(0f, -r)), aw);
+            f.leftArm().overrideBend(s.elbow() * (0.30f + 0.70f * Math.max(0f, -l)), aw);
+            float k = Mth.sin(p * 1.0f + 0.8f);
+            f.rightLeg().override(0.25f + 0.30f * k, 0f, 0.10f, paddle);
+            f.leftLeg().override(0.25f - 0.30f * k, 0f, -0.10f, paddle);
+            f.rightLeg().overrideBend(s.knee() * (0.35f + 0.45f * Math.max(0f, k)), paddle);
+            f.leftLeg().overrideBend(s.knee() * (0.35f + 0.45f * Math.max(0f, -k)), paddle);
+            f.body().rx -= 0.55f * paddle;
+            f.head().rx -= 0.45f * paddle;
+            Rigging.twistUpper(f, 0.12f * r * paddle);
+            f.body().py += 0.03f * Mth.sin(p * 2f) * paddle;
+        }
 
+        diveAir(m, f, s, gate);
         dive(m, f, s, gate);
+    }
+
+    /** Falling toward water: arms go overhead, hands together, and the body tips head-first. */
+    private static void diveAir(MotionState m, PoseFrame f, Signs s, float gate) {
+        float w = m.diveAirW.v * gate * (1f - m.waterW.v);
+        if (w <= 0.001f) return;
+        float aw = w * m.armsFree.v;
+        f.rightArm().override(-3.0f, 0f, -0.10f, aw);
+        f.leftArm().override(-3.0f, 0f, 0.10f, aw);
+        f.rightArm().overrideBend(0f, aw);
+        f.leftArm().overrideBend(0f, aw);
+        f.rightLeg().override(0.10f, 0f, 0.02f, w);
+        f.leftLeg().override(0.10f, 0f, -0.02f, w);
+        f.rightLeg().overrideBend(s.knee() * 0.20f, w);
+        f.leftLeg().overrideBend(s.knee() * 0.20f, w);
+        // Arching over: the steeper the fall, the more head-first.
+        float steep = Mth.clamp(-m.vertical / 0.8f, 0f, 1f);
+        f.body().rx -= (0.70f + 0.75f * steep) * w;
+        f.head().rx += 0.30f * w;
+        Rigging.leanTorso(f, s, 0.10f * w);
     }
 
     /** Dolphin entry after jumping in from a height: streamlined, head first, then an undulating glide out. */

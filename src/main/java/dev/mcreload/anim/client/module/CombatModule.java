@@ -135,6 +135,12 @@ final class CombatModule implements AnimModule {
         rear.overrideBend(s.knee() * k.rearKnee(), lw);
         float drop = Math.max(0f, k.leadKnee() - 0.3f);
         f.body().py -= 0.07f * drop * lw;
+        // Weapons: the whole body drives forward into the strike (lunge), not just the arm.
+        if (MotionState.isWeapon(kind)) {
+            float lunge = Math.max(0f, -k.lean());
+            f.body().pz -= 0.38f * lunge * w;
+            Rigging.leanTorso(f, s, 0.25f * lunge * w);
+        }
     }
 
     /** Other items: vanilla arm swing, plus a little body follow-through. */
@@ -162,7 +168,8 @@ final class CombatModule implements AnimModule {
             // Turned side-on, but not so far that the drawing arm has to go through the chest;
             // less while walking, and the hips stay facing the way the feet are going.
             float moving = m.moveF();
-            float turn = side * (0.62f - 0.25f * moving) * bow;
+            // Turns into the stance as the string comes back, not in one snap.
+            float turn = side * (0.62f - 0.25f * moving) * bow * (0.4f + 0.6f * AngleMath.ease(m.usePull * 2f));
             f.body().ry += turn;
             f.head().ry += turn;
             useArm.ry += turn;
@@ -173,7 +180,7 @@ final class CombatModule implements AnimModule {
             otherArm.bend += s.elbow() * (0.5f + 1.1f * m.usePull) * bow;
             if (m.bowStyle == 1) {
                 // Horizontal bow drawn from above: roll the bow arm flat.
-                useArm.overrideRoll(side * 1.35f, bow);
+                useArm.overrideRoll(side * 1.15f, bow);
                 otherArm.rx -= 0.15f * bow;
             }
             // Legs keep stepping straight ahead: undo the body turn below the hips.

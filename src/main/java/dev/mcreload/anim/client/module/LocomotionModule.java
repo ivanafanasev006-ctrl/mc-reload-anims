@@ -67,6 +67,9 @@ final class LocomotionModule implements AnimModule {
         // Soft knee at heel strike, deep fold on the swing.
         f.rightLeg().bend += s.knee() * (0.10f + 0.15f * a + 0.95f * a * Math.max(0f, sin)) * w;
         f.leftLeg().bend += s.knee() * (0.10f + 0.15f * a + 0.95f * a * Math.max(0f, -sin)) * w;
+        // The swinging leg lifts a little into the hip.
+        f.rightLeg().py -= 0.7f * a * Math.max(0f, sin) * w;
+        f.leftLeg().py -= 0.7f * a * Math.max(0f, -sin) * w;
 
         float aw = w * arms;
         // Arms swing wider and cross a little in front of the body on the way forward.
@@ -91,120 +94,104 @@ final class LocomotionModule implements AnimModule {
     }
 
     /**
-     * Sprint, "in a hurry": only a slight forward lean, but a big loose bounce on every stride,
-     * shoulders and arms thrown around, and small imperfect wobbles so no two strides look alike.
+     * Sprint: leaning into it, legs working like pistons (knee driven up, foot stamped down under
+     * the hips, the hip hiking with each lift), arms pumping hard at 90 degrees, shoulders turning,
+     * the body bouncing on every stride while the head stays level and only bobs a little.
      */
     private static void run(PoseFrame f, Signs s, float w, float arms, float sin, float cos, float a, MotionState m, boolean drag) {
-        float t = m.time + m.seed;
-        // Stride-to-stride irregularity: amplitude and timing wander a little.
-        float vary = 1f + 0.18f * wobble(t * 0.9f, 0f);
-        legX(f.rightLeg(), -0.18f * a + 0.95f * a * vary * cos, w);
-        legX(f.leftLeg(), -0.18f * a - 0.95f * a * vary * cos, w);
-        // Knee: almost straight at push-off behind, folded tight as the leg drives forward.
-        float shift = 0.5f;
-        float rSwing = sin * Mth.cos(shift) + cos * Mth.sin(shift);   // sin(phase + shift)
-        float lSwing = -rSwing;
-        f.rightLeg().bend += s.knee() * (0.15f + 1.75f * Math.max(0f, rSwing)) * a * w;
-        f.leftLeg().bend += s.knee() * (0.15f + 1.75f * Math.max(0f, lSwing)) * a * w;
-        // Feet land slightly apart, not on a line.
-        f.rightLeg().targetZ(0.06f, w);
-        f.leftLeg().targetZ(-0.06f, w);
+        // Per-leg phase: lift = knee coming up and forward, 0 while the foot is down and pushing.
+        float rLift = Math.max(0f, sin), lLift = Math.max(0f, -sin);
+        // Thighs: short fore-aft travel around a forward centre; mostly up and down.
+        legX(f.rightLeg(), -0.30f * a + 0.62f * a * cos - 0.45f * a * rLift, w);
+        legX(f.leftLeg(), -0.30f * a - 0.62f * a * cos - 0.45f * a * lLift, w);
+        // Knee: folds tight under the body on the way up, nearly straight when it stamps down.
+        f.rightLeg().bend += s.knee() * (0.20f + 1.75f * rLift + 0.35f * Math.max(0f, cos)) * a * w;
+        f.leftLeg().bend += s.knee() * (0.20f + 1.75f * lLift + 0.35f * Math.max(0f, -cos)) * a * w;
+        // The lifting leg rides up into the hip, the planted one takes the weight.
+        f.rightLeg().py -= 1.6f * rLift * a * w;
+        f.leftLeg().py -= 1.6f * lLift * a * w;
+        f.rightLeg().targetZ(0.05f, w);
+        f.leftLeg().targetZ(-0.05f, w);
 
         float aw = w * arms;
-        float swing = 1.30f * a * vary;
         if (drag) {
-            // Sword trailing behind in the main hand, the free arm pumping on its own.
+            // A warrior carrying the blade: sword arm held back and a little out, steady, the blade
+            // turned outward behind; the free arm pumps.
             PartPose main = m.mainRight ? f.rightArm() : f.leftArm();
             PartPose off = m.mainRight ? f.leftArm() : f.rightArm();
             float side = m.mainRight ? 1f : -1f;
             float offPhase = m.mainRight ? -cos : cos;
-            main.override(0.30f + 0.10f * a * cos * side, 0f, side * 0.22f, aw);
-            main.overrideBend(s.elbow() * 0.20f, aw);
-            main.overrideRoll(Mth.PI, aw);
-            off.override(-0.25f * a + swing * 1.1f * offPhase, 0f, -side * 0.10f, aw);
-            off.overrideBend(s.elbow() * 1.45f * a, aw);
+            main.override(0.42f, side * 0.15f, side * 0.32f, aw);
+            main.overrideBend(s.elbow() * 0.30f, aw);
+            main.overrideRoll(side * 2.15f, aw);
+            off.override(-0.35f * a + 1.25f * a * offPhase, 0f, -side * 0.10f, aw);
+            off.overrideBend(s.elbow() * 1.55f * a, aw);
         } else {
-            armPose(f.rightArm(), -0.20f * a - swing * cos, -0.08f, aw);
-            armPose(f.leftArm(), -0.20f * a + swing * cos, 0.08f, aw);
-            f.rightArm().ry -= 0.28f * a * Math.max(0f, -cos) * aw;
-            f.leftArm().ry += 0.28f * a * Math.max(0f, cos) * aw;
-            f.rightArm().bend += s.elbow() * (1.35f + 0.35f * Math.max(0f, -sin)) * a * aw;
-            f.leftArm().bend += s.elbow() * (1.35f + 0.35f * Math.max(0f, sin)) * a * aw;
-            // Hands flop a little out of rhythm.
-            f.rightArm().rz += 0.10f * wobble(t * 2.3f, 1f) * a * aw;
-            f.leftArm().rz -= 0.10f * wobble(t * 2.1f, 2f) * a * aw;
+            armPose(f.rightArm(), -0.30f * a - 1.25f * a * cos, -0.08f, aw);
+            armPose(f.leftArm(), -0.30f * a + 1.25f * a * cos, 0.08f, aw);
+            f.rightArm().ry -= 0.25f * a * Math.max(0f, -cos) * aw;
+            f.leftArm().ry += 0.25f * a * Math.max(0f, cos) * aw;
+            f.rightArm().bend += s.elbow() * (1.45f + 0.25f * Math.max(0f, -sin)) * a * aw;
+            f.leftArm().bend += s.elbow() * (1.45f + 0.25f * Math.max(0f, sin)) * a * aw;
         }
 
-        // Shoulders thrown round hard against the hips.
-        float twist = -cos * 0.42f * a * w;
+        // Shoulders turn against the hips; the head is held facing forward.
+        float twist = -cos * 0.38f * a * w;
         Rigging.twistUpper(f, twist);
-        f.head().ry -= twist * 0.7f;
-        // Leaning just enough to hurry, head up looking where it's going.
-        f.body().rx -= 0.20f * a * w;
-        Rigging.leanTorso(f, s, 0.06f * a * w);
-        f.head().rx -= 0.20f * a * w;
-        // Loose bounce: low as the legs pass each other, launched up in the flight phase,
-        // a bit higher on some strides than others.
-        float bounce = (Math.abs(cos) - 0.45f) * (0.13f + 0.04f * wobble(t * 0.7f, 3f));
+        f.head().ry -= twist;
+        // Leaning into the run, head up looking ahead.
+        f.body().rx -= 0.40f * a * w;
+        Rigging.leanTorso(f, s, 0.10f * a * w);
+        f.head().rx -= 0.48f * a * w;
+        // Bounce: lowest as the legs pass under the body, launched up between steps.
+        float bounce = (Math.abs(cos) - 0.45f) * 0.16f;
         f.body().py += bounce * a * w;
-        // The upper body and head are jolted by each landing and rock side to side.
-        float jolt = Math.max(0f, 0.55f - Math.abs(cos));
-        Rigging.leanTorso(f, s, 0.10f * jolt * a * w);
-        f.head().rx += 0.12f * jolt * a * w;
-        f.body().rz += (0.07f * sin + 0.03f * wobble(t * 1.3f, 4f)) * a * w;
-        f.body().px += 0.025f * sin * a * w;
-        f.head().rz += 0.05f * wobble(t * 1.9f, 5f) * a * w;
-        f.head().ry += 0.06f * wobble(t * 1.1f, 6f) * a * w;
-    }
-
-    /** Smooth pseudo-random wobble in about [-1, 1]. */
-    static float wobble(float t, float seed) {
-        return 0.6f * Mth.sin(t * 1.7f + seed * 2.1f) + 0.4f * Mth.sin(t * 2.9f + seed * 3.7f);
+        // Hips roll over the planted leg; the head only nods a little with the bounce.
+        f.body().rz += 0.06f * sin * a * w;
+        f.head().rz -= 0.05f * sin * a * w;
+        f.head().rx += 0.08f * (Math.abs(cos) - 0.45f) * a * w;
+        f.body().px += 0.02f * sin * a * w;
     }
 
     /**
-     * Ninja creep: body a little side-on, low on bent legs, each foot clearly lifted and placed
-     * in turn, lead hand low in front, rear hand guarding, eyes scanning when standing still.
+     * Sneak: a cat-like creep. Each foot is lifted high and set down again in turn, knees bent,
+     * arms held out to the sides for balance, the body swaying over each step.
      */
     private static void sneak(PoseFrame f, Signs s, float w, float arms, float a, MotionState m) {
         float sin = Mth.sin(m.sneakPhase), cos = Mth.cos(m.sneakPhase);
-        float turn = 0.30f * w;
-        f.body().ry += turn;
-        f.head().ry += turn;
-        f.rightArm().ry += turn * 0.5f;
-        f.leftArm().ry += turn * 0.5f;
+        float rLift = Math.max(0f, sin), lLift = Math.max(0f, -sin);
 
-        float base = 0.50f;
-        // Thighs reach forward and back in turn...
-        legX(f.rightLeg(), -base + 0.55f * a * cos, w);
-        legX(f.leftLeg(), -base - 0.55f * a * cos, w);
-        f.rightLeg().targetZ(0.14f, w);
-        f.leftLeg().targetZ(-0.14f, w);
-        // ...and the swinging foot is lifted high, the planted one carries the weight.
-        float rLift = Math.max(0f, sin);
-        float lLift = Math.max(0f, -sin);
-        f.rightLeg().bend += s.knee() * (2f * base + 0.95f * rLift * a) * w;
-        f.leftLeg().bend += s.knee() * (2f * base + 0.95f * lLift * a) * w;
+        float base = 0.40f;
+        // Up and down more than forward and back.
+        legX(f.rightLeg(), -base + 0.32f * a * cos - 0.55f * a * rLift, w);
+        legX(f.leftLeg(), -base - 0.32f * a * cos - 0.55f * a * lLift, w);
+        f.rightLeg().targetZ(0.10f, w);
+        f.leftLeg().targetZ(-0.10f, w);
+        f.rightLeg().bend += s.knee() * (2f * base + 1.10f * rLift * a) * w;
+        f.leftLeg().bend += s.knee() * (2f * base + 1.10f * lLift * a) * w;
+        f.rightLeg().py -= 1.2f * rLift * a * w;
+        f.leftLeg().py -= 1.2f * lLift * a * w;
         f.body().py -= 2f * Rigging.LEG_SEGMENT_BLOCKS * (1f - Mth.cos(base)) * w;
-        // Each step dips a little as the weight is transferred.
-        f.body().py -= 0.03f * Math.abs(cos) * a * w;
-        f.torso().targetX(0.32f, w);
+        // Settles onto each foot as it lands.
+        f.body().py -= 0.035f * Math.abs(cos) * a * w;
+        f.torso().targetX(0.25f, w);
 
         float aw = w * arms;
-        // Lead hand low and forward, rear hand up by the face; both move with the steps.
-        f.rightArm().targetX(-1.10f + 0.15f * a * cos, aw);
+        // Arms out to the sides, slightly forward, elbows soft; they rise and fall with the steps.
+        f.rightArm().targetX(-0.35f + 0.12f * a * cos, aw);
         f.rightArm().targetY(0f, aw);
-        f.rightArm().targetZ(0.15f, aw);
-        f.rightArm().bend += s.elbow() * 0.50f * aw;
-        f.leftArm().targetX(-1.60f - 0.10f * a * cos, aw);
-        f.leftArm().targetY(0.45f, aw);
-        f.leftArm().targetZ(0f, aw);
-        f.leftArm().bend += s.elbow() * 1.60f * aw;
+        f.rightArm().targetZ(0.55f + 0.10f * a * rLift, aw);
+        f.leftArm().targetX(-0.35f - 0.12f * a * cos, aw);
+        f.leftArm().targetY(0f, aw);
+        f.leftArm().targetZ(-0.55f - 0.10f * a * lLift, aw);
+        f.rightArm().bend += s.elbow() * 0.55f * aw;
+        f.leftArm().bend += s.elbow() * 0.55f * aw;
 
-        // Weight shifts from foot to foot.
-        f.body().rz += 0.06f * a * sin * w;
-        f.body().px += 0.035f * a * sin * w;
-        Rigging.twistUpper(f, 0.08f * a * cos * w);
+        // Body sways over the standing foot, shoulders turn with the steps.
+        f.body().rz += 0.08f * a * sin * w;
+        f.body().px += 0.04f * a * sin * w;
+        Rigging.twistUpper(f, 0.14f * a * cos * w);
+        f.head().ry -= 0.07f * a * cos * w;
         // Nervous look-around while standing still.
         float still = 1f - a;
         f.head().ry += (0.40f * Mth.sin(m.time * 0.9f + m.seed) + 0.08f * Mth.sin(m.time * 2.3f)) * still * w;

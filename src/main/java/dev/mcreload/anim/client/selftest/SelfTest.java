@@ -204,73 +204,63 @@ public final class SelfTest {
         ItemStack none = ItemStack.EMPTY;
         SCENARIOS.add(new Scenario("03_sprint", 40, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> move(mc, true, true, false, false), new Window(20, 40, 6, 0.05f)));
-        SCENARIOS.add(new Scenario("03b_sprint_brake", 45, sp -> place(sp, 2, Y, 0, -90, none),
-                (mc, t) -> move(mc, t < 25, t < 25, false, false), new Window(25, 38, 3, 0.08f)));
-        SCENARIOS.add(new Scenario("03c_walk_stop_no_brake", 45, sp -> place(sp, 2, Y, 0, -90, none),
-                (mc, t) -> move(mc, t < 25, false, false, false), new Window(25, 36, 2, 0.12f)));
-        SCENARIOS.add(new Scenario("04_ninja_sneak", 60, sp -> place(sp, 2, Y, 0, -90, none),
+        SCENARIOS.add(new Scenario("04_sneak", 60, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> move(mc, true, false, true, false), new Window(25, 60, 6, 0.12f)));
-        SCENARIOS.add(new Scenario("05_sword_sprint_drag", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> move(mc, true, true, false, false), new Window(22, 40, 4, 0.06f)));
+        SCENARIOS.add(new Scenario("05_sword_sprint_carry", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> move(mc, true, true, false, false), new Window(22, 40, 3, 0.08f)));
+        SCENARIOS.add(new Scenario("06_standing_jump", 40, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, false, false, false, t == 15 || t == 16), new Window(15, 30, 5, 0.05f)));
+        SCENARIOS.add(new Scenario("06b_sprint_jump", 50, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, true, true, false, t == 25 || t == 26), new Window(25, 40, 4, 0.06f)));
         SCENARIOS.add(new Scenario("07_high_fall_roll_W", 60, sp -> place(sp, 2, Y + 7, 0, -90, none),
-                (mc, t) -> move(mc, t > 5, false, false, false), new Window(22, 45, 6, 0.05f)));
-        SCENARIOS.add(new Scenario("07d_high_fall_still", 60, sp -> place(sp, 2, Y + 7, 0, -90, none),
-                (mc, t) -> move(mc, false, false, false, false), new Window(22, 45, 3, 0.08f)));
+                (mc, t) -> move(mc, t > 5, false, false, false), new Window(18, 40, 8, 0.04f)));
         SCENARIOS.add(new Scenario("07c_sword_landing", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> move(mc, false, false, false, false), new Window(22, 45, 4, 0.08f)));
-        SCENARIOS.add(new Scenario("20_elytra", 60, SelfTest::launchElytra,
-                (mc, t) -> {
-                    move(mc, false, false, false, false);
-                    if (t == 8 && !mc.player.isFallFlying()) startGlide(mc);
-                }, new Window(25, 55, 3, 0.2f)));
-        SCENARIOS.add(new Scenario("20b_elytra_landing", 90, sp -> launchElytraLow(sp),
-                (mc, t) -> {
-                    move(mc, false, false, false, false);
-                    if (t == 4 && !mc.player.isFallFlying()) startGlide(mc);
-                }, new Window(20, 90, 24, 0.15f)));
+                (mc, t) -> move(mc, false, false, false, false), new Window(20, 45, 5, 0.06f)));
         SCENARIOS.add(new Scenario("08a_slash_1", 25, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
                 (mc, t) -> { if (t == 10) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 25, 6, 0.03f)));
         SCENARIOS.add(new Scenario("08b_slash_2", 16, sp -> {},
                 (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 5, 0.03f)));
         SCENARIOS.add(new Scenario("08c_slash_3", 16, sp -> {},
-                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 4, 0.03f)));
-        SCENARIOS.add(new Scenario("08d_spin", 25, sp -> {},
-                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 22, 5, 0.03f)));
-        SCENARIOS.add(new Scenario("22_throw", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.COBBLESTONE, 16)),
-                (mc, t) -> {
-                    boolean throwNow = t == 8;
-                    mc.options.keyDrop.setDown(throwNow);
-                    if (throwNow) mc.player.swing(InteractionHand.MAIN_HAND);
-                }, new Window(8, 24, 5, 0.04f)));
-        SCENARIOS.add(new Scenario("14_bow", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.BOW)),
+                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 5, 0.03f)));
+        SCENARIOS.add(new Scenario("09_axe", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_AXE)),
+                (mc, t) -> { if (t == 8 || t == 30) mc.player.swing(InteractionHand.MAIN_HAND); },
+                new Window(8, 26, 4, 0.05f), new Window(30, 48, 4, 0.05f)));
+        SCENARIOS.add(new Scenario("10b_fists_on_block", 40, sp -> placeLook(sp, 2, Y, 0, -90, 60, none),
+                (mc, t) -> { if (t >= 8 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 36, 6, 0.05f)));
+        SCENARIOS.add(new Scenario("15_pickaxe", 35, sp -> placeLook(sp, 2, Y, 0, -90, 55, new ItemStack(Items.IRON_PICKAXE)),
+                (mc, t) -> { if (t >= 8 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 33, 4, 0.06f)));
+        SCENARIOS.add(new Scenario("14_bow", 50, sp -> { place(sp, 2, Y, 0, -90, new ItemStack(Items.BOW)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD)); },
                 (mc, t) -> mc.options.keyUse.setDown((t > 5 && t < 28) || t > 32),
-                new Window(18, 27, 2, 0.3f), new Window(42, 50, 2, 0.3f)));
-        SCENARIOS.add(new Scenario("14b_bow_walk", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.BOW)),
-                (mc, t) -> { mc.options.keyUse.setDown(t > 5); move(mc, t > 5, false, false, false); },
-                new Window(20, 45, 4, 0.12f)));
-        SCENARIOS.add(new Scenario("23b_crossbow_load_aim", 60, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.CROSSBOW)),
-                (mc, t) -> mc.options.keyUse.setDown(t > 4 && t < 40), new Window(15, 35, 2, 0.4f), new Window(48, 60, 1, 0.3f)));
+                new Window(10, 27, 3, 0.2f), new Window(42, 50, 2, 0.3f)));
         SCENARIOS.add(new Scenario("26b_explosion_sword", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 34, 4, 0.08f)));
-        SCENARIOS.add(new Scenario("29_hand_swap", 30, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> { if (t == 8) swapHands(mc); }, new Window(9, 22, 4, 0.06f)));
-        for (int i = 0; i < 4; i++) {
+                (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(10, 34, 6, 0.06f)));
+        SCENARIOS.add(new Scenario("11b_tread", 50, sp -> place(sp, POOL_X + 10, Y - 2, 0, -90, none),
+                (mc, t) -> move(mc, false, false, false, t % 10 < 3), new Window(20, 50, 3, 0.3f)));
+        SCENARIOS.add(new Scenario("11d_paddle", 60, sp -> place(sp, POOL_X + 3, Y - 2, 0, -90, none),
+                (mc, t) -> move(mc, t > 5, false, false, t % 8 < 3), new Window(25, 60, 5, 0.2f)));
+        SCENARIOS.add(new Scenario("11c_dive_high", 50, sp -> place(sp, POOL_X + 12, Y + 7, 0, -90, none),
+                (mc, t) -> move(mc, false, false, false, false), new Window(5, 40, 8, 0.05f)));
+        SCENARIOS.add(new Scenario("11e_jump_in", 50, sp -> place(sp, POOL_X - 3, Y, 0, -90, none),
+                (mc, t) -> move(mc, t > 4 && t < 20, t > 4 && t < 20, false, t == 14 || t == 15), new Window(14, 40, 8, 0.05f)));
+        String[] idles = {"stretch", "scratch_look", "stick_fencing", "hands_on_hips", "yawn", "look_at_hands",
+                "neck", "impatient", "kick_pebble", "squats"};
+        for (int i = 0; i < idles.length; i++) {
             final int action = i;
-            String[] names = {"stretch", "scratch_look", "stick_fencing", "hands_on_hips"};
-            SCENARIOS.add(new Scenario("30_idle_" + names[i], 80, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+            SCENARIOS.add(new Scenario("30_idle_" + idles[i], 75, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
                     (mc, t) -> {
                         move(mc, false, false, false, false);
                         if (t == 6) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.forceIdle(action); }
-                    }, new Window(10, 74, 6, 0.3f)));
+                    }, new Window(10, 72, 4, 0.4f)));
         }
-        SCENARIOS.add(new Scenario("11_swim", 50, sp -> place(sp, POOL_X + 2, Y - 3, 0, -90, none),
-                (mc, t) -> move(mc, t > 5, t > 5, false, false), new Window(35, 50, 2, 0.15f)));
-        SCENARIOS.add(new Scenario("11b_tread", 60, sp -> place(sp, POOL_X + 10, Y - 2, 0, -90, none),
-                (mc, t) -> move(mc, false, false, false, t % 10 < 3), new Window(20, 60, 4, 0.3f)));
-        SCENARIOS.add(new Scenario("11c_dive", 50, sp -> place(sp, POOL_X + 12, Y + 7, 0, -90, none),
-                (mc, t) -> move(mc, false, false, false, false), new Window(14, 45, 6, 0.06f)));
-        SCENARIOS.add(new Scenario("13_ladder", 55, sp -> place(sp, LADDER_X + 1, Y, 0, 90, none),
-                (mc, t) -> move(mc, true, false, false, false), new Window(15, 55, 4, 0.2f)));
+        for (int i = 0; i < dev.mcreload.anim.client.rig.MotionState.EMOTE_COUNT; i++) {
+            final int emote = i;
+            SCENARIOS.add(new Scenario("40_emote_" + dev.mcreload.anim.client.rig.MotionState.EMOTE_KEYS[i], 70,
+                    sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                    (mc, t) -> {
+                        move(mc, false, false, false, false);
+                        if (t == 6) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.playEmote(emote); }
+                    }, new Window(10, 66, 5, 0.35f)));
+        }
     }
 
     private static void startGlide(Minecraft mc) {

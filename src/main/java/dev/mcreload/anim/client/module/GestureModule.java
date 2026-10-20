@@ -66,6 +66,12 @@ final class GestureModule implements AnimModule {
             case MotionState.IDLE_STRETCH -> stretch(f, s, env, aw, t);
             case MotionState.IDLE_SCRATCH -> scratch(f, s, env, aw, t, main, off, side);
             case MotionState.IDLE_SHADOWBOX -> shadowbox(f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_YAWN -> yawn(f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_HANDS -> lookAtHands(f, s, env, aw, t);
+            case MotionState.IDLE_NECK -> neck(f, s, env, aw, t);
+            case MotionState.IDLE_IMPATIENT -> impatient(f, s, env, aw, t, side);
+            case MotionState.IDLE_KICK -> kickPebble(f, s, env, aw, t, side);
+            case MotionState.IDLE_SQUATS -> squats(f, s, env, aw, t);
             default -> lookAround(f, s, env, aw, t, m);
         }
     }
@@ -178,6 +184,94 @@ final class GestureModule implements AnimModule {
         f.body().rz += 0.05f * Mth.sin(t * 0.95f) * e;
         f.body().px += 0.03f * Mth.sin(t * 0.95f) * e;
         Rigging.leanTorso(f, s, -0.05f * e);
+    }
+
+    /** Big yawn: one arm stretches up, the other hand covers the mouth, head tipped back. */
+    private static void yawn(PoseFrame f, Signs s, float e, float aw, float t, PartPose main, PartPose off, float side) {
+        float open = seg(t, 0.3f, 1.0f) * (1f - seg(t, 2.0f, 2.6f));
+        main.override(-1.70f, side * -0.70f, 0f, aw * open);
+        main.overrideBend(s.elbow() * 2.0f, aw * open);
+        off.override(-2.90f, 0f, -side * 0.30f, aw * open);
+        off.overrideBend(s.elbow() * 0.40f, aw * open);
+        f.head().rx -= 0.35f * open * e;
+        Rigging.leanTorso(f, s, -0.12f * open * e);
+        f.body().py += 0.02f * open * e;
+        // A shiver at the end.
+        f.body().rz += 0.03f * Mth.sin(t * 30f) * seg(t, 2.0f, 2.2f) * (1f - seg(t, 2.4f, 2.6f)) * e;
+    }
+
+    /** Holds the hands up and inspects them, turning them over, glancing from one to the other. */
+    private static void lookAtHands(PoseFrame f, Signs s, float e, float aw, float t) {
+        float turn = Mth.sin(t * 2.4f);
+        f.rightArm().override(-1.25f, -0.25f, 0.05f, aw);
+        f.leftArm().override(-1.25f, 0.25f, -0.05f, aw);
+        f.rightArm().overrideBend(s.elbow() * 1.3f, aw);
+        f.leftArm().overrideBend(s.elbow() * 1.3f, aw);
+        f.rightArm().overrideRoll(0.9f * turn, aw);
+        f.leftArm().overrideRoll(-0.9f * turn, aw);
+        f.head().rx += 0.55f * e;
+        f.head().ry += 0.25f * Mth.sin(t * 1.3f) * e;
+    }
+
+    /** Tilts the head to each side to crack the neck, then rolls the shoulders. */
+    private static void neck(PoseFrame f, Signs s, float e, float aw, float t) {
+        float tilt = seg(t, 0.2f, 0.6f) - 2f * seg(t, 0.8f, 1.2f) + seg(t, 1.4f, 1.6f);
+        f.head().rz += 0.45f * tilt * e;
+        f.head().rx += 0.10f * Math.abs(tilt) * e;
+        float roll = seg(t, 1.5f, 1.6f) * (1f - seg(t, 2.3f, 2.5f));
+        float c = Mth.sin((t - 1.5f) * 9f) * roll;
+        f.rightArm().rx += 0.25f * c * aw;
+        f.leftArm().rx += 0.25f * c * aw;
+        f.rightArm().rz += 0.15f * roll * aw;
+        f.leftArm().rz -= 0.15f * roll * aw;
+        f.torso().py -= 0.6f * Math.max(0f, c) * e;
+    }
+
+    /** Arms folded across the chest, tapping a foot, sighing. */
+    private static void impatient(PoseFrame f, Signs s, float e, float aw, float t, float side) {
+        f.rightArm().override(-0.80f, -0.75f, 0.05f, aw);
+        f.leftArm().override(-0.70f, 0.75f, -0.05f, aw);
+        f.rightArm().overrideBend(s.elbow() * 1.85f, aw);
+        f.leftArm().overrideBend(s.elbow() * 1.85f, aw);
+        PartPose foot = side > 0 ? f.rightLeg() : f.leftLeg();
+        float tap = Math.max(0f, Mth.sin(t * 11f)) * seg(t, 0.5f, 0.7f) * (1f - seg(t, 2.8f, 3.0f));
+        foot.overrideX(-0.15f, e);
+        foot.overrideBend(s.knee() * (0.15f + 0.25f * tap), e);
+        foot.py -= 0.8f * tap * e;
+        float sigh = Mth.sin(Mth.PI * AngleMath.clamp((t - 1.6f) / 0.9f, 0f, 1f));
+        f.head().rx -= 0.25f * sigh * e;
+        Rigging.leanTorso(f, s, -0.08f * sigh * e);
+        f.body().rz += side * 0.04f * e;
+    }
+
+    /** Looks down and kicks a pebble away. */
+    private static void kickPebble(PoseFrame f, Signs s, float e, float aw, float t, float side) {
+        PartPose foot = side > 0 ? f.rightLeg() : f.leftLeg();
+        float back = seg(t, 0.4f, 0.9f) * (1f - seg(t, 0.9f, 1.05f));
+        float kick = seg(t, 0.9f, 1.05f) * (1f - seg(t, 1.4f, 1.9f));
+        foot.overrideX(0.45f * back - 0.85f * kick, e * Math.max(back, kick));
+        foot.overrideBend(s.knee() * (0.9f * back + 0.1f * kick), e * Math.max(back, kick));
+        f.rightArm().rz += 0.15f * kick * aw;
+        f.leftArm().rz -= 0.15f * kick * aw;
+        f.rightArm().rx += 0.25f * kick * side * aw;
+        f.leftArm().rx -= 0.25f * kick * side * aw;
+        // Eyes on the ground, then following the pebble away.
+        f.head().rx += (0.55f - 0.35f * seg(t, 1.0f, 1.6f)) * e;
+        f.body().rx += 0.06f * kick * e;
+    }
+
+    /** Two quick squats, arms straight out in front. */
+    private static void squats(PoseFrame f, Signs s, float e, float aw, float t) {
+        float down = Math.max(0f, Mth.sin((t - 0.4f) / 1.3f * Mth.TWO_PI - Mth.HALF_PI) * 0.5f + 0.5f)
+                * seg(t, 0.3f, 0.5f) * (1f - seg(t, 2.9f, 3.2f));
+        f.rightArm().override(-1.55f, 0f, 0.05f, aw);
+        f.leftArm().override(-1.55f, 0f, -0.05f, aw);
+        f.rightArm().overrideBend(0f, aw);
+        f.leftArm().overrideBend(0f, aw);
+        Rigging.crouch(f, s, 0.95f * down * e);
+        Rigging.leanTorso(f, s, 0.35f * down * e);
+        f.head().rx -= 0.30f * down * e;
+        Rigging.legsOut(f, 0.12f * e);
     }
 
     private static float seg(float t, float a, float b) {

@@ -51,6 +51,9 @@ final class AirModule implements AnimModule {
             float land = Math.max(0f, m.land.x) * gate;
             if (land > 0.001f) {
                 Rigging.crouch(f, s, 0.70f * land);
+                // Legs absorb the impact, driven up into the hips.
+                f.rightLeg().py -= 1.4f * land;
+                f.leftLeg().py -= 1.4f * land;
                 Rigging.leanTorso(f, s, 0.25f * land);
                 f.body().rx -= 0.18f * land;
                 f.head().rx -= 0.35f * land;
@@ -80,9 +83,19 @@ final class AirModule implements AnimModule {
         float trailThigh = Mth.lerp(run, -0.35f, 0.80f);
         float leadKnee = Mth.lerp(run, 1.10f, 1.40f) * (1f - relax) + Mth.lerp(run, 0.55f, 0.25f);
         float trailKnee = Mth.lerp(run, 0.80f, 1.22f) * relax + 0.10f;
+        // Jumping on the spot: no lead leg, both knees tuck up under the body, feet a little apart.
+        float still = AngleMath.clamp(1f - run / 0.35f, 0f, 1f);
+        float tuck = Mth.lerp(relax, 1.15f, 0.55f);
+        leadThigh = Mth.lerp(still, leadThigh, -0.22f);
+        trailThigh = Mth.lerp(still, trailThigh, -0.22f);
+        leadKnee = Mth.lerp(still, leadKnee, tuck);
+        trailKnee = Mth.lerp(still, trailKnee, tuck);
         leg(lead, s, leadThigh, leadKnee, w);
         leg(trail, s, trailThigh, trailKnee, w);
-        Rigging.legsOut(f, 0.09f * w);
+        Rigging.legsOut(f, (0.09f + 0.12f * still) * w);
+        // Legs draw up into the hips as the knees tuck.
+        f.rightLeg().py -= 1.0f * still * (1f - relax) * w;
+        f.leftLeg().py -= 1.0f * still * (1f - relax) * w;
 
         float aw = w * arms;
         arm(leadArm, s, Mth.lerp(run, -0.60f, -0.87f), leadArm == f.rightArm() ? 0.17f : -0.17f, 0.45f, aw);

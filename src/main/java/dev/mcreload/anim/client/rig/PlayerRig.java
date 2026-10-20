@@ -89,7 +89,7 @@ public final class PlayerRig {
         boolean attacking = motion.slashKind >= 0 && motion.slashKind != MotionState.TOOL && motion.slashProgress() < 1.2f;
         float air = Math.max(motion.airW.v, Math.max(motion.elytraW.v, motion.flyW.v));
 
-        float armW = lerp(30f, 16f, lv), armZ = lerp(0.95f, 0.55f, lv);
+        float armW = lerp(26f, 12f, lv), armZ = lerp(0.85f, 0.45f, lv);
         if (attacking) { armW = Math.max(armW, 40f); armZ = 0.8f; }
         // While vanilla poses the arms (using items), follow it tightly.
         float vanilla = 1f - motion.armsFree.v * (1f - motion.toolSwingW.v);
@@ -104,10 +104,10 @@ public final class PlayerRig {
         springs.zeta[PoseFrame.RIGHT_ARM] = springs.zeta[PoseFrame.LEFT_ARM] = armZ;
         springs.omega[PoseFrame.RIGHT_LEG] = springs.omega[PoseFrame.LEFT_LEG] = legW;
         springs.zeta[PoseFrame.RIGHT_LEG] = springs.zeta[PoseFrame.LEFT_LEG] = legZ;
-        springs.omega[PoseFrame.TORSO] = attacking ? 34f : lerp(24f, 15f, lv);
-        springs.zeta[PoseFrame.TORSO] = lerp(0.9f, 0.65f, lv);
-        springs.omega[PoseFrame.BODY] = lerp(22f, 13f, lv);
-        springs.zeta[PoseFrame.BODY] = lerp(0.95f, 0.7f, lv);
+        springs.omega[PoseFrame.TORSO] = attacking ? 34f : lerp(20f, 11f, lv);
+        springs.zeta[PoseFrame.TORSO] = lerp(0.85f, 0.55f, lv);
+        springs.omega[PoseFrame.BODY] = lerp(18f, 10f, lv);
+        springs.zeta[PoseFrame.BODY] = lerp(0.9f, 0.6f, lv);
     }
 
     private static float lerp(float a, float b, float t) {

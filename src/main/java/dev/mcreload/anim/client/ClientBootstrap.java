@@ -26,6 +26,10 @@ public final class ClientBootstrap {
     public static final KeyMapping TOGGLE = new KeyMapping(
             "key.mcreload.toggle", KeyConflictContext.IN_GAME, InputConstants.UNKNOWN, "key.categories.mcreload");
 
+    public static final KeyMapping EMOTES = new KeyMapping(
+            "key.mcreload.emotes", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM,
+            org.lwjgl.glfw.GLFW.GLFW_KEY_B, "key.categories.mcreload");
+
     public static void init(IEventBus modBus) {
         modBus.addListener(ClientBootstrap::onRegisterKeys);
         modBus.addListener(ClientBootstrap::onConfigLoad);
@@ -54,6 +58,7 @@ public final class ClientBootstrap {
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.register(TOGGLE);
+        event.register(EMOTES);
     }
 
     private static void onConfigLoad(ModConfigEvent.Loading event) {
@@ -67,6 +72,10 @@ public final class ClientBootstrap {
     private static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Cfg.refresh();
+        while (EMOTES.consumeClick()) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.screen == null) mc.setScreen(new EmoteScreen());
+        }
         while (TOGGLE.consumeClick()) {
             boolean enabled = !ClientConfig.ENABLED.get();
             ClientConfig.ENABLED.set(enabled);

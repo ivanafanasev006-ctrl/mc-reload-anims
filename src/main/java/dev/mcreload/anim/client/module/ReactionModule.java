@@ -25,7 +25,7 @@ import net.minecraft.world.entity.HumanoidArm;
  * </ul>
  */
 final class ReactionModule implements AnimModule {
-    private static final float ROLL_SECONDS = 0.46f, SWORD_LAND_SECONDS = 0.9f, BLAST_SECONDS = 1.4f, TOTEM_SECONDS = 2.6f;
+    private static final float ROLL_SECONDS = 0.38f, SWORD_LAND_SECONDS = 0.9f, BLAST_SECONDS = 1.4f, TOTEM_SECONDS = 2.6f;
 
     @Override
     public boolean enabled() {
@@ -102,7 +102,7 @@ final class ReactionModule implements AnimModule {
         float t = m.since(m.landStart) / SWORD_LAND_SECONDS;
         if (t >= 1f || t < 0f) return;
         float e = AngleMath.ease(t / 0.12f) * (1f - AngleMath.ease((t - 0.6f) / 0.4f)) * gate;
-        plantBlade(f, s, e, main, off, side, 0.75f);
+        plantBlade(f, s, e, main, off, side, 0.75f, AngleMath.ease(t * SWORD_LAND_SECONDS / 0.16f));
     }
 
     private static void blast(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate, float arms,
@@ -114,7 +114,7 @@ final class ReactionModule implements AnimModule {
         boolean blade = Weapons.isMeleeWeapon(rig.player.getMainHandItem());
         if (blade) {
             // Drive the blade into the ground and brace, sliding back with the blast.
-            plantBlade(f, s, e, main, off, side, 0.60f);
+            plantBlade(f, s, e, main, off, side, 0.60f, AngleMath.ease((t * BLAST_SECONDS - 0.05f) / 0.18f));
             // Pushed back by the blast, the blade ploughing through the ground.
             f.body().pz += 0.30f * AngleMath.ease(t / 0.35f) * e;
         } else {
@@ -135,7 +135,7 @@ final class ReactionModule implements AnimModule {
      * sword arm out in front, wrist turned over so the blade points straight down; the free hand
      * braces on the knee.
      */
-    private static void plantBlade(PoseFrame f, Signs s, float e, PartPose main, PartPose off, float side, float depth) {
+    private static void plantBlade(PoseFrame f, Signs s, float e, PartPose main, PartPose off, float side, float depth, float stab) {
         Rigging.crouch(f, s, depth * e);
         f.body().rx -= 0.40f * e;
         Rigging.leanTorso(f, s, 0.55f * e);
@@ -150,8 +150,10 @@ final class ReactionModule implements AnimModule {
         // Down on one knee: drop the hips far enough that the lead foot and rear knee touch.
         f.body().py -= Math.max(0f, 0.31f - 2f * Rigging.LEG_SEGMENT_BLOCKS * (1f - Mth.cos(depth))) * e;
         // Out beside the body so the blade goes into the ground next to the knee, not through the leg.
-        main.override(-1.45f, 0f, side * 0.38f, e);
-        main.overrideBend(s.elbow() * 0.15f, e);
+        // Raised high first, then driven down hard into the ground.
+        main.override(Mth.lerp(stab, -2.70f, -1.45f), 0f, side * Mth.lerp(stab, 0.20f, 0.38f), e);
+        main.overrideBend(s.elbow() * Mth.lerp(stab, 0.60f, 0.15f), e);
+        f.body().py += 0.06f * (1f - stab) * e;
         main.overrideRoll(Mth.PI, e);
         off.override(-0.75f, side * 0.25f, -side * 0.30f, e);
         off.overrideBend(s.elbow() * 0.60f, e);

@@ -12,11 +12,13 @@ public final class Modules {
             new CombatModule(),
             new FistModule(),
             new GestureModule(),
+            new EmoteModule(),
             new RideModule(),
             new FlightModule(),
             new ReactionModule(),
             new SleepModule(),
-            new SpellcastModule()
+            new SpellcastModule(),
+            new PhysicsModule()
     );
 
     private Modules() {}

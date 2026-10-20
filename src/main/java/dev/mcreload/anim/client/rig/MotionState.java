@@ -60,6 +60,12 @@ public final class MotionState {
     public float vertical;
     public float horizontalSpeed;
     public float sneakPhase;
+    /** Loose-limb inertia: forward, sideways and vertical (from body accelerations), and turning. */
+    public final dev.mcreload.anim.client.math.Wobble swayF = new dev.mcreload.anim.client.math.Wobble(60f, 7f, 1.2f),
+            swayS = new dev.mcreload.anim.client.math.Wobble(60f, 7f, 1.2f),
+            swayV = new dev.mcreload.anim.client.math.Wobble(80f, 8f, 1.2f),
+            swayT = new dev.mcreload.anim.client.math.Wobble(50f, 6f, 1.2f);
+    private float lastF, lastS, lastV, lastT;
     /** Main hand is the right hand. */
     public boolean mainRight = true;
 
@@ -97,6 +103,7 @@ public final class MotionState {
     private int lastGlideTick = -1000;
     private boolean wasInWater;
     private int lastWaterTick = -1000;
+    private boolean rollEarly;
     /** Diving in from a height: streamlined "dolphin" entry. */
     public float diveStart = -100f;
     /** Swapping items between hands (F): hands meet in the middle and part again. */
@@ -155,7 +162,9 @@ public final class MotionState {
     private int lastSwingTime;
 
     /** Continuous stroke phase for front crawl, radians. */
-    public float swimPhase;
+    public float swimPhase, paddlePhase;
+    private float fistSide = 1f;
+    public final Smooth paddleW = new Smooth(4f), diveAirW = new Smooth(7f);
     /** Continuous climbing cycle, radians, driven by height gained. */
     public float climbPhase;
     private double lastClimbY = Double.NaN;
@@ -195,7 +204,8 @@ public final class MotionState {
 
         // Diving into water from a height: streamlined dolphin entry; never "land" on the bottom.
         boolean inWater = player.isInWater();
-        if (inWater && !wasInWater && minAirVy < -0.45f && Cfg.water) diveStart = time;
+        // Any jump into water (not just stepping in) ends in a dolphin dive.
+        if (inWater && !wasInWater && (minAirVy < -0.25f || airTicks > 4) && Cfg.water) diveStart = time;
         if (inWater) { minAirVy = 0f; airTicks = 0; lastWaterTick = player.tickCount; }
         wasInWater = inWater;
 
@@ -208,11 +218,24 @@ public final class MotionState {
             }
             airTicks++;
             minAirVy = Math.min(minAirVy, (float) vy);
+            // About to hit the ground hard while running on: start the roll at the moment of
+            // touchdown instead of a tick or two after it.
+            if (!special && !rollEarly && Cfg.landing && -minAirVy > 0.62f && movingForward()
+                    && !(Weapons.isMeleeWeapon(player.getMainHandItem()) && player.getOffhandItem().isEmpty())) {
+                double gap = groundGap();
+                if (gap >= 0 && gap < -vy * 1.1) {
+                    landKind = LAND_ROLL;
+                    landStart = time;
+                    rollEarly = true;
+                }
+            }
         } else {
             if (!wasOnGround && Cfg.landing && player.tickCount - lastGlideTick < 4 && tickSpeed > 0.15f) {
                 // Coming in on an elytra: tumble out of it with a roll.
                 landKind = LAND_ROLL;
                 landStart = time;
+            } else if (rollEarly) {
+                // Already rolling.
             } else if (!wasOnGround && airTicks > 2 && !special && Cfg.landing) {
                 float impact = -minAirVy;
                 ItemStack main = player.getMainHandItem();
@@ -235,6 +258,7 @@ public final class MotionState {
             }
             airTicks = 0;
             minAirVy = 0f;
+            rollEarly = false;
         }
         wasOnGround = ground;
 
@@ -293,6 +317,16 @@ public final class MotionState {
         forward.to((float) (ivx * fx + ivz * fz), dt);
         strafe.to((float) (ivx * rx + ivz * rz), dt);
         turn.to(Mth.lerp(pt, prevYawRate, yawRate), dt);
+        if (dt > 0f && dt < 0.25f) {
+            // Accelerations in blocks/tick per second; limbs lag behind them.
+            float aF = (forward.v - lastF) / dt, aS = (strafe.v - lastS) / dt;
+            float aV = (vertical - lastV) / dt, aT = (turn.v - lastT) / dt;
+            swayF.step(dt, -Mth.clamp(aF, -4f, 4f) * 12f);
+            swayS.step(dt, -Mth.clamp(aS, -4f, 4f) * 12f);
+            swayV.step(dt, -Mth.clamp(aV, -6f, 6f) * 10f);
+            swayT.step(dt, -Mth.clamp(aT, -200f, 200f) * 0.12f);
+        }
+        lastF = forward.v; lastS = strafe.v; lastV = vertical; lastT = turn.v;
         move.to(Mth.clamp(horizontalSpeed / 0.2f, 0f, 1f), dt);
 
         boolean ground = player.onGround();
@@ -353,6 +387,11 @@ public final class MotionState {
         if (player.isCrouching()) sneakPhase += dt * 88f * Math.min(horizontalSpeed, 0.12f);
         // Front crawl: about one stroke per second per arm, a bit faster when sprint-swimming.
         if (swimming) swimPhase += dt * (2.4f + 2.6f * Math.min(1f, horizontalSpeed / 0.2f));
+        // Paddling along at the surface without sprinting.
+        paddleW.to(treading ? Mth.clamp(horizontalSpeed / 0.07f, 0f, 1f) : 0f, dt);
+        if (treading) paddlePhase += dt * (2.2f + 10f * Math.min(horizontalSpeed, 0.15f));
+        // About to drop into water: start the dolphin dive in the air.
+        diveAirW.to(air && vertical < -0.12f && airTicks > 2 && waterBelow() ? 1f : 0f, dt);
 
         // Climbing: the cycle follows the height actually gained, so hands match the speed.
         double py = Mth.lerp(pt, player.yo, player.getY());
@@ -386,6 +425,7 @@ public final class MotionState {
         updateIdle(ground && !blocked && !swimming && !player.isInWater() && !climbing && !player.isUsingItem()
                 && !player.isCrouching() && horizontalSpeed < 0.01f && time - slashStart > 2f
                 && time - swapStart > 1f && player.hurtTime == 0, dt);
+        updateEmote(dt);
 
         boolean fists = mainItem.isEmpty();
         guardW.to(fists && time - lastPunchTime < 1.3f && !blocked ? 1f : 0f, dt);
@@ -405,7 +445,50 @@ public final class MotionState {
         hitBack.step(dt);
     }
 
-    public static final int IDLE_STRETCH = 0, IDLE_SCRATCH = 1, IDLE_SHADOWBOX = 2, IDLE_LOOK = 3, IDLE_COUNT = 4;
+    public static final int IDLE_STRETCH = 0, IDLE_SCRATCH = 1, IDLE_SHADOWBOX = 2, IDLE_LOOK = 3,
+            IDLE_YAWN = 4, IDLE_HANDS = 5, IDLE_NECK = 6, IDLE_IMPATIENT = 7, IDLE_KICK = 8, IDLE_SQUATS = 9,
+            IDLE_COUNT = 10;
+
+    // ---- emotes (played from the emote menu; client side)
+    public static final int EMOTE_DANCE = 0, EMOTE_WAVE = 1, EMOTE_CLAP = 2, EMOTE_FACEPALM = 3, EMOTE_SHRUG = 4,
+            EMOTE_SALUTE = 5, EMOTE_BOW = 6, EMOTE_SIT = 7, EMOTE_THUMBS = 8, EMOTE_VICTORY = 9, EMOTE_POINT = 10,
+            EMOTE_LAUGH = 11, EMOTE_CRY = 12, EMOTE_FLOSS = 13, EMOTE_PUSHUPS = 14, EMOTE_COUNT = 15;
+    public static final String[] EMOTE_KEYS = {"dance", "wave", "clap", "facepalm", "shrug", "salute", "bow", "sit",
+            "thumbs", "victory", "point", "laugh", "cry", "floss", "pushups"};
+    public int emote = -1;
+    public float emoteStart = -100f;
+    public final Smooth emoteW = new Smooth(6f);
+    private int emoteMovingTicks;
+
+    /** Seconds; 0 = loops until you move. */
+    public static float emoteDuration(int e) {
+        return switch (e) {
+            case EMOTE_DANCE, EMOTE_SIT, EMOTE_FLOSS, EMOTE_PUSHUPS -> 0f;
+            case EMOTE_WAVE, EMOTE_SALUTE, EMOTE_BOW -> 2.4f;
+            case EMOTE_SHRUG -> 1.8f;
+            case EMOTE_THUMBS, EMOTE_POINT -> 2.0f;
+            case EMOTE_CRY -> 3.5f;
+            default -> 2.8f;
+        };
+    }
+
+    public void playEmote(int e) {
+        emote = e;
+        emoteStart = time;
+        emoteMovingTicks = 0;
+    }
+
+    private void updateEmote(float dt) {
+        if (emote >= 0) {
+            float d = emoteDuration(emote);
+            boolean busy = horizontalSpeed > 0.03f || player.swinging || player.isUsingItem() || player.hurtTime > 0
+                    || !player.onGround() || player.isPassenger() || player.isSleeping() || player.isInWater();
+            if (busy) emoteMovingTicks++; else emoteMovingTicks = 0;
+            if ((d > 0f && time - emoteStart > d) || emoteMovingTicks > 2) emote = -1;
+        }
+        emoteW.to(emote >= 0 ? 1f : 0f, dt);
+        if (emote >= 0) idleSince = time;
+    }
 
     /** Weight of the current idle fidget; drops at once when the player does anything. */
     public final Smooth idleW = new Smooth(7f);
@@ -413,7 +496,7 @@ public final class MotionState {
     private void updateIdle(boolean still, float dt) {
         if (!still || !Cfg.idleActions) {
             idleSince = time;
-            nextIdleAt = 6f + rng.nextFloat() * 4f;
+            nextIdleAt = 8f + rng.nextFloat() * 4f;
             idleW.to(0f, dt);
             if (idleW.v < 0.01f) idleAction = -1;
             return;
@@ -421,9 +504,9 @@ public final class MotionState {
         if (idleAction >= 0 && time - idleActionStart > idleDuration(idleAction)) {
             idleAction = -1;
             idleSince = time;
-            nextIdleAt = 5f + rng.nextFloat() * 5f;
+            nextIdleAt = 8f + rng.nextFloat() * 4f;
         }
-        if (idleAction < 0 && time - idleSince > nextIdleAt) {
+        if (idleAction < 0 && emote < 0 && time - idleSince > nextIdleAt) {
             int pick = rng.nextInt(IDLE_COUNT);
             if (pick == lastIdleAction) pick = (pick + 1) % IDLE_COUNT;
             idleAction = lastIdleAction = pick;
@@ -444,10 +527,38 @@ public final class MotionState {
     public static float idleDuration(int action) {
         return switch (action) {
             case IDLE_STRETCH -> 4.0f;
-            case IDLE_SCRATCH -> 3.5f;
+            case IDLE_SCRATCH, IDLE_IMPATIENT, IDLE_SQUATS -> 3.5f;
             case IDLE_SHADOWBOX -> 3.2f;
+            case IDLE_NECK, IDLE_KICK -> 2.6f;
             default -> 3.0f;
         };
+    }
+
+    /** Height of the feet above the first solid surface below (up to 3 blocks), or -1. */
+    private double groundGap() {
+        net.minecraft.world.level.Level level = player.level();
+        double y = player.getY();
+        net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
+        for (int i = 0; i < 4; i++) {
+            var shape = level.getBlockState(pos).getCollisionShape(level, pos);
+            if (!shape.isEmpty()) {
+                double top = pos.getY() + shape.max(net.minecraft.core.Direction.Axis.Y);
+                if (top <= y + 1e-3) return y - top;
+            }
+            pos.move(net.minecraft.core.Direction.DOWN);
+        }
+        return -1;
+    }
+
+    /** Water within a few blocks below the feet, with nothing solid in between. */
+    private boolean waterBelow() {
+        net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
+        for (int i = 0; i < 6; i++) {
+            if (!player.level().getFluidState(pos).isEmpty()) return player.level().getFluidState(pos).is(net.minecraft.tags.FluidTags.WATER);
+            if (!player.level().getBlockState(pos).getCollisionShape(player.level(), pos).isEmpty()) return false;
+            pos.move(net.minecraft.core.Direction.DOWN);
+        }
+        return false;
     }
 
     /** Forward input held (your own player) or clearly running on (others). */
@@ -513,9 +624,16 @@ public final class MotionState {
             lastThrowTime = time;
             slashKind = THROW;
             slashDuration = 0.65f;
+        } else if (kind == FIST_BLOCK) {
+            // Digging with bare hands: one fist after the other.
+            fistSide = -fistSide;
+            slashSide *= fistSide;
+            slashKind = kind;
+            slashDuration = 0.36f;
+            slashChained = false;
         } else {
             slashKind = kind;
-            slashDuration = kind == FIST_BLOCK ? 0.30f : (isLooping(kind) ? 0.40f : 0.30f);
+            slashDuration = isLooping(kind) ? 0.40f : 0.30f;
         }
         slashStart = time;
     }
