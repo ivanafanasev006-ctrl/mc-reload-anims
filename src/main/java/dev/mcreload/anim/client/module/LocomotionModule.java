@@ -140,9 +140,9 @@ final class LocomotionModule implements AnimModule {
         Rigging.twistUpper(f, twist);
         f.head().ry -= twist;
         // Leaning into the run, head up looking ahead.
-        f.body().rx -= 0.40f * a * w;
-        Rigging.leanTorso(f, s, 0.10f * a * w);
-        f.head().rx -= 0.48f * a * w;
+        f.body().rx -= 0.48f * a * w;
+        Rigging.leanTorso(f, s, 0.14f * a * w);
+        f.head().rx -= 0.60f * a * w;
         // Bounce: lowest as the legs pass under the body, launched up between steps.
         float bounce = (Math.abs(cos) - 0.45f) * 0.16f;
         f.body().py += bounce * a * w;

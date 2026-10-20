@@ -179,12 +179,16 @@ final class EmoteModule implements AnimModule {
         float down = Mth.sin(Mth.PI * AngleMath.clamp((t - 0.2f) / 1.8f, 0f, 1f));
         arm(main, s, -0.60f, side * -0.80f, 0f, 1.40f, aw);        // hand across the stomach
         arm(off, s, 0.55f, 0f, -side * 0.15f, 0.20f, aw);          // other arm swept back
+        // Bend at the hips: the body tips forward around the hip joint, the legs stay upright.
         f.body().rx -= 0.80f * down * e;
         Rigging.leanTorso(f, s, 0.15f * down * e);
         f.head().rx += 0.20f * down * e;
         PartPose lead = side > 0 ? f.rightLeg() : f.leftLeg();
-        lead.overrideX(-0.35f * down, e);
-        lead.overrideBend(s.knee() * 0.40f * down, e);
+        PartPose rear = side > 0 ? f.leftLeg() : f.rightLeg();
+        lead.overrideX(0.80f * down - 0.20f * down, e);
+        lead.overrideBend(s.knee() * 0.30f * down, e);
+        rear.overrideX(0.80f * down, e);
+        rear.overrideBend(0f, e);
     }
 
     /** Sits down on the ground, leaning back on the hands. */

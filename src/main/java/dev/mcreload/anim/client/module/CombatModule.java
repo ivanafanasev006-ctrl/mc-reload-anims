@@ -178,6 +178,11 @@ final class CombatModule implements AnimModule {
             otherArm.ry += turn * 0.45f;
             otherArm.rz -= side * (0.20f + 0.35f * m.usePull) * bow;
             otherArm.bend += s.elbow() * (0.5f + 1.1f * m.usePull) * bow;
+            // Something (a shield) in the drawing hand: turn it edge-on so it doesn't cover the face.
+            net.minecraft.world.InteractionHand used = rig.player.getUsedItemHand();
+            boolean offHasItem = !rig.player.getItemInHand(used == net.minecraft.world.InteractionHand.MAIN_HAND
+                    ? net.minecraft.world.InteractionHand.OFF_HAND : net.minecraft.world.InteractionHand.MAIN_HAND).isEmpty();
+            if (offHasItem) otherArm.overrideRoll(-side * 1.45f, bow);
             if (m.bowStyle == 1) {
                 // Horizontal bow drawn from above: roll the bow arm flat.
                 useArm.overrideRoll(side * 1.15f, bow);

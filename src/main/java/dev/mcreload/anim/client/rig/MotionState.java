@@ -164,7 +164,7 @@ public final class MotionState {
     /** Continuous stroke phase for front crawl, radians. */
     public float swimPhase, paddlePhase;
     private float fistSide = 1f;
-    public final Smooth paddleW = new Smooth(4f), diveAirW = new Smooth(7f);
+    public final Smooth paddleW = new Smooth(4f), diveAirW = new Smooth(10f);
     /** Continuous climbing cycle, radians, driven by height gained. */
     public float climbPhase;
     private double lastClimbY = Double.NaN;
@@ -391,7 +391,7 @@ public final class MotionState {
         paddleW.to(treading ? Mth.clamp(horizontalSpeed / 0.07f, 0f, 1f) : 0f, dt);
         if (treading) paddlePhase += dt * (2.2f + 10f * Math.min(horizontalSpeed, 0.15f));
         // About to drop into water: start the dolphin dive in the air.
-        diveAirW.to(air && vertical < -0.12f && airTicks > 2 && waterBelow() ? 1f : 0f, dt);
+        diveAirW.to(air && vertical < 0.04f && airTicks > 2 && waterBelow() ? 1f : 0f, dt);
 
         // Climbing: the cycle follows the height actually gained, so hands match the speed.
         double py = Mth.lerp(pt, player.yo, player.getY());
@@ -553,7 +553,7 @@ public final class MotionState {
     /** Water within a few blocks below the feet, with nothing solid in between. */
     private boolean waterBelow() {
         net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 14; i++) {
             if (!player.level().getFluidState(pos).isEmpty()) return player.level().getFluidState(pos).is(net.minecraft.tags.FluidTags.WATER);
             if (!player.level().getBlockState(pos).getCollisionShape(player.level(), pos).isEmpty()) return false;
             pos.move(net.minecraft.core.Direction.DOWN);

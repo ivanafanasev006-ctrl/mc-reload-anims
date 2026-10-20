@@ -66,17 +66,17 @@ final class SlashLibrary {
     /** Heavy diagonal: axe hoisted high over the shoulder, body thrown down into the cut. */
     static final Key[] AXE_OVER = {
             READY,
-            new Key(0.48f, -2.75f, 0.65f, 0.40f, 1.35f, 0.75f, 0.18f, -2.20f, 0.10f, 1.20f, -0.20f, 0.35f, 0.20f, 0.35f),
-            new Key(0.68f, -0.45f, -0.70f, -0.15f, 0.05f, -0.70f, -0.55f, -0.70f, 0.30f, 0.50f, -0.90f, 1.25f, 0.55f, 0.60f),
-            new Key(1.00f, -0.70f, -0.30f, 0.05f, 0.50f, -0.20f, -0.15f, -0.50f, 0.15f, 0.60f, -0.35f, 0.55f, 0.15f, 0.35f),
+            new Key(0.48f, -2.75f, 0.65f, 0.40f, 1.35f, 0.75f, 0.18f, -0.50f, 0.30f, 0.70f, -0.20f, 0.35f, 0.20f, 0.35f),
+            new Key(0.68f, -0.45f, -0.70f, -0.15f, 0.05f, -0.70f, -0.55f, 0.45f, 0.30f, 0.70f, -0.90f, 1.25f, 0.55f, 0.60f),
+            new Key(1.00f, -0.70f, -0.30f, 0.05f, 0.50f, -0.20f, -0.15f, -0.40f, 0.30f, 0.70f, -0.35f, 0.55f, 0.15f, 0.35f),
     };
 
     /** Heavy horizontal: hips and shoulders wound right round, axe swept through at waist height. */
     static final Key[] AXE_SWEEP = {
             READY,
-            new Key(0.48f, -1.20f, 1.60f, 0.90f, 0.80f, 1.05f, 0.08f, -1.10f, 0.40f, 1.00f, -0.20f, 0.40f, 0.25f, 0.50f),
-            new Key(0.68f, -1.10f, -1.45f, -0.35f, 0.05f, -1.00f, -0.30f, -0.20f, 0.80f, 0.40f, -0.75f, 1.05f, 0.45f, 0.50f),
-            new Key(1.00f, -0.75f, -0.55f, 0.00f, 0.45f, -0.30f, -0.08f, -0.45f, 0.20f, 0.60f, -0.30f, 0.50f, 0.15f, 0.30f),
+            new Key(0.48f, -1.20f, 1.60f, 0.90f, 0.80f, 1.05f, 0.08f, -0.40f, 0.30f, 0.70f, -0.20f, 0.40f, 0.25f, 0.50f),
+            new Key(0.68f, -1.10f, -1.45f, -0.35f, 0.05f, -1.00f, -0.30f, 0.45f, 0.30f, 0.70f, -0.75f, 1.05f, 0.45f, 0.50f),
+            new Key(1.00f, -0.75f, -0.55f, 0.00f, 0.45f, -0.30f, -0.08f, -0.40f, 0.30f, 0.70f, -0.30f, 0.50f, 0.15f, 0.30f),
     };
 
     // ---------------------------------------------------------------- tools (looping while mining)
