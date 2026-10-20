@@ -150,36 +150,7 @@ public final class WeaponTrails {
         boolean hasBodyRot = rig.finalPose(PoseFrame.BODY, 1, BODY_ROT);
         boolean hasBodyPos = rig.finalPose(PoseFrame.BODY, 0, BODY_POS);
 
-        Matrix4f mat = new Matrix4f();
-        Vec3 pos = player.getPosition(pt);
-        mat.translate((float) pos.x, (float) pos.y, (float) pos.z);
-        if (player.isCrouching()) mat.translate(0f, -0.125f, 0f);
-        float bodyYaw = Mth.rotLerp(pt, player.yBodyRotO, player.yBodyRot);
-        mat.rotate(Axis.YP.rotationDegrees(180f - bodyYaw));
-
-        // playerAnimator's whole-body transform (PlayerRenderer.setupRotations, at RETURN).
-        float bx = hasBodyPos ? BODY_POS[0] : 0f, by = hasBodyPos ? BODY_POS[1] : 0f, bz = hasBodyPos ? BODY_POS[2] : 0f;
-        mat.translate(bx, by + 0.7f, bz);
-        if (hasBodyRot) {
-            mat.rotate(Axis.ZP.rotation(BODY_ROT[2]));
-            mat.rotate(Axis.YP.rotation(BODY_ROT[1]));
-            mat.rotate(Axis.XP.rotation(BODY_ROT[0]));
-        }
-        mat.translate(0f, -0.7f, 0f);
-
-        // LivingEntityRenderer: flip, player scale, model offset.
-        mat.scale(-1f, -1f, 1f);
-        mat.scale(0.9375f, 0.9375f, 0.9375f);
-        mat.translate(0f, -1.501f, 0f);
-
-        // The arm, exactly as ModelPart.translateAndRotate.
-        mat.translate(POS[0] / 16f, POS[1] / 16f, POS[2] / 16f);
-        mat.rotate(new Quaternionf().rotationZYX(ROT[2], ROT[1], ROT[0]));
-
-        // ItemInHandLayer.renderArmWithItem
-        mat.rotate(Axis.XP.rotationDegrees(-90f));
-        mat.rotate(Axis.YP.rotationDegrees(180f));
-        mat.translate((left ? -1f : 1f) / 16f, 0.125f, -0.625f);
+        Matrix4f mat = handMatrix(player, ROT, POS, hasBodyRot ? BODY_ROT : null, hasBodyPos ? BODY_POS : null, left, pt);
 
         // Item model's third-person transform (ItemTransform.apply), then ItemRenderer's centering.
         ItemDisplayContext ctx = left ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
@@ -196,6 +167,46 @@ public final class WeaponTrails {
         Vector3f base = mat.transformPosition(new Vector3f(BASE_U, BASE_U, 0.5f));
         Vector3f tip = mat.transformPosition(new Vector3f(TIP_U, TIP_U, 0.5f));
         return new Vec3[]{new Vec3(base.x(), base.y(), base.z()), new Vec3(tip.x(), tip.y(), tip.z())};
+    }
+
+    /**
+     * World-space transform of an item held in the hand, as built by ItemInHandLayer just before
+     * the item renderer takes over (entity position, body yaw, playerAnimator's whole-body
+     * transform, model flip and scale, the arm's animated pose, the hand offset).
+     */
+    static Matrix4f handMatrix(AbstractClientPlayer player, float[] rot, float[] armPos, float[] bodyRot, float[] bodyPos,
+                               boolean left, float pt) {
+        Matrix4f mat = new Matrix4f();
+        Vec3 pos = player.getPosition(pt);
+        mat.translate((float) pos.x, (float) pos.y, (float) pos.z);
+        if (player.isCrouching()) mat.translate(0f, -0.125f, 0f);
+        float bodyYaw = Mth.rotLerp(pt, player.yBodyRotO, player.yBodyRot);
+        mat.rotate(Axis.YP.rotationDegrees(180f - bodyYaw));
+
+        // playerAnimator's whole-body transform (PlayerRenderer.setupRotations, at RETURN).
+        float bx = bodyPos != null ? bodyPos[0] : 0f, by = bodyPos != null ? bodyPos[1] : 0f, bz = bodyPos != null ? bodyPos[2] : 0f;
+        mat.translate(bx, by + 0.7f, bz);
+        if (bodyRot != null) {
+            mat.rotate(Axis.ZP.rotation(bodyRot[2]));
+            mat.rotate(Axis.YP.rotation(bodyRot[1]));
+            mat.rotate(Axis.XP.rotation(bodyRot[0]));
+        }
+        mat.translate(0f, -0.7f, 0f);
+
+        // LivingEntityRenderer: flip, player scale, model offset.
+        mat.scale(-1f, -1f, 1f);
+        mat.scale(0.9375f, 0.9375f, 0.9375f);
+        mat.translate(0f, -1.501f, 0f);
+
+        // The arm, exactly as ModelPart.translateAndRotate.
+        mat.translate(armPos[0] / 16f, armPos[1] / 16f, armPos[2] / 16f);
+        mat.rotate(new Quaternionf().rotationZYX(rot[2], rot[1], rot[0]));
+
+        // ItemInHandLayer.renderArmWithItem
+        mat.rotate(Axis.XP.rotationDegrees(-90f));
+        mat.rotate(Axis.YP.rotationDegrees(180f));
+        mat.translate((left ? -1f : 1f) / 16f, 0.125f, -0.625f);
+        return mat;
     }
 
     private static void render(PoseStack poseStack, Vec3 cam, long now, long life) {

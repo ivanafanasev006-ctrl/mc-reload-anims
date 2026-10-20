@@ -18,6 +18,8 @@ public final class PartPose {
     public float bend;
     /** Absolute rotation targets and their weights (0 = keep incoming pose). */
     public float tx, ty, tz, wx, wy, wz;
+    /** Twist about the limb's own long axis (wrist roll for arms), applied after everything else. */
+    public float roll;
 
     public void reset() {
         rx = ry = rz = 0f;
@@ -25,6 +27,13 @@ public final class PartPose {
         bend = 0f;
         tx = ty = tz = 0f;
         wx = wy = wz = 0f;
+        roll = 0f;
+    }
+
+    /** Pull the limb's own twist toward a value (used by attacks to sweep the blade in the hand). */
+    public void overrideRoll(float value, float weight) {
+        if (weight <= 0f) return;
+        roll += (value - roll) * Math.min(1f, weight);
     }
 
     /** Blend toward an absolute X angle. Several calls are averaged by weight. */
@@ -75,6 +84,7 @@ public final class PartPose {
         rx *= s; ry *= s; rz *= s;
         px *= s; py *= s; pz *= s;
         bend *= s;
+        roll *= Math.min(1f, s);
         float ws = Math.min(1f, s);
         wx *= ws; wy *= ws; wz *= ws;
     }

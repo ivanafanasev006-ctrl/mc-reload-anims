@@ -134,6 +134,11 @@ public final class PlayerRig {
                 x += p.rx * k;
                 y += p.ry * k;
                 z += p.rz * k;
+                if (Math.abs(p.roll) > 1e-4f) {
+                    tmp[0] = x; tmp[1] = y; tmp[2] = z;
+                    AngleMath.rollLocalY(tmp, p.roll * k);
+                    x = tmp[0]; y = tmp[1]; z = tmp[2];
+                }
             }
             case POSITION -> {
                 t = T_POS;

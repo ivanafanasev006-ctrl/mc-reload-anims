@@ -13,6 +13,8 @@ public final class ClientConfig {
 
     public static final ForgeConfigSpec.BooleanValue LOCOMOTION;
     public static final ForgeConfigSpec.BooleanValue IDLE;
+    public static final ForgeConfigSpec.BooleanValue IDLE_ACTIONS;
+    public static final ForgeConfigSpec.BooleanValue TWO_HANDED;
     public static final ForgeConfigSpec.BooleanValue AIRBORNE;
     public static final ForgeConfigSpec.BooleanValue LANDING;
     public static final ForgeConfigSpec.BooleanValue WATER;
@@ -56,6 +58,10 @@ public final class ClientConfig {
                 .define("locomotion", true);
         IDLE = b.comment("Breathing and weight shifting while standing still.")
                 .define("idle", true);
+        IDLE_ACTIONS = b.comment("After standing still for a while: stretching, scratching the head, shadow-boxing, looking around.")
+                .define("idleActions", true);
+        TWO_HANDED = b.comment("Hold swords with both hands (samurai grip) when the other hand is empty.")
+                .define("twoHandedSwords", false);
         AIRBORNE = b.comment("Jump tuck and falling flail.")
                 .define("airborne", true);
         LANDING = b.comment("Landing squash after a fall.")

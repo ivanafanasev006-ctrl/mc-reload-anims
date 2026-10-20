@@ -32,6 +32,7 @@ public final class ClientBootstrap {
         modBus.addListener(ClientBootstrap::onConfigReload);
         MinecraftForge.EVENT_BUS.addListener(ClientBootstrap::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(WeaponTrails::onRenderLevel);
+        MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.fx.IdleProps::onRenderLevel);
         MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.fx.SleepZzz::onRenderLevel);
         MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.fx.SoundCues::onPlaySound);
 

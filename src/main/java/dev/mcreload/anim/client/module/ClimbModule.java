@@ -9,10 +9,10 @@ import dev.mcreload.anim.config.Cfg;
 import net.minecraft.util.Mth;
 
 /**
- * Ladders, vines and other climbables, climbed like a rock wall: each hand reaches high and wide
- * for the next hold and hauls the body up with a bending elbow, the legs splay out frog-style and
- * push with deep knee bends, and the whole body shifts its weight from side to side with every
- * pull. The cycle follows the height actually gained, so everything freezes when you stop.
+ * Ladders, vines and other climbables: a plain, smooth hand-over-hand climb. Hands move straight
+ * up and down the rails one after the other, feet step up the rungs under the body (no splayed
+ * knees), the right hand going up together with the left foot. The cycle follows the height
+ * actually gained, so everything stops when you stop.
  */
 final class ClimbModule implements AnimModule {
     @Override
@@ -26,39 +26,30 @@ final class ClimbModule implements AnimModule {
         if (c <= 0.001f) return;
 
         float p = m.climbPhase;
-        // 0 = hand at the chest after the pull, 1 = fully reaching up for the next hold.
+        // 1 = hand at its highest, 0 = pulled down to the shoulder. Smooth sine, no snapping.
         float reachR = Mth.sin(p) * 0.5f + 0.5f;
         float reachL = 1f - reachR;
-        float pullR = Mth.sin(p - 0.5f) * 0.5f + 0.5f;
-        float pullL = 1f - pullR;
-        // Legs push opposite to the arms (right hand reaches while the left foot pushes).
+        // Feet step opposite to the hands.
         float stepR = reachL, stepL = reachR;
 
         float aw = c * m.armsFree.v;
-        f.rightArm().targetX(-1.25f - reachR * 1.65f, aw);
-        f.leftArm().targetX(-1.25f - reachL * 1.65f, aw);
-        f.rightArm().targetY(0f, aw);
-        f.leftArm().targetY(0f, aw);
-        f.rightArm().targetZ(0.20f + 0.25f * reachR, aw);
-        f.leftArm().targetZ(-0.20f - 0.25f * reachL, aw);
-        f.rightArm().bend += s.elbow() * (0.25f + 1.45f * (1f - pullR)) * aw;
-        f.leftArm().bend += s.elbow() * (0.25f + 1.45f * (1f - pullL)) * aw;
+        f.rightArm().override(-2.05f - reachR * 0.60f, 0f, 0.10f, aw);
+        f.leftArm().override(-2.05f - reachL * 0.60f, 0f, -0.10f, aw);
+        f.rightArm().overrideBend(s.elbow() * (0.25f + 0.95f * (1f - reachR)), aw);
+        f.leftArm().overrideBend(s.elbow() * (0.25f + 0.95f * (1f - reachL)), aw);
 
-        // Frog legs: knees wide, one foot high on the next rung, the other straightening to push.
-        f.rightLeg().targetX(-0.55f - stepR * 0.95f, c);
-        f.leftLeg().targetX(-0.55f - stepL * 0.95f, c);
-        f.rightLeg().targetZ(0.38f, c);
-        f.leftLeg().targetZ(-0.38f, c);
-        f.rightLeg().bend += s.knee() * (0.45f + stepR * 1.55f) * c;
-        f.leftLeg().bend += s.knee() * (0.45f + stepL * 1.55f) * c;
-        f.body().pz += 0.12f * c;
+        // Feet straight up and down the rungs, knees pointing at the ladder.
+        f.rightLeg().override(-0.25f - stepR * 0.90f, 0f, 0.03f, c);
+        f.leftLeg().override(-0.25f - stepL * 0.90f, 0f, -0.03f, c);
+        f.rightLeg().overrideBend(s.knee() * (0.20f + stepR * 1.40f), c);
+        f.leftLeg().overrideBend(s.knee() * (0.20f + stepL * 1.40f), c);
 
-        // Weight shifts toward the hand that is pulling, chest rocks into the wall on each pull.
+        // Close to the ladder, a gentle sway with each pull.
         float shift = reachR - reachL;
-        f.body().rz += 0.14f * shift * c;
-        f.body().px -= 0.05f * shift * c;
-        Rigging.leanTorso(f, s, (0.12f + 0.12f * Math.abs(Mth.sin(p))) * c);
-        f.head().rx -= 0.35f * c;
-        f.head().ry += 0.20f * shift * c;
+        f.body().pz += 0.05f * c;
+        f.body().rz += 0.04f * shift * c;
+        Rigging.leanTorso(f, s, 0.08f * c);
+        f.head().rx -= 0.30f * c;
+        f.head().ry += 0.08f * shift * c;
     }
 }

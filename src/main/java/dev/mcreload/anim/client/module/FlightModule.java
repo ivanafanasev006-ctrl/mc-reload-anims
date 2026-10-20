@@ -9,9 +9,8 @@ import dev.mcreload.anim.config.Cfg;
 import net.minecraft.util.Mth;
 
 /**
- * Elytra gliding and creative flight. Gliding keeps vanilla's streamlined pose but lets the limbs
- * ride the wind: arms swept back and trembling, legs trailing with a slow wave that runs from hip to
- * knee. Creative hover: legs dangling and slowly kicking, arms loose, a gentle bob.
+ * Elytra gliding and creative flight. Gliding: arms swept back along the body, legs together,
+ * everything trembling in the wind. Creative hover: legs dangling and slowly kicking, arms loose, a gentle bob.
  */
 final class FlightModule implements AnimModule {
     @Override
@@ -25,27 +24,24 @@ final class FlightModule implements AnimModule {
 
         float glide = m.elytraW.v;
         if (glide > 0.001f) {
-            // Skydiver's arch (belly to the ground): arms spread wide and up, chest lifted, knees
-            // bent with the shins raised. Limbs tremble in the airflow and bank into turns.
+            // Streamlined like a diving bird: arms swept back along the sides toward the feet,
+            // hands a little away from the hips, legs together. Limbs tremble in the airflow and
+            // the arms open slightly on the outside of a turn.
             float speed = Math.min(1f, (float) rig.player.getDeltaMovement().length() / 1.5f);
             float bank = Mth.clamp(m.turn.v / 10f, -1f, 1f);
-            float flutter = Mth.sin(t * 19f + m.seed) * 0.05f * speed, flutter2 = Mth.sin(t * 23f + m.seed + 1.3f) * 0.05f * speed;
+            float flutter = Mth.sin(t * 19f + m.seed) * 0.04f * speed, flutter2 = Mth.sin(t * 23f + m.seed + 1.3f) * 0.04f * speed;
             float wave = Mth.sin(t * 3.2f + m.seed);
             float aw = glide * m.armsFree.v;
-            f.rightArm().targetX(-0.35f + flutter, aw);
-            f.leftArm().targetX(-0.35f + flutter2, aw);
-            f.rightArm().targetY(0f, aw);
-            f.leftArm().targetY(0f, aw);
-            f.rightArm().targetZ(1.75f + 0.20f * bank + 0.06f * wave, aw);
-            f.leftArm().targetZ(-1.75f + 0.20f * bank + 0.06f * wave, aw);
-            Rigging.elbows(f, s, 0.30f * aw);
-            f.rightLeg().targetX(0.10f + 0.06f * wave, glide);
-            f.leftLeg().targetX(0.10f - 0.06f * wave, glide);
-            f.rightLeg().targetZ(0.24f, glide);
-            f.leftLeg().targetZ(-0.24f, glide);
-            f.rightLeg().bend += s.knee() * (1.25f + 0.10f * Mth.sin(t * 2.7f + m.seed)) * glide;
-            f.leftLeg().bend += s.knee() * (1.25f + 0.10f * Mth.sin(t * 2.7f + m.seed + 1.5f)) * glide;
-            Rigging.leanTorso(f, s, -0.25f * glide);
+            f.rightArm().override(0.18f + flutter, 0f, 0.30f + 0.10f * Math.max(0f, bank) + 0.03f * wave, aw);
+            f.leftArm().override(0.18f + flutter2, 0f, -0.30f - 0.10f * Math.max(0f, -bank) - 0.03f * wave, aw);
+            f.rightArm().overrideBend(s.elbow() * 0.10f, aw);
+            f.leftArm().overrideBend(s.elbow() * 0.10f, aw);
+            f.rightLeg().override(0.06f + 0.04f * wave, 0f, 0.05f, glide);
+            f.leftLeg().override(0.06f - 0.04f * wave, 0f, -0.05f, glide);
+            f.rightLeg().overrideBend(s.knee() * (0.15f + 0.08f * Mth.sin(t * 2.7f + m.seed)), glide);
+            f.leftLeg().overrideBend(s.knee() * (0.15f + 0.08f * Mth.sin(t * 2.7f + m.seed + 1.5f)), glide);
+            Rigging.leanTorso(f, s, -0.15f * glide);
+            f.head().rx -= 0.20f * glide;
         }
 
         float fly = m.flyW.v;

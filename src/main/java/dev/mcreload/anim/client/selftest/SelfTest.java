@@ -201,79 +201,98 @@ public final class SelfTest {
     private static int fpsLogTimer;
 
     private static void buildScenarios() {
-        SCENARIOS.add(new Scenario("02_walk", 40, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, true, false, false, false), new Window(20, 40, 4, 0.08f)));
-        SCENARIOS.add(new Scenario("03_sprint", 40, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, true, true, false, false), new Window(20, 40, 4, 0.06f)));
-        SCENARIOS.add(new Scenario("03b_sprint_brake", 45, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, t < 25, t < 25, false, false), new Window(25, 40, 4, 0.08f)));
-        SCENARIOS.add(new Scenario("04_ninja_sneak", 55, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, true, false, true, false), new Window(25, 55, 4, 0.15f)));
-        SCENARIOS.add(new Scenario("06_sprint_jump_x2", 70, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, true, true, false, (t >= 20 && t <= 21) || (t >= 42 && t <= 43)),
-                new Window(21, 34, 3, 0.08f), new Window(43, 56, 3, 0.08f)));
-        SCENARIOS.add(new Scenario("07_high_fall_roll", 60, sp -> place(sp, 2, Y + 7, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, t > 5, false, false, false), new Window(22, 45, 6, 0.06f)));
+        ItemStack none = ItemStack.EMPTY;
+        SCENARIOS.add(new Scenario("03_sprint", 40, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, true, true, false, false), new Window(20, 40, 6, 0.05f)));
+        SCENARIOS.add(new Scenario("03b_sprint_brake", 45, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, t < 25, t < 25, false, false), new Window(25, 38, 3, 0.08f)));
+        SCENARIOS.add(new Scenario("03c_walk_stop_no_brake", 45, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, t < 25, false, false, false), new Window(25, 36, 2, 0.12f)));
+        SCENARIOS.add(new Scenario("04_ninja_sneak", 60, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, true, false, true, false), new Window(25, 60, 6, 0.12f)));
+        SCENARIOS.add(new Scenario("05_sword_sprint_drag", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> move(mc, true, true, false, false), new Window(22, 40, 4, 0.06f)));
+        SCENARIOS.add(new Scenario("07_high_fall_roll_W", 60, sp -> place(sp, 2, Y + 7, 0, -90, none),
+                (mc, t) -> move(mc, t > 5, false, false, false), new Window(22, 45, 6, 0.05f)));
+        SCENARIOS.add(new Scenario("07d_high_fall_still", 60, sp -> place(sp, 2, Y + 7, 0, -90, none),
+                (mc, t) -> move(mc, false, false, false, false), new Window(22, 45, 3, 0.08f)));
         SCENARIOS.add(new Scenario("07c_sword_landing", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> move(mc, false, false, false, false), new Window(22, 45, 5, 0.08f)));
-        SCENARIOS.add(new Scenario("07b_skydive", 100, sp -> place(sp, 2, Y + 70, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, false, false, false, false), new Window(50, 80, 2, 0.4f)));
-        SCENARIOS.add(new Scenario("20_elytra", 70, SelfTest::launchElytra,
+                (mc, t) -> move(mc, false, false, false, false), new Window(22, 45, 4, 0.08f)));
+        SCENARIOS.add(new Scenario("20_elytra", 60, SelfTest::launchElytra,
                 (mc, t) -> {
                     move(mc, false, false, false, false);
-                    if (t == 8 && !mc.player.isFallFlying()) mc.player.connection.send(new net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket(
-                            mc.player, net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action.START_FALL_FLYING));
-                }, new Window(25, 60, 4, 0.2f)));
-        SCENARIOS.add(new Scenario("21_sword_stance", 35, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
-                (mc, t) -> move(mc, false, false, false, false), new Window(25, 35, 1, 0.3f)));
+                    if (t == 8 && !mc.player.isFallFlying()) startGlide(mc);
+                }, new Window(25, 55, 3, 0.2f)));
+        SCENARIOS.add(new Scenario("20b_elytra_landing", 90, sp -> launchElytraLow(sp),
+                (mc, t) -> {
+                    move(mc, false, false, false, false);
+                    if (t == 4 && !mc.player.isFallFlying()) startGlide(mc);
+                }, new Window(20, 90, 24, 0.15f)));
         SCENARIOS.add(new Scenario("08a_slash_1", 25, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
-                (mc, t) -> { if (t == 10) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 25, 5, 0.03f)));
+                (mc, t) -> { if (t == 10) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 25, 6, 0.03f)));
         SCENARIOS.add(new Scenario("08b_slash_2", 16, sp -> {},
-                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 4, 0.03f)));
+                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 5, 0.03f)));
         SCENARIOS.add(new Scenario("08c_slash_3", 16, sp -> {},
                 (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 4, 0.03f)));
         SCENARIOS.add(new Scenario("08d_spin", 25, sp -> {},
-                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 22, 6, 0.03f)));
-        SCENARIOS.add(new Scenario("09_axe", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_AXE)),
-                (mc, t) -> { if (t == 8 || t == 30) mc.player.swing(InteractionHand.MAIN_HAND); },
-                new Window(8, 26, 4, 0.05f), new Window(30, 48, 4, 0.05f)));
-        SCENARIOS.add(new Scenario("10_punches", 40, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> { if (t == 8 || t == 16 || t == 24) mc.player.swing(InteractionHand.MAIN_HAND); },
-                new Window(8, 32, 6, 0.05f)));
-        SCENARIOS.add(new Scenario("10b_fists_on_block", 40, sp -> placeLook(sp, 2, Y, 0, -90, 60, ItemStack.EMPTY),
-                (mc, t) -> { if (t >= 8 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 36, 5, 0.05f)));
+                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 22, 5, 0.03f)));
         SCENARIOS.add(new Scenario("22_throw", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.COBBLESTONE, 16)),
                 (mc, t) -> {
-                    boolean throwNow = t == 8 || t == 22;
+                    boolean throwNow = t == 8;
                     mc.options.keyDrop.setDown(throwNow);
                     if (throwNow) mc.player.swing(InteractionHand.MAIN_HAND);
-                }, new Window(8, 18, 3, 0.04f), new Window(22, 32, 3, 0.04f)));
-        SCENARIOS.add(new Scenario("15_pickaxe", 35, sp -> placeLook(sp, 2, Y, 0, -90, 55, new ItemStack(Items.IRON_PICKAXE)),
-                (mc, t) -> { if (t >= 8 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 33, 4, 0.06f)));
+                }, new Window(8, 24, 5, 0.04f)));
         SCENARIOS.add(new Scenario("14_bow", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.BOW)),
                 (mc, t) -> mc.options.keyUse.setDown((t > 5 && t < 28) || t > 32),
                 new Window(18, 27, 2, 0.3f), new Window(42, 50, 2, 0.3f)));
-        SCENARIOS.add(new Scenario("23_crossbow_carry", 25, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.CROSSBOW)),
-                (mc, t) -> mc.options.keyUse.setDown(false), new Window(18, 25, 1, 0.3f)));
-        SCENARIOS.add(new Scenario("23b_crossbow_load_aim", 60, sp -> {},
+        SCENARIOS.add(new Scenario("14b_bow_walk", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.BOW)),
+                (mc, t) -> { mc.options.keyUse.setDown(t > 5); move(mc, t > 5, false, false, false); },
+                new Window(20, 45, 4, 0.12f)));
+        SCENARIOS.add(new Scenario("23b_crossbow_load_aim", 60, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.CROSSBOW)),
                 (mc, t) -> mc.options.keyUse.setDown(t > 4 && t < 40), new Window(15, 35, 2, 0.4f), new Window(48, 60, 1, 0.3f)));
-        SCENARIOS.add(new Scenario("24_shield", 40, SelfTest::shieldUp,
-                (mc, t) -> mc.options.keyUse.setDown(t > 4), new Window(20, 40, 2, 0.4f)));
-        SCENARIOS.add(new Scenario("25_eat", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.GOLDEN_APPLE, 8)),
-                (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 40, 3, 0.25f)));
-        SCENARIOS.add(new Scenario("26_explosion", 50, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 30, 4, 0.08f)));
         SCENARIOS.add(new Scenario("26b_explosion_sword", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 30, 3, 0.1f)));
-        SCENARIOS.add(new Scenario("27_totem", 60, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> { if (t == 8) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.onTotem(); } },
-                new Window(14, 50, 4, 0.25f)));
-        SCENARIOS.add(new Scenario("28_sleep", 70, SelfTest::goToBed,
-                (mc, t) -> {}, new Window(40, 70, 2, 0.5f)));
-        SCENARIOS.add(new Scenario("11_swim", 60, sp -> place(sp, POOL_X + 2, Y - 3, 0, -90, ItemStack.EMPTY),
-                (mc, t) -> move(mc, t > 5, t > 5, false, false), new Window(40, 60, 3, 0.15f)));
-        SCENARIOS.add(new Scenario("13_ladder", 55, sp -> place(sp, LADDER_X + 1, Y, 0, 90, ItemStack.EMPTY),
+                (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 34, 4, 0.08f)));
+        SCENARIOS.add(new Scenario("29_hand_swap", 30, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> { if (t == 8) swapHands(mc); }, new Window(9, 22, 4, 0.06f)));
+        for (int i = 0; i < 4; i++) {
+            final int action = i;
+            String[] names = {"stretch", "scratch_look", "stick_fencing", "hands_on_hips"};
+            SCENARIOS.add(new Scenario("30_idle_" + names[i], 80, sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
+                    (mc, t) -> {
+                        move(mc, false, false, false, false);
+                        if (t == 6) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.forceIdle(action); }
+                    }, new Window(10, 74, 6, 0.3f)));
+        }
+        SCENARIOS.add(new Scenario("11_swim", 50, sp -> place(sp, POOL_X + 2, Y - 3, 0, -90, none),
+                (mc, t) -> move(mc, t > 5, t > 5, false, false), new Window(35, 50, 2, 0.15f)));
+        SCENARIOS.add(new Scenario("11b_tread", 60, sp -> place(sp, POOL_X + 10, Y - 2, 0, -90, none),
+                (mc, t) -> move(mc, false, false, false, t % 10 < 3), new Window(20, 60, 4, 0.3f)));
+        SCENARIOS.add(new Scenario("11c_dive", 50, sp -> place(sp, POOL_X + 12, Y + 7, 0, -90, none),
+                (mc, t) -> move(mc, false, false, false, false), new Window(14, 45, 6, 0.06f)));
+        SCENARIOS.add(new Scenario("13_ladder", 55, sp -> place(sp, LADDER_X + 1, Y, 0, 90, none),
                 (mc, t) -> move(mc, true, false, false, false), new Window(15, 55, 4, 0.2f)));
+    }
+
+    private static void startGlide(Minecraft mc) {
+        mc.player.connection.send(new net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket(
+                mc.player, net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action.START_FALL_FLYING));
+    }
+
+    /** Glide in from low enough to touch down a couple of seconds later. */
+    private static void launchElytraLow(ServerPlayer sp) {
+        place(sp, -8, Y + 9, 4, -90, ItemStack.EMPTY);
+        sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(Items.ELYTRA));
+        sp.teleportTo(sp.serverLevel(), -7.5, Y + 9, 4.5, -90, 25f);
+    }
+
+    private static void swapHands(Minecraft mc) {
+        IntegratedServer srv = mc.getSingleplayerServer();
+        srv.execute(() -> {
+            ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
+            ItemStack main = sp.getMainHandItem().copy(), off = sp.getOffhandItem().copy();
+            sp.setItemInHand(InteractionHand.MAIN_HAND, off);
+            sp.setItemInHand(InteractionHand.OFF_HAND, main);
+        });
     }
 
     private static void explode(Minecraft mc, double dx, double dz) {

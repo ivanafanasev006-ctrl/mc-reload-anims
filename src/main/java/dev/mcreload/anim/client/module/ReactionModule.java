@@ -25,7 +25,7 @@ import net.minecraft.world.entity.HumanoidArm;
  * </ul>
  */
 final class ReactionModule implements AnimModule {
-    private static final float ROLL_SECONDS = 0.65f, SWORD_LAND_SECONDS = 0.9f, BLAST_SECONDS = 1.4f, TOTEM_SECONDS = 2.6f;
+    private static final float ROLL_SECONDS = 0.46f, SWORD_LAND_SECONDS = 0.9f, BLAST_SECONDS = 1.4f, TOTEM_SECONDS = 2.6f;
 
     @Override
     public boolean enabled() {
@@ -35,20 +35,21 @@ final class ReactionModule implements AnimModule {
     @Override
     public void apply(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float pt) {
         float gate = m.gate.v;
-        if (gate <= 0.001f) return;
         float arms = m.armsFree.v;
         float side = rig.player.getMainArm() == HumanoidArm.RIGHT ? 1f : -1f;
         PartPose main = side > 0 ? f.rightArm() : f.leftArm();
         PartPose off = side > 0 ? f.leftArm() : f.rightArm();
 
-        if (Cfg.reactions) {
+        if (Cfg.reactions && gate > 0.001f) {
             hits(m, f, s, gate, arms);
             blast(rig, m, f, s, gate, arms, main, off, side);
             totem(m, f, s, gate, arms);
         }
         if (Cfg.landing) {
-            if (m.landKind == MotionState.LAND_ROLL) roll(m, f, s, gate, arms);
-            if (m.landKind == MotionState.LAND_SWORD) swordLanding(m, f, s, gate, main, off, side);
+            // Rolling out of an elytra landing starts while the glide gate is still opening.
+            boolean free = !rig.player.isFallFlying() && !rig.player.isPassenger() && !rig.player.isSleeping();
+            if (m.landKind == MotionState.LAND_ROLL) roll(m, f, s, free ? 1f : gate, free ? 1f : arms);
+            if (m.landKind == MotionState.LAND_SWORD && gate > 0.001f) swordLanding(m, f, s, gate, main, off, side);
         }
     }
 
@@ -101,7 +102,7 @@ final class ReactionModule implements AnimModule {
         float t = m.since(m.landStart) / SWORD_LAND_SECONDS;
         if (t >= 1f || t < 0f) return;
         float e = AngleMath.ease(t / 0.12f) * (1f - AngleMath.ease((t - 0.6f) / 0.4f)) * gate;
-        plantBlade(f, s, e, main, off, side, 0.70f);
+        plantBlade(f, s, e, main, off, side, 0.75f);
     }
 
     private static void blast(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate, float arms,
@@ -113,8 +114,9 @@ final class ReactionModule implements AnimModule {
         boolean blade = Weapons.isMeleeWeapon(rig.player.getMainHandItem());
         if (blade) {
             // Drive the blade into the ground and brace, sliding back with the blast.
-            plantBlade(f, s, e, main, off, side, 0.55f);
-            f.body().pz += 0.12f * e;
+            plantBlade(f, s, e, main, off, side, 0.60f);
+            // Pushed back by the blast, the blade ploughing through the ground.
+            f.body().pz += 0.30f * AngleMath.ease(t / 0.35f) * e;
         } else {
             // Flash-banged: both forearms up over the face, head ducked, cowering.
             f.rightArm().override(-1.95f, -0.60f, 0f, e * arms);
@@ -128,15 +130,30 @@ final class ReactionModule implements AnimModule {
         }
     }
 
-    /** Deep crouch with the blade driven point-first into the ground beside the lead foot. */
+    /**
+     * Drops low with the whole body leaning in and drives the blade point-first into the ground:
+     * sword arm out in front, wrist turned over so the blade points straight down; the free hand
+     * braces on the knee.
+     */
     private static void plantBlade(PoseFrame f, Signs s, float e, PartPose main, PartPose off, float side, float depth) {
         Rigging.crouch(f, s, depth * e);
-        Rigging.leanTorso(f, s, 0.45f * e);
-        f.head().rx -= 0.25f * e;
-        main.override(0.35f, side * 0.10f, side * 0.15f, e);
-        main.overrideBend(s.elbow() * 1.20f, e);
-        off.override(-0.60f, 0f, -side * 0.80f, e);
-        off.overrideBend(s.elbow() * 0.30f, e);
+        f.body().rx -= 0.30f * e;
+        Rigging.leanTorso(f, s, 0.55f * e);
+        f.head().rx -= 0.55f * e;
+        // Lead leg forward, rear knee nearly down.
+        PartPose lead = side > 0 ? f.rightLeg() : f.leftLeg();
+        PartPose rear = side > 0 ? f.leftLeg() : f.rightLeg();
+        lead.overrideX(-1.45f, e);
+        lead.overrideBend(s.knee() * 1.70f, e);
+        rear.overrideX(-0.20f, e);
+        rear.overrideBend(s.knee() * 2.0f, e);
+        // Down on one knee: drop the hips far enough that the lead foot and rear knee touch.
+        f.body().py -= Math.max(0f, 0.31f - 2f * Rigging.LEG_SEGMENT_BLOCKS * (1f - Mth.cos(depth))) * e;
+        main.override(-1.30f, -side * 0.15f, side * 0.10f, e);
+        main.overrideBend(s.elbow() * 0.15f, e);
+        main.overrideRoll(Mth.PI, e);
+        off.override(-0.75f, side * 0.25f, -side * 0.30f, e);
+        off.overrideBend(s.elbow() * 0.60f, e);
     }
 
     private static void totem(MotionState m, PoseFrame f, Signs s, float gate, float arms) {

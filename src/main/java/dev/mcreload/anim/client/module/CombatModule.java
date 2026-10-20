@@ -103,6 +103,8 @@ final class CombatModule implements AnimModule {
         float aim = aims ? rig.player.getXRot() * Mth.DEG_TO_RAD * 0.5f : 0f;
         arm.override(k.armX() + aim, side * k.armY(), side * k.armZ(), w);
         arm.overrideBend(s.elbow() * k.elbow(), w);
+        // The blade moves in the hand too: cocked back on the wind-up, snapped through on the cut.
+        arm.overrideRoll(side * SlashLibrary.roll(kind, t), w);
 
         // Two-handed weapons: the free hand rides on the hilt under the main hand.
         float two = MotionState.isWeapon(kind) ? m.twoHandW.v : 0f;
@@ -157,16 +159,28 @@ final class CombatModule implements AnimModule {
         // target; head and (vanilla-aimed) arms are turned back so the aim stays on target.
         float bow = m.bowW.v * gate;
         if (bow > 0.001f) {
-            float turn = side * 1.05f * bow;
-            sideOn(f, turn);
-            otherArm.bend += s.elbow() * (0.6f + 1.4f * m.usePull) * bow;
-            otherArm.rz -= side * 0.25f * m.usePull * bow;    // draw elbow up and back
+            // Turned side-on, but not so far that the drawing arm has to go through the chest;
+            // less while walking, and the hips stay facing the way the feet are going.
+            float moving = m.moveF();
+            float turn = side * (0.62f - 0.25f * moving) * bow;
+            f.body().ry += turn;
+            f.head().ry += turn;
+            useArm.ry += turn;
+            // Drawing arm: only part of the turn, elbow raised out to the side so the forearm
+            // runs past the face instead of through the body.
+            otherArm.ry += turn * 0.45f;
+            otherArm.rz -= side * (0.20f + 0.35f * m.usePull) * bow;
+            otherArm.bend += s.elbow() * (0.5f + 1.1f * m.usePull) * bow;
             if (m.bowStyle == 1) {
                 // Horizontal bow drawn from above: roll the bow arm flat.
-                useArm.rz += side * 1.35f * bow;
-                otherArm.rx -= 0.25f * bow;
+                useArm.overrideRoll(side * 1.35f, bow);
+                otherArm.rx -= 0.15f * bow;
             }
-            Rigging.legsOut(f, 0.20f * bow);
+            // Legs keep stepping straight ahead: undo the body turn below the hips.
+            f.rightLeg().ry -= turn;
+            f.leftLeg().ry -= turn;
+            f.rightLeg().rz += 0.10f * bow;
+            f.leftLeg().rz -= 0.10f * bow;
             f.rightLeg().bend += s.knee() * 0.15f * bow;
             f.leftLeg().bend += s.knee() * 0.15f * bow;
             Rigging.leanTorso(f, s, -0.04f * bow * m.usePull);

@@ -166,6 +166,35 @@ final class SlashLibrary {
                 mix(a.spin(), b.spin(), u));
     }
 
+    /*
+     * Wrist roll of the weapon hand, (t, roll) pairs. 0 = blade straight out of the fist as in
+     * vanilla; + turns the blade toward the outside of the arm, - toward the inside. A forehand
+     * cocks the blade back behind the arm on the wind-up and snaps it through flat on the cut.
+     */
+    private static final float[][] ROLL_H = {{0f, 0f}, {0.42f, 1.25f}, {0.55f, 0.2f}, {0.62f, -1.30f}, {1.00f, -0.30f}};
+    private static final float[][] ROLL_BACK = {{0f, 0f}, {0.40f, -1.35f}, {0.52f, -0.2f}, {0.62f, 1.30f}, {1.00f, 0.30f}};
+    private static final float[][] ROLL_V = {{0f, 0f}, {0.42f, 0.35f}, {0.62f, 0f}, {1.00f, 0f}};
+    private static final float[][] ROLL_SPIN = {{0f, 0f}, {0.25f, 1.20f}, {0.70f, 1.45f}, {1.00f, 0.10f}};
+    private static final float[][] ROLL_AXE_SWEEP = {{0f, 0f}, {0.48f, 1.10f}, {0.68f, -1.10f}, {1.00f, -0.20f}};
+    private static final float[][] ROLL_NONE = {{0f, 0f}, {1f, 0f}};
+
+    static float roll(int kind, float t) {
+        float[][] k = switch (kind) {
+            case MotionState.SLASH_H -> ROLL_H;
+            case MotionState.SLASH_BACK -> ROLL_BACK;
+            case MotionState.SLASH_V -> ROLL_V;
+            case MotionState.SPIN -> ROLL_SPIN;
+            case MotionState.AXE_SWEEP -> ROLL_AXE_SWEEP;
+            default -> ROLL_NONE;
+        };
+        t = AngleMath.clamp(t, 0f, 1f);
+        int i = 0;
+        while (i < k.length - 2 && t > k[i + 1][0]) i++;
+        float span = k[i + 1][0] - k[i][0];
+        float u = span <= 0f ? 1f : AngleMath.ease((t - k[i][0]) / span);
+        return mix(k[i][1], k[i + 1][1], u);
+    }
+
     private static float mix(float a, float b, float u) {
         return a + (b - a) * u;
     }

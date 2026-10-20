@@ -59,6 +59,9 @@ public final class MotionState {
     /** Interpolated vertical speed, blocks/tick (+ = up). */
     public float vertical;
     public float horizontalSpeed;
+    public float sneakPhase;
+    /** Main hand is the right hand. */
+    public boolean mainRight = true;
 
     public final Smooth forward = new Smooth(10f), strafe = new Smooth(10f), turn = new Smooth(8f), move = new Smooth(8f);
     /** 1 = normal on-foot animation allowed; fades to 0 when riding, sleeping, gliding, riptiding. */
@@ -90,6 +93,21 @@ public final class MotionState {
     public float totemStart = -100f;
     private int hurtPending;
     private float prevTickSpeed;
+    private boolean wasSprinting;
+    private int lastGlideTick = -1000;
+    private boolean wasInWater;
+    private int lastWaterTick = -1000;
+    /** Diving in from a height: streamlined "dolphin" entry. */
+    public float diveStart = -100f;
+    /** Swapping items between hands (F): hands meet in the middle and part again. */
+    public float swapStart = -100f;
+    private ItemStack lastMain = ItemStack.EMPTY, lastOff = ItemStack.EMPTY;
+    // ---- idle fidgets
+    public float idleSince;
+    public int idleAction = -1;
+    public float idleActionStart = -100f;
+    private float nextIdleAt = 8f;
+    private final java.util.Random rng = new java.util.Random();
 
     // ---- archery / throwing
     /** Alternates every bow draw: 0 = classic vertical bow, 1 = horizontal bow drawn from above. */
@@ -167,11 +185,19 @@ public final class MotionState {
         boolean special = player.isInWater() || player.isFallFlying() || player.onClimbable()
                 || player.isPassenger() || player.getAbilities().flying;
         float tickSpeed = (float) Math.sqrt(vx * vx + vz * vz);
-        if (ground && wasOnGround && !special && prevTickSpeed > 0.17f && tickSpeed < prevTickSpeed * 0.6f && Cfg.locomotion) {
+        if (ground && wasOnGround && !special && wasSprinting && prevTickSpeed > 0.2f && tickSpeed < prevTickSpeed * 0.6f && Cfg.locomotion) {
             // Sprint released: skid to a stop.
             brake.impulse(Mth.clamp((prevTickSpeed - tickSpeed) / 0.18f, 0.4f, 1.1f));
         }
         prevTickSpeed = tickSpeed;
+        wasSprinting = player.isSprinting();
+        if (player.isFallFlying()) lastGlideTick = player.tickCount;
+
+        // Diving into water from a height: streamlined dolphin entry; never "land" on the bottom.
+        boolean inWater = player.isInWater();
+        if (inWater && !wasInWater && minAirVy < -0.45f && Cfg.water) diveStart = time;
+        if (inWater) { minAirVy = 0f; airTicks = 0; lastWaterTick = player.tickCount; }
+        wasInWater = inWater;
 
         if (!ground) {
             if (wasOnGround && vy > 0.05 && !special) {
@@ -183,7 +209,11 @@ public final class MotionState {
             airTicks++;
             minAirVy = Math.min(minAirVy, (float) vy);
         } else {
-            if (!wasOnGround && airTicks > 2 && !special && Cfg.landing) {
+            if (!wasOnGround && Cfg.landing && player.tickCount - lastGlideTick < 4 && tickSpeed > 0.15f) {
+                // Coming in on an elytra: tumble out of it with a roll.
+                landKind = LAND_ROLL;
+                landStart = time;
+            } else if (!wasOnGround && airTicks > 2 && !special && Cfg.landing) {
                 float impact = -minAirVy;
                 ItemStack main = player.getMainHandItem();
                 boolean swordOnly = Weapons.isMeleeWeapon(main) && player.getOffhandItem().isEmpty();
@@ -192,10 +222,13 @@ public final class MotionState {
                     landKind = LAND_SWORD;
                     landStart = time;
                     land.impulse(0.6f);
-                } else if (impact > 0.62f) {
-                    // High drop: break the fall with a forward roll.
+                } else if (impact > 0.62f && movingForward()) {
+                    // High drop while running on: break the fall with a forward roll.
                     landKind = LAND_ROLL;
                     landStart = time;
+                } else if (impact > 0.62f) {
+                    // High drop standing still: just a deeper crouch.
+                    land.impulse(1.25f);
                 } else if (impact > 0.18f) {
                     land.impulse(Mth.clamp((impact - 0.12f) / 0.85f, 0.15f, 1.25f));
                 }
@@ -219,6 +252,16 @@ public final class MotionState {
                 hurtPending = 0;
             }
         }
+
+        // Items swapped between hands (works for everyone you can see).
+        ItemStack main = player.getMainHandItem(), off = player.getOffhandItem();
+        if (!(main.isEmpty() && off.isEmpty())
+                && ItemStack.matches(main, lastOff) && ItemStack.matches(off, lastMain)
+                && !ItemStack.matches(main, off)) {
+            swapStart = time;
+        }
+        lastMain = main.copy();
+        lastOff = off.copy();
 
         cast = Cfg.ironsSpells ? IronsSpellsCompat.query(player) : IronsSpellsCompat.CastInfo.NONE;
         if (wasCasting && !cast.casting()) release.impulse(1f);
@@ -260,9 +303,12 @@ public final class MotionState {
         gate.to(blocked ? 0f : 1f, dt);
 
         boolean swimming = player.isVisuallySwimming();
-        boolean treading = player.isInWater() && !ground && !swimming;
+        // Bobbing at the surface flips in and out of the water every few ticks: treat the last
+        // moments in the water as still in it, so the pose doesn't flicker between air and water.
+        boolean wet = player.isInWater() || player.tickCount - lastWaterTick < 10;
+        boolean treading = wet && !ground && !swimming;
         boolean climbing = player.onClimbable() && !ground && !riding;
-        boolean air = !ground && !player.isInWater() && !climbing && !blocked;
+        boolean air = !ground && !wet && !climbing && !blocked;
 
         sprintW.to(player.isSprinting() && horizontalSpeed > 0.05f ? 1f : 0f, dt);
         sneakW.to(player.isCrouching() ? 1f : 0f, dt);
@@ -301,7 +347,10 @@ public final class MotionState {
 
         castW.to(cast.casting() ? 1f : 0f, dt);
 
+        mainRight = player.getMainArm() == HumanoidArm.RIGHT;
         speed.to(horizontalSpeed, dt);
+        // Sneaking: our own step cycle, fast enough that the feet really step instead of gliding.
+        if (player.isCrouching()) sneakPhase += dt * 88f * Math.min(horizontalSpeed, 0.12f);
         // Front crawl: about one stroke per second per arm, a bit faster when sprint-swimming.
         if (swimming) swimPhase += dt * (2.4f + 2.6f * Math.min(1f, horizontalSpeed / 0.2f));
 
@@ -323,7 +372,7 @@ public final class MotionState {
         boolean recentlyFought = time - slashStart < 3.0f;
         readyW.to(weapon && ground && !blocked && !swimming && sprintW.v < 0.5f
                 && (moveF() < 0.7f || recentlyFought) && !player.isUsingItem() ? 1f : 0f, dt);
-        twoHandW.to(weapon && offItem.isEmpty() ? 1f : 0f, dt);
+        twoHandW.to(Cfg.twoHanded && weapon && offItem.isEmpty() ? 1f : 0f, dt);
         boolean crossInHand = mainItem.getItem() instanceof CrossbowItem || offItem.getItem() instanceof CrossbowItem;
         boolean charged = CrossbowItem.isCharged(mainItem) || CrossbowItem.isCharged(offItem);
         crossCarryW.to(crossInHand && !charged && !player.isUsingItem() && !blocked ? 1f : 0f, dt);
@@ -333,6 +382,10 @@ public final class MotionState {
         boolean drawing = use == UseAnim.BOW;
         if (drawing && !wasDrawingBow) bowStyle ^= 1;
         wasDrawingBow = drawing;
+
+        updateIdle(ground && !blocked && !swimming && !player.isInWater() && !climbing && !player.isUsingItem()
+                && !player.isCrouching() && horizontalSpeed < 0.01f && time - slashStart > 2f
+                && time - swapStart > 1f && player.hurtTime == 0, dt);
 
         boolean fists = mainItem.isEmpty();
         guardW.to(fists && time - lastPunchTime < 1.3f && !blocked ? 1f : 0f, dt);
@@ -350,6 +403,59 @@ public final class MotionState {
         shieldHit.step(dt);
         hitFront.step(dt);
         hitBack.step(dt);
+    }
+
+    public static final int IDLE_STRETCH = 0, IDLE_SCRATCH = 1, IDLE_SHADOWBOX = 2, IDLE_LOOK = 3, IDLE_COUNT = 4;
+
+    /** Weight of the current idle fidget; drops at once when the player does anything. */
+    public final Smooth idleW = new Smooth(7f);
+
+    private void updateIdle(boolean still, float dt) {
+        if (!still || !Cfg.idleActions) {
+            idleSince = time;
+            nextIdleAt = 6f + rng.nextFloat() * 4f;
+            idleW.to(0f, dt);
+            if (idleW.v < 0.01f) idleAction = -1;
+            return;
+        }
+        if (idleAction >= 0 && time - idleActionStart > idleDuration(idleAction)) {
+            idleAction = -1;
+            idleSince = time;
+            nextIdleAt = 5f + rng.nextFloat() * 5f;
+        }
+        if (idleAction < 0 && time - idleSince > nextIdleAt) {
+            int pick = rng.nextInt(IDLE_COUNT);
+            if (pick == lastIdleAction) pick = (pick + 1) % IDLE_COUNT;
+            idleAction = lastIdleAction = pick;
+            idleActionStart = time;
+        }
+        idleW.to(idleAction >= 0 ? 1f : 0f, dt);
+    }
+
+    private int lastIdleAction = -1;
+
+    /** Start a given fidget now (self-test). */
+    public void forceIdle(int action) {
+        idleAction = lastIdleAction = action;
+        idleActionStart = time;
+        idleW.v = 1f;
+    }
+
+    public static float idleDuration(int action) {
+        return switch (action) {
+            case IDLE_STRETCH -> 4.0f;
+            case IDLE_SCRATCH -> 3.5f;
+            case IDLE_SHADOWBOX -> 3.2f;
+            default -> 3.0f;
+        };
+    }
+
+    /** Forward input held (your own player) or clearly running on (others). */
+    private boolean movingForward() {
+        if (player instanceof net.minecraft.client.player.LocalPlayer lp && lp.input != null) {
+            return lp.input.forwardImpulse > 0.1f;
+        }
+        return Math.sqrt(vx * vx + vz * vz) > 0.12;
     }
 
     // ---- events from sounds (see SoundCues)
@@ -406,7 +512,7 @@ public final class MotionState {
             throwSide = time - lastThrowTime < 2.0f ? -throwSide : 1f;
             lastThrowTime = time;
             slashKind = THROW;
-            slashDuration = 0.40f;
+            slashDuration = 0.65f;
         } else {
             slashKind = kind;
             slashDuration = kind == FIST_BLOCK ? 0.30f : (isLooping(kind) ? 0.40f : 0.30f);

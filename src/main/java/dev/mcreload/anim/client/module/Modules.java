@@ -11,6 +11,7 @@ public final class Modules {
             new ClimbModule(),
             new CombatModule(),
             new FistModule(),
+            new GestureModule(),
             new RideModule(),
             new FlightModule(),
             new ReactionModule(),
