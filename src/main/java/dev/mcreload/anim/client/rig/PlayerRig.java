@@ -89,12 +89,16 @@ public final class PlayerRig {
         switch (type) {
             case ROTATION -> {
                 t = T_ROT;
-                x = v0.getX() + p.rx * k;
-                y = v0.getY() + p.ry * k;
-                z = v0.getZ() + p.rz * k;
+                x = v0.getX();
+                y = v0.getY();
+                z = v0.getZ();
+                // Targets replace the incoming pose, additive motion goes on top of the result.
                 if (p.wx > 0f) x = AngleMath.lerpAngle(x, p.tx, p.wx * k);
                 if (p.wy > 0f) y = AngleMath.lerpAngle(y, p.ty, p.wy * k);
                 if (p.wz > 0f) z = AngleMath.lerpAngle(z, p.tz, p.wz * k);
+                x += p.rx * k;
+                y += p.ry * k;
+                z += p.rz * k;
             }
             case POSITION -> {
                 t = T_POS;
@@ -118,6 +122,18 @@ public final class PlayerRig {
         out[2] = z;
         baseOutValid[i][t] = true;
         return new Vec3f(x, y, z);
+    }
+
+    /**
+     * The pose that was actually drawn last frame for a part (after every mod's animation),
+     * in playerAnimator units. Returns false if nothing was drawn yet.
+     * @param type 0 = position, 1 = rotation, 2 = bend
+     */
+    public boolean finalPose(int part, int type, float[] out) {
+        if (harmonizer.isActive() && harmonizer.lastOut(part, type, out)) return true;
+        if (!baseOutValid[part][type]) return false;
+        System.arraycopy(baseOut[part][type], 0, out, 0, 3);
+        return true;
     }
 
     static int typeIndex(TransformType type) {

@@ -119,6 +119,12 @@ public final class HarmonizerLayer implements IAnimation {
         return new Vec3f(x, y, z);
     }
 
+    boolean lastOut(int part, int type, float[] out) {
+        if (!lastOutValid[part][type]) return false;
+        System.arraycopy(lastOut[part][type], 0, out, 0, 3);
+        return true;
+    }
+
     private void startFade(int i, float seconds) {
         if (seconds <= 0f) {
             fading[i] = false;

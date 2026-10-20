@@ -19,6 +19,11 @@ public final class ClientConfig {
     public static final ForgeConfigSpec.BooleanValue COMBAT;
     public static final ForgeConfigSpec.BooleanValue REACTIONS;
 
+    public static final ForgeConfigSpec.BooleanValue TRAILS;
+    public static final ForgeConfigSpec.DoubleValue TRAIL_SECONDS;
+    public static final ForgeConfigSpec.DoubleValue TRAIL_OPACITY;
+    public static final ForgeConfigSpec.ConfigValue<String> TRAIL_COLOR;
+
     public static final ForgeConfigSpec.BooleanValue HARMONIZER;
     public static final ForgeConfigSpec.DoubleValue FADE_IN;
     public static final ForgeConfigSpec.DoubleValue FADE_OUT;
@@ -56,10 +61,20 @@ public final class ClientConfig {
                 .define("water", true);
         CLIMBING = b.comment("Ladder and vine climbing.")
                 .define("climbing", true);
-        COMBAT = b.comment("Vanilla sword/axe swing body motion, bow, crossbow, trident, shield, eating, drinking.")
+        COMBAT = b.comment("Keyframed weapon slashes (3-hit combo) and punches, bow, crossbow, trident, shield, eating, drinking.")
                 .define("combat", true);
         REACTIONS = b.comment("Recoil when taking damage.")
                 .define("reactions", true);
+        b.pop();
+
+        b.comment("White wind streak behind swung weapons (our slashes and Better Combat attacks).").push("trails");
+        TRAILS = b.define("enabled", true);
+        TRAIL_SECONDS = b.comment("How long the streak lingers, seconds.")
+                .defineInRange("lifetimeSeconds", 0.22, 0.05, 1.0);
+        TRAIL_OPACITY = b.comment("Brightness of the streak, 0..1.")
+                .defineInRange("opacity", 0.75, 0.0, 1.0);
+        TRAIL_COLOR = b.comment("Colour as RRGGBB hex.")
+                .define("color", "FFFFFF");
         b.pop();
 
         b.comment("Blending with other playerAnimator-based mods (Better Combat, Iron's Spells, Emotecraft...).").push("compat");

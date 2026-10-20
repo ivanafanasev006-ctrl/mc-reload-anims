@@ -63,6 +63,28 @@ public final class MotionState {
     /** +1 if the item in use is in the right hand, -1 if left. */
     public float useSide = 1f;
 
+    /** Smoothed horizontal speed, blocks/tick. Walk ~0.215, sprint ~0.28, sneak ~0.065. */
+    public final Smooth speed = new Smooth(7f);
+    /**
+     * 1 = our arm poses may replace vanilla's. Drops to 0 whenever vanilla's arm pose matters
+     * (using an item, holding a loaded crossbow, swinging a tool, Iron's casting).
+     */
+    public final Smooth armsFree = new Smooth(10f);
+    public final Smooth toolSwingW = new Smooth(14f);
+
+    // ---- melee ----
+    public static final int SLASH_H = 0, SLASH_V = 1, SLASH_BACK = 2, PUNCH = 3, TOOL = 4;
+    public static final float SLASH_SECONDS = 0.42f;
+    public int slashKind = -1;
+    public float slashStart = -100f;
+    /** +1 right arm, -1 left arm. */
+    public float slashSide = 1f;
+    private int combo;
+    private float lastAttack;
+
+    /** Continuous stroke phase for front crawl, radians. */
+    public float swimPhase;
+
     public MotionState(AbstractClientPlayer player) {
         this.player = player;
         this.seed = (player.getUUID().hashCode() & 1023) / 1023f * Mth.TWO_PI;
@@ -176,9 +198,44 @@ public final class MotionState {
 
         castW.to(cast.casting() ? 1f : 0f, dt);
 
+        speed.to(horizontalSpeed, dt);
+        if (swimming) swimPhase += dt * (3.6f + 9f * Math.min(1f, horizontalSpeed / 0.2f));
+
+        // Melee: start our own timeline at every new swing, independent of vanilla's 6-tick swing.
+        float attack = player.getAttackAnim(pt);
+        if (attack > 0f && (lastAttack <= 0f || attack < lastAttack - 0.3f)) startSwing();
+        lastAttack = attack;
+        toolSwingW.to(slashKind == TOOL && slashProgress() < 1.1f ? 1f : 0f, dt);
+
+        boolean vanillaArms = player.isUsingItem()
+                || CrossbowItem.isCharged(player.getMainHandItem()) || CrossbowItem.isCharged(player.getOffhandItem());
+        float free = vanillaArms ? 0f : 1f;
+        armsFree.to(free * (1f - 0.9f * castW.v), dt);
+
         land.step(dt);
         hurt.step(dt);
         release.step(dt);
+    }
+
+    private void startSwing() {
+        HumanoidArm arm = player.swingingArm == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite();
+        slashSide = arm == HumanoidArm.RIGHT ? 1f : -1f;
+        ItemStack held = player.getItemInHand(player.swingingArm);
+        if (Weapons.isMeleeWeapon(held)) {
+            boolean chained = slashKind >= 0 && slashKind <= SLASH_BACK && time - slashStart < SLASH_SECONDS + 0.7f;
+            combo = chained ? (combo + 1) % 3 : 0;
+            slashKind = combo;
+        } else if (held.isEmpty()) {
+            slashKind = PUNCH;
+        } else {
+            slashKind = TOOL;
+        }
+        slashStart = time;
+    }
+
+    /** 0..1 over the swing, keeps growing afterwards (used to blend out). */
+    public float slashProgress() {
+        return (time - slashStart) / SLASH_SECONDS;
     }
 
     public float moveF() {

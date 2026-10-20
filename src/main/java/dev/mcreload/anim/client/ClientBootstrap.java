@@ -4,7 +4,9 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.kosmx.playerAnim.api.layered.AnimationStack;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess;
 import dev.mcreload.anim.McReloadAnim;
+import dev.mcreload.anim.client.fx.WeaponTrails;
 import dev.mcreload.anim.client.rig.PlayerRig;
+import dev.mcreload.anim.client.rig.RigRegistry;
 import dev.mcreload.anim.compat.ModCompat;
 import dev.mcreload.anim.config.Cfg;
 import dev.mcreload.anim.config.ClientConfig;
@@ -28,6 +30,7 @@ public final class ClientBootstrap {
         modBus.addListener(ClientBootstrap::onConfigLoad);
         modBus.addListener(ClientBootstrap::onConfigReload);
         MinecraftForge.EVENT_BUS.addListener(ClientBootstrap::onClientTick);
+        MinecraftForge.EVENT_BUS.addListener(WeaponTrails::onRenderLevel);
 
         ModCompat.init();
 
@@ -39,6 +42,7 @@ public final class ClientBootstrap {
 
     private static void attach(AbstractClientPlayer player, AnimationStack stack) {
         PlayerRig rig = new PlayerRig(player);
+        RigRegistry.put(player, rig);
         stack.addAnimLayer(PlayerRig.BASE_PRIORITY, rig.baseLayer());
         stack.addAnimLayer(PlayerRig.HARMONIZER_PRIORITY, rig.harmonizerLayer());
     }

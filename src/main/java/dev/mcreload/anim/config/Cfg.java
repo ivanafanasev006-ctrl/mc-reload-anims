@@ -14,6 +14,10 @@ public final class Cfg {
     public static volatile boolean locomotion = true, idle = true, airborne = true, landing = true,
             water = true, climbing = true, combat = true, reactions = true;
 
+    public static volatile boolean trails = true;
+    public static volatile float trailSeconds = 0.22f, trailOpacity = 0.75f;
+    public static volatile int trailColor = 0xFFFFFF;
+
     public static volatile boolean harmonizer = true;
     public static volatile float fadeIn = 0.10f, fadeOut = 0.22f, yield = 0.85f, keepLegs = 0.85f, keepHead = 0f;
     public static volatile boolean ironsSpells = true;
@@ -35,6 +39,11 @@ public final class Cfg {
         combat = ClientConfig.COMBAT.get();
         reactions = ClientConfig.REACTIONS.get();
 
+        trails = ClientConfig.TRAILS.get();
+        trailSeconds = ClientConfig.TRAIL_SECONDS.get().floatValue();
+        trailOpacity = ClientConfig.TRAIL_OPACITY.get().floatValue();
+        trailColor = parseColor(ClientConfig.TRAIL_COLOR.get());
+
         harmonizer = ClientConfig.HARMONIZER.get();
         fadeIn = ClientConfig.FADE_IN.get().floatValue();
         fadeOut = ClientConfig.FADE_OUT.get().floatValue();
@@ -44,6 +53,14 @@ public final class Cfg {
         ironsSpells = ClientConfig.IRONS_SPELLS.get();
 
         signs = Signs.of(ClientConfig.INVERT_KNEE.get(), ClientConfig.INVERT_ELBOW.get(), ClientConfig.INVERT_TORSO.get());
+    }
+
+    private static int parseColor(String hex) {
+        try {
+            return Integer.parseInt(hex.trim().replace("#", ""), 16) & 0xFFFFFF;
+        } catch (NumberFormatException e) {
+            return 0xFFFFFF;
+        }
     }
 
     private Cfg() {}

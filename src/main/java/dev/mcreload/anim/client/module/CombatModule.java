@@ -1,5 +1,6 @@
 package dev.mcreload.anim.client.module;
 
+import dev.mcreload.anim.client.math.AngleMath;
 import dev.mcreload.anim.client.pose.PartPose;
 import dev.mcreload.anim.client.pose.PoseFrame;
 import dev.mcreload.anim.client.pose.Rigging;
@@ -9,13 +10,6 @@ import dev.mcreload.anim.client.rig.PlayerRig;
 import dev.mcreload.anim.config.Cfg;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.TridentItem;
 
 /**
  * Whole-body follow-through for vanilla combat: the swing drives the torso, hips and a short
@@ -35,45 +29,66 @@ final class CombatModule implements AnimModule {
     public void apply(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float pt) {
         float gate = m.gate.v;
         if (gate <= 0.001f) return;
-        AbstractClientPlayer p = rig.player;
-
-        swing(p, m, f, s, pt, gate);
+        swing(rig, m, f, s, gate, pt);
         useItems(m, f, s, gate);
     }
 
-    private static void swing(AbstractClientPlayer p, MotionState m, PoseFrame f, Signs s, float pt, float gate) {
-        float a = p.getAttackAnim(pt);
-        if (a <= 0f) return;
+    /**
+     * Weapon and fist attacks play our own keyframed wind-up / strike / recovery, chained into a
+     * three-hit combo; tools keep vanilla's swing so mining looks normal.
+     */
+    private static void swing(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate, float pt) {
+        int kind = m.slashKind;
+        if (kind < 0 || kind == MotionState.TOOL) {
+            toolSwing(rig.player, m, f, s, gate, pt);
+            return;
+        }
+        float t = m.slashProgress();
+        if (t >= 1.3f) return;
 
-        HumanoidArm arm = p.swingingArm == InteractionHand.MAIN_HAND ? p.getMainArm() : p.getMainArm().getOpposite();
-        float side = arm == HumanoidArm.RIGHT ? 1f : -1f;
-        ItemStack held = p.getItemInHand(p.swingingArm);
-        // Full body motion for weapons, a lighter touch when mining or punching.
-        float w = (isWeapon(held) ? 1f : 0.35f) * gate;
+        // Envelope: quick blend in, hold, blend out after the recovery.
+        float w = AngleMath.ease(t / 0.10f) * (1f - AngleMath.ease((t - 0.85f) / 0.45f)) * gate;
+        // Better Combat (or any other mod) animating this arm wins.
+        int armIndex = m.slashSide > 0 ? PoseFrame.RIGHT_ARM : PoseFrame.LEFT_ARM;
+        w *= 1f - rig.foreign[armIndex];
+        if (w <= 0.001f) return;
 
-        float sq = Mth.sqrt(a);
-        float twist = Mth.sin(sq * Mth.TWO_PI);   // same curve vanilla uses for the torso
-        float follow = Mth.sin(a * Mth.PI);       // 0 -> 1 -> 0 over the swing
+        float side = m.slashSide;
+        SlashLibrary.Key k = SlashLibrary.sample(SlashLibrary.forKind(kind), t);
 
-        Rigging.twistUpper(f, side * twist * 0.22f * w);
-        Rigging.leanTorso(f, s, 0.16f * follow * w);
-        f.head().rx -= 0.10f * follow * w;
-        f.body().rz -= side * 0.05f * follow * w;
+        PartPose arm = side > 0 ? f.rightArm() : f.leftArm();
+        PartPose off = side > 0 ? f.leftArm() : f.rightArm();
+        arm.override(k.armX(), side * k.armY(), side * k.armZ(), w);
+        arm.overrideBend(s.elbow() * k.elbow(), w);
+        off.override(k.offX(), 0f, -side * k.offZ(), w);
+        off.overrideBend(s.elbow() * k.offElbow(), w);
 
-        // Wind-up: the swinging elbow is bent, then snaps straight through the hit.
-        PartPose swingArm = side > 0 ? f.rightArm() : f.leftArm();
-        swingArm.bend += s.elbow() * 0.5f * Math.max(0f, Mth.cos(sq * Mth.PI)) * w;
+        Rigging.twistUpper(f, side * k.twist() * w);
+        f.body().rx += k.lean() * w;
+        f.head().rx += k.lean() * 0.9f * w;
+        f.body().rz -= side * 0.06f * Math.max(0f, -k.lean()) * w;
 
-        // Short lunge with the opposite foot when standing; fades out while running.
-        float still = 1f - 0.7f * m.moveF();
+        // Footwork: step into the strike with the opposite foot, less while running.
+        float still = 1f - 0.75f * m.moveF();
+        float lw = w * still;
         PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
         PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();
-        float lunge = follow * w * still;
-        lead.rx -= 0.28f * lunge;
-        rear.rx += 0.20f * lunge;
-        lead.bend += s.knee() * 0.35f * lunge;
-        rear.bend += s.knee() * 0.18f * lunge;
-        f.body().py -= 0.025f * lunge;
+        lead.overrideX(k.leadThigh(), lw);
+        lead.overrideBend(s.knee() * k.leadKnee(), lw);
+        rear.overrideX(k.rearThigh(), lw);
+        rear.overrideBend(s.knee() * k.rearKnee(), lw);
+        float drop = Math.max(0f, k.leadKnee() - 0.3f);
+        f.body().py -= 0.07f * drop * lw;
+    }
+
+    /** Mining / using a tool: vanilla arm swing, plus a little body follow-through. */
+    private static void toolSwing(AbstractClientPlayer p, MotionState m, PoseFrame f, Signs s, float gate, float pt) {
+        float a = p.getAttackAnim(pt);
+        float w = m.toolSwingW.v * gate;
+        if (w <= 0.001f || a <= 0f) return;
+        float follow = Mth.sin(a * Mth.PI);
+        Rigging.twistUpper(f, m.slashSide * Mth.sin(Mth.sqrt(a) * Mth.TWO_PI) * 0.12f * w);
+        Rigging.leanTorso(f, s, 0.10f * follow * w);
     }
 
     private static void useItems(MotionState m, PoseFrame f, Signs s, float gate) {
@@ -136,8 +151,4 @@ final class CombatModule implements AnimModule {
         }
     }
 
-    private static boolean isWeapon(ItemStack stack) {
-        Item item = stack.getItem();
-        return item instanceof SwordItem || item instanceof AxeItem || item instanceof TridentItem;
-    }
 }
