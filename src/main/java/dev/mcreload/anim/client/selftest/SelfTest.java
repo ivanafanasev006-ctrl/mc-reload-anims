@@ -245,7 +245,17 @@ public final class SelfTest {
             return;
         }
         if (mc.player != null && mc.player.input != INPUT) mc.player.input = INPUT;
-        if (++fpsLogTimer % 100 == 0) McReloadAnim.LOG.info("[mcreload] self-test fps: {}", mc.getFps());
+        if (++fpsLogTimer % 20 == 0 && mc.player != null) {
+            dev.mcreload.anim.client.rig.PlayerRig rig = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player);
+            McReloadAnim.LOG.info("[mcreload] self-test {} t={} fps={} pos=({}, {}, {}) ground={} sprint={} speed={} sprintW={} airW={} walkSpeed={}",
+                    currentLabel, scenarioTick, mc.getFps(),
+                    String.format("%.2f", mc.player.getX()), String.format("%.2f", mc.player.getY()), String.format("%.2f", mc.player.getZ()),
+                    mc.player.onGround(), mc.player.isSprinting(),
+                    rig == null ? "-" : String.format("%.3f", rig.motion.speed.v),
+                    rig == null ? "-" : String.format("%.2f", rig.motion.sprintW.v),
+                    rig == null ? "-" : String.format("%.2f", rig.motion.airW.v),
+                    String.format("%.2f", mc.player.walkAnimation.speed()));
+        }
 
         Scenario s = SCENARIOS.get(scenarioIndex);
         currentLabel = s.name();

@@ -25,6 +25,8 @@ public final class MotionState {
 
     // ---- per tick ----
     private double vx, vy, vz, pvx, pvy, pvz;
+    /** Our own position history: playerAnimator ticks us before the entity moves, so xo == x then. */
+    private double lastX = Double.NaN, lastY, lastZ;
     private float yawRate, prevYawRate;
     private boolean wasOnGround = true;
     private int airTicks;
@@ -93,9 +95,12 @@ public final class MotionState {
     /** Called once per game tick by playerAnimator. */
     public void tick() {
         pvx = vx; pvy = vy; pvz = vz;
-        vx = player.getX() - player.xo;
-        vy = player.getY() - player.yo;
-        vz = player.getZ() - player.zo;
+        double x = player.getX(), y = player.getY(), z = player.getZ();
+        if (Double.isNaN(lastX)) { lastX = x; lastY = y; lastZ = z; }
+        vx = x - lastX;
+        vy = y - lastY;
+        vz = z - lastZ;
+        lastX = x; lastY = y; lastZ = z;
         if (vx * vx + vy * vy + vz * vz > 9.0) { // teleport / respawn
             vx = vy = vz = 0;
             pvx = pvy = pvz = 0;
