@@ -8,6 +8,7 @@ import dev.mcreload.anim.client.rig.MotionState;
 import dev.mcreload.anim.client.rig.PlayerRig;
 import dev.mcreload.anim.client.rig.RigRegistry;
 import dev.mcreload.anim.client.rig.Weapons;
+import dev.mcreload.anim.client.selftest.SelfTest;
 import dev.mcreload.anim.compat.ModCompat;
 import dev.mcreload.anim.config.Cfg;
 import net.minecraft.client.Camera;
@@ -74,7 +75,8 @@ public final class WeaponTrails {
         }
 
         long now = System.nanoTime();
-        long life = (long) (Cfg.trailSeconds * 1e9);
+        // Self-test renders at a few FPS: keep the streak long so its placement can be checked.
+        long life = (long) ((SelfTest.enabled() ? 1.5f : Cfg.trailSeconds) * 1e9);
         float pt = event.getPartialTick();
         Camera camera = event.getCamera();
         Vec3 cam = camera.getPosition();
@@ -108,7 +110,8 @@ public final class WeaponTrails {
 
         boolean ours = m.slashKind >= MotionState.SLASH_H && m.slashKind <= MotionState.SLASH_BACK;
         float t = m.slashProgress();
-        boolean ourStrike = ours && t >= 0.34f && t <= 0.74f && rig.foreign[armPart] < 0.5f;
+        float from = SelfTest.enabled() ? 0.05f : 0.34f, to = SelfTest.enabled() ? 1.0f : 0.74f;
+        boolean ourStrike = ours && t >= from && t <= to && rig.foreign[armPart] < 0.5f;
         boolean foreign = ModCompat.betterCombat && rig.foreign[armPart] > 0.5f;
         if (!ourStrike && !foreign) {
             // Better Combat swings the main hand; check that one too.
