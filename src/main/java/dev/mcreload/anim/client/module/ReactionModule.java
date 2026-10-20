@@ -137,19 +137,20 @@ final class ReactionModule implements AnimModule {
      */
     private static void plantBlade(PoseFrame f, Signs s, float e, PartPose main, PartPose off, float side, float depth) {
         Rigging.crouch(f, s, depth * e);
-        f.body().rx -= 0.30f * e;
+        f.body().rx -= 0.40f * e;
         Rigging.leanTorso(f, s, 0.55f * e);
         f.head().rx -= 0.55f * e;
-        // Lead leg forward, rear knee nearly down.
-        PartPose lead = side > 0 ? f.rightLeg() : f.leftLeg();
-        PartPose rear = side > 0 ? f.leftLeg() : f.rightLeg();
+        // Free-side leg forward, sword-side knee nearly down next to the blade.
+        PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
+        PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();
         lead.overrideX(-1.45f, e);
         lead.overrideBend(s.knee() * 1.70f, e);
         rear.overrideX(-0.20f, e);
         rear.overrideBend(s.knee() * 2.0f, e);
         // Down on one knee: drop the hips far enough that the lead foot and rear knee touch.
         f.body().py -= Math.max(0f, 0.31f - 2f * Rigging.LEG_SEGMENT_BLOCKS * (1f - Mth.cos(depth))) * e;
-        main.override(-1.30f, -side * 0.15f, side * 0.10f, e);
+        // Out beside the body so the blade goes into the ground next to the knee, not through the leg.
+        main.override(-1.45f, 0f, side * 0.38f, e);
         main.overrideBend(s.elbow() * 0.15f, e);
         main.overrideRoll(Mth.PI, e);
         off.override(-0.75f, side * 0.25f, -side * 0.30f, e);
