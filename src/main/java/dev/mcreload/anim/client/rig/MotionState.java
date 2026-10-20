@@ -361,7 +361,7 @@ public final class MotionState {
     public void onExplosion(double distance) {
         if (distance > 10.0) return;
         explodeStart = time;
-        explodeStrength = (float) Mth.clamp(1.0 - distance / 10.0, 0.35, 1.0);
+        explodeStrength = (float) Mth.clamp(1.3 - distance / 10.0, 0.6, 1.0);
     }
 
     public void onTotem() {
