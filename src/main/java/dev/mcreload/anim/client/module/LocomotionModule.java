@@ -76,14 +76,14 @@ final class LocomotionModule implements AnimModule {
 
     private static void run(PoseFrame f, Signs s, float w, float arms, float sin, float cos, float a) {
         // Thigh drives far forward, pushes back less; the knee folds tight during the forward swing.
-        legX(f.rightLeg(), -0.30f * a + 0.95f * a * cos, w);
-        legX(f.leftLeg(), -0.30f * a - 0.95f * a * cos, w);
+        legX(f.rightLeg(), -0.25f * a + 0.78f * a * cos, w);
+        legX(f.leftLeg(), -0.25f * a - 0.78f * a * cos, w);
         float sw = Mth.sin(0.25f);
         float cw = Mth.cos(0.25f);
         float rSwing = sin * cw + cos * sw;       // sin(phase + 0.25)
         float lSwing = -rSwing;
-        f.rightLeg().bend += s.knee() * (0.35f + 1.45f * Math.max(0f, rSwing)) * a * w;
-        f.leftLeg().bend += s.knee() * (0.35f + 1.45f * Math.max(0f, lSwing)) * a * w;
+        f.rightLeg().bend += s.knee() * (0.40f + 1.55f * Math.max(0f, rSwing)) * a * w;
+        f.leftLeg().bend += s.knee() * (0.40f + 1.55f * Math.max(0f, lSwing)) * a * w;
 
         float aw = w * arms;
         armPose(f.rightArm(), -0.25f * a - 0.95f * a * cos, -0.04f, aw);
@@ -103,11 +103,12 @@ final class LocomotionModule implements AnimModule {
 
     /** Cautious creep: low on bent legs, slow high steps, hands ready in front, eyes scanning. */
     private static void sneak(PoseFrame f, Signs s, float w, float arms, float sin, float cos, float a, MotionState m) {
-        float crouch = 0.55f;
-        legX(f.rightLeg(), -crouch + 0.42f * a * cos - 0.25f * a * Math.max(0f, sin), w);
-        legX(f.leftLeg(), -crouch - 0.42f * a * cos - 0.25f * a * Math.max(0f, -sin), w);
-        f.rightLeg().bend += s.knee() * (2f * crouch + 0.75f * a * Math.max(0f, sin)) * w;
-        f.leftLeg().bend += s.knee() * (2f * crouch + 0.75f * a * Math.max(0f, -sin)) * w;
+        // Vanilla's crouch already pitches the torso and moves the hips back; we add soft knees.
+        float crouch = 0.32f;
+        legX(f.rightLeg(), -crouch + 0.38f * a * cos - 0.22f * a * Math.max(0f, sin), w);
+        legX(f.leftLeg(), -crouch - 0.38f * a * cos - 0.22f * a * Math.max(0f, -sin), w);
+        f.rightLeg().bend += s.knee() * (2f * crouch + 0.65f * a * Math.max(0f, sin)) * w;
+        f.leftLeg().bend += s.knee() * (2f * crouch + 0.65f * a * Math.max(0f, -sin)) * w;
         f.body().py -= 2f * Rigging.LEG_SEGMENT_BLOCKS * (1f - Mth.cos(crouch)) * w;
         f.body().py -= 0.02f * a * Math.abs(sin) * w;
 

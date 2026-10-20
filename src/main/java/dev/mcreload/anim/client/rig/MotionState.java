@@ -82,7 +82,8 @@ public final class MotionState {
     /** +1 right arm, -1 left arm. */
     public float slashSide = 1f;
     private int combo;
-    private float lastAttack;
+    private boolean lastSwinging;
+    private int lastSwingTime;
 
     /** Continuous stroke phase for front crawl, radians. */
     public float swimPhase;
@@ -206,10 +207,13 @@ public final class MotionState {
         speed.to(horizontalSpeed, dt);
         if (swimming) swimPhase += dt * (3.6f + 9f * Math.min(1f, horizontalSpeed / 0.2f));
 
-        // Melee: start our own timeline at every new swing, independent of vanilla's 6-tick swing.
-        float attack = player.getAttackAnim(pt);
-        if (attack > 0f && (lastAttack <= 0f || attack < lastAttack - 0.3f)) startSwing();
-        lastAttack = attack;
+        // Melee: start our own timeline the moment a swing begins (vanilla's swing progress only
+        // starts moving 2-3 ticks later, which made attacks feel late).
+        boolean swinging = player.swinging;
+        int swingTime = player.swingTime;
+        if (swinging && (!lastSwinging || swingTime < lastSwingTime)) startSwing();
+        lastSwinging = swinging;
+        lastSwingTime = swingTime;
         toolSwingW.to(slashKind == TOOL && slashProgress() < 1.1f ? 1f : 0f, dt);
 
         boolean vanillaArms = player.isUsingItem()
