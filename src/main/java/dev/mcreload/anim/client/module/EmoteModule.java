@@ -185,9 +185,9 @@ final class EmoteModule implements AnimModule {
         f.head().rx += 0.20f * down * e;
         PartPose lead = side > 0 ? f.rightLeg() : f.leftLeg();
         PartPose rear = side > 0 ? f.leftLeg() : f.rightLeg();
-        lead.overrideX(0.80f * down - 0.20f * down, e);
+        lead.overrideX(-0.80f * down - 0.20f * down, e);
         lead.overrideBend(s.knee() * 0.30f * down, e);
-        rear.overrideX(0.80f * down, e);
+        rear.overrideX(-0.80f * down, e);
         rear.overrideBend(0f, e);
     }
 
