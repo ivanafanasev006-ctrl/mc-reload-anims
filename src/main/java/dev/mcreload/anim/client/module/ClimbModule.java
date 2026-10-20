@@ -9,9 +9,10 @@ import dev.mcreload.anim.config.Cfg;
 import net.minecraft.util.Mth;
 
 /**
- * Ladders, vines and other climbables (after Mo'Bends' ladder climb): hand-over-hand reaching with
- * big arm travel and pulling elbows, high alternating knee lifts, the chest rocking toward the
- * ladder on every pull. The cycle follows the height actually gained, so it freezes when you stop.
+ * Ladders, vines and other climbables, climbed like a rock wall: each hand reaches high and wide
+ * for the next hold and hauls the body up with a bending elbow, the legs splay out frog-style and
+ * push with deep knee bends, and the whole body shifts its weight from side to side with every
+ * pull. The cycle follows the height actually gained, so everything freezes when you stop.
  */
 final class ClimbModule implements AnimModule {
     @Override
@@ -25,38 +26,39 @@ final class ClimbModule implements AnimModule {
         if (c <= 0.001f) return;
 
         float p = m.climbPhase;
-        float armR = Mth.sin(p) * 0.5f + 0.5f;
-        float armL = Mth.sin(p + Mth.PI) * 0.5f + 0.5f;
-        float armR2 = Mth.sin(p - 0.3f) * 0.5f + 0.5f;
-        float armL2 = Mth.sin(p + Mth.PI - 0.3f) * 0.5f + 0.5f;
-        float twice = Mth.sin(p * 2f) * 0.5f + 0.5f;
-        float legR = Mth.sin(p + Mth.PI) * 0.5f + 0.5f;
-        float legL = Mth.sin(p) * 0.5f + 0.5f;
-        float legR2 = Mth.sin(p + Mth.PI + 0.3f) * 0.5f + 0.5f;
-        float legL2 = Mth.sin(p + 0.3f) * 0.5f + 0.5f;
+        // 0 = hand at the chest after the pull, 1 = fully reaching up for the next hold.
+        float reachR = Mth.sin(p) * 0.5f + 0.5f;
+        float reachL = 1f - reachR;
+        float pullR = Mth.sin(p - 0.5f) * 0.5f + 0.5f;
+        float pullL = 1f - pullR;
+        // Legs push opposite to the arms (right hand reaches while the left foot pushes).
+        float stepR = reachL, stepL = reachR;
 
         float aw = c * m.armsFree.v;
-        // Arms reach from overhead (-2.36) down to the chest (-1.14), elbows folding as they pull.
-        f.rightArm().targetX(-2.36f + armR * 1.22f, aw);
-        f.leftArm().targetX(-2.36f + armL * 1.22f, aw);
+        f.rightArm().targetX(-1.25f - reachR * 1.65f, aw);
+        f.leftArm().targetX(-1.25f - reachL * 1.65f, aw);
         f.rightArm().targetY(0f, aw);
         f.leftArm().targetY(0f, aw);
-        f.rightArm().targetZ(-0.08f, aw);
-        f.leftArm().targetZ(0.08f, aw);
-        f.rightArm().bend += s.elbow() * armR2 * 1.40f * aw;
-        f.leftArm().bend += s.elbow() * armL2 * 1.40f * aw;
+        f.rightArm().targetZ(0.20f + 0.25f * reachR, aw);
+        f.leftArm().targetZ(-0.20f - 0.25f * reachL, aw);
+        f.rightArm().bend += s.elbow() * (0.25f + 1.45f * (1f - pullR)) * aw;
+        f.leftArm().bend += s.elbow() * (0.25f + 1.45f * (1f - pullL)) * aw;
 
-        // High alternating knee lifts.
-        f.rightLeg().targetX(-0.79f - legR * 0.87f, c);
-        f.leftLeg().targetX(-0.79f - legL * 0.87f, c);
-        f.rightLeg().bend += s.knee() * (0.35f + legR2 * 1.57f) * c;
-        f.leftLeg().bend += s.knee() * (0.35f + legL2 * 1.57f) * c;
-        // Climbing pose sits the hips back from the ladder so the knees fit.
-        f.body().pz += 0.10f * c;
+        // Frog legs: knees wide, one foot high on the next rung, the other straightening to push.
+        f.rightLeg().targetX(-0.55f - stepR * 0.95f, c);
+        f.leftLeg().targetX(-0.55f - stepL * 0.95f, c);
+        f.rightLeg().targetZ(0.38f, c);
+        f.leftLeg().targetZ(-0.38f, c);
+        f.rightLeg().bend += s.knee() * (0.45f + stepR * 1.55f) * c;
+        f.leftLeg().bend += s.knee() * (0.45f + stepL * 1.55f) * c;
+        f.body().pz += 0.12f * c;
 
-        // Chest rocks into the ladder on each pull; body sways side to side.
-        Rigging.leanTorso(f, s, twice * 0.17f * c);
-        f.body().rz += 0.05f * Mth.sin(p) * c;
-        f.head().rx -= 0.25f * c;
+        // Weight shifts toward the hand that is pulling, chest rocks into the wall on each pull.
+        float shift = reachR - reachL;
+        f.body().rz += 0.14f * shift * c;
+        f.body().px -= 0.05f * shift * c;
+        Rigging.leanTorso(f, s, (0.12f + 0.12f * Math.abs(Mth.sin(p))) * c);
+        f.head().rx -= 0.35f * c;
+        f.head().ry += 0.20f * shift * c;
     }
 }

@@ -108,7 +108,7 @@ public final class WeaponTrails {
         ItemStack stack = player.getItemInHand(hand);
         int armPart = arm == HumanoidArm.RIGHT ? PoseFrame.RIGHT_ARM : PoseFrame.LEFT_ARM;
 
-        boolean ours = m.slashKind >= MotionState.SLASH_H && m.slashKind <= MotionState.SLASH_BACK;
+        boolean ours = MotionState.isWeapon(m.slashKind);
         float t = m.slashProgress();
         float from = SelfTest.enabled() ? 0.05f : 0.34f, to = SelfTest.enabled() ? 1.0f : 0.74f;
         boolean ourStrike = ours && t >= from && t <= to && rig.foreign[armPart] < 0.5f;

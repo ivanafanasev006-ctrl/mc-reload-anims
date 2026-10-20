@@ -14,6 +14,7 @@ public final class Modules {
             new RideModule(),
             new FlightModule(),
             new ReactionModule(),
+            new SleepModule(),
             new SpellcastModule()
     );
 

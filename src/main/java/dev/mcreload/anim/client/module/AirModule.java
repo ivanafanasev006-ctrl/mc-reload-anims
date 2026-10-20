@@ -114,15 +114,16 @@ final class AirModule implements AnimModule {
     private static void skydive(MotionState m, PoseFrame f, Signs s, float w, float arms) {
         float t = m.time;
         float flutter = Mth.sin(t * 13f + m.seed), flutter2 = Mth.sin(t * 11f + m.seed + 2f);
-        // Belly to the ground, arms and legs spread.
+        // Skydiver's arch: belly to the ground, arms spread wide and up, knees bent, shins raised.
         f.body().rx -= 1.15f * w;
         f.head().rx -= 1.0f * w;
+        Rigging.leanTorso(f, s, -0.25f * w);
         float aw = w * arms;
-        arm(f.rightArm(), s, -0.55f + 0.06f * flutter, 1.25f + 0.06f * flutter2, 0.55f, aw);
-        arm(f.leftArm(), s, -0.55f + 0.06f * flutter2, -1.25f - 0.06f * flutter, 0.55f, aw);
-        leg(f.rightLeg(), s, 0.35f + 0.05f * flutter2, 0.70f, w);
-        leg(f.leftLeg(), s, 0.35f + 0.05f * flutter, 0.70f, w);
-        Rigging.legsOut(f, 0.22f * w);
+        arm(f.rightArm(), s, -0.45f + 0.06f * flutter, 1.75f + 0.06f * flutter2, 0.30f, aw);
+        arm(f.leftArm(), s, -0.45f + 0.06f * flutter2, -1.75f - 0.06f * flutter, 0.30f, aw);
+        leg(f.rightLeg(), s, 0.15f + 0.05f * flutter2, 1.25f, w);
+        leg(f.leftLeg(), s, 0.15f + 0.05f * flutter, 1.25f, w);
+        Rigging.legsOut(f, 0.24f * w);
     }
 
     private static void leg(PartPose leg, Signs s, float x, float knee, float w) {

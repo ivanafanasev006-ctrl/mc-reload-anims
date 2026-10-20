@@ -25,18 +25,27 @@ final class FlightModule implements AnimModule {
 
         float glide = m.elytraW.v;
         if (glide > 0.001f) {
+            // Skydiver's arch (belly to the ground): arms spread wide and up, chest lifted, knees
+            // bent with the shins raised. Limbs tremble in the airflow and bank into turns.
             float speed = Math.min(1f, (float) rig.player.getDeltaMovement().length() / 1.5f);
-            float wave = Mth.sin(t * 6f + m.seed), wave2 = Mth.sin(t * 6f + m.seed - 0.9f);
-            float tremble = Mth.sin(t * 23f) * 0.03f * speed;
-            Rigging.armsOut(f, (0.10f + 0.05f * wave + tremble) * glide);
-            f.rightArm().rx += (0.10f + 0.05f * wave2) * glide;
-            f.leftArm().rx += (0.10f - 0.05f * wave2) * glide;
-            Rigging.elbows(f, s, (0.20f + 0.10f * speed) * glide);
-            // Legs trail; the wave runs down the leg (hip first, knee a moment later).
-            f.rightLeg().rx += 0.10f * wave * glide;
-            f.leftLeg().rx -= 0.10f * wave * glide;
-            f.rightLeg().bend += s.knee() * (0.15f + 0.20f * Math.max(0f, wave2)) * glide;
-            f.leftLeg().bend += s.knee() * (0.15f + 0.20f * Math.max(0f, -wave2)) * glide;
+            float bank = Mth.clamp(m.turn.v / 10f, -1f, 1f);
+            float flutter = Mth.sin(t * 19f + m.seed) * 0.05f * speed, flutter2 = Mth.sin(t * 23f + m.seed + 1.3f) * 0.05f * speed;
+            float wave = Mth.sin(t * 3.2f + m.seed);
+            float aw = glide * m.armsFree.v;
+            f.rightArm().targetX(-0.35f + flutter, aw);
+            f.leftArm().targetX(-0.35f + flutter2, aw);
+            f.rightArm().targetY(0f, aw);
+            f.leftArm().targetY(0f, aw);
+            f.rightArm().targetZ(1.75f + 0.20f * bank + 0.06f * wave, aw);
+            f.leftArm().targetZ(-1.75f + 0.20f * bank + 0.06f * wave, aw);
+            Rigging.elbows(f, s, 0.30f * aw);
+            f.rightLeg().targetX(0.10f + 0.06f * wave, glide);
+            f.leftLeg().targetX(0.10f - 0.06f * wave, glide);
+            f.rightLeg().targetZ(0.24f, glide);
+            f.leftLeg().targetZ(-0.24f, glide);
+            f.rightLeg().bend += s.knee() * (1.25f + 0.10f * Mth.sin(t * 2.7f + m.seed)) * glide;
+            f.leftLeg().bend += s.knee() * (1.25f + 0.10f * Mth.sin(t * 2.7f + m.seed + 1.5f)) * glide;
+            Rigging.leanTorso(f, s, -0.25f * glide);
         }
 
         float fly = m.flyW.v;

@@ -71,6 +71,33 @@ public final class MotionState {
     public final Smooth castW = new Smooth(6f);
     public final Smooth rideW = new Smooth(6f), flyW = new Smooth(5f), elytraW = new Smooth(6f);
     public final Smooth guardW = new Smooth(6f);
+    public final Smooth sleepW = new Smooth(4f);
+    /** Holding a melee weapon and ready to fight (standing / walking, recently attacked). */
+    public final Smooth readyW = new Smooth(4f);
+    /** Weapon in the main hand and nothing in the other: two-handed (samurai) grip. */
+    public final Smooth twoHandW = new Smooth(5f);
+    public final Smooth crossCarryW = new Smooth(6f), crossAimW = new Smooth(8f);
+
+    // ---- one-shot reactions
+    public final Spring brake = new Spring(40f, 8.5f);
+    public final Spring shieldHit = new Spring(160f, 14f);
+    public final Spring hitFront = new Spring(120f, 12f);
+    public final Spring hitBack = new Spring(120f, 12f);
+    public static final int LAND_NONE = 0, LAND_ROLL = 1, LAND_SWORD = 2;
+    public int landKind = LAND_NONE;
+    public float landStart = -100f;
+    public float explodeStart = -100f, explodeStrength;
+    public float totemStart = -100f;
+    private int hurtPending;
+    private float prevTickSpeed;
+
+    // ---- archery / throwing
+    /** Alternates every bow draw: 0 = classic vertical bow, 1 = horizontal bow drawn from above. */
+    public int bowStyle;
+    private boolean wasDrawingBow;
+    /** Alternates every throw: +1 main arm, -1 off arm. */
+    public float throwSide = -1f;
+    private float lastThrowTime = -100f;
 
     public final Spring land = new Spring(95f, 13f);
     public final Spring hurt = new Spring(140f, 13f);
@@ -91,8 +118,10 @@ public final class MotionState {
     public final Smooth toolSwingW = new Smooth(14f);
 
     // ---- melee / tools ----
-    public static final int SLASH_H = 0, SLASH_V = 1, SLASH_BACK = 2, PUNCH = 3, TOOL = 4,
-            PICK = 5, SHOVEL = 6, HOE = 7, CHOP = 8;
+    public static final int SLASH_H = 0, SLASH_V = 1, SLASH_BACK = 2, SPIN = 3, PUNCH = 4, TOOL = 5,
+            PICK = 6, SHOVEL = 7, HOE = 8, CHOP = 9, AXE_OVER = 10, AXE_SWEEP = 11, THROW = 12, FIST_BLOCK = 13;
+    /** Sword combo order: forehand, backhand, overhead, spinning finisher. */
+    private static final int[] SWORD_COMBO = {SLASH_H, SLASH_BACK, SLASH_V, SPIN};
     public int slashKind = -1;
     public float slashStart = -100f;
     public float slashDuration = 0.6f;
@@ -137,6 +166,13 @@ public final class MotionState {
         boolean ground = player.onGround();
         boolean special = player.isInWater() || player.isFallFlying() || player.onClimbable()
                 || player.isPassenger() || player.getAbilities().flying;
+        float tickSpeed = (float) Math.sqrt(vx * vx + vz * vz);
+        if (ground && wasOnGround && !special && prevTickSpeed > 0.17f && tickSpeed < prevTickSpeed * 0.6f && Cfg.locomotion) {
+            // Sprint released: skid to a stop.
+            brake.impulse(Mth.clamp((prevTickSpeed - tickSpeed) / 0.18f, 0.4f, 1.1f));
+        }
+        prevTickSpeed = tickSpeed;
+
         if (!ground) {
             if (wasOnGround && vy > 0.05 && !special) {
                 // Take-off: switch the leading leg every jump.
@@ -149,15 +185,40 @@ public final class MotionState {
         } else {
             if (!wasOnGround && airTicks > 2 && !special && Cfg.landing) {
                 float impact = -minAirVy;
-                if (impact > 0.18f) land.impulse(Mth.clamp((impact - 0.12f) / 0.85f, 0.15f, 1.25f));
+                ItemStack main = player.getMainHandItem();
+                boolean swordOnly = Weapons.isMeleeWeapon(main) && player.getOffhandItem().isEmpty();
+                if (impact > 0.62f && swordOnly) {
+                    // High drop with only a blade in hand: plant it in the ground.
+                    landKind = LAND_SWORD;
+                    landStart = time;
+                    land.impulse(0.6f);
+                } else if (impact > 0.62f) {
+                    // High drop: break the fall with a forward roll.
+                    landKind = LAND_ROLL;
+                    landStart = time;
+                } else if (impact > 0.18f) {
+                    land.impulse(Mth.clamp((impact - 0.12f) / 0.85f, 0.15f, 1.25f));
+                }
             }
             airTicks = 0;
             minAirVy = 0f;
         }
         wasOnGround = ground;
 
-        if (player.hurtTime > lastHurtTime && Cfg.reactions) hurt.impulse(1f);
+        if (player.hurtTime > lastHurtTime && Cfg.reactions) hurtPending = 3;
         lastHurtTime = player.hurtTime;
+        if (hurtPending > 0) {
+            // Which way did the knockback push us? Pushed backwards = hit from the front.
+            hurtPending--;
+            double h = Math.sqrt(vx * vx + vz * vz);
+            float yawR = player.yBodyRot * Mth.DEG_TO_RAD;
+            double along = vx * -Mth.sin(yawR) + vz * Mth.cos(yawR);
+            if (h > 0.04 || hurtPending == 0) {
+                if (h > 0.04 && along > 0.0) hitBack.impulse(1f); else hitFront.impulse(1f);
+                hurt.impulse(0.4f);
+                hurtPending = 0;
+            }
+        }
 
         cast = Cfg.ironsSpells ? IronsSpellsCompat.query(player) : IronsSpellsCompat.CastInfo.NONE;
         if (wasCasting && !cast.casting()) release.impulse(1f);
@@ -257,17 +318,59 @@ public final class MotionState {
         lastSwingTime = swingTime;
         toolSwingW.to(slashKind == TOOL && slashProgress() < 1.1f ? 1f : 0f, dt);
 
-        boolean fists = player.getMainHandItem().isEmpty();
-        guardW.to(fists && time - lastPunchTime < 2.5f && !blocked ? 1f : 0f, dt);
+        ItemStack mainItem = player.getMainHandItem(), offItem = player.getOffhandItem();
+        boolean weapon = Weapons.isMeleeWeapon(mainItem);
+        boolean recentlyFought = time - slashStart < 3.0f;
+        readyW.to(weapon && ground && !blocked && !swimming && sprintW.v < 0.5f
+                && (moveF() < 0.7f || recentlyFought) && !player.isUsingItem() ? 1f : 0f, dt);
+        twoHandW.to(weapon && offItem.isEmpty() ? 1f : 0f, dt);
+        boolean crossInHand = mainItem.getItem() instanceof CrossbowItem || offItem.getItem() instanceof CrossbowItem;
+        boolean charged = CrossbowItem.isCharged(mainItem) || CrossbowItem.isCharged(offItem);
+        crossCarryW.to(crossInHand && !charged && !player.isUsingItem() && !blocked ? 1f : 0f, dt);
+        crossAimW.to(charged && !blocked ? 1f : 0f, dt);
+        sleepW.to(player.isSleeping() ? 1f : 0f, dt);
 
-        boolean vanillaArms = player.isUsingItem()
-                || CrossbowItem.isCharged(player.getMainHandItem()) || CrossbowItem.isCharged(player.getOffhandItem());
+        boolean drawing = use == UseAnim.BOW;
+        if (drawing && !wasDrawingBow) bowStyle ^= 1;
+        wasDrawingBow = drawing;
+
+        boolean fists = mainItem.isEmpty();
+        guardW.to(fists && time - lastPunchTime < 1.3f && !blocked ? 1f : 0f, dt);
+
+        // Eating and drinking are ours (food goes to the mouth); everything else in use is vanilla's.
+        boolean eating = use == UseAnim.EAT || use == UseAnim.DRINK;
+        boolean vanillaArms = (player.isUsingItem() && !eating) || charged;
         float free = vanillaArms ? 0f : 1f;
         armsFree.to(free * (1f - 0.9f * castW.v), dt);
 
         land.step(dt);
         hurt.step(dt);
         release.step(dt);
+        brake.step(dt);
+        shieldHit.step(dt);
+        hitFront.step(dt);
+        hitBack.step(dt);
+    }
+
+    // ---- events from sounds (see SoundCues)
+
+    public void onShieldBlock() {
+        shieldHit.impulse(1f);
+    }
+
+    public void onExplosion(double distance) {
+        if (distance > 10.0) return;
+        explodeStart = time;
+        explodeStrength = (float) Mth.clamp(1.0 - distance / 10.0, 0.35, 1.0);
+    }
+
+    public void onTotem() {
+        totemStart = time;
+    }
+
+    /** Seconds since an event started (large if it never did). */
+    public float since(float start) {
+        return time - start;
     }
 
     private void startSwing() {
@@ -277,40 +380,56 @@ public final class MotionState {
         float progress = slashProgress();
 
         // Mining re-triggers the vanilla swing every few ticks: let each strike finish, then loop.
-        if (isTool(kind) && kind == slashKind && progress < 0.92f) return;
+        if (isLooping(kind) && kind == slashKind && progress < 0.92f) return;
         // Weapons: allow chaining once the hit has landed.
-        if (isSlash(kind) && isSlash(slashKind) && progress < 0.55f) return;
+        if (isWeapon(kind) && isWeapon(slashKind) && progress < 0.55f) return;
 
-        slashChained = progress < 1.3f && ((isSlash(kind) && isSlash(slashKind)) || (isTool(kind) && kind == slashKind));
+        slashChained = progress < 1.3f && ((isWeapon(kind) && isWeapon(slashKind)) || (isLooping(kind) && kind == slashKind));
         slashSide = arm == HumanoidArm.RIGHT ? 1f : -1f;
+        float cooldown = player.getCurrentItemAttackStrengthDelay() / 20f;
         if (isSlash(kind)) {
             boolean chained = isSlash(slashKind) && time - slashStart < slashDuration + 0.6f;
-            combo = chained ? (combo + 1) % 3 : 0;
-            slashKind = combo;
-            // Slower weapons swing slower: match the attack cooldown (sword ~0.6 s, axe ~0.95 s).
-            float cooldown = player.getCurrentItemAttackStrengthDelay() / 20f;
-            slashDuration = Mth.clamp(cooldown * 0.95f, 0.5f, 1.0f);
+            combo = chained ? (combo + 1) % SWORD_COMBO.length : 0;
+            slashKind = SWORD_COMBO[combo];
+            // Slower weapons swing slower: match the attack cooldown (sword ~0.6 s).
+            slashDuration = Mth.clamp(cooldown * 0.95f, 0.5f, 1.0f) * (slashKind == SPIN ? 1.25f : 1f);
+        } else if (isAxe(kind)) {
+            boolean chained = isAxe(slashKind) && time - slashStart < slashDuration + 0.8f;
+            slashKind = chained && slashKind == AXE_OVER ? AXE_SWEEP : AXE_OVER;
+            slashDuration = Mth.clamp(cooldown * 0.95f, 0.75f, 1.1f);
         } else if (kind == PUNCH) {
             punchSide = time - lastPunchTime < 1.2f ? -punchSide : 1f;
             lastPunchTime = time;
             slashKind = PUNCH;
-            slashDuration = 0.36f;
+            slashDuration = 0.32f;
+        } else if (kind == THROW) {
+            throwSide = time - lastThrowTime < 2.0f ? -throwSide : 1f;
+            lastThrowTime = time;
+            slashKind = THROW;
+            slashDuration = 0.40f;
         } else {
             slashKind = kind;
-            slashDuration = isTool(kind) ? 0.40f : 0.30f;
+            slashDuration = kind == FIST_BLOCK ? 0.30f : (isLooping(kind) ? 0.40f : 0.30f);
         }
         slashStart = time;
     }
 
     private int classify(ItemStack held) {
-        if (held.isEmpty()) return PUNCH;
+        if (isLocalDropping()) return THROW;
+        if (held.isEmpty()) return targetingBlock() ? FIST_BLOCK : PUNCH;
         Item item = held.getItem();
         if (item instanceof PickaxeItem) return PICK;
         if (item instanceof ShovelItem) return SHOVEL;
         if (item instanceof HoeItem) return HOE;
-        if (item instanceof AxeItem) return targetingBlock() ? CHOP : SLASH_H;
+        if (item instanceof AxeItem) return targetingBlock() ? CHOP : AXE_OVER;
         if (Weapons.isMeleeWeapon(held)) return SLASH_H;
         return TOOL;
+    }
+
+    /** Vanilla swings the arm when you drop an item (Q): detect it for your own player. */
+    private boolean isLocalDropping() {
+        Minecraft mc = Minecraft.getInstance();
+        return player == mc.player && mc.options.keyDrop.isDown();
     }
 
     /** For you: are you hitting a block (chopping a tree) rather than a mob? Others: assume a mob. */
@@ -319,12 +438,27 @@ public final class MotionState {
         return player == mc.player && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK;
     }
 
+    /** Sword combo strikes. */
     public static boolean isSlash(int kind) {
-        return kind >= SLASH_H && kind <= SLASH_BACK;
+        return kind >= SLASH_H && kind <= SPIN;
     }
 
+    public static boolean isAxe(int kind) {
+        return kind == AXE_OVER || kind == AXE_SWEEP;
+    }
+
+    /** Any keyframed weapon strike (sword or axe): these leave blade trails. */
+    public static boolean isWeapon(int kind) {
+        return isSlash(kind) || isAxe(kind);
+    }
+
+    /** Tool strikes that loop while you keep mining. */
     public static boolean isTool(int kind) {
         return kind >= PICK && kind <= CHOP;
+    }
+
+    public static boolean isLooping(int kind) {
+        return isTool(kind) || kind == FIST_BLOCK;
     }
 
     /** 0..1 over the swing, keeps growing afterwards (used to blend out). */
