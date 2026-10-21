@@ -198,6 +198,8 @@ public final class SelfTest {
     private interface Driver { void tick(Minecraft mc, int t); }
 
     private static final ScriptedInput INPUT = new ScriptedInput();
+    /** Full-screen world view (no side/front/top panels) for the current scenario. */
+    static volatile boolean noPanels;
     private static volatile boolean worldReady;
     private static int framesInWindow;
     private static int currentWindow = -1;
@@ -328,16 +330,23 @@ public final class SelfTest {
                     }, new Window(16, 72, 4, 0.25f)));
         }
         // Riding a minecart down the line, then sitting about once it has stopped.
-        SCENARIOS.add(new Scenario("47_minecart", 260, SelfTest::boardMinecart,
+        SCENARIOS.add(new Scenario("47_minecart", 330, SelfTest::boardMinecart,
                 (mc, t) -> move(mc, false, false, false, false),
-                new Window(8, 60, 4, 0.2f), new Window(150, 260, 6, 0.6f)));
+                new Window(8, 60, 4, 0.2f), new Window(215, 330, 6, 0.5f)));
         SCENARIOS.add(new Scenario("48_boat_idle", 200, SelfTest::boardBoat,
                 (mc, t) -> move(mc, false, false, false, false), new Window(60, 200, 6, 0.6f)));
-        // Mobs: walking over, then standing about.
-        SCENARIOS.add(new Scenario("50_mobs_hostile", 120, sp -> spawnMobs(sp, true),
-                (mc, t) -> move(mc, false, false, false, false), new Window(20, 120, 6, 0.4f)));
-        SCENARIOS.add(new Scenario("51_mobs_animals", 120, sp -> spawnMobs(sp, false),
-                (mc, t) -> move(mc, false, false, false, false), new Window(20, 120, 6, 0.4f)));
+        // Mobs, seen through the player's eyes: walking up, then standing about.
+        for (int g = 0; g < 3; g++) {
+            final int group = g;
+            SCENARIOS.add(new Scenario("5" + g + "_mobs", 130, sp -> spawnMobs(sp, group),
+                    (mc, t) -> {
+                        move(mc, false, false, false, false);
+                        mc.options.setCameraType(CameraType.FIRST_PERSON);
+                        noPanels = true;
+                        mc.player.setXRot(12f);
+                        walkMobs(mc, t);
+                    }, new Window(16, 60, 3, 0.3f), new Window(70, 130, 4, 0.5f)));
+        }
         for (int i : new int[]{MotionState_EMOTE_WAVE, MotionState_EMOTE_FACEPALM, 0, 15, 16, 17, 18, 19}) {
             final int emote = i;
             SCENARIOS.add(new Scenario("40_emote_" + dev.mcreload.anim.client.rig.MotionState.EMOTE_KEYS[i], 60,
@@ -433,45 +442,65 @@ public final class SelfTest {
         cart.setDeltaMovement(0.6, 0, 0);
     }
 
-    /** A row of mobs behind the player (so the front camera sees them), told to walk past. */
-    private static void spawnMobs(ServerPlayer sp, boolean hostile) {
+    private static final List<net.minecraft.world.entity.Mob> MOBS = new ArrayList<>();
+
+    /** A row of mobs in front of the player, frozen (no AI) so the test can walk them itself. */
+    private static void spawnMobs(ServerPlayer sp, int group) {
         sp.stopRiding();
-        double px = 40.5, pz = 0.5;
-        place(sp, 40, Y, 0, -90, ItemStack.EMPTY);
+        place(sp, 40, Y, 0, 90, ItemStack.EMPTY);
         ServerLevel lvl = sp.serverLevel();
-        lvl.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, sp.getBoundingBox().inflate(40)).forEach(e -> e.discard());
-        net.minecraft.world.entity.EntityType<?>[] types = hostile
-                ? new net.minecraft.world.entity.EntityType<?>[]{net.minecraft.world.entity.EntityType.ZOMBIE,
-                net.minecraft.world.entity.EntityType.SKELETON, net.minecraft.world.entity.EntityType.VILLAGER,
-                net.minecraft.world.entity.EntityType.IRON_GOLEM, net.minecraft.world.entity.EntityType.CREEPER,
-                net.minecraft.world.entity.EntityType.SPIDER, net.minecraft.world.entity.EntityType.ZOMBIE,
-                net.minecraft.world.entity.EntityType.WANDERING_TRADER}
-                : new net.minecraft.world.entity.EntityType<?>[]{net.minecraft.world.entity.EntityType.WOLF,
-                net.minecraft.world.entity.EntityType.CAT, net.minecraft.world.entity.EntityType.CHICKEN,
-                net.minecraft.world.entity.EntityType.COW, net.minecraft.world.entity.EntityType.PIG,
-                net.minecraft.world.entity.EntityType.SHEEP, net.minecraft.world.entity.EntityType.HORSE,
-                net.minecraft.world.entity.EntityType.LLAMA};
+        MOBS.forEach(net.minecraft.world.entity.Entity::discard);
+        MOBS.clear();
+        net.minecraft.world.entity.EntityType<?>[][] groups = {
+                {net.minecraft.world.entity.EntityType.ZOMBIE, net.minecraft.world.entity.EntityType.SKELETON,
+                        net.minecraft.world.entity.EntityType.ZOMBIE, net.minecraft.world.entity.EntityType.VILLAGER,
+                        net.minecraft.world.entity.EntityType.ZOMBIFIED_PIGLIN, net.minecraft.world.entity.EntityType.WANDERING_TRADER},
+                {net.minecraft.world.entity.EntityType.IRON_GOLEM, net.minecraft.world.entity.EntityType.CREEPER,
+                        net.minecraft.world.entity.EntityType.SPIDER, net.minecraft.world.entity.EntityType.WOLF,
+                        net.minecraft.world.entity.EntityType.CAT},
+                {net.minecraft.world.entity.EntityType.CHICKEN, net.minecraft.world.entity.EntityType.COW,
+                        net.minecraft.world.entity.EntityType.PIG, net.minecraft.world.entity.EntityType.SHEEP,
+                        net.minecraft.world.entity.EntityType.HORSE, net.minecraft.world.entity.EntityType.LLAMA}};
+        net.minecraft.world.entity.EntityType<?>[] types = groups[group];
+        float spacing = group == 1 ? 2.0f : 1.6f;
         for (int i = 0; i < types.length; i++) {
             net.minecraft.world.entity.Entity ent = types[i].create(lvl);
             if (!(ent instanceof net.minecraft.world.entity.Mob mob)) continue;
-            double x = px - 5.0 - (i % 2) * 2.5, z = pz - 5.6 + i * 1.6;
-            mob.moveTo(x, Y, z, 0f, 0f);
+            double z = 0.5 - spacing * (types.length - 1) / 2.0 + i * spacing;
+            mob.moveTo(32.5, Y, z, -90f, 0f);
+            mob.setYHeadRot(-90f);
+            mob.yBodyRot = -90f;
+            mob.setNoAi(true);
             mob.setPersistenceRequired();
             mob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
             if (mob instanceof net.minecraft.world.entity.monster.AbstractSkeleton)
                 mob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
-            if (i == 6 && mob instanceof net.minecraft.world.entity.monster.Zombie z2) z2.setBaby(true);
+            if (mob instanceof net.minecraft.world.entity.monster.ZombifiedPiglin)
+                mob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.GOLDEN_SWORD));
+            if (group == 0 && i == 2 && mob instanceof net.minecraft.world.entity.monster.Zombie z2) z2.setBaby(true);
             if (mob instanceof net.minecraft.world.entity.TamableAnimal ta) ta.tame(sp);
             lvl.addFreshEntity(mob);
-            // Half of them walk across, the others stay put.
-            if (i % 2 == 0) mob.getNavigation().moveTo(x - 6.0, Y, z, 1.0);
+            MOBS.add(mob);
         }
+    }
+
+    /** Walk the mobs toward the player for a couple of seconds (server side), then let them stand. */
+    private static void walkMobs(Minecraft mc, int t) {
+        IntegratedServer srv = mc.getSingleplayerServer();
+        if (srv == null || t < 12 || t > 55) return;
+        srv.execute(() -> {
+            for (net.minecraft.world.entity.Mob mob : MOBS) {
+                mob.moveTo(mob.getX() + 0.07, mob.getY(), mob.getZ(), -90f, 0f);
+                mob.setYHeadRot(-90f);
+                mob.yBodyRot = -90f;
+            }
+        });
     }
 
     private static void boardBoat(ServerPlayer sp) {
         sp.stopRiding();
         place(sp, POOL_X + 3, Y - 1, 0, -90, ItemStack.EMPTY);
-        net.minecraft.world.entity.vehicle.Boat boat = new net.minecraft.world.entity.vehicle.Boat(sp.serverLevel(), POOL_X + 3.5, Y - 1, 0.5);
+        net.minecraft.world.entity.vehicle.Boat boat = new net.minecraft.world.entity.vehicle.Boat(sp.serverLevel(), POOL_X + 3.5, Y - 0.3, 0.5);
         boat.setYRot(-90);
         sp.serverLevel().addFreshEntity(boat);
         sp.startRiding(boat, true);
@@ -520,6 +549,7 @@ public final class SelfTest {
         Scenario s = SCENARIOS.get(scenarioIndex);
         currentLabel = s.name();
         if (scenarioTick == 0) {
+            mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
             mc.options.keyUse.setDown(false);
             mc.options.keyDrop.setDown(false);
             framesInWindow = 0;
@@ -559,6 +589,7 @@ public final class SelfTest {
     }
 
     private static void place(ServerPlayer sp, double x, double y, double z, float yaw, ItemStack hand) {
+        noPanels = false;
         if (sp.isPassenger()) sp.stopRiding();
         if (sp.isSleeping()) sp.stopSleeping();
         if (sp.isFallFlying()) sp.stopFallFlying();

@@ -22,6 +22,12 @@ final class SelfTestOverlay {
         float pt = event.getPartialTick();
         int w = g.guiWidth(), h = g.guiHeight();
 
+        if (SelfTest.noPanels) {
+            g.drawString(mc.font, SelfTest.currentLabel, 6, 6, 0xFFFF55);
+            g.flush();
+            SelfTest.onFrameRendered(mc);
+            return;
+        }
         int panelW = w / 4;
         int top = 4, bottom = h - 4;
         String[] names = {"SIDE", "FRONT", "TOP"};
