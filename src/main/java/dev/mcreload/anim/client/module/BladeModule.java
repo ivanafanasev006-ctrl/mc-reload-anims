@@ -47,6 +47,11 @@ final class BladeModule implements AnimModule {
         strike(rig, m, f, s, gate, hd, main, off);
     }
 
+    private static float smoother(float x) {
+        x = AngleMath.clamp(x, 0f, 1f);
+        return x * x * x * (x * (x * 6f - 15f) + 10f);
+    }
+
     /** Arm rotation from Mo'Bends-style "out to the side by z, then swung round by y" (degrees). */
     private void arm(PartPose arm, float zDeg, float yDeg, float xDeg, float w) {
         Quaternionf q = new Quaternionf().rotationY(deg(yDeg)).mul(new Quaternionf().rotationZ(deg(zDeg)))
@@ -86,18 +91,19 @@ final class BladeModule implements AnimModule {
         if (!MotionState.isWeapon(kind)) return;
         float t = m.slashProgress();
         if (t >= 1.3f) return;
-        float in = m.slashChained ? 1f : AngleMath.ease(t / 0.06f);
-        float w = in * (1f - AngleMath.ease((t - 0.8f) / 0.4f)) * gate;
+        float in = m.slashChained ? 1f : AngleMath.ease(t / 0.10f);
+        float w = in * (1f - AngleMath.ease((t - 0.8f) / 0.45f)) * gate;
         int armIndex = m.mainRight ? PoseFrame.RIGHT_ARM : PoseFrame.LEFT_ARM;
         w *= 1f - rig.foreign[armIndex];      // Better Combat animating the arm wins
         if (w <= 0.001f) return;
         float aw = w * m.armsFree.v;
 
-        // Mo'Bends timing: the cut snaps through in the first third, then holds and recovers.
-        float a = AngleMath.clamp(t / 0.6f, 0f, 1f);
-        float sw = AngleMath.clamp(a * 3f, 0f, 1f);
+        // A short wind-up, then the cut accelerates through and decelerates into the
+        // follow-through (smootherstep: no sudden starts or stops), then holds and recovers.
+        float a = AngleMath.clamp(t / 0.7f, 0f, 1f);
+        float sw = smoother((a - 0.06f) / 0.42f);
         boolean axe = MotionState.isAxe(kind);
-        if (axe) sw = AngleMath.ease(AngleMath.clamp((a - 0.12f) * 2.4f, 0f, 1f));
+        if (axe) sw = smoother((a - 0.14f) / 0.46f);
         boolean still = m.moveF() < 0.3f && m.groundW.v > 0.5f;
 
         float twist, tilt, lean;
@@ -107,7 +113,9 @@ final class BladeModule implements AnimModule {
                 twist = -70f * sw;
                 arm(main, hd * 90f, hd * (60f - 180f * sw + twist), 0f, aw);
                 main.overrideBend(s.elbow() * deg(10f), aw);
-                tilt = 50f;
+                // The blade lines up with the arm as it sweeps across, so it never cuts back
+                // through the chest at the end of the swing.
+                tilt = 40f + 45f * sw;
                 lean = 20f - 20f * sw;
             }
             case MotionState.SLASH_BACK -> {

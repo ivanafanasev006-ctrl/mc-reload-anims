@@ -40,6 +40,12 @@ final class LocomotionModule implements AnimModule {
 
     @Override
     public void apply(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float pt) {
+        // Vanilla's crouch pose (torso tipped, parts shifted down) switches on and off instantly
+        // with isCrouching(). Undo it with exactly that switch, never with the smoothed sneak
+        // weight: otherwise, tapping shift, torso, head and legs come apart for a moment while
+        // the weight catches up. Our own sneak pose then blends in smoothly on top.
+        if (rig.player.isCrouching()) cancelVanillaCrouch(f);
+
         float ground = m.gate.v * (1f - m.airW.v) * (1f - m.swimW.v) * (1f - m.climbW.v) * (1f - m.waterW.v);
         if (ground <= 0.001f) return;
 
@@ -185,16 +191,6 @@ final class LocomotionModule implements AnimModule {
      */
     private static void sneak(PoseFrame f, Signs s, float w, float arms, float ls, float amt0, float move, MotionState m) {
         float c = Mth.cos(ls), sn = Mth.sin(ls);
-        // Undo vanilla's crouch (whole torso tipped 0.5 rad, parts shifted down): we bend at the waist.
-        f.torso().overrideX(0f, w);
-        f.torso().py -= 3.2f * w;
-        f.head().py -= 4.2f * w;
-        f.rightArm().py -= 3.2f * w;
-        f.leftArm().py -= 3.2f * w;
-        f.rightLeg().pz -= 4.0f * w;
-        f.leftLeg().pz -= 4.0f * w;
-        f.rightLeg().py -= 0.2f * w;
-        f.leftLeg().py -= 0.2f * w;
 
         float legSwing = 1.54f * amt0;
         legX(f.rightLeg(), deg(-5f) + c * legSwing, w);
@@ -221,36 +217,50 @@ final class LocomotionModule implements AnimModule {
     }
 
     /**
-     * Stopping out of a sprint like a skateboarder: the body whips round side-on, the feet slide
-     * apart wide with the knees bent, the hips drop and lean back against the slide, the arms are
-     * flung out for balance. About half a second.
+     * Stopping out of a sprint: the body's momentum carries the chest on forward for a moment,
+     * then the front foot braces and the body sits back a little to keep its balance, arms coming
+     * forward. Short and understated.
      */
     private static void brake(PoseFrame f, Signs s, MotionState m, float ground, float arms) {
-        float t = m.since(m.brakeStart) / 0.55f;
+        float T = m.since(m.brakeStart);
+        float t = T / 0.5f;
         if (t < 0f || t >= 1f) return;
-        float b = AngleMath.ease(t / 0.12f) * (1f - AngleMath.ease((t - 0.55f) / 0.45f)) * ground;
+        float b = AngleMath.ease(t / 0.08f) * (1f - AngleMath.ease((t - 0.5f) / 0.5f)) * ground;
         if (b <= 0.001f) return;
+        // Momentum: the chest keeps going for ~0.12 s, then the weight goes back onto the heels.
+        float carry = Mth.sin(Mth.PI * AngleMath.clamp(T / 0.24f, 0f, 1f));
+        float sit = AngleMath.ease((T - 0.08f) / 0.15f);
+        Rigging.leanTorso(f, s, (deg(12f) * carry - deg(7f) * sit) * b);
+        f.body().rx += deg(6f) * sit * b;
+        f.head().rx -= deg(5f) * sit * b;
+        // Front foot planted ahead, both knees giving a little.
         float side = m.mainRight ? 1f : -1f;
-        // Side-on to the direction of travel; the head keeps looking ahead.
-        f.body().ry += side * deg(70f) * b;
-        f.head().ry -= side * deg(70f) * b;
-        // Wide, low stance across the slide.
-        f.rightLeg().override(deg(-12f), 0f, deg(28f), b);
-        f.leftLeg().override(deg(-12f), 0f, deg(-28f), b);
-        f.rightLeg().overrideBend(s.knee() * deg(50f), b);
-        f.leftLeg().overrideBend(s.knee() * deg(50f), b);
-        f.body().py -= px(3.0f) * b;
-        // Leaning back against the slide (away from the leading side), chest up.
-        f.body().rz += side * deg(14f) * b;
-        Rigging.leanTorso(f, s, deg(10f) * b);
-        // Arms out wide, the leading one a little higher.
+        PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
+        PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();
+        lead.override(deg(-22f) - deg(6f) * sit, 0f, deg(-4f) * side, b);
+        rear.override(deg(8f), 0f, deg(4f) * side, b);
+        lead.overrideBend(s.knee() * deg(14f), b);
+        rear.overrideBend(s.knee() * deg(26f), b);
+        f.body().py -= px(1.2f) * sit * b;
+        // Arms swing forward with the momentum and stay a little out for balance.
         float aw = b * arms;
-        f.rightArm().override(deg(-25f), 0f, deg(side > 0 ? 95f : 70f), aw);
-        f.leftArm().override(deg(-25f), 0f, deg(side > 0 ? -70f : -95f), aw);
-        f.rightArm().overrideBend(s.elbow() * deg(20f), aw);
-        f.leftArm().overrideBend(s.elbow() * deg(20f), aw);
-        // A little wobble as the shoes grip.
-        f.body().rx += deg(4f) * Mth.sin(t * 40f) * (1f - t) * b;
+        f.rightArm().override(deg(-30f) - deg(10f) * carry, 0f, deg(14f), aw);
+        f.leftArm().override(deg(-30f) - deg(10f) * carry, 0f, deg(-14f), aw);
+        f.rightArm().overrideBend(s.elbow() * deg(25f), aw);
+        f.leftArm().overrideBend(s.elbow() * deg(25f), aw);
+    }
+
+    /** Exactly undo HumanoidModel's crouch offsets (we bend at the waist instead). */
+    private static void cancelVanillaCrouch(PoseFrame f) {
+        f.torso().overrideX(0f, 1f);
+        f.torso().py -= 3.2f;
+        f.head().py -= 4.2f;
+        f.rightArm().py -= 3.2f;
+        f.leftArm().py -= 3.2f;
+        f.rightLeg().pz -= 4.0f;
+        f.leftLeg().pz -= 4.0f;
+        f.rightLeg().py -= 0.2f;
+        f.leftLeg().py -= 0.2f;
     }
 
     private static void legX(PartPose leg, float x, float w) {

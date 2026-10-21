@@ -36,6 +36,7 @@ final class CombatModule implements AnimModule {
         if (gate <= 0.001f) return;
         swing(rig, m, f, s, gate, pt);
         useItems(rig, m, f, s, gate);
+        fishing(rig, m, f, s, gate);
     }
 
     // ------------------------------------------------------------------ fighting stance
@@ -179,7 +180,12 @@ final class CombatModule implements AnimModule {
             // them or the chest: the bow arm stays straight, the drawing elbow folds back toward
             // the face as the string comes back. The feet take an archer's stance.
             useArm.overrideBend(0f, bow);
-            otherArm.overrideBend(s.elbow() * (0.20f + 0.75f * m.usePull), bow);
+            // The drawing hand stays close behind the bow hand: the arm swings in a little
+            // further than vanilla and the elbow folds sideways (bend axis turned a quarter
+            // turn), so the string comes straight back a little instead of the forearm tipping up.
+            otherArm.ry += side * 0.30f * bow;
+            otherArm.overrideBendAxis(side * Mth.HALF_PI, bow);
+            otherArm.overrideBend(s.elbow() * (0.12f + 0.30f * m.usePull), bow);
             f.torso().overrideBend(0f, bow);
             if (m.bowStyle == 1) {
                 // Horizontal bow: the bow arm turned flat (about its own axis, the aim is kept).
@@ -195,27 +201,34 @@ final class CombatModule implements AnimModule {
             Rigging.legsOut(f, 0.08f * bow * still);
         }
 
-        // Crossbow: carried across the chest with both hands while unloaded.
+        // Crossbow: both hands on it, held at the body like a shotgun: the trigger hand at the
+        // hip, the other hand forward under the front, the shoulders turned a little behind it
+        // (arm angles solved for the crossbow's grip and front). Loaded, it comes up a little,
+        // level and ready, and the feet set when standing.
         float carry = m.crossCarryW.v * gate * m.armsFree.v;
-        if (carry > 0.001f) {
-            float cs = crossbowSide(rig);
-            PartPose holdArm = cs > 0 ? f.rightArm() : f.leftArm();
-            PartPose support = cs > 0 ? f.leftArm() : f.rightArm();
-            holdArm.override(-0.75f, -cs * 0.55f, 0f, carry);
-            holdArm.overrideBend(s.elbow() * 1.15f, carry);
-            support.override(-1.05f, cs * 0.65f, 0f, carry);
-            support.overrideBend(s.elbow() * 1.45f, carry);
-        }
-        // Loaded: shouldered like a rifle, body bladed, feet planted wide.
         float aimC = m.crossAimW.v * gate;
-        if (aimC > 0.001f) {
+        float hold = Math.max(carry, aimC);
+        if (hold > 0.001f) {
             float cs = crossbowSide(rig);
-            sideOn(f, cs * 0.45f * aimC);
-            Rigging.legsOut(f, 0.18f * aimC);
+            PartPose grip = cs > 0 ? f.rightArm() : f.leftArm();
+            PartPose fore = cs > 0 ? f.leftArm() : f.rightArm();
+            float up = aimC / hold;
+            float breathe = 0.03f * Mth.sin(m.time * 1.7f + m.seed);
+            grip.override(Mth.lerp(up, -0.78f, -0.94f) + breathe, cs * Mth.lerp(up, -0.63f, -0.56f),
+                    cs * Mth.lerp(up, 0.43f, 0.33f), hold);
+            grip.overrideBend(s.elbow() * Mth.lerp(up, 0.84f, 0.77f), hold);
+            fore.override(Mth.lerp(up, -0.92f, -1.40f) + breathe, cs * Mth.lerp(up, 0.35f, 0.61f),
+                    cs * Mth.lerp(up, 0.46f, -0.24f), hold);
+            fore.overrideBend(s.elbow() * 0.10f, hold);
+            Rigging.twistShoulders(f, cs * 0.40f * hold);
+            float still = (1f - m.moveF()) * aimC;
             PartPose lead = cs > 0 ? f.leftLeg() : f.rightLeg();
-            lead.rx -= 0.25f * aimC;
-            lead.bend += s.knee() * 0.30f * aimC;
-            f.head().rz += cs * 0.12f * aimC;              // cheek down on the stock
+            PartPose rear = cs > 0 ? f.rightLeg() : f.leftLeg();
+            lead.overrideX(-0.25f, still);
+            rear.overrideX(0.18f, still);
+            lead.bend += s.knee() * 0.25f * still;
+            rear.bend += s.knee() * 0.20f * still;
+            Rigging.legsOut(f, 0.08f * still);
         }
         // Loading: hold it down and pull the string back by hand.
         float xbow = m.crossbowW.v * gate;
@@ -261,27 +274,94 @@ final class CombatModule implements AnimModule {
             f.body().py -= 0.03f * hit;
         }
 
-        // Food and drink: brought right up to the mouth by the hand holding it.
+        // Food and drink: the FOOD goes to the mouth, not the hand. A held item sits about five
+        // pixels in front of the fist, so the fist stops below the chin with the forearm up and
+        // the food right at the lips (arm solved with the jointed arm for the food's centre, as
+        // a function of where the head is pointing).
         float eat = m.eatW.v * gate;
         float drink = m.drinkW.v * gate;
         float mouth = Math.max(eat, drink);
         if (mouth > 0.001f) {
-            // Solved for the hand to reach the mouth with the jointed arm (no over-bending).
-            float bob = eat * 0.08f * Mth.sin(m.time * 14f);
-            useArm.override(-1.25f + pitch * 0.30f + bob, -side * 0.75f, 0f, mouth);
-            useArm.overrideBend(s.elbow() * 1.20f, mouth);
+            float headPitch = AngleMath.clamp(pitch + (0.12f * eat - 0.35f * drink) / mouth, -0.9f, 1.0f);
+            float bob = eat * 0.05f * Mth.sin(m.time * 14f);
+            useArm.override(-1.20f + 1.19f * headPitch + bob, -side * (0.76f + 0.27f * headPitch),
+                    side * Math.max(0f, 0.21f - 0.40f * headPitch), mouth);
+            useArm.overrideBend(s.elbow() * (0.60f + 0.29f * headPitch), mouth);
         }
         if (eat > 0.001f) f.head().rx += (0.12f + 0.07f * Mth.sin(m.time * 14f)) * eat;
         if (drink > 0.001f) {
             f.head().rx -= 0.35f * drink;
             Rigging.leanTorso(f, s, -0.05f * drink);
-            useArm.rx -= 0.35f * drink;
         }
         float horn = m.hornW.v * gate;
         if (horn > 0.001f) {
             f.head().rx -= 0.25f * horn;
             Rigging.leanTorso(f, s, -0.08f * horn);
         }
+    }
+
+    // ------------------------------------------------------------------ fishing
+
+    /**
+     * Fishing rod: a real cast (rod whipped back over the shoulder, then flicked forward with a
+     * step and the body following through), a relaxed hold while the bobber is out (rod tip up,
+     * weight on one leg, the tip twitching now and then), and a sharp strike back on reeling in.
+     */
+    private static void fishing(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate) {
+        float side = m.rodSide;
+        PartPose rodArm = side > 0 ? f.rightArm() : f.leftArm();
+        PartPose free = side > 0 ? f.leftArm() : f.rightArm();
+        PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
+        PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();
+        float hold = m.fishingW.v * gate;
+
+        float tc = m.since(m.fishCastStart) / 0.6f;
+        float cast = tc >= 0f && tc < 1f ? (1f - AngleMath.ease((tc - 0.6f) / 0.4f)) * gate : 0f;
+        float tr = m.since(m.fishReelStart) / 0.5f;
+        float reel = tr >= 0f && tr < 1f ? (1f - AngleMath.ease((tr - 0.45f) / 0.55f)) * gate : 0f;
+        float w = Math.max(hold, Math.max(cast, reel));
+        if (w <= 0.001f) return;
+
+        // Base: the waiting hold.
+        float t = m.time + m.seed;
+        float twitch = Mth.sin(t * 9f) * Math.max(0f, Mth.sin(t * 0.7f) - 0.85f) * 6f;
+        float x = -0.60f + 0.03f * Mth.sin(t * 1.3f) - 0.10f * twitch, bend = 0.95f, twist = 0.10f, lean = -0.04f;
+        float step = 0f;
+        if (cast > 0.001f) {
+            // Back over the shoulder, then whipped forward, then settling.
+            float back = AngleMath.ease(tc / 0.2f) * (1f - AngleMath.ease((tc - 0.2f) / 0.25f));
+            float flick = AngleMath.ease((tc - 0.2f) / 0.25f) * (1f - AngleMath.ease((tc - 0.55f) / 0.45f));
+            x = Mth.lerp(back, x, -2.75f);
+            x = Mth.lerp(flick, x, -1.35f);
+            bend = Mth.lerp(back, bend, 0.70f);
+            bend = Mth.lerp(flick, bend, 0.15f);
+            twist = twist + 0.45f * back - 0.35f * flick;
+            lean = lean - 0.12f * back + 0.22f * flick;
+            step = Math.max(back * 0.5f, flick);
+        }
+        if (reel > 0.001f) {
+            // Strike: rod snapped up and back, leaning back against the fish.
+            float jerk = AngleMath.ease(tr / 0.15f) * (1f - AngleMath.ease((tr - 0.25f) / 0.5f));
+            x = Mth.lerp(jerk, x, -2.05f);
+            bend = Mth.lerp(jerk, bend, 0.55f);
+            lean -= 0.18f * jerk;
+            twist += 0.15f * jerk;
+        }
+        float aw = w;
+        rodArm.override(x, -side * 0.18f, side * 0.10f, aw);
+        rodArm.overrideBend(s.elbow() * bend, aw);
+        // The free hand rests on the belly while waiting, out for balance when casting.
+        free.override(Mth.lerp(step, -0.55f, -0.25f), side * Mth.lerp(step, 0.45f, 0f), -side * Mth.lerp(step, 0.05f, 0.45f), aw);
+        free.overrideBend(s.elbow() * Mth.lerp(step, 1.25f, 0.50f), aw);
+        Rigging.twistUpper(f, side * twist * w);
+        Rigging.leanTorso(f, s, lean * w);
+        // Weight on the back leg while waiting; a step into the cast.
+        float still = (1f - m.moveF()) * m.groundW.v;
+        lead.overrideX(Mth.lerp(step, -0.12f, -0.40f), w * still);
+        rear.overrideX(Mth.lerp(step, 0.10f, 0.15f), w * still);
+        lead.bend += s.knee() * (0.10f + 0.25f * step) * w * still;
+        rear.bend += s.knee() * 0.15f * w * still;
+        f.body().rz -= side * 0.03f * w * still * (1f - step);
     }
 
     /** Turn the whole body about its vertical axis, keeping head and arms aimed where they were. */

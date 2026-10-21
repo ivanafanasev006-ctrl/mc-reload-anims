@@ -104,7 +104,7 @@ final class WaterModule implements AnimModule {
         // Tipping over head-first (body.rx -PI/2 is lying flat, -PI is upside down): the steeper
         // and longer the fall, the closer to straight down.
         float steep = AngleMath.clamp(-m.vertical / 0.7f, 0f, 1f);
-        f.body().rx -= (1.35f + 1.30f * steep) * w;
+        f.body().rx -= (1.15f + 1.50f * steep) * w;
         f.head().rx += 0.25f * w;
     }
 
@@ -139,8 +139,9 @@ final class WaterModule implements AnimModule {
     }
 
     /**
-     * Falling backwards into water from high up: turned over onto the back, hands clasped behind
-     * the head, one knee up, completely relaxed; a splash pose for a moment after hitting the water.
+     * Jumping or falling backwards (holding S): turned over onto the back, hands clasped behind
+     * the head, one knee up, completely relaxed. On land this ends in a back roll
+     * (ReactionModule); in water, a splash pose for a moment after hitting the surface.
      */
     private static void chill(MotionState m, PoseFrame f, Signs s, float gate) {
         float air = m.chillW.v * gate * (1f - m.waterW.v);

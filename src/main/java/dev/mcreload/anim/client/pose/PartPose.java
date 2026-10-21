@@ -20,6 +20,11 @@ public final class PartPose {
     public float tx, ty, tz, wx, wy, wz;
     /** Twist about the limb's own long axis (wrist roll for arms), applied after everything else. */
     public float roll;
+    /**
+     * Direction the joint folds in (playerAnimator's bend axis, radians about the limb):
+     * 0 = forward/back, PI/2 = sideways. Blended over the incoming axis by its weight.
+     */
+    public float bendAxis, wAxis;
 
     public void reset() {
         rx = ry = rz = 0f;
@@ -28,6 +33,13 @@ public final class PartPose {
         tx = ty = tz = 0f;
         wx = wy = wz = 0f;
         roll = 0f;
+        bendAxis = wAxis = 0f;
+    }
+
+    public void overrideBendAxis(float value, float weight) {
+        if (weight <= 0f) return;
+        bendAxis = wAxis <= 0f ? value : AngleMath.lerpAngle(bendAxis, value, weight);
+        wAxis = Math.min(1f, wAxis + weight);
     }
 
     /** Pull the limb's own twist toward a value (used by attacks to sweep the blade in the hand). */
@@ -87,5 +99,6 @@ public final class PartPose {
         roll *= Math.min(1f, s);
         float ws = Math.min(1f, s);
         wx *= ws; wy *= ws; wz *= ws;
+        wAxis *= ws;
     }
 }

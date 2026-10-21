@@ -36,6 +36,10 @@ public final class MotionState {
     private double lastX = Double.NaN, lastY, lastZ;
     private float yawRate, prevYawRate;
     private boolean wasOnGround = true;
+    /** Ticks of "still treading water" left (hysteresis so the pose never flickers at the edge). */
+    private int treadHold;
+    private int groundTicks;
+    private int lastRideTick = -1000;
     private int airTicks;
     private float minAirVy;
     private int lastHurtTime;
@@ -99,8 +103,10 @@ public final class MotionState {
     public final Spring shieldHit = new Spring(160f, 14f);
     public final Spring hitFront = new Spring(120f, 12f);
     public final Spring hitBack = new Spring(120f, 12f);
-    public static final int LAND_NONE = 0, LAND_ROLL = 1, LAND_SWORD = 2;
+    public static final int LAND_NONE = 0, LAND_ROLL = 1, LAND_SWORD = 2, LAND_BACKROLL = 3;
     public int landKind = LAND_NONE;
+    /** How far back (radians) the body was already lying when the back roll started. */
+    public float backRollFrom;
     public float landStart = -100f;
     public float explodeStart = -100f, explodeStrength;
     public float totemStart = -100f;
@@ -113,6 +119,23 @@ public final class MotionState {
     private int teleportTick = -1000;
     private boolean rollEarly;
     private int lastSprintTick = -1000;
+    // ---- fishing
+    /** Casting the rod out / reeling it in (times), and how much we are fishing right now. */
+    public float fishCastStart = -100f, fishReelStart = -100f;
+    public final Smooth fishingW = new Smooth(5f);
+    /** +1 if the rod is in the right hand, -1 if left. */
+    public float rodSide = 1f;
+
+    // ---- riding a mount
+    /** The mount's vertical speed (blocks/tick, smoothed) and turn rate (deg/tick, smoothed). */
+    public final Smooth mountVy = new Smooth(10f), mountTurn = new Smooth(6f);
+    /** The mount touching down after a jump or a drop. */
+    public final Spring mountLand = new Spring(70f, 9f);
+    private int mountAirTicks;
+    private float mountMinVy;
+    private double lastMountY = Double.NaN;
+    private float mountVyTick, mountTurnTick;
+
     /** Diving in from a height: streamlined "dolphin" entry. */
     public float diveStart = -100f;
     /** Swapping items between hands (F): hands meet in the middle and part again. */
@@ -153,7 +176,8 @@ public final class MotionState {
 
     // ---- melee / tools ----
     public static final int SLASH_H = 0, SLASH_V = 1, SLASH_BACK = 2, SPIN = 3, PUNCH = 4, TOOL = 5,
-            PICK = 6, SHOVEL = 7, HOE = 8, CHOP = 9, AXE_OVER = 10, AXE_SWEEP = 11, THROW = 12, FIST_BLOCK = 13, PLACE = 14;
+            PICK = 6, SHOVEL = 7, HOE = 8, CHOP = 9, AXE_OVER = 10, AXE_SWEEP = 11, THROW = 12, FIST_BLOCK = 13, PLACE = 14,
+            FISH = 15;
     /** Sword combo order: forehand, backhand, overhead, spinning finisher. */
     private static final int[] SWORD_COMBO = {SLASH_H, SLASH_BACK, SLASH_V, SPIN};
     public int slashKind = -1;
@@ -207,7 +231,7 @@ public final class MotionState {
             lastWaterTick = -1000;
             teleportTick = player.tickCount;
             // A teleport is a cut: drop the water poses at once instead of fading them out.
-            if (!player.isInWater()) { waterW.v = 0f; swimW.v = 0f; paddleW.v = 0f; }
+            if (!player.isInWater()) { waterW.v = 0f; swimW.v = 0f; paddleW.v = 0f; treadHold = 0; }
         }
         prevYawRate = yawRate;
         yawRate = Mth.wrapDegrees(player.yBodyRot - player.yBodyRotO);
@@ -242,6 +266,45 @@ public final class MotionState {
         if (inWater) { minAirVy = 0f; airTicks = 0; lastWaterTick = player.tickCount; }
         wasInWater = inWater;
 
+        // Treading water only in water deep enough to float in (not wading along the bottom or
+        // hopping in the shallows), held for a few ticks so bobbing at the surface or brushing the
+        // bottom never flips the pose; dropped at once when standing on something for two ticks
+        // or when jumping up and out of the water.
+        groundTicks = ground ? groundTicks + 1 : 0;
+        float fluid = inWater ? (float) player.getFluidHeight(net.minecraft.tags.FluidTags.WATER) : 0f;
+        if (inWater && fluid >= 0.9f && !ground) treadHold = 6;
+        else if (groundTicks >= 2) treadHold = 0;
+        else if (!inWater && vy > 0.08) treadHold = 0;
+        else if (treadHold > 0 && !(inWater && fluid >= 0.6f)) treadHold--;
+
+        // Riding: the rider's own "air time" means nothing, and getting off is not a landing.
+        if (player.isPassenger()) {
+            lastRideTick = player.tickCount;
+            airTicks = 0;
+            minAirVy = 0f;
+            airStartY = player.getY();
+            net.minecraft.world.entity.Entity mount = player.getVehicle();
+            if (mount != null) {
+                double my = mount.getY();
+                mountVyTick = Double.isNaN(lastMountY) ? 0f : (float) Mth.clamp(my - lastMountY, -2.0, 2.0);
+                lastMountY = my;
+                mountTurnTick = Mth.wrapDegrees(mount.getYRot() - mount.yRotO);
+                if (!mount.onGround()) {
+                    mountAirTicks++;
+                    mountMinVy = Math.min(mountMinVy, mountVyTick);
+                } else {
+                    if (mountAirTicks > 3) mountLand.impulse(Mth.clamp(-mountMinVy * 2.2f, 0.35f, 1.2f));
+                    mountAirTicks = 0;
+                    mountMinVy = 0f;
+                }
+            }
+        } else {
+            lastMountY = Double.NaN;
+            mountVyTick = 0f;
+            mountTurnTick = 0f;
+            mountAirTicks = 0;
+        }
+
         if (!ground) {
             if (wasOnGround && vy > 0.05 && !special) {
                 // Take-off: switch the leading leg every jump.
@@ -253,7 +316,8 @@ public final class MotionState {
             minAirVy = Math.min(minAirVy, (float) vy);
             // About to hit the ground hard while running on: start the roll at the moment of
             // touchdown instead of a tick or two after it.
-            if (!special && !rollEarly && Cfg.landing && -minAirVy > 0.62f && movingForward()
+            if (!special && !rollEarly && Cfg.landing && -minAirVy > 0.62f && movingForward() && chillW.v < 0.45f
+                    && player.tickCount - lastRideTick >= 10
                     && !(Weapons.isMeleeWeapon(player.getMainHandItem()) && player.getOffhandItem().isEmpty())) {
                 double gap = groundGap();
                 if (gap >= 0 && gap < -vy * 1.1) {
@@ -268,11 +332,19 @@ public final class MotionState {
                 if (Cfg.landing) land.impulse(0.8f);
             } else if (rollEarly) {
                 // Already rolling.
+            } else if (player.tickCount - lastRideTick < 10) {
+                // Just got off a horse / out of a boat: step down, no landing reaction.
             } else if (!wasOnGround && airTicks > 2 && !special && Cfg.landing) {
                 float impact = -minAirVy;
                 ItemStack main = player.getMainHandItem();
                 boolean swordOnly = Weapons.isMeleeWeapon(main) && player.getOffhandItem().isEmpty();
-                if (impact > 0.62f && swordOnly) {
+                if (impact > 0.38f && chillW.v > 0.45f) {
+                    // Fell backwards lying back (jumped back holding S): roll out over the shoulder.
+                    landKind = LAND_BACKROLL;
+                    landStart = time;
+                    backRollFrom = 1.35f * chillW.v;
+                    chillW.v = 0f;
+                } else if (impact > 0.62f && swordOnly) {
                     // High drop with only a blade in hand: plant it in the ground.
                     landKind = LAND_SWORD;
                     landStart = time;
@@ -369,10 +441,9 @@ public final class MotionState {
         gate.to(blocked ? 0f : 1f, dt);
 
         boolean swimming = player.isVisuallySwimming();
-        // Bobbing at the surface flips in and out of the water every few ticks: treat the last
-        // moments in the water as still in it, so the pose doesn't flicker between air and water.
-        boolean wet = (player.isInWater() && player.tickCount - teleportTick > 2) || player.tickCount - lastWaterTick < 10;
-        boolean treading = wet && !ground && !swimming;
+        // Treading water (see tick(): deep water only, with hysteresis).
+        boolean treading = treadHold > 0 && !swimming && !riding;
+        boolean wet = treading || swimming;
         boolean climbing = player.onClimbable() && !ground && !riding;
         boolean air = !ground && !wet && !climbing && !blocked;
 
@@ -414,6 +485,18 @@ public final class MotionState {
         castW.to(cast.casting() ? 1f : 0f, dt);
 
         mainRight = player.getMainArm() == HumanoidArm.RIGHT;
+        mountVy.to(mountVyTick, dt);
+        mountTurn.to(mountTurnTick, dt);
+        mountLand.step(dt);
+        // Fishing: rod in hand and the bobber out.
+        ItemStack rodMain = player.getMainHandItem();
+        boolean rodInMain = rodMain.getItem() instanceof net.minecraft.world.item.FishingRodItem;
+        boolean rodInOff = player.getOffhandItem().getItem() instanceof net.minecraft.world.item.FishingRodItem;
+        if (rodInMain || rodInOff) {
+            HumanoidArm rodArm = rodInMain ? player.getMainArm() : player.getMainArm().getOpposite();
+            rodSide = rodArm == HumanoidArm.RIGHT ? 1f : -1f;
+        }
+        fishingW.to((rodInMain || rodInOff) && player.fishing != null && !blocked ? 1f : 0f, dt);
         itemTilt.to(itemTiltTarget, dt);
         itemTiltTarget = 0f;
         holdingBlade = Weapons.isMeleeWeapon(player.getMainHandItem());
@@ -425,10 +508,16 @@ public final class MotionState {
         // Paddling along at the surface without sprinting.
         paddleW.to(treading ? Mth.clamp(horizontalSpeed / 0.07f, 0f, 1f) : 0f, dt);
         if (treading) paddlePhase += dt * (2.2f + 10f * Math.min(horizontalSpeed, 0.15f));
-        // About to drop into water: start the dolphin dive in the air.
-        boolean overWater = air && diveEligible && vertical < -0.25f && fallHeight >= 1.0f && waterBelow();
-        boolean backwards = forward.v < -0.02f || isLocalPressingBack();
-        chillW.to(overWater && backwards && fallHeight >= 4f ? 1f : 0f, dt);
+        // Jumping or falling backwards (holding S, or clearly moving backwards): lie back in the
+        // air with the hands behind the head; landing, roll out backwards (or float, in water).
+        boolean backwards = isLocalPressingBack()
+                || (!(player instanceof net.minecraft.client.player.LocalPlayer) && forward.v < -0.05f);
+        chillW.to(air && backwards && airTicks >= 3 ? 1f : 0f, dt);
+        if (ground) chillW.v = Math.max(0f, chillW.v - dt * 5f);   // short hop: straight back up
+        // Heading for water from dry land with enough drop: the dolphin dive starts from the top
+        // of the jump (or as soon as we go over the edge) and lasts until we hit the water.
+        float gap = air && diveEligible && vertical < 0.12f ? waterGap() : -1f;
+        boolean overWater = gap >= 0f && fallHeight + gap >= 1.4f;
         diveAirW.to(overWater && chillW.v < 0.5f ? 1f : 0f, dt);
         surfaceDepth = treading ? surfaceDepth() : 0f;
 
@@ -610,6 +699,22 @@ public final class MotionState {
         return (float) (top - (player.getY() + 1.3));
     }
 
+    /** Height from the feet down to a water surface below (nothing solid in between), or -1. */
+    private float waterGap() {
+        net.minecraft.world.level.Level level = player.level();
+        net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
+        for (int i = 0; i < 16; i++) {
+            net.minecraft.world.level.material.FluidState fs = level.getFluidState(pos);
+            if (!fs.isEmpty()) {
+                if (!fs.is(net.minecraft.tags.FluidTags.WATER)) return -1f;
+                return (float) Math.max(0.0, player.getY() - (pos.getY() + fs.getHeight(level, pos)));
+            }
+            if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) return -1f;
+            pos.move(net.minecraft.core.Direction.DOWN);
+        }
+        return -1f;
+    }
+
     /** Water within a few blocks below the feet, with nothing solid in between. */
     private boolean waterBelow() {
         net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
@@ -695,6 +800,12 @@ public final class MotionState {
             slashKind = kind;
             slashDuration = 0.38f;
             slashChained = false;
+        } else if (kind == FISH) {
+            // Casting out, or reeling in if the bobber is already out.
+            if (player.fishing == null) fishCastStart = time; else fishReelStart = time;
+            slashKind = kind;
+            slashDuration = 0.5f;
+            slashChained = false;
         } else {
             slashKind = kind;
             slashDuration = isLooping(kind) ? 0.40f : 0.30f;
@@ -704,6 +815,7 @@ public final class MotionState {
 
     private int classify(ItemStack held) {
         if (isLocalDropping()) return THROW;
+        if (held.getItem() instanceof net.minecraft.world.item.FishingRodItem) return FISH;
         // Right-click on a block (placing, opening, using an item on it): a press of the hand.
         if (isLocalUsing() || (player != Minecraft.getInstance().player && held.getItem() instanceof net.minecraft.world.item.BlockItem)) {
             return PLACE;

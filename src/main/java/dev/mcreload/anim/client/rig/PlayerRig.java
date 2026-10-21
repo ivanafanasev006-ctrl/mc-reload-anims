@@ -90,7 +90,8 @@ public final class PlayerRig {
         float air = Math.max(motion.airW.v, Math.max(motion.elytraW.v, motion.flyW.v));
 
         float armW = lerp(26f, 12f, lv), armZ = lerp(0.85f, 0.45f, lv);
-        if (attacking) { armW = Math.max(armW, 40f); armZ = 0.8f; }
+        // Strikes: firm but not snapping; a touch of lag keeps them fluid.
+        if (attacking) { armW = Math.max(armW, 26f); armZ = 0.72f; }
         // While vanilla poses the arms (using items), follow it tightly.
         float vanilla = 1f - motion.armsFree.v * (1f - motion.toolSwingW.v);
         armW = lerp(armW, 60f, vanilla);
@@ -98,13 +99,13 @@ public final class PlayerRig {
 
         float legW = lerp(lerp(30f, 24f, lv), lerp(24f, 13f, lv), air);
         float legZ = lerp(0.9f, lerp(0.85f, 0.5f, lv), air);
-        if (attacking) legW = Math.max(legW, 30f);
+        if (attacking) legW = Math.max(legW, 24f);
 
         springs.omega[PoseFrame.RIGHT_ARM] = springs.omega[PoseFrame.LEFT_ARM] = armW;
         springs.zeta[PoseFrame.RIGHT_ARM] = springs.zeta[PoseFrame.LEFT_ARM] = armZ;
         springs.omega[PoseFrame.RIGHT_LEG] = springs.omega[PoseFrame.LEFT_LEG] = legW;
         springs.zeta[PoseFrame.RIGHT_LEG] = springs.zeta[PoseFrame.LEFT_LEG] = legZ;
-        springs.omega[PoseFrame.TORSO] = attacking ? 34f : lerp(20f, 11f, lv);
+        springs.omega[PoseFrame.TORSO] = attacking ? 22f : lerp(20f, 11f, lv);
         springs.zeta[PoseFrame.TORSO] = lerp(0.85f, 0.55f, lv);
         springs.omega[PoseFrame.BODY] = lerp(18f, 10f, lv);
         springs.zeta[PoseFrame.BODY] = lerp(0.9f, 0.6f, lv);
@@ -149,6 +150,7 @@ public final class PlayerRig {
             case BEND -> {
                 t = T_BEND;
                 x = v0.getX();
+                if (p.wAxis > 0f) x = AngleMath.lerpAngle(x, p.bendAxis, p.wAxis * k);
                 y = v0.getY() + p.bend * k;
                 z = v0.getZ();
             }

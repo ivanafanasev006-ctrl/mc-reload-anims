@@ -232,6 +232,20 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("24_shield_walk", 45, sp -> { place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD)); },
                 (mc, t) -> { mc.options.keyUse.setDown(t > 4); move(mc, t > 15, false, false, false); },
                 new Window(10, 15, 1, 0.2f), new Window(22, 45, 4, 0.12f)));
+        SCENARIOS.add(new Scenario("28_sneak_toggle", 50, sp -> place(sp, 2, Y, 3, -90, none),
+                (mc, t) -> move(mc, t > 4, false, t > 8 && (t / 3) % 2 == 0, false), new Window(9, 50, 10, 0.0f)));
+        SCENARIOS.add(new Scenario("29_back_jump", 50, sp -> place(sp, 10, Y, 3, -90, none),
+                (mc, t) -> { moveBack(mc, t < 40); INPUT.jump = t >= 8 && t < 10; }, new Window(9, 36, 9, 0.02f)));
+        SCENARIOS.add(new Scenario("30_crossbow", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.CROSSBOW)),
+                (mc, t) -> move(mc, t > 22, false, false, false), new Window(12, 20, 1, 0.3f), new Window(28, 40, 2, 0.2f)));
+        SCENARIOS.add(new Scenario("31_crossbow_loaded", 30, sp -> {
+                    ItemStack cb = new ItemStack(Items.CROSSBOW);
+                    net.minecraft.world.item.CrossbowItem.setCharged(cb, true);
+                    place(sp, 2, Y, 0, -90, cb);
+                }, (mc, t) -> move(mc, false, false, false, false), new Window(14, 30, 1, 0.3f)));
+        SCENARIOS.add(new Scenario("32_fishing", 75, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.FISHING_ROD)),
+                (mc, t) -> mc.options.keyUse.setDown(t == 8 || t == 55),
+                new Window(8, 22, 5, 0.02f), new Window(35, 50, 1, 0.3f), new Window(55, 66, 3, 0.03f)));
         SCENARIOS.add(new Scenario("25_eat", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.GOLDEN_APPLE, 8)),
                 (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 38, 3, 0.25f)));
         SCENARIOS.add(new Scenario("07c_sword_landing", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
@@ -243,8 +257,12 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("27_totem", 50, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> { if (t == 8) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.onTotem(); } },
                 new Window(14, 50, 3, 0.3f)));
-        SCENARIOS.add(new Scenario("19_horse", 70, SelfTest::mountHorse,
-                (mc, t) -> move(mc, t > 10, t > 40, false, false), new Window(20, 40, 3, 0.15f), new Window(50, 70, 3, 0.1f)));
+        SCENARIOS.add(new Scenario("19_horse", 90, SelfTest::mountHorse,
+                (mc, t) -> {
+                    // walk, gallop, hold jump and release (the horse jumps), then get off.
+                    move(mc, t > 8 && t < 66, t > 28 && t < 66, t >= 72 && t < 75, t >= 44 && t < 52);
+                }, new Window(18, 27, 2, 0.15f), new Window(34, 44, 2, 0.1f), new Window(52, 66, 5, 0.02f),
+                new Window(73, 90, 3, 0.05f)));
         SCENARIOS.add(new Scenario("11b_tread", 50, sp -> place(sp, POOL_X + 10, Y - 2, 0, -90, none),
                 (mc, t) -> move(mc, false, false, false, t % 10 < 3), new Window(20, 50, 3, 0.3f)));
         SCENARIOS.add(new Scenario("11d_surface_swim", 60, sp -> place(sp, POOL_X + 3, Y - 2, 0, -90, none),

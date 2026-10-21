@@ -10,6 +10,8 @@ import dev.mcreload.anim.config.Cfg;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import dev.mcreload.anim.client.math.AngleMath;
 import net.minecraft.world.entity.vehicle.Boat;
 
 /**
@@ -76,38 +78,91 @@ final class RideModule implements AnimModule {
     }
 
     /**
-     * In the saddle: thighs along the horse's flanks, shins hanging straight down to the stirrups,
-     * a straight back that rises and settles with the gait (posting at a trot, leaning forward
-     * and moving with the neck at a gallop), hands low and together on the reins, giving with
-     * the horse's head.
+     * In the saddle, moving with the mount's gait:
+     * <ul>
+     *   <li>standing: a relaxed seat, hands resting low on the reins, looking about, and every so
+     *       often a pat on the neck;</li>
+     *   <li>walk: the hips follow the horse's back side to side, hands soft;</li>
+     *   <li>trot: posting, rising out of the saddle every other beat;</li>
+     *   <li>gallop: up in a jockey's two-point seat, leaning well forward, knees folded, hands
+     *       forward along the neck, rocking with the stride;</li>
+     *   <li>the horse jumping: folding forward over the neck on take-off with the hands following
+     *       the mouth, staying with it in the air, then sitting down deep and absorbing the
+     *       landing;</li>
+     *   <li>leaning into turns; leaning forward onto the neck when the horse rears; giving the
+     *       reins when it puts its head down to graze.</li>
+     * </ul>
      */
     private static void mount(LivingEntity mount, MotionState m, PoseFrame f, Signs s, float w, float pt) {
-        float speed = Math.min(mount.walkAnimation.speed(pt), 1f);
+        float speed = Math.min(mount.walkAnimation.speed(pt), 1.2f);
         float phase = mount.walkAnimation.position(pt) * 0.6662f;
-        float gallop = Mth.clamp((speed - 0.55f) / 0.35f, 0f, 1f);
+        float moving = Mth.clamp(speed / 0.12f, 0f, 1f);
+        float trot = Mth.clamp((speed - 0.30f) / 0.20f, 0f, 1f) * (1f - Mth.clamp((speed - 0.65f) / 0.20f, 0f, 1f));
+        float gallop = Mth.clamp((speed - 0.65f) / 0.20f, 0f, 1f);
+        float walk = moving * (1f - trot) * (1f - gallop);
+        float still = 1f - moving;
 
-        // Legs: astride, knees down, a little grip.
-        float grip = 0.06f * Math.abs(Mth.sin(phase)) * speed;
-        f.rightLeg().override(-1.00f, 0.25f, 0.42f - grip, w);
-        f.leftLeg().override(-1.00f, -0.25f, -0.42f + grip, w);
-        f.rightLeg().overrideBend(s.knee() * (1.00f + 0.10f * speed), w);
-        f.leftLeg().overrideBend(s.knee() * (1.00f + 0.10f * speed), w);
-
-        // Body: rising and settling with the stride, leaning into speed.
-        float post = Math.abs(Mth.sin(phase));
-        f.body().py += (0.06f * post - 0.02f) * speed * w;
-        f.body().rx -= (0.06f * speed + 0.20f * gallop) * w;
-        f.body().rx += 0.05f * Mth.sin(phase * 2f) * speed * w;
-        Rigging.leanTorso(f, s, (0.05f + 0.10f * speed + 0.15f * gallop) * w);
-        f.head().rx -= (0.05f * speed + 0.25f * gallop) * w;
-        f.body().rz += 0.03f * Mth.sin(phase) * speed * w;
-
-        // Hands low and together on the reins, following the horse's head.
+        // The mount in the air (jumping / dropping) and touching down.
+        float vy = m.mountVy.v;
+        float rise = Mth.clamp(vy / 0.35f, 0f, 1f);
+        float drop = Mth.clamp(-vy / 0.45f, 0f, 1f);
+        float jump = Math.max(rise, drop * 0.8f);
+        float landing = Math.max(0f, m.mountLand.x);
+        float rear = 0f, graze = 0f;
+        if (mount instanceof AbstractHorse horse) {
+            rear = horse.getStandAnim(pt);
+            graze = horse.getEatAnim(pt) * still;
+        }
+        float turn = Mth.clamp(m.mountTurn.v / 12f, -1f, 1f) * moving;
         float arms = w * m.armsFree.v;
-        float give = 0.10f * Mth.sin(phase * 2f + 0.6f) * speed + 0.15f * gallop * Mth.sin(phase * 2f);
-        f.rightArm().override(-0.75f + give, -0.30f, 0.02f, arms);
-        f.leftArm().override(-0.75f + give, 0.30f, -0.02f, arms);
-        f.rightArm().overrideBend(s.elbow() * (0.95f - 0.25f * gallop), arms);
-        f.leftArm().overrideBend(s.elbow() * (0.95f - 0.25f * gallop), arms);
+
+        // ---- legs: astride, the knees folding up into the stirrups at speed
+        float fold = 0.15f * trot + 0.45f * gallop + 0.40f * jump;
+        float grip = 0.05f * Math.abs(Mth.sin(phase)) * moving;
+        float thigh = -1.00f + 0.20f * gallop + 0.15f * jump;
+        f.rightLeg().override(thigh, 0.25f, 0.42f - grip, w);
+        f.leftLeg().override(thigh, -0.25f, -0.42f + grip, w);
+        f.rightLeg().overrideBend(s.knee() * (1.00f + fold), w);
+        f.leftLeg().overrideBend(s.knee() * (1.00f + fold), w);
+
+        // ---- body
+        float post = Math.max(0f, Mth.sin(phase));                 // trot: up every other beat
+        float lift = 0.08f * post * trot + 0.06f * gallop + 0.10f * rise - 0.07f * landing;
+        f.body().py += lift * w;
+        // Hips swinging with the walk.
+        f.body().rz += 0.05f * Mth.sin(phase) * walk * w;
+        f.body().ry += 0.04f * Mth.sin(phase) * walk * w;
+        // Rocking-horse motion at the gallop.
+        f.body().rx += (0.07f * Mth.sin(phase * 2f) * gallop + 0.03f * Mth.sin(phase * 2f) * trot) * w;
+        // Leaning: into speed, folding over the neck on a jump, onto the neck when rearing,
+        // sitting back for the landing.
+        float forward = 0.04f * walk + 0.12f * trot + 0.30f * gallop + 0.45f * rise + 0.25f * drop + 0.55f * rear
+                - 0.18f * landing + 0.08f * still * graze;
+        f.body().rx -= forward * 0.45f * w;
+        Rigging.leanTorso(f, s, forward * 0.70f * w);
+        f.head().rx -= forward * 0.55f * w;
+        // Into turns.
+        f.body().rz -= 0.14f * turn * w;
+        f.head().rz += 0.06f * turn * w;
+
+        // ---- standing still: look about now and then
+        float look = Mth.sin(m.time * 0.45f + m.seed) * Mth.clamp(Mth.sin(m.time * 0.21f + m.seed * 2f) * 2f, 0f, 1f);
+        f.head().ry += 0.45f * look * still * w;
+        Rigging.twistUpper(f, 0.10f * look * still * w);
+
+        // ---- hands on the reins, following the horse's mouth
+        float give = 0.10f * Mth.sin(phase * 2f + 0.6f) * (walk + trot) + 0.12f * gallop * Mth.sin(phase * 2f);
+        float reach = 0.30f * gallop + 0.55f * rise + 0.35f * drop + 0.50f * rear + 0.40f * graze;
+        float armX = -0.70f - reach + give;
+        float elbow = Mth.clamp(0.95f - 0.45f * gallop - 0.6f * Math.max(rise, rear) - 0.4f * graze, 0.15f, 1.2f);
+        // Every eight seconds or so, standing, the free hand pats the neck.
+        float patT = (m.time + m.seed * 3f) % 8f;
+        float pat = still * (1f - graze) * AngleMath.ease((patT - 5.6f) / 0.3f) * (1f - AngleMath.ease((patT - 7.2f) / 0.3f));
+        float tap = pat * Math.abs(Mth.sin(patT * 9f));
+        f.rightArm().override(armX, -0.30f, 0.02f, arms);
+        f.leftArm().override(Mth.lerp(pat, armX, -1.05f + 0.15f * tap), Mth.lerp(pat, 0.30f, 0.15f), -0.02f, arms);
+        f.rightArm().overrideBend(s.elbow() * elbow, arms);
+        f.leftArm().overrideBend(s.elbow() * Mth.lerp(pat, elbow, 0.35f), arms);
+        Rigging.leanTorso(f, s, 0.10f * pat * w);
     }
 }
