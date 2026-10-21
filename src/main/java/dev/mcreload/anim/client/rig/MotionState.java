@@ -71,6 +71,8 @@ public final class MotionState {
     /** Held item tipped forward in the hand (radians), smoothed; modules raise the target. */
     public final Smooth itemTilt = new Smooth(16f);
     public float itemTiltTarget;
+    /** 0..1 this frame: both hands are fixed on something (set by modules, cleared every frame). */
+    public float armsHeld;
     /** Loose-limb inertia: forward, sideways and vertical (from body accelerations), and turning. */
     public final dev.mcreload.anim.client.math.Wobble swayF = new dev.mcreload.anim.client.math.Wobble(60f, 7f, 1.2f),
             swayS = new dev.mcreload.anim.client.math.Wobble(60f, 7f, 1.2f),
@@ -107,6 +109,17 @@ public final class MotionState {
     public int landKind = LAND_NONE;
     /** How far back (radians) the body was already lying when the back roll started. */
     public float backRollFrom;
+    /** How far back the body lies right now in a backwards fall (radians, set by WaterModule#chill). */
+    public float backLie;
+    /** Trident thrown (release after a wind-up). */
+    public float spearThrowStart = -100f;
+    private boolean wasSpearUse;
+    /**
+     * Last arm Euler angles produced for each arm (0 = right, 1 = left) by composed rotations,
+     * so the next frame can pick the equivalent solution closest to it (no flips).
+     */
+    public final float[][] armEulerRef = new float[4][3];
+    public final float[] armEulerTime = {-100f, -100f, -100f, -100f};
     public float landStart = -100f;
     public float explodeStart = -100f, explodeStrength;
     public float totemStart = -100f;
@@ -177,7 +190,7 @@ public final class MotionState {
     // ---- melee / tools ----
     public static final int SLASH_H = 0, SLASH_V = 1, SLASH_BACK = 2, SPIN = 3, PUNCH = 4, TOOL = 5,
             PICK = 6, SHOVEL = 7, HOE = 8, CHOP = 9, AXE_OVER = 10, AXE_SWEEP = 11, THROW = 12, FIST_BLOCK = 13, PLACE = 14,
-            FISH = 15;
+            FISH = 15, STAB = 16;
     /** Sword combo order: forehand, backhand, overhead, spinning finisher. */
     private static final int[] SWORD_COMBO = {SLASH_H, SLASH_BACK, SLASH_V, SPIN};
     public int slashKind = -1;
@@ -314,6 +327,19 @@ public final class MotionState {
             }
             airTicks++;
             minAirVy = Math.min(minAirVy, (float) vy);
+            // Falling backwards lying back: start the back roll the moment we touch down, like
+            // the forward roll.
+            if (!special && !rollEarly && Cfg.landing && chillW.v > 0.45f && -vy > 0.2
+                    && player.tickCount - lastRideTick >= 10) {
+                double gap = groundGap();
+                if (gap >= 0 && gap < -vy * 1.1) {
+                    landKind = LAND_BACKROLL;
+                    landStart = time;
+                    backRollFrom = backLie;
+                    chillW.v = 0f;
+                    rollEarly = true;
+                }
+            }
             // About to hit the ground hard while running on: start the roll at the moment of
             // touchdown instead of a tick or two after it.
             if (!special && !rollEarly && Cfg.landing && -minAirVy > 0.62f && movingForward() && chillW.v < 0.45f
@@ -342,13 +368,12 @@ public final class MotionState {
                     // Fell backwards lying back (jumped back holding S): roll out over the shoulder.
                     landKind = LAND_BACKROLL;
                     landStart = time;
-                    backRollFrom = 1.35f * chillW.v;
+                    backRollFrom = backLie;
                     chillW.v = 0f;
                 } else if (impact > 0.62f && swordOnly) {
                     // High drop with only a blade in hand: plant it in the ground.
                     landKind = LAND_SWORD;
                     landStart = time;
-                    land.impulse(0.6f);
                 } else if (impact > 0.62f && movingForward()) {
                     // High drop while running on: break the fall with a forward roll.
                     landKind = LAND_ROLL;
@@ -499,6 +524,7 @@ public final class MotionState {
         fishingW.to((rodInMain || rodInOff) && player.fishing != null && !blocked ? 1f : 0f, dt);
         itemTilt.to(itemTiltTarget, dt);
         itemTiltTarget = 0f;
+        armsHeld = 0f;
         holdingBlade = Weapons.isMeleeWeapon(player.getMainHandItem());
         speed.to(horizontalSpeed, dt);
         // Sneaking: our own step cycle, fast enough that the feet really step instead of gliding.
@@ -535,7 +561,7 @@ public final class MotionState {
         toolSwingW.to(slashKind == TOOL && slashProgress() < 1.1f ? 1f : 0f, dt);
 
         ItemStack mainItem = player.getMainHandItem(), offItem = player.getOffhandItem();
-        boolean weapon = Weapons.isMeleeWeapon(mainItem);
+        boolean weapon = Weapons.isMeleeWeapon(mainItem) && !(mainItem.getItem() instanceof net.minecraft.world.item.TridentItem);
         boolean recentlyFought = time - slashStart < 3.0f;
         // Guard only for a few seconds after a fight, standing still; otherwise a weapon is just held.
         readyW.to(weapon && ground && !blocked && !swimming && sprintW.v < 0.5f
@@ -548,6 +574,9 @@ public final class MotionState {
         crossAimW.to(charged && !blocked ? 1f : 0f, dt);
         sleepW.to(player.isSleeping() ? 1f : 0f, dt);
 
+        boolean spearUse = use == UseAnim.SPEAR;
+        if (wasSpearUse && !spearUse && usePull >= 0.45f) spearThrowStart = time;
+        wasSpearUse = spearUse;
         boolean drawing = use == UseAnim.BOW;
         if (drawing && !wasDrawingBow) bowStyle ^= 1;
         wasDrawingBow = drawing;
@@ -562,7 +591,8 @@ public final class MotionState {
 
         // Eating and drinking are ours (food goes to the mouth); everything else in use is vanilla's.
         boolean eating = use == UseAnim.EAT || use == UseAnim.DRINK;
-        boolean vanillaArms = (player.isUsingItem() && !eating) || charged;
+        // A crossbow in hand: both hands stay on it (CombatModule), nothing else swings the arms.
+        boolean vanillaArms = (player.isUsingItem() && !eating) || charged || crossInHand;
         float free = vanillaArms ? 0f : 1f;
         armsFree.to(free * (1f - 0.9f * castW.v), dt);
 
@@ -800,6 +830,10 @@ public final class MotionState {
             slashKind = kind;
             slashDuration = 0.38f;
             slashChained = false;
+        } else if (kind == STAB) {
+            slashKind = kind;
+            slashDuration = Mth.clamp(cooldown * 0.9f, 0.5f, 0.9f);
+            slashChained = false;
         } else if (kind == FISH) {
             // Casting out, or reeling in if the bobber is already out.
             if (player.fishing == null) fishCastStart = time; else fishReelStart = time;
@@ -816,6 +850,7 @@ public final class MotionState {
     private int classify(ItemStack held) {
         if (isLocalDropping()) return THROW;
         if (held.getItem() instanceof net.minecraft.world.item.FishingRodItem) return FISH;
+        if (held.getItem() instanceof net.minecraft.world.item.TridentItem && !isLocalUsing()) return STAB;
         // Right-click on a block (placing, opening, using an item on it): a press of the hand.
         if (isLocalUsing() || (player != Minecraft.getInstance().player && held.getItem() instanceof net.minecraft.world.item.BlockItem)) {
             return PLACE;

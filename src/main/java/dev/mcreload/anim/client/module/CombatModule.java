@@ -35,7 +35,8 @@ final class CombatModule implements AnimModule {
         float gate = m.gate.v;
         if (gate <= 0.001f) return;
         swing(rig, m, f, s, gate, pt);
-        useItems(rig, m, f, s, gate);
+        useItems(rig, m, f, s, gate, pt);
+        javelin(rig, m, f, s, gate);
         fishing(rig, m, f, s, gate);
     }
 
@@ -81,7 +82,8 @@ final class CombatModule implements AnimModule {
             return;
         }
         // Swords and axes: BladeModule. Fists: FistModule.
-        boolean keyed = MotionState.isLooping(kind) || kind == MotionState.THROW || kind == MotionState.PLACE;
+        boolean keyed = MotionState.isLooping(kind) || kind == MotionState.THROW || kind == MotionState.PLACE
+                || kind == MotionState.STAB;
         if (!keyed) return;
         float t = m.slashProgress();
         if (t >= 1.3f) return;
@@ -118,7 +120,7 @@ final class CombatModule implements AnimModule {
         Rigging.twistUpper(f, side * k.twist() * w);
         // Weapons pitch the whole body into the strike; working a block in front of the feet
         // bends at the waist and knees instead, so the feet stay planted.
-        boolean weapon = MotionState.isWeapon(kind);
+        boolean weapon = MotionState.isWeapon(kind) || kind == MotionState.STAB;
         float bodyLean = weapon ? k.lean() : k.lean() * 0.25f;
         f.body().rx += bodyLean * w;
         f.head().rx += bodyLean * 0.9f * w;
@@ -147,7 +149,11 @@ final class CombatModule implements AnimModule {
         float drop = Math.max(0f, k.leadKnee() - 0.3f);
         f.body().py -= 0.07f * drop * lw;
         // Weapons: the whole body drives forward into the strike (lunge), not just the arm.
-        if (MotionState.isWeapon(kind)) {
+        if (kind == MotionState.STAB) {
+            // The spear lines up with the arm for the thrust.
+            m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.HALF_PI * w);
+        }
+        if (weapon) {
             float lunge = Math.max(0f, -k.lean());
             f.body().pz -= 0.38f * lunge * w;
             Rigging.leanTorso(f, s, 0.25f * lunge * w);
@@ -166,7 +172,7 @@ final class CombatModule implements AnimModule {
 
     // ------------------------------------------------------------------ held / used items
 
-    private static void useItems(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate) {
+    private static void useItems(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate, float pt) {
         float side = m.useSide;
         PartPose useArm = side > 0 ? f.rightArm() : f.leftArm();
         PartPose otherArm = side > 0 ? f.leftArm() : f.rightArm();
@@ -184,6 +190,13 @@ final class CombatModule implements AnimModule {
             // further than vanilla and the elbow folds sideways (bend axis turned a quarter
             // turn), so the string comes straight back a little instead of the forearm tipping up.
             otherArm.ry += side * 0.30f * bow;
+            // Vanilla points both arms where the head looks, up to ~50 degrees off the body:
+            // turn the chest and shoulders with the head, so the arms stay in front of the chest
+            // instead of the drawing arm crossing through it when the camera swings round.
+            AbstractClientPlayer pl = rig.player;
+            float headYaw = Mth.wrapDegrees(Mth.rotLerp(pt, pl.yHeadRotO, pl.yHeadRot)
+                    - Mth.rotLerp(pt, pl.yBodyRotO, pl.yBodyRot)) * Mth.DEG_TO_RAD;
+            Rigging.twistShoulders(f, headYaw * bow);
             otherArm.overrideBendAxis(side * Mth.HALF_PI, bow);
             otherArm.overrideBend(s.elbow() * (0.12f + 0.30f * m.usePull), bow);
             f.torso().overrideBend(0f, bow);
@@ -205,7 +218,7 @@ final class CombatModule implements AnimModule {
         // hip, the other hand forward under the front, the shoulders turned a little behind it
         // (arm angles solved for the crossbow's grip and front). Loaded, it comes up a little,
         // level and ready, and the feet set when standing.
-        float carry = m.crossCarryW.v * gate * m.armsFree.v;
+        float carry = m.crossCarryW.v * gate;
         float aimC = m.crossAimW.v * gate;
         float hold = Math.max(carry, aimC);
         if (hold > 0.001f) {
@@ -213,11 +226,11 @@ final class CombatModule implements AnimModule {
             PartPose grip = cs > 0 ? f.rightArm() : f.leftArm();
             PartPose fore = cs > 0 ? f.leftArm() : f.rightArm();
             float up = aimC / hold;
-            float breathe = 0.03f * Mth.sin(m.time * 1.7f + m.seed);
-            grip.override(Mth.lerp(up, -0.78f, -0.94f) + breathe, cs * Mth.lerp(up, -0.63f, -0.56f),
+            // Held still: no breathing or swinging on the arms (they would rattle the crossbow).
+            grip.override(Mth.lerp(up, -0.78f, -0.94f), cs * Mth.lerp(up, -0.63f, -0.56f),
                     cs * Mth.lerp(up, 0.43f, 0.33f), hold);
             grip.overrideBend(s.elbow() * Mth.lerp(up, 0.84f, 0.77f), hold);
-            fore.override(Mth.lerp(up, -0.92f, -1.40f) + breathe, cs * Mth.lerp(up, 0.35f, 0.61f),
+            fore.override(Mth.lerp(up, -0.92f, -1.40f), cs * Mth.lerp(up, 0.35f, 0.61f),
                     cs * Mth.lerp(up, 0.46f, -0.24f), hold);
             fore.overrideBend(s.elbow() * 0.10f, hold);
             Rigging.twistShoulders(f, cs * 0.40f * hold);
@@ -239,16 +252,6 @@ final class CombatModule implements AnimModule {
             Rigging.crouch(f, s, 0.15f * xbow);
         }
 
-        // Trident wind-up: lean back, opposite foot forward.
-        float spear = m.spearW.v * gate;
-        if (spear > 0.001f) {
-            float pull = m.usePull * spear;
-            Rigging.twistUpper(f, side * 0.35f * pull);
-            Rigging.leanTorso(f, s, -0.15f * pull);
-            PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
-            lead.rx -= 0.30f * pull;
-            lead.bend += s.knee() * 0.30f * pull;
-        }
 
         // Shield: staggered half-squat behind the shield, recoil on each blocked hit.
         float block = m.blockW.v * gate;
@@ -258,12 +261,19 @@ final class CombatModule implements AnimModule {
             float still = 1f - m.moveF();
             PartPose lead = side > 0 ? f.rightLeg() : f.leftLeg();   // shield-side foot forward
             PartPose rear = side > 0 ? f.leftLeg() : f.rightLeg();
-            lead.overrideX(-0.35f, block * still);
-            rear.overrideX(0.30f, block * still);
-            Rigging.crouch(f, s, 0.28f * block);
-            Rigging.legsOut(f, 0.10f * block * still);
-            Rigging.leanTorso(f, s, 0.18f * block);
+            float sneak = m.sneakW.v;
+            lead.overrideX(-0.35f, block * still * (1f - sneak));
+            rear.overrideX(0.30f, block * still * (1f - sneak));
+            // Already low when sneaking: no extra squat or lean on top.
+            Rigging.crouch(f, s, 0.28f * block * (1f - sneak));
+            Rigging.legsOut(f, 0.10f * block * still * (1f - sneak));
+            Rigging.leanTorso(f, s, 0.18f * block * (1f - sneak));
             useArm.bend += s.elbow() * 0.35f * block;
+            // Keep the shield upright in front of the chest however far the chest leans (the
+            // arms ride on the torso, so a forward lean tips the shield down into the legs);
+            // vanilla also drops the arms 0.4 rad when crouching.
+            float chestLean = f.torso().bend * s.torso();
+            useArm.rx -= (chestLean + (rig.player.isCrouching() ? 0.4f : 0f)) * block;
         }
         float hit = m.shieldHit.x;
         if (Math.abs(hit) > 0.001f) {
@@ -298,6 +308,46 @@ final class CombatModule implements AnimModule {
             f.head().rx -= 0.25f * horn;
             Rigging.leanTorso(f, s, -0.08f * horn);
         }
+    }
+
+    // ------------------------------------------------------------------ trident
+
+    /**
+     * Trident throw, like a javelin. Wind-up: the throwing arm drawn back high over the
+     * shoulder, elbow cocked, chest turned side-on and leaning back, the free arm pointing at the
+     * target, feet in a long stride. Release: whipped over the top and down, the body following
+     * through onto the front foot.
+     */
+    private static void javelin(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate) {
+        float spear = m.spearW.v * gate;
+        float ts = m.since(m.spearThrowStart) / 0.55f;
+        float thr = ts >= 0f && ts < 1f ? (1f - AngleMath.ease((ts - 0.5f) / 0.5f)) * gate : 0f;
+        float w = Math.max(spear, thr);
+        if (w <= 0.001f) return;
+        float side = m.useSide;
+        PartPose arm = side > 0 ? f.rightArm() : f.leftArm();
+        PartPose free = side > 0 ? f.leftArm() : f.rightArm();
+        PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
+        PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();
+        float pull = spear > thr ? AngleMath.ease(m.usePull) : 1f;
+        float whip = thr > spear ? AngleMath.ease(ts / 0.28f) : 0f;   // 0 = cocked, 1 = thrown
+
+        arm.override(Mth.lerp(whip, -2.45f - 0.40f * pull, -0.70f), side * Mth.lerp(whip, 0.12f, -0.25f),
+                side * Mth.lerp(whip, 0.22f, 0.05f), w);
+        arm.overrideBend(s.elbow() * Mth.lerp(whip, 0.30f + 0.40f * pull, 0.05f), w);
+        free.override(Mth.lerp(whip, -1.45f, -0.30f), -side * Mth.lerp(whip, 0.30f, 0.0f),
+                -side * Mth.lerp(whip, 0.08f, 0.40f), w);
+        free.overrideBend(s.elbow() * Mth.lerp(whip, 0.15f, 0.65f), w);
+        Rigging.twistShoulders(f, side * Mth.lerp(whip, 0.55f * pull, -0.45f) * w);
+        Rigging.leanTorso(f, s, Mth.lerp(whip, -0.18f * pull, 0.32f) * w);
+        f.head().rx += Mth.lerp(whip, 0.10f * pull, -0.15f) * w;
+
+        float still = (1f - m.moveF()) * m.groundW.v;
+        lead.overrideX(Mth.lerp(whip, -0.45f * pull, -0.35f), w * still);
+        rear.overrideX(Mth.lerp(whip, 0.35f * pull, 0.05f), w * still);
+        lead.bend += s.knee() * Mth.lerp(whip, 0.25f, 0.50f) * w * still;
+        rear.bend += s.knee() * Mth.lerp(whip, 0.30f, 0.15f) * w * still;
+        f.body().py -= 0.03f * pull * w * still;
     }
 
     // ------------------------------------------------------------------ fishing

@@ -40,6 +40,8 @@ final class BladeModule implements AnimModule {
     public void apply(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float pt) {
         float gate = m.gate.v;
         if (gate <= 0.001f) return;
+        curMotion = m;
+        curFrame = f;
         float hd = m.mainRight ? 1f : -1f;
         PartPose main = m.mainRight ? f.rightArm() : f.leftArm();
         PartPose off = m.mainRight ? f.leftArm() : f.rightArm();
@@ -52,17 +54,38 @@ final class BladeModule implements AnimModule {
         return x * x * x * (x * (x * 6f - 15f) + 10f);
     }
 
-    /** Arm rotation from Mo'Bends-style "out to the side by z, then swung round by y" (degrees). */
+    private MotionState curMotion;
+    private PoseFrame curFrame;
+    /** 0 = guard stance, 1 = strike: each keeps its own Euler history. */
+    private int curSlot;
+
+    /**
+     * Arm rotation from Mo'Bends-style "out to the side by z, then swung round by y" (degrees).
+     * Every rotation has two Euler triples; we keep the one closest to what this arm got last
+     * frame, so a swing passing over the shoulder or behind the back never flips the arm round
+     * the long way (which looked like the wrist twisting the wrong way).
+     */
     private void arm(PartPose arm, float zDeg, float yDeg, float xDeg, float w) {
         Quaternionf q = new Quaternionf().rotationY(deg(yDeg)).mul(new Quaternionf().rotationZ(deg(zDeg)))
                 .mul(new Quaternionf().rotationX(deg(xDeg)));
         AngleMath.toModelEuler(q, e);
+        if (curMotion != null && curFrame != null) {
+            int idx = (arm == curFrame.rightArm() ? 0 : 1) + 2 * curSlot;
+            float[] ref = curMotion.armEulerRef[idx];
+            if (curMotion.time - curMotion.armEulerTime[idx] > 0.25f) {
+                ref[0] = 0f; ref[1] = 0f; ref[2] = 0f;
+            }
+            AngleMath.nearestEuler(e, ref);
+            System.arraycopy(e, 0, ref, 0, 3);
+            curMotion.armEulerTime[idx] = curMotion.time;
+        }
         arm.override(e[0], e[1], e[2], w);
     }
 
     // ------------------------------------------------------------------ guard after a fight
 
     private void stance(MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off) {
+        curSlot = 0;
         float w = m.readyW.v * gate;
         if (w <= 0.001f) return;
         float aw = w * m.armsFree.v;
@@ -87,6 +110,7 @@ final class BladeModule implements AnimModule {
     // ------------------------------------------------------------------ strikes
 
     private void strike(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off) {
+        curSlot = 1;
         int kind = m.slashKind;
         if (!MotionState.isWeapon(kind)) return;
         float t = m.slashProgress();
@@ -119,18 +143,25 @@ final class BladeModule implements AnimModule {
                 lean = 20f - 20f * sw;
             }
             case MotionState.SLASH_BACK -> {
-                // Rising cut: from low across the body up and out the other side.
-                twist = 40f - 90f * sw;
-                arm(main, hd * (20f + 110f * sw), hd * (60f - 150f * sw + twist), 0f, aw);
-                main.overrideBend(s.elbow() * deg(20f), aw);
-                tilt = 90f;
-                lean = 10f - 10f * sw;
+                // Rising backhand: from low across the body at the opposite hip, up and out
+                // diagonally to finish high on the sword side, the chest turning with it. One
+                // clean diagonal (the old version spun the hanging arm about its own axis).
+                twist = -35f + 65f * sw;
+                float z = 45f + 95f * sw;
+                float y = -150f + 120f * sw;
+                arm(main, hd * z, hd * (y + twist), 0f, aw);
+                main.overrideBend(s.elbow() * deg(Mth.lerp(sw, 45f, 10f)), aw);
+                tilt = Mth.lerp(sw, 60f, 85f);
+                lean = Mth.lerp(sw, 12f, -4f);
             }
             case MotionState.SLASH_V, MotionState.AXE_OVER -> {
                 // Overhead chop: blade raised high behind the head, brought straight down with
                 // the whole body.
                 twist = 20f - 30f * sw;
-                float x = Mth.lerp(sw, -170f, -45f);
+                // The wind-up is animated too: the blade rises from in front up behind the head
+                // (instead of popping straight up there), then comes down.
+                float rise = smoother(a / (axe ? 0.16f : 0.08f));
+                float x = Mth.lerp(sw, Mth.lerp(rise, -60f, -170f), -45f);
                 arm(main, hd * 10f, hd * twist, x, aw);
                 main.overrideBend(s.elbow() * deg(Mth.lerp(sw, 50f, 5f)), aw);
                 tilt = Mth.lerp(sw, 20f, 70f);

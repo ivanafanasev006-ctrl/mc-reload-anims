@@ -8,6 +8,7 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="${mod_authors}"
+credits="Built on Player Animator by KosmX. Inspired by Mo' Bends and Fresh Animations."
 logoFile="kinetrix_logo.png"
 displayURL="https://github.com/ivanafanasev006-ctrl/mc-reload-anims"
 description='''${mod_description}'''

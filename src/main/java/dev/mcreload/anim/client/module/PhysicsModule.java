@@ -1,5 +1,7 @@
 package dev.mcreload.anim.client.module;
 
+import dev.mcreload.anim.client.math.AngleMath;
+
 import dev.mcreload.anim.client.pose.PoseFrame;
 import dev.mcreload.anim.client.pose.Rigging;
 import dev.mcreload.anim.client.pose.Signs;
@@ -23,7 +25,11 @@ final class PhysicsModule implements AnimModule {
     public void apply(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float pt) {
         float g = m.gate.v * Math.min(1f, Cfg.liveliness / 0.6f);
         if (g <= 0.001f) return;
-        float arms = m.armsFree.v * (1f - m.toolSwingW.v) * g;
+        // Hands fixed on something (a sword planted in the ground...): no loose swinging, and
+        // the chest stays steady so what they hold stays put.
+        float held = AngleMath.clamp(m.armsHeld, 0f, 1f);
+        float arms = m.armsFree.v * (1f - m.toolSwingW.v) * g * (1f - held);
+        g *= 1f - 0.8f * held;
         float fwd = m.swayF.x, side = m.swayS.x, vert = m.swayV.x, turn = m.swayT.x;
 
         // Speeding up: arms trail back, chest lags back, head nods. Stopping: the reverse.

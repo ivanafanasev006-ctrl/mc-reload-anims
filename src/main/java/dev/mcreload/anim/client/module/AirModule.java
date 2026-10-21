@@ -42,10 +42,10 @@ final class AirModule implements AnimModule {
                 float fallW = air * fall * (1f - dive);
                 float diveW = air * fall * dive;
                 if (jumpW > 0.001f) jump(m, f, s, jumpW, arms, pt);
-                // Dropping with only a blade in hand: as soon as we are clearly falling, both
-                // hands take the sword up overhead, ready to plant it on landing.
+                // A real drop (faster than any ordinary jump comes down) with only a blade in
+                // hand: both hands take the sword up overhead, ready to plant it on landing.
                 boolean bladeOnly = m.holdingBlade && rig.player.getOffhandItem().isEmpty();
-                float bladeW = bladeOnly ? air * AngleMath.clamp((-m.vertical - 0.12f) / 0.30f, 0f, 1f) : 0f;
+                float bladeW = bladeOnly ? air * AngleMath.clamp((-m.vertical - 0.50f) / 0.25f, 0f, 1f) : 0f;
                 float plainFall = fallW * (1f - bladeW);
                 if (plainFall > 0.001f) fall(m, f, s, plainFall, arms);
                 if (bladeW > 0.001f) bladeFall(m, f, s, bladeW, arms, m.mainRight ? 1f : -1f);
@@ -147,6 +147,7 @@ final class AirModule implements AnimModule {
         off.overrideBend(s.elbow() * 0.45f, aw);
         // Blade straight up over the head (turned in the fist, see ReactionModule#plantBlade).
         m.itemTiltTarget = Math.max(m.itemTiltTarget, 0.95f * aw);
+        m.armsHeld = Math.max(m.armsHeld, aw);
         // Knees drawn up, one ahead of the other, ready to take the landing on one knee.
         PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
         PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();

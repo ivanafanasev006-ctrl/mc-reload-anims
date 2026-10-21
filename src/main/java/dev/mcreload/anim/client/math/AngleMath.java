@@ -88,6 +88,21 @@ public final class AngleMath {
         }
     }
 
+    /**
+     * Replace {@code e} by whichever of its two equivalent Euler triples is closest to
+     * {@code ref}, unwrapped to lie within half a turn of it (component-wise).
+     */
+    public static void nearestEuler(float[] e, float[] ref) {
+        double x = e[0], y = e[1], z = e[2];
+        double ax = x + Math.PI, ay = Math.PI - y, az = z + Math.PI;
+        double d1 = dist(x, ref[0]) + dist(y, ref[1]) + dist(z, ref[2]);
+        double d2 = dist(ax, ref[0]) + dist(ay, ref[1]) + dist(az, ref[2]);
+        if (d2 < d1) { x = ax; y = ay; z = az; }
+        e[0] = (float) (ref[0] + wrap(x - ref[0]));
+        e[1] = (float) (ref[1] + wrap(y - ref[1]));
+        e[2] = (float) (ref[2] + wrap(z - ref[2]));
+    }
+
     private static double wrap(double d) {
         d %= Math.PI * 2.0;
         if (d > Math.PI) d -= Math.PI * 2.0;

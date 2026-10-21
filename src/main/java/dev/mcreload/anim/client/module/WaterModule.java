@@ -150,8 +150,12 @@ final class WaterModule implements AnimModule {
         float w = Math.max(air, splash);
         if (w <= 0.001f) return;
         float aw = w * m.armsFree.v;
-        // On the back.
-        f.body().rx += 1.35f * w;
+        // On the back, and in the air tipping on over head-down toward the ground the faster we
+        // fall (the back roll on landing carries on from this angle).
+        float steep = AngleMath.clamp(-m.vertical / 0.6f, 0f, 1f);
+        float lie = air >= splash ? 1.25f + 0.95f * steep : 1.35f;
+        f.body().rx += lie * w;
+        m.backLie = lie * air;
         f.head().rx -= 0.20f * w;
         // Hands behind the head.
         f.rightArm().override(-2.90f, -0.30f, 0.45f, aw);

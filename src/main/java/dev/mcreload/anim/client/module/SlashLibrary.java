@@ -138,6 +138,14 @@ final class SlashLibrary {
             new Key(1.00f, -0.50f, 0.00f, 0.10f, 0.40f, -0.05f, -0.03f, -0.40f, 0.10f, 0.40f, -0.15f, 0.30f, 0.10f, 0.25f),
     };
 
+    /** Trident / spear: drawn back low at the hip, then a straight lunging thrust. */
+    static final Key[] STAB = {
+            new Key(0f, -0.60f, 0.15f, 0.12f, 1.30f, 0.25f, 0.02f, -0.80f, 0.15f, 0.90f, -0.20f, 0.35f, 0.15f, 0.30f),
+            new Key(0.18f, -0.50f, 0.25f, 0.18f, 1.45f, 0.35f, 0.04f, -0.85f, 0.15f, 0.90f, -0.25f, 0.40f, 0.20f, 0.35f),
+            new Key(0.40f, -1.55f, -0.05f, 0.02f, 0.02f, -0.35f, -0.30f, -0.40f, 0.20f, 0.60f, -0.60f, 0.80f, 0.40f, 0.35f),
+            new Key(1.00f, -0.80f, 0.05f, 0.10f, 0.90f, 0f, -0.05f, -0.50f, 0.15f, 0.80f, -0.25f, 0.40f, 0.15f, 0.30f),
+    };
+
     static Key[] forKind(int kind) {
         return switch (kind) {
             case MotionState.SLASH_H -> HORIZONTAL;
@@ -153,6 +161,7 @@ final class SlashLibrary {
             case MotionState.FIST_BLOCK -> FIST_BLOCK;
             case MotionState.THROW -> THROW;
             case MotionState.PLACE -> PLACE;
+            case MotionState.STAB -> STAB;
             default -> HORIZONTAL;
         };
     }

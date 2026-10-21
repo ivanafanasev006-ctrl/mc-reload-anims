@@ -249,6 +249,19 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("32_fishing", 75, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.FISHING_ROD)),
                 (mc, t) -> mc.options.keyUse.setDown(t == 8 || t == 55),
                 new Window(8, 22, 5, 0.02f), new Window(35, 50, 1, 0.3f), new Window(55, 66, 3, 0.03f)));
+        SCENARIOS.add(new Scenario("24b_shield_sneak", 40, sp -> { place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD)); },
+                (mc, t) -> { mc.options.keyUse.setDown(t > 4); move(mc, t > 22, false, t > 8, false); },
+                new Window(16, 22, 1, 0.2f), new Window(26, 40, 2, 0.2f)));
+        SCENARIOS.add(new Scenario("14b_bow_turn", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.BOW)),
+                (mc, t) -> {
+                    mc.options.keyUse.setDown(t > 5);
+                    // Swing the view round while drawing: the head turns ahead of the body.
+                    if (t > 12 && t < 40) mc.player.setYRot(mc.player.getYRot() + (t < 26 ? 4f : -4f));
+                }, new Window(18, 40, 4, 0.2f)));
+        SCENARIOS.add(new Scenario("33_trident_throw", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.TRIDENT)),
+                (mc, t) -> mc.options.keyUse.setDown(t > 5 && t < 30), new Window(14, 29, 2, 0.2f), new Window(30, 42, 4, 0.03f)));
+        SCENARIOS.add(new Scenario("34_trident_stab", 30, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.TRIDENT)),
+                (mc, t) -> { if (t == 8) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(8, 22, 4, 0.04f)));
         SCENARIOS.add(new Scenario("25_eat", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.GOLDEN_APPLE, 8)),
                 (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 38, 3, 0.25f)));
         SCENARIOS.add(new Scenario("07c_sword_landing", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
