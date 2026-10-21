@@ -233,7 +233,7 @@ public final class WeaponTrails {
         // Weapon turned in the fist.
         if (joints && left != rig.motion.mainRight && Math.abs(rig.motion.itemTilt.v) > 1e-3f) {
             mat.translate(0f, 10f / 16f, -1f / 16f);
-            mat.rotate(new Quaternionf().rotationX(-rig.motion.itemTilt.v));
+            mat.rotate(new Quaternionf().rotationX(rig.motion.itemTilt.v));
             mat.translate(0f, -10f / 16f, 1f / 16f);
         }
 

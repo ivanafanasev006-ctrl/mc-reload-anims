@@ -136,19 +136,22 @@ final class EmoteModule implements AnimModule {
         arm(main, s, -2.75f, 0f, side * (0.35f + 0.30f * wv), 0.45f + 0.25f * wv, aw * up);
         f.head().rz -= side * 0.10f * e;
         f.body().rz -= side * 0.03f * e;
+        Rigging.leanTorso(f, s, -0.06f * up * e);
+        Rigging.crouch(f, s, 0.05f * Math.abs(wv) * e);
     }
 
     private static void clap(PoseFrame f, Signs s, float e, float aw, float t) {
         float c = Math.abs(Mth.sin(t * 6.5f));
-        arm(f.rightArm(), s, -1.30f, -0.35f - 0.25f * (1f - c), 0f, 1.15f, aw);
-        arm(f.leftArm(), s, -1.30f, 0.35f + 0.25f * (1f - c), 0f, 1.15f, aw);
+        arm(f.rightArm(), s, -1.20f, -0.55f - 0.20f * (1f - c) + 0.20f, 0f, 1.00f, aw);
+        arm(f.leftArm(), s, -1.20f, 0.55f + 0.20f * (1f - c) - 0.20f, 0f, 1.00f, aw);
+        Rigging.crouch(f, s, 0.06f * c * e);
         f.head().rx += 0.05f * c * e;
         f.body().py += 0.015f * c * e;
     }
 
     private static void facepalm(PoseFrame f, Signs s, float e, float aw, float t, PartPose main, float side) {
         float up = seg(t, 0.1f, 0.5f);
-        arm(main, s, -1.95f, side * -0.55f, 0f, 2.05f, aw * up);
+        arm(main, s, -1.60f, side * -0.70f, 0f, 1.45f, aw * up);
         f.head().rx += 0.45f * up * e;
         f.head().ry += 0.20f * Mth.sin(t * 5f) * seg(t, 0.6f, 0.8f) * e;
         Rigging.leanTorso(f, s, 0.12f * up * e);
@@ -167,7 +170,7 @@ final class EmoteModule implements AnimModule {
 
     private static void salute(PoseFrame f, Signs s, float e, float aw, float t, PartPose main, float side) {
         float up = seg(t, 0.15f, 0.45f);
-        arm(main, s, -2.15f, side * -0.85f, side * 0.25f, 2.25f, aw * up);
+        arm(main, s, -1.90f, side * 0.30f, side * 0.20f, 1.10f, aw * up);
         // Standing to attention.
         f.rightLeg().override(0f, 0f, 0f, e);
         f.leftLeg().override(0f, 0f, 0f, e);
@@ -177,7 +180,7 @@ final class EmoteModule implements AnimModule {
 
     private static void bow(PoseFrame f, Signs s, float e, float aw, float t, PartPose main, PartPose off, float side) {
         float down = Mth.sin(Mth.PI * AngleMath.clamp((t - 0.2f) / 1.8f, 0f, 1f));
-        arm(main, s, -0.60f, side * -0.80f, 0f, 1.40f, aw);        // hand across the stomach
+        arm(main, s, -0.50f, side * -1.10f, side * 0.60f, 1.10f, aw);  // hand across the stomach
         arm(off, s, 0.55f, 0f, -side * 0.15f, 0.20f, aw);          // other arm swept back
         // Bend at the hips: the body tips forward around the hip joint, the legs stay upright.
         f.body().rx -= 0.80f * down * e;
@@ -217,8 +220,11 @@ final class EmoteModule implements AnimModule {
         arm(f.rightArm(), s, -2.85f, 0f, 0.45f + 0.10f * hop, 0.35f, aw);
         arm(f.leftArm(), s, -2.85f, 0f, -0.45f - 0.10f * hop, 0.35f, aw);
         f.body().py += 0.18f * hop * e;
-        f.rightLeg().bend += s.knee() * 0.60f * hop * e;
-        f.leftLeg().bend += s.knee() * 0.60f * hop * e;
+        // Crouch before each little jump, legs tucking in the air.
+        float load = Math.max(0f, -Mth.sin(t * 7f)) * seg(t, 0.2f, 0.4f) * (1f - seg(t, 2.0f, 2.4f));
+        Rigging.crouch(f, s, 0.35f * load * e);
+        f.rightLeg().bend += s.knee() * 0.70f * hop * e;
+        f.leftLeg().bend += s.knee() * 0.70f * hop * e;
         f.head().rx -= 0.30f * e;
         Rigging.leanTorso(f, s, -0.10f * e);
     }
@@ -233,7 +239,7 @@ final class EmoteModule implements AnimModule {
     private static void laugh(PoseFrame f, Signs s, float e, float aw, float t, PartPose main, PartPose off, float side) {
         float shake = Mth.sin(t * 22f) * 0.5f + 0.5f;
         float bend = 0.5f + 0.5f * Mth.sin(t * 2.2f);
-        arm(main, s, -0.55f, side * -0.70f, 0f, 1.55f, aw);        // hand on the belly
+        arm(main, s, -0.50f, side * -1.10f, side * 0.60f, 1.10f, aw);  // hand on the belly
         arm(off, s, -0.25f + 0.10f * shake, 0f, -side * 0.25f, 0.40f, aw);
         Rigging.leanTorso(f, s, (0.10f + 0.25f * bend) * e);
         f.head().rx -= (0.30f - 0.40f * bend) * e;
@@ -243,8 +249,8 @@ final class EmoteModule implements AnimModule {
 
     private static void cry(PoseFrame f, Signs s, float e, float aw, float t) {
         float sob = Math.max(0f, Mth.sin(t * 5.5f));
-        arm(f.rightArm(), s, -2.05f, -0.55f, 0f, 2.05f, aw);
-        arm(f.leftArm(), s, -2.05f, 0.55f, 0f, 2.05f, aw);
+        arm(f.rightArm(), s, -1.40f, -0.75f, 0f, 1.35f, aw);
+        arm(f.leftArm(), s, -1.40f, 0.75f, 0f, 1.35f, aw);
         f.head().rx += (0.45f + 0.08f * sob) * e;
         Rigging.leanTorso(f, s, (0.20f + 0.06f * sob) * e);
         f.body().py -= 0.02f * sob * e;

@@ -123,7 +123,7 @@ final class LocomotionModule implements AnimModule {
         f.leftArm().bend += s.elbow() * deg(10f + 10f * -sn) * aw;
 
         float k = Math.min(1f, amt * 1.5f);
-        Rigging.twistUpper(f, deg(-20f) * c * k * w);
+        Rigging.twistUpper(f, deg(-20f) * c * k * w * arms);
         Rigging.leanTorso(f, s, deg(3f + 5f * Mth.cos(ls * 2f)) * k * w);
         f.body().py += px(0.6f) * Mth.cos(ls * 2f) * k * w;
     }
@@ -168,7 +168,7 @@ final class LocomotionModule implements AnimModule {
             f.leftArm().bend += s.elbow() * deg(10f + 35f * (1f - rEl)) * aw;
         }
 
-        Rigging.twistUpper(f, deg(-40f) * c * w);
+        Rigging.twistUpper(f, deg(-40f) * c * w * arms);
         // Leaning into the run: the whole body a little, the chest more.
         f.body().rx -= deg(12f) * amt * w;
         f.head().rx -= deg(12f) * amt * w;
@@ -221,28 +221,36 @@ final class LocomotionModule implements AnimModule {
     }
 
     /**
-     * Stopping out of a sprint: a short skateboard slide, knees bent, upper body turned a little,
-     * arms flung out to the sides for balance. About half a second.
+     * Stopping out of a sprint like a skateboarder: the body whips round side-on, the feet slide
+     * apart wide with the knees bent, the hips drop and lean back against the slide, the arms are
+     * flung out for balance. About half a second.
      */
     private static void brake(PoseFrame f, Signs s, MotionState m, float ground, float arms) {
-        float t = m.since(m.brakeStart) / 0.45f;
+        float t = m.since(m.brakeStart) / 0.55f;
         if (t < 0f || t >= 1f) return;
-        float b = Mth.sin(Mth.PI * Math.min(1f, t * 1.3f)) * ground;
+        float b = AngleMath.ease(t / 0.12f) * (1f - AngleMath.ease((t - 0.55f) / 0.45f)) * ground;
         if (b <= 0.001f) return;
-        f.rightLeg().overrideX(deg(-30f), b);
-        f.rightLeg().overrideBend(s.knee() * deg(30f), b);
-        f.leftLeg().overrideX(deg(10f), b);
-        f.leftLeg().overrideBend(s.knee() * deg(45f), b);
-        Rigging.legsOut(f, deg(8f) * b);
-        f.body().py -= px(1.5f) * b;
-        f.body().ry += deg(25f) * b;
-        f.head().ry -= deg(25f) * b;
-        Rigging.leanTorso(f, s, deg(-8f) * b);
+        float side = m.mainRight ? 1f : -1f;
+        // Side-on to the direction of travel; the head keeps looking ahead.
+        f.body().ry += side * deg(70f) * b;
+        f.head().ry -= side * deg(70f) * b;
+        // Wide, low stance across the slide.
+        f.rightLeg().override(deg(-12f), 0f, deg(28f), b);
+        f.leftLeg().override(deg(-12f), 0f, deg(-28f), b);
+        f.rightLeg().overrideBend(s.knee() * deg(50f), b);
+        f.leftLeg().overrideBend(s.knee() * deg(50f), b);
+        f.body().py -= px(3.0f) * b;
+        // Leaning back against the slide (away from the leading side), chest up.
+        f.body().rz += side * deg(14f) * b;
+        Rigging.leanTorso(f, s, deg(10f) * b);
+        // Arms out wide, the leading one a little higher.
         float aw = b * arms;
-        f.rightArm().override(deg(-20f), 0f, deg(80f), aw);
-        f.leftArm().override(deg(-20f), 0f, deg(-80f), aw);
-        f.rightArm().overrideBend(s.elbow() * deg(15f), aw);
-        f.leftArm().overrideBend(s.elbow() * deg(15f), aw);
+        f.rightArm().override(deg(-25f), 0f, deg(side > 0 ? 95f : 70f), aw);
+        f.leftArm().override(deg(-25f), 0f, deg(side > 0 ? -70f : -95f), aw);
+        f.rightArm().overrideBend(s.elbow() * deg(20f), aw);
+        f.leftArm().overrideBend(s.elbow() * deg(20f), aw);
+        // A little wobble as the shoes grip.
+        f.body().rx += deg(4f) * Mth.sin(t * 40f) * (1f - t) * b;
     }
 
     private static void legX(PartPose leg, float x, float w) {

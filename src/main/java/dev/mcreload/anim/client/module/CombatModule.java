@@ -80,7 +80,7 @@ final class CombatModule implements AnimModule {
             return;
         }
         // Swords and axes: BladeModule. Fists: FistModule.
-        boolean keyed = MotionState.isLooping(kind) || kind == MotionState.THROW;
+        boolean keyed = MotionState.isLooping(kind) || kind == MotionState.THROW || kind == MotionState.PLACE;
         if (!keyed) return;
         float t = m.slashProgress();
         if (t >= 1.3f) return;
@@ -165,37 +165,24 @@ final class CombatModule implements AnimModule {
         // target; head and (vanilla-aimed) arms are turned back so the aim stays on target.
         float bow = m.bowW.v * gate;
         if (bow > 0.001f) {
-            // Turned side-on, but not so far that the drawing arm has to go through the chest;
-            // less while walking, and the hips stay facing the way the feet are going.
-            float moving = m.moveF();
-            // Turns into the stance as the string comes back, not in one snap.
-            float turn = side * (0.62f - 0.25f * moving) * bow * (0.4f + 0.6f * AngleMath.ease(m.usePull * 2f));
-            f.body().ry += turn;
-            f.head().ry += turn;
-            useArm.ry += turn;
-            // Drawing arm: only part of the turn, elbow raised out to the side so the forearm
-            // runs past the face instead of through the body.
-            otherArm.ry += turn * 0.45f;
-            otherArm.rz -= side * (0.20f + 0.35f * m.usePull) * bow;
-            otherArm.bend += s.elbow() * (0.5f + 1.1f * m.usePull) * bow;
-            // Something (a shield) in the drawing hand: turn it edge-on so it doesn't cover the face.
-            net.minecraft.world.InteractionHand used = rig.player.getUsedItemHand();
-            boolean offHasItem = !rig.player.getItemInHand(used == net.minecraft.world.InteractionHand.MAIN_HAND
-                    ? net.minecraft.world.InteractionHand.OFF_HAND : net.minecraft.world.InteractionHand.MAIN_HAND).isEmpty();
-            // (Vanilla keeps it as is; turning it only made it stick out.)
+            // The arms aim exactly as vanilla points them (along the camera), so nothing turns
+            // them or the chest: the bow arm stays straight, the drawing elbow folds back toward
+            // the face as the string comes back. The feet take an archer's stance.
+            useArm.overrideBend(0f, bow);
+            otherArm.overrideBend(s.elbow() * (0.20f + 0.75f * m.usePull), bow);
+            f.torso().overrideBend(0f, bow);
             if (m.bowStyle == 1) {
-                // Horizontal bow drawn from above: roll the bow arm flat.
+                // Horizontal bow: the bow arm turned flat (about its own axis, the aim is kept).
                 useArm.overrideRoll(side * 1.15f, bow);
-                otherArm.rx -= 0.15f * bow;
             }
-            // Legs keep stepping straight ahead: undo the body turn below the hips.
-            f.rightLeg().ry -= turn;
-            f.leftLeg().ry -= turn;
-            f.rightLeg().rz += 0.10f * bow;
-            f.leftLeg().rz -= 0.10f * bow;
-            f.rightLeg().bend += s.knee() * 0.15f * bow;
-            f.leftLeg().bend += s.knee() * 0.15f * bow;
-            Rigging.leanTorso(f, s, -0.04f * bow * m.usePull);
+            float still = 1f - m.moveF();
+            PartPose lead = side > 0 ? f.rightLeg() : f.leftLeg();
+            PartPose rear = side > 0 ? f.leftLeg() : f.rightLeg();
+            lead.overrideX(-0.25f, bow * still);
+            rear.overrideX(0.20f, bow * still);
+            lead.bend += s.knee() * 0.25f * bow;
+            rear.bend += s.knee() * 0.15f * bow;
+            Rigging.legsOut(f, 0.08f * bow * still);
         }
 
         // Crossbow: carried across the chest with both hands while unloaded.
@@ -243,16 +230,16 @@ final class CombatModule implements AnimModule {
         // Shield: staggered half-squat behind the shield, recoil on each blocked hit.
         float block = m.blockW.v * gate;
         if (block > 0.001f) {
+            // Behind the shield: knees bent and the weight low, but the legs keep walking (or
+            // creeping, when sneaking); standing still, a staggered guard stance.
+            float still = 1f - m.moveF();
             PartPose lead = side > 0 ? f.rightLeg() : f.leftLeg();   // shield-side foot forward
             PartPose rear = side > 0 ? f.leftLeg() : f.rightLeg();
-            lead.targetX(-0.35f, block);
-            lead.bend += s.knee() * 0.70f * block;
-            rear.targetX(0.35f, block);
-            rear.bend += s.knee() * 0.60f * block;
-            Rigging.legsOut(f, 0.12f * block);
-            f.body().py -= 0.09f * block;
-            Rigging.leanTorso(f, s, 0.12f * block);
-            f.head().rx -= 0.10f * block;
+            lead.overrideX(-0.35f, block * still);
+            rear.overrideX(0.30f, block * still);
+            Rigging.crouch(f, s, 0.28f * block);
+            Rigging.legsOut(f, 0.10f * block * still);
+            Rigging.leanTorso(f, s, 0.18f * block);
             useArm.bend += s.elbow() * 0.35f * block;
         }
         float hit = m.shieldHit.x;
@@ -269,9 +256,10 @@ final class CombatModule implements AnimModule {
         float drink = m.drinkW.v * gate;
         float mouth = Math.max(eat, drink);
         if (mouth > 0.001f) {
-            float bob = eat * 0.12f * Mth.sin(m.time * 14f);
-            useArm.override(-1.65f + pitch * 0.5f + bob, -side * 0.55f, 0f, mouth);
-            useArm.overrideBend(s.elbow() * 1.85f, mouth);
+            // Solved for the hand to reach the mouth with the jointed arm (no over-bending).
+            float bob = eat * 0.08f * Mth.sin(m.time * 14f);
+            useArm.override(-1.25f + pitch * 0.30f + bob, -side * 0.75f, 0f, mouth);
+            useArm.overrideBend(s.elbow() * 1.20f, mouth);
         }
         if (eat > 0.001f) f.head().rx += (0.12f + 0.07f * Mth.sin(m.time * 14f)) * eat;
         if (drink > 0.001f) {

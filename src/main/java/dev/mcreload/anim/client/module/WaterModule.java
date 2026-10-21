@@ -7,6 +7,7 @@ import dev.mcreload.anim.client.pose.Signs;
 import dev.mcreload.anim.client.rig.MotionState;
 import dev.mcreload.anim.client.rig.PlayerRig;
 import dev.mcreload.anim.config.Cfg;
+import dev.mcreload.anim.client.math.AngleMath;
 import net.minecraft.util.Mth;
 
 /**
@@ -46,94 +47,120 @@ final class WaterModule implements AnimModule {
         }
 
         float water = m.waterW.v * (1f - m.swimW.v) * gate;
-        float paddle = water * m.paddleW.v;
-        float tread = water - paddle;
-        if (tread > 0.001f) {
-            // Treading water on the spot: arms and legs spread, everything slow. The legs paddle
-            // like flippers just behind the body, the arms sweep a little forward and back in turn.
-            float t = m.time + m.seed;
-            float leg = Mth.sin(t * 1.7f), arm = Mth.sin(t * 1.25f);
-            f.rightLeg().override(0.12f + 0.22f * leg, 0f, 0.24f, tread);
-            f.leftLeg().override(0.12f - 0.22f * leg, 0f, -0.24f, tread);
-            f.rightLeg().overrideBend(s.knee() * (0.30f + 0.25f * Math.max(0f, -leg)), tread);
-            f.leftLeg().overrideBend(s.knee() * (0.30f + 0.25f * Math.max(0f, leg)), tread);
-            float aw = tread * m.armsFree.v;
-            f.rightArm().override(-0.35f + 0.22f * arm, 0f, 0.80f, aw);
-            f.leftArm().override(-0.35f - 0.22f * arm, 0f, -0.80f, aw);
-            f.rightArm().overrideBend(s.elbow() * 0.35f, aw);
-            f.leftArm().overrideBend(s.elbow() * 0.35f, aw);
-            f.body().py += 0.03f * Mth.sin(t * 1.7f * 2f) * tread;
-            f.body().rz += 0.025f * arm * tread;
-        }
-        if (paddle > 0.001f) {
-            // Swimming along at the surface without sprinting: a relaxed dog-paddle. Arms reach
-            // forward in turn and pull back under the chest, legs cycle slowly behind, chest low.
-            float p = m.paddlePhase;
-            float r = Mth.sin(p), l = Mth.sin(p + Mth.PI);
-            float aw = paddle * m.armsFree.v;
-            f.rightArm().override(-1.35f - 0.45f * r, 0f, 0.25f + 0.10f * Math.max(0f, -r), aw);
-            f.leftArm().override(-1.35f - 0.45f * l, 0f, -0.25f - 0.10f * Math.max(0f, -l), aw);
-            f.rightArm().overrideBend(s.elbow() * (0.30f + 0.70f * Math.max(0f, -r)), aw);
-            f.leftArm().overrideBend(s.elbow() * (0.30f + 0.70f * Math.max(0f, -l)), aw);
-            float k = Mth.sin(p * 1.0f + 0.8f);
-            f.rightLeg().override(0.25f + 0.30f * k, 0f, 0.10f, paddle);
-            f.leftLeg().override(0.25f - 0.30f * k, 0f, -0.10f, paddle);
-            f.rightLeg().overrideBend(s.knee() * (0.35f + 0.45f * Math.max(0f, k)), paddle);
-            f.leftLeg().overrideBend(s.knee() * (0.35f + 0.45f * Math.max(0f, -k)), paddle);
-            f.body().rx -= 0.55f * paddle;
-            f.head().rx -= 0.45f * paddle;
-            Rigging.twistUpper(f, 0.12f * r * paddle);
-            f.body().py += 0.03f * Mth.sin(p * 2f) * paddle;
-        }
+        if (water > 0.001f) surface(m, f, s, water);
 
         diveAir(m, f, s, gate);
         dive(m, f, s, gate);
+        chill(m, f, s, gate);
+    }
+
+    /**
+     * At the surface without sprinting: treading water like a real swimmer. The body stays
+     * vertical with the shoulders above the water; the arms are held out to the sides, forearms
+     * forward, palms flat, sculling in and out in quick figure-eights; the legs do the eggbeater
+     * kick: knees bent and slightly apart, each foot drawing circles, the two legs half a turn
+     * apart. Swimming along, the body only leans in slightly and the arms sweep further.
+     */
+    private static void surface(MotionState m, PoseFrame f, Signs s, float w) {
+        float mv = m.paddleW.v;
+        float t = m.time + m.seed;
+        float p = mv > 0.05f ? m.paddlePhase : t * 3.0f;      // leg circles
+        float sc = t * 4.2f;                                    // sculling
+
+        // Float higher: lift the model so the shoulders clear the surface, bobbing with each kick.
+        f.body().py += AngleMath.clamp(m.surfaceDepth + 0.15f, 0f, 0.45f) * w;
+        f.body().py += 0.02f * Mth.sin(p * 2f) * w;
+        f.body().rx -= 0.12f * mv * w;
+        Rigging.leanTorso(f, s, 0.06f * mv * w);
+
+        // Eggbeater legs: thigh forward a little and out, the foot drawing a circle below the knee.
+        eggbeater(f.rightLeg(), s, p, 1f, w);
+        eggbeater(f.leftLeg(), s, p + Mth.PI, -1f, w);
+
+        // Sculling arms: upper arms out to the sides and a little forward, forearms forward,
+        // the hands sweeping out and in just under the surface.
+        float aw = w * m.armsFree.v;
+        float sr = Mth.sin(sc), cr = Mth.cos(sc);
+        float reach = 0.25f * mv;
+        f.rightArm().override(-0.55f - reach - 0.06f * cr, 0.35f * sr, 0.62f + 0.10f * cr, aw);
+        f.leftArm().override(-0.55f - reach - 0.06f * cr, -0.35f * sr, -0.62f - 0.10f * cr, aw);
+        f.rightArm().overrideBend(s.elbow() * (0.85f + 0.10f * sr), aw);
+        f.leftArm().overrideBend(s.elbow() * (0.85f + 0.10f * sr), aw);
+        Rigging.twistUpper(f, 0.04f * Mth.sin(p) * w);
+    }
+
+    /** @param out +1 right leg, -1 left leg. */
+    private static void eggbeater(PartPose leg, Signs s, float phase, float out, float w) {
+        float sn = Mth.sin(phase), cs = Mth.cos(phase);
+        leg.override(-0.30f + 0.18f * sn, 0f, out * (0.16f + 0.10f * cs), w);
+        leg.overrideBend(s.knee() * (0.75f + 0.35f * cs), w);
     }
 
     /** Falling toward water: arms go overhead, hands together, and the body tips head-first. */
     private static void diveAir(MotionState m, PoseFrame f, Signs s, float gate) {
         float w = m.diveAirW.v * gate * (1f - m.waterW.v);
         if (w <= 0.001f) return;
-        float aw = w * m.armsFree.v;
-        f.rightArm().override(-3.0f, 0f, -0.10f, aw);
-        f.leftArm().override(-3.0f, 0f, 0.10f, aw);
-        f.rightArm().overrideBend(0f, aw);
-        f.leftArm().overrideBend(0f, aw);
-        f.rightLeg().override(0.10f, 0f, 0.02f, w);
-        f.leftLeg().override(0.10f, 0f, -0.02f, w);
-        f.rightLeg().overrideBend(s.knee() * 0.20f, w);
-        f.leftLeg().overrideBend(s.knee() * 0.20f, w);
-        // Arching over: the steeper the fall, the more head-first.
-        float steep = Mth.clamp(-m.vertical / 0.8f, 0f, 1f);
-        f.body().rx -= (0.70f + 0.75f * steep) * w;
-        f.head().rx += 0.30f * w;
-        Rigging.leanTorso(f, s, 0.10f * w);
+        streamline(f, s, w, w * m.armsFree.v);
+        // Tipping over: the steeper the fall, the more head-first, up to straight down.
+        float steep = AngleMath.clamp(-m.vertical / 0.7f, 0f, 1f);
+        f.body().rx -= (0.9f + 0.7f * steep) * w;
+        f.head().rx += 0.25f * w;
     }
 
-    /** Dolphin entry after jumping in from a height: streamlined, head first, then an undulating glide out. */
+    /** Entering the water head-first, then curving round under the surface and levelling out. */
     private static void dive(MotionState m, PoseFrame f, Signs s, float gate) {
         float t = m.since(m.diveStart) / DIVE_SECONDS;
         if (t < 0f || t >= 1f) return;
-        float e = Math.min(1f, t / 0.08f) * (1f - dev.mcreload.anim.client.math.AngleMath.ease((t - 0.45f) / 0.55f)) * gate
-                * (1f - m.swimW.v);
+        float e = Math.min(1f, t / 0.05f) * (1f - AngleMath.ease((t - 0.55f) / 0.45f)) * gate * (1f - m.swimW.v);
         if (e <= 0.001f) return;
-        float wave = Mth.sin(t * Mth.TWO_PI * 2.2f);
-        float aw = e * m.armsFree.v;
-        // Arms locked overhead, hands together.
-        f.rightArm().override(-3.0f, 0f, -0.10f, aw);
-        f.leftArm().override(-3.0f, 0f, 0.10f, aw);
+        streamline(f, s, e, e * m.armsFree.v);
+        // Head straight down at first, then the dolphin curve back toward horizontal.
+        float pitch = Mth.lerp(AngleMath.ease((t - 0.25f) / 0.6f), 1.55f, 0.9f);
+        f.body().rx -= pitch * e;
+        float wave = Mth.sin(t * Mth.TWO_PI * 1.8f);
+        f.rightLeg().overrideX(0.25f * wave, e);
+        f.leftLeg().overrideX(0.25f * wave, e);
+        Rigging.leanTorso(f, s, -0.15f * wave * e);
+        f.head().rx += 0.30f * e;
+    }
+
+    private static void streamline(PoseFrame f, Signs s, float w, float aw) {
+        f.rightArm().override(-3.05f, 0f, -0.12f, aw);
+        f.leftArm().override(-3.05f, 0f, 0.12f, aw);
         f.rightArm().overrideBend(0f, aw);
         f.leftArm().overrideBend(0f, aw);
-        // Legs together doing a dolphin kick: a wave from the hips through the knees.
-        f.rightLeg().override(0.20f * wave, 0f, 0.02f, e);
-        f.leftLeg().override(0.20f * wave, 0f, -0.02f, e);
-        f.rightLeg().overrideBend(s.knee() * (0.15f + 0.45f * Math.max(0f, -wave)), e);
-        f.leftLeg().overrideBend(s.knee() * (0.15f + 0.45f * Math.max(0f, -wave)), e);
-        // Body pitched head-down into the water, levelling out as the dive ends.
-        float pitch = 1.25f * (1f - 0.6f * dev.mcreload.anim.client.math.AngleMath.ease(t / 0.8f));
-        f.body().rx -= pitch * e;
-        Rigging.leanTorso(f, s, -0.12f * wave * e);
-        f.head().rx += 0.35f * e;
+        f.rightLeg().override(0.05f, 0f, 0.02f, w);
+        f.leftLeg().override(0.05f, 0f, -0.02f, w);
+        f.rightLeg().overrideBend(s.knee() * 0.10f, w);
+        f.leftLeg().overrideBend(s.knee() * 0.10f, w);
+        f.torso().overrideBend(0f, w);
+    }
+
+    /**
+     * Falling backwards into water from high up: turned over onto the back, hands clasped behind
+     * the head, one knee up, completely relaxed; a splash pose for a moment after hitting the water.
+     */
+    private static void chill(MotionState m, PoseFrame f, Signs s, float gate) {
+        float air = m.chillW.v * gate * (1f - m.waterW.v);
+        float t = m.since(m.chillSplashStart) / 0.8f;
+        float splash = t >= 0f && t < 1f ? (1f - AngleMath.ease((t - 0.3f) / 0.7f)) * gate : 0f;
+        float w = Math.max(air, splash);
+        if (w <= 0.001f) return;
+        float aw = w * m.armsFree.v;
+        // On the back.
+        f.body().rx += 1.35f * w;
+        f.head().rx -= 0.20f * w;
+        // Hands behind the head.
+        f.rightArm().override(-2.90f, -0.30f, 0.45f, aw);
+        f.leftArm().override(-2.90f, 0.30f, -0.45f, aw);
+        f.rightArm().overrideBend(s.elbow() * 1.6f, aw);
+        f.leftArm().overrideBend(s.elbow() * 1.6f, aw);
+        // One leg straight, the other knee up.
+        f.rightLeg().override(-0.75f, 0f, 0.08f, w);
+        f.rightLeg().overrideBend(s.knee() * 1.25f, w);
+        f.leftLeg().override(-0.10f, 0f, -0.05f, w);
+        f.leftLeg().overrideBend(s.knee() * 0.10f, w);
+        f.torso().overrideBend(0f, w);
     }
 
     /** @param out +1 right arm, -1 left arm (sign of "away from the body" on the z axis). */

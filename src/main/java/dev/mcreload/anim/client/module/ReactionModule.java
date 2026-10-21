@@ -102,7 +102,12 @@ final class ReactionModule implements AnimModule {
         float t = m.since(m.landStart) / SWORD_LAND_SECONDS;
         if (t >= 1f || t < 0f) return;
         float e = AngleMath.ease(t / 0.12f) * (1f - AngleMath.ease((t - 0.6f) / 0.4f)) * gate;
+        m.itemTiltTarget = 0f;
+        m.itemTilt.v *= 1f - e;
         plantBlade(f, s, e, main, off, side, 0.75f, AngleMath.ease(t * SWORD_LAND_SECONDS / 0.16f));
+        // The impact: thrown down hard onto the knee, then pushing up.
+        f.body().py -= 0.10f * Mth.sin(Mth.PI * AngleMath.clamp(t / 0.35f, 0f, 1f)) * e;
+        Rigging.leanTorso(f, s, 0.20f * Mth.sin(Mth.PI * AngleMath.clamp(t / 0.4f, 0f, 1f)) * e);
     }
 
     private static void blast(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate, float arms,
@@ -114,19 +119,26 @@ final class ReactionModule implements AnimModule {
         boolean blade = Weapons.isMeleeWeapon(rig.player.getMainHandItem());
         if (blade) {
             // Drive the blade into the ground and brace, sliding back with the blast.
+            m.itemTiltTarget = 0f;
+            m.itemTilt.v *= 1f - e;
             plantBlade(f, s, e, main, off, side, 0.60f, AngleMath.ease((t * BLAST_SECONDS - 0.05f) / 0.18f));
             // Pushed back by the blast, the blade ploughing through the ground.
             f.body().pz += 0.30f * AngleMath.ease(t / 0.35f) * e;
         } else {
-            // Flash-banged: both forearms up over the face, head ducked, cowering.
-            f.rightArm().override(-1.95f, -0.60f, 0f, e * arms);
-            f.leftArm().override(-1.95f, 0.60f, 0f, e * arms);
-            f.rightArm().overrideBend(s.elbow() * 1.80f, e * arms);
-            f.leftArm().overrideBend(s.elbow() * 1.80f, e * arms);
-            f.head().rx += 0.35f * e;
-            Rigging.leanTorso(f, s, 0.25f * e);
-            Rigging.crouch(f, s, 0.30f * e);
-            f.body().pz += 0.06f * e;
+            // Flash-banged: curled up behind both forearms crossed over the face, back rounded,
+            // knees bent, staggered back a step by the blast.
+            float flinch = Mth.sin(Mth.PI * AngleMath.clamp(t / 0.25f, 0f, 1f));
+            f.rightArm().override(-1.60f, -0.70f, 0f, e * arms);
+            f.leftArm().override(-1.75f, 0.70f, 0f, e * arms);
+            f.rightArm().overrideBend(s.elbow() * 1.55f, e * arms);
+            f.leftArm().overrideBend(s.elbow() * 1.45f, e * arms);
+            f.head().rx += 0.40f * e;
+            Rigging.leanTorso(f, s, (0.50f + 0.15f * flinch) * e);
+            Rigging.crouch(f, s, 0.42f * e);
+            PartPose rearLeg = side > 0 ? f.rightLeg() : f.leftLeg();
+            rearLeg.rx += 0.35f * flinch * e;
+            f.body().pz += (0.10f + 0.08f * flinch) * e;
+            f.body().rx += 0.10f * flinch * e;
         }
     }
 
@@ -175,6 +187,10 @@ final class ReactionModule implements AnimModule {
         f.head().rx += 0.50f * e;
         f.head().ry += 0.45f * look * e;
         f.body().rz += 0.04f * Mth.sin(t * 9f) * e;
+        // Dazed: hunched over, knees soft and wobbling, swaying on the spot.
+        Rigging.leanTorso(f, s, (0.30f + 0.08f * Mth.sin(t * 7f)) * e);
+        Rigging.crouch(f, s, (0.18f + 0.08f * Mth.sin(t * 11f)) * e);
+        f.body().px += 0.04f * Mth.sin(t * 5f) * e;
         f.rightLeg().bend += s.knee() * 0.25f * e;
         f.leftLeg().bend += s.knee() * 0.25f * e;
     }

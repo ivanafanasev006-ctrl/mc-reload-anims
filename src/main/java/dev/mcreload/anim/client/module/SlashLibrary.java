@@ -115,11 +115,19 @@ final class SlashLibrary {
     };
 
     /** Bare hands on a block: hammer-fist straight down, the whole torso pumping into it. */
+    /** Digging with bare hands: reach, dig the fingers in, scoop the earth back toward the chest. */
     static final Key[] FIST_BLOCK = {
-            new Key(0f, -1.10f, -0.15f, 0.05f, 1.30f, 0f, -0.05f, -0.45f, 0.15f, 1.00f, -0.25f, 0.45f, 0.15f, 0.35f),
-            new Key(0.40f, -2.30f, -0.05f, 0.10f, 1.35f, 0.30f, 0.06f, -0.40f, 0.15f, 1.00f, -0.25f, 0.45f, 0.15f, 0.35f),
-            new Key(0.62f, -0.90f, -0.20f, 0.00f, 0.25f, -0.30f, -0.30f, -0.30f, 0.20f, 0.90f, -0.40f, 0.70f, 0.20f, 0.45f),
-            new Key(1.00f, -1.10f, -0.15f, 0.05f, 1.30f, 0f, -0.05f, -0.45f, 0.15f, 1.00f, -0.25f, 0.45f, 0.15f, 0.35f),
+            new Key(0f, -1.85f, -0.10f, 0.10f, 0.60f, 0.15f, -0.10f, -0.45f, 0.15f, 0.90f, -0.35f, 0.60f, 0.20f, 0.50f),
+            new Key(0.45f, -1.05f, -0.15f, 0.05f, 0.15f, -0.20f, -0.30f, -0.50f, 0.15f, 0.90f, -0.45f, 0.80f, 0.25f, 0.60f),
+            new Key(0.75f, -0.45f, 0.05f, 0.25f, 1.30f, 0.10f, -0.15f, -0.45f, 0.15f, 0.90f, -0.40f, 0.70f, 0.20f, 0.55f),
+            new Key(1.00f, -1.85f, -0.10f, 0.10f, 0.60f, 0.15f, -0.10f, -0.45f, 0.15f, 0.90f, -0.35f, 0.60f, 0.20f, 0.50f),
+    };
+
+    /** Placing a block / using something on a block: the hand pushes it into place. */
+    static final Key[] PLACE = {
+            new Key(0f, -0.95f, -0.05f, 0.10f, 0.95f, 0.05f, 0f, -0.35f, 0.15f, 0.40f, -0.15f, 0.30f, 0.10f, 0.25f),
+            new Key(0.35f, -1.55f, -0.15f, 0.05f, 0.05f, -0.18f, -0.12f, -0.30f, 0.15f, 0.40f, -0.30f, 0.45f, 0.15f, 0.30f),
+            new Key(1.00f, -0.80f, -0.05f, 0.10f, 0.60f, 0f, 0f, -0.35f, 0.15f, 0.40f, -0.15f, 0.30f, 0.10f, 0.25f),
     };
 
     /** Throwing an item away (Q): arm cocked back, flung out forward, follow-through. */
@@ -144,6 +152,7 @@ final class SlashLibrary {
             case MotionState.CHOP -> CHOP;
             case MotionState.FIST_BLOCK -> FIST_BLOCK;
             case MotionState.THROW -> THROW;
+            case MotionState.PLACE -> PLACE;
             default -> HORIZONTAL;
         };
     }

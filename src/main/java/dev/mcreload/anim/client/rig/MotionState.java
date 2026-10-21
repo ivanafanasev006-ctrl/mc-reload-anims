@@ -152,7 +152,7 @@ public final class MotionState {
 
     // ---- melee / tools ----
     public static final int SLASH_H = 0, SLASH_V = 1, SLASH_BACK = 2, SPIN = 3, PUNCH = 4, TOOL = 5,
-            PICK = 6, SHOVEL = 7, HOE = 8, CHOP = 9, AXE_OVER = 10, AXE_SWEEP = 11, THROW = 12, FIST_BLOCK = 13;
+            PICK = 6, SHOVEL = 7, HOE = 8, CHOP = 9, AXE_OVER = 10, AXE_SWEEP = 11, THROW = 12, FIST_BLOCK = 13, PLACE = 14;
     /** Sword combo order: forehand, backhand, overhead, spinning finisher. */
     private static final int[] SWORD_COMBO = {SLASH_H, SLASH_BACK, SLASH_V, SPIN};
     public int slashKind = -1;
@@ -171,6 +171,14 @@ public final class MotionState {
 
     /** Continuous stroke phase for front crawl, radians. */
     public float swimPhase, paddlePhase;
+    private double airStartY;
+    private boolean diveEligible;
+    private float fallHeight;
+    /** Falling backwards into water from high up: lying back with the hands behind the head. */
+    public final Smooth chillW = new Smooth(4f);
+    public float chillSplashStart = -100f;
+    /** How far the shoulders sit below the water surface (blocks), for floating higher. */
+    public float surfaceDepth;
     private float fistSide = 1f;
     public final Smooth paddleW = new Smooth(4f), diveAirW = new Smooth(10f);
     /** Continuous climbing cycle, radians, driven by height gained. */
@@ -194,6 +202,8 @@ public final class MotionState {
         if (vx * vx + vy * vy + vz * vz > 9.0) { // teleport / respawn
             vx = vy = vz = 0;
             pvx = pvy = pvz = 0;
+            airStartY = y;
+            lastWaterTick = -1000;
         }
         prevYawRate = yawRate;
         yawRate = Mth.wrapDegrees(player.yBodyRot - player.yBodyRotO);
@@ -213,8 +223,17 @@ public final class MotionState {
 
         // Diving into water from a height: streamlined dolphin entry; never "land" on the bottom.
         boolean inWater = player.isInWater();
-        // Any jump into water (not just stepping in) ends in a dolphin dive.
-        if (inWater && !wasInWater && (minAirVy < -0.25f || airTicks > 4) && Cfg.water) diveStart = time;
+        // Height fallen since the feet last left solid ground (not water).
+        if (ground || player.onClimbable()) airStartY = player.getY();
+        float fallen = (float) (airStartY - player.getY());
+        // A dive only when jumping or falling in from dry land at least ~1.5 blocks above the
+        // water, never when bobbing back in after surfacing.
+        boolean fromLand = player.tickCount - lastWaterTick > 20;
+        if (inWater && !wasInWater && fromLand && fallen >= 1.4f && Cfg.water) {
+            if (chillW.v > 0.5f) chillSplashStart = time; else diveStart = time;
+        }
+        diveEligible = !inWater && fromLand;
+        fallHeight = fallen;
         if (inWater) { minAirVy = 0f; airTicks = 0; lastWaterTick = player.tickCount; }
         wasInWater = inWater;
 
@@ -402,7 +421,11 @@ public final class MotionState {
         paddleW.to(treading ? Mth.clamp(horizontalSpeed / 0.07f, 0f, 1f) : 0f, dt);
         if (treading) paddlePhase += dt * (2.2f + 10f * Math.min(horizontalSpeed, 0.15f));
         // About to drop into water: start the dolphin dive in the air.
-        diveAirW.to(air && vertical < -0.30f && airTicks > 4 && waterBelow() ? 1f : 0f, dt);
+        boolean overWater = air && diveEligible && vertical < -0.25f && fallHeight >= 1.0f && waterBelow();
+        boolean backwards = forward.v < -0.02f || isLocalPressingBack();
+        chillW.to(overWater && backwards && fallHeight >= 4f ? 1f : 0f, dt);
+        diveAirW.to(overWater && chillW.v < 0.5f ? 1f : 0f, dt);
+        surfaceDepth = treading ? surfaceDepth() : 0f;
 
         // Climbing: the cycle follows the height actually gained, so hands match the speed.
         double py = Mth.lerp(pt, player.yo, player.getY());
@@ -563,6 +586,25 @@ public final class MotionState {
         return -1;
     }
 
+    private boolean isLocalPressingBack() {
+        return player instanceof net.minecraft.client.player.LocalPlayer lp && lp.input != null && lp.input.forwardImpulse < -0.1f;
+    }
+
+    /** Distance from the shoulders (1.3 blocks up) down to... i.e. how deep the shoulders are under the surface. */
+    private float surfaceDepth() {
+        net.minecraft.world.level.Level level = player.level();
+        net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
+        double top = -1;
+        for (int i = 0; i < 4; i++) {
+            net.minecraft.world.level.material.FluidState fs = level.getFluidState(pos);
+            if (fs.isEmpty() || !fs.is(net.minecraft.tags.FluidTags.WATER)) break;
+            top = pos.getY() + fs.getHeight(level, pos);
+            pos.move(net.minecraft.core.Direction.UP);
+        }
+        if (top < 0) return 0f;
+        return (float) (top - (player.getY() + 1.3));
+    }
+
     /** Water within a few blocks below the feet, with nothing solid in between. */
     private boolean waterBelow() {
         net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
@@ -642,7 +684,11 @@ public final class MotionState {
             fistSide = -fistSide;
             slashSide *= fistSide;
             slashKind = kind;
-            slashDuration = 0.36f;
+            slashDuration = 0.42f;
+            slashChained = false;
+        } else if (kind == PLACE) {
+            slashKind = kind;
+            slashDuration = 0.38f;
             slashChained = false;
         } else {
             slashKind = kind;
@@ -653,6 +699,10 @@ public final class MotionState {
 
     private int classify(ItemStack held) {
         if (isLocalDropping()) return THROW;
+        // Right-click on a block (placing, opening, using an item on it): a press of the hand.
+        if (isLocalUsing() || (player != Minecraft.getInstance().player && held.getItem() instanceof net.minecraft.world.item.BlockItem)) {
+            return PLACE;
+        }
         if (held.isEmpty()) return targetingBlock() ? FIST_BLOCK : PUNCH;
         Item item = held.getItem();
         if (item instanceof PickaxeItem) return PICK;
@@ -661,6 +711,11 @@ public final class MotionState {
         if (item instanceof AxeItem) return targetingBlock() ? CHOP : AXE_OVER;
         if (Weapons.isMeleeWeapon(held)) return SLASH_H;
         return TOOL;
+    }
+
+    private boolean isLocalUsing() {
+        Minecraft mc = Minecraft.getInstance();
+        return player == mc.player && mc.options.keyUse.isDown();
     }
 
     /** Vanilla swings the arm when you drop an item (Q): detect it for your own player. */

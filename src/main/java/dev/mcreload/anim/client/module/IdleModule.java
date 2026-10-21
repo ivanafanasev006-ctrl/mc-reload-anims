@@ -22,8 +22,9 @@ final class IdleModule implements AnimModule {
 
         float breath = Mth.sin(m.time * 1.7f + m.seed);
         Rigging.leanTorso(f, s, (0.012f + 0.012f * breath) * still);
-        Rigging.armsOut(f, (0.025f + 0.015f * breath) * still);
-        Rigging.elbows(f, s, 0.10f * still);
+        float arms = m.armsFree.v;
+        Rigging.armsOut(f, (0.025f + 0.015f * breath) * still * arms);
+        Rigging.elbows(f, s, 0.10f * still * arms);
         f.head().rx += 0.01f * breath * still;
 
         float shift = Mth.sin(m.time * 0.37f + m.seed * 1.7f);

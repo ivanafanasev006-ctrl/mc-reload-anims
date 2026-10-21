@@ -47,7 +47,7 @@ public final class IronsSpellsCompat {
             getSpellId = synced.getMethod("getCastingSpellId");
             ready = true;
         } catch (Throwable t) {
-            McReloadAnim.LOG.warn("[mcreload] Iron's Spells found but its casting API changed; spell stances disabled.", t);
+            McReloadAnim.LOG.warn("[kinetrix] Iron's Spells found but its casting API changed; spell stances disabled.", t);
             return;
         }
         try {
@@ -57,9 +57,9 @@ public final class IronsSpellsCompat {
             getSchoolType = spell.getMethod("getSchoolType");
             getCastType = spell.getMethod("getCastType");
         } catch (Throwable t) {
-            McReloadAnim.LOG.info("[mcreload] Iron's Spells school lookup unavailable, using neutral stance for all spells.");
+            McReloadAnim.LOG.info("[kinetrix] Iron's Spells school lookup unavailable, using neutral stance for all spells.");
         }
-        McReloadAnim.LOG.info("[mcreload] Iron's Spells 'n Spellbooks detected: casting stances enabled.");
+        McReloadAnim.LOG.info("[kinetrix] Iron's Spells 'n Spellbooks detected: casting stances enabled.");
     }
 
     public static boolean isReady() {
@@ -76,7 +76,7 @@ public final class IronsSpellsCompat {
         } catch (Throwable t) {
             if (!warned) {
                 warned = true;
-                McReloadAnim.LOG.warn("[mcreload] Could not read Iron's Spells casting state; spell stances disabled.", t);
+                McReloadAnim.LOG.warn("[kinetrix] Could not read Iron's Spells casting state; spell stances disabled.", t);
             }
             ready = false;
             return CastInfo.NONE;

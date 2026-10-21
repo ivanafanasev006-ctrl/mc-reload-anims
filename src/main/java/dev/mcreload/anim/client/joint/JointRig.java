@@ -163,7 +163,7 @@ public final class JointRig {
         // Turn the held weapon in the hand (pivot at the fist).
         if (Math.abs(itemTilt) > 1e-3f && (arm == HumanoidArm.RIGHT) == mainRight) {
             ps.translate(0f, 10f / 16f, -1f / 16f);
-            ps.mulPose(new Quaternionf().rotationX(-itemTilt));
+            ps.mulPose(new Quaternionf().rotationX(itemTilt));
             ps.translate(0f, -10f / 16f, 1f / 16f);
         }
     }

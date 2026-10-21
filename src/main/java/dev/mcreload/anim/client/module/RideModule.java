@@ -75,30 +75,39 @@ final class RideModule implements AnimModule {
         f.head().rx -= lean * 0.20f * w;
     }
 
+    /**
+     * In the saddle: thighs along the horse's flanks, shins hanging straight down to the stirrups,
+     * a straight back that rises and settles with the gait (posting at a trot, leaning forward
+     * and moving with the neck at a gallop), hands low and together on the reins, giving with
+     * the horse's head.
+     */
     private static void mount(LivingEntity mount, MotionState m, PoseFrame f, Signs s, float w, float pt) {
         float speed = Math.min(mount.walkAnimation.speed(pt), 1f);
         float phase = mount.walkAnimation.position(pt) * 0.6662f;
-        // Rising and settling twice per stride, rocking front to back.
-        float bounce = Math.abs(Mth.sin(phase));
-        f.body().py += (0.05f * bounce - 0.02f) * speed * w;
-        f.body().rx += (-0.10f * speed + 0.07f * Mth.sin(phase * 2f) * speed) * w;
-        Rigging.leanTorso(f, s, (0.08f + 0.10f * speed) * w);
-        f.head().rx -= (0.12f + 0.12f * speed) * w;
+        float gallop = Mth.clamp((speed - 0.55f) / 0.35f, 0f, 1f);
+
+        // Legs: astride, knees down, a little grip.
+        float grip = 0.06f * Math.abs(Mth.sin(phase)) * speed;
+        f.rightLeg().override(-1.00f, 0.25f, 0.42f - grip, w);
+        f.leftLeg().override(-1.00f, -0.25f, -0.42f + grip, w);
+        f.rightLeg().overrideBend(s.knee() * (1.00f + 0.10f * speed), w);
+        f.leftLeg().overrideBend(s.knee() * (1.00f + 0.10f * speed), w);
+
+        // Body: rising and settling with the stride, leaning into speed.
+        float post = Math.abs(Mth.sin(phase));
+        f.body().py += (0.06f * post - 0.02f) * speed * w;
+        f.body().rx -= (0.06f * speed + 0.20f * gallop) * w;
+        f.body().rx += 0.05f * Mth.sin(phase * 2f) * speed * w;
+        Rigging.leanTorso(f, s, (0.05f + 0.10f * speed + 0.15f * gallop) * w);
+        f.head().rx -= (0.05f * speed + 0.25f * gallop) * w;
         f.body().rz += 0.03f * Mth.sin(phase) * speed * w;
 
-        // Hands on the reins, bobbing with the gait.
+        // Hands low and together on the reins, following the horse's head.
         float arms = w * m.armsFree.v;
-        float bob = 0.12f * Mth.sin(phase * 2f + 0.6f) * speed;
-        f.rightArm().targetX(-0.80f + bob, arms);
-        f.leftArm().targetX(-0.80f + bob, arms);
-        f.rightArm().targetY(-0.25f, arms);
-        f.leftArm().targetY(0.25f, arms);
-        f.rightArm().targetZ(0.05f, arms);
-        f.leftArm().targetZ(-0.05f, arms);
-        Rigging.elbows(f, s, 1.05f * arms);
-
-        // Knees grip the saddle (on top of vanilla's riding legs).
-        f.rightLeg().bend += s.knee() * (0.55f + 0.10f * bounce * speed) * w;
-        f.leftLeg().bend += s.knee() * (0.55f + 0.10f * bounce * speed) * w;
+        float give = 0.10f * Mth.sin(phase * 2f + 0.6f) * speed + 0.15f * gallop * Mth.sin(phase * 2f);
+        f.rightArm().override(-0.75f + give, -0.30f, 0.02f, arms);
+        f.leftArm().override(-0.75f + give, 0.30f, -0.02f, arms);
+        f.rightArm().overrideBend(s.elbow() * (0.95f - 0.25f * gallop), arms);
+        f.leftArm().overrideBend(s.elbow() * (0.95f - 0.25f * gallop), arms);
     }
 }

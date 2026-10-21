@@ -15,7 +15,7 @@ public final class Joints {
     public static boolean firstPerson;
 
     static {
-        McReloadAnim.LOG.info("[mcreload] Joints: {}", BENDY
+        McReloadAnim.LOG.info("[kinetrix] Joints: {}", BENDY
                 ? "bendy-lib found, it will bend the limbs"
                 : "drawing elbows, knees and waist ourselves");
     }

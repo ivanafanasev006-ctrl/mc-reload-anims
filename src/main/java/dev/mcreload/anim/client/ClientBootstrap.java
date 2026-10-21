@@ -24,11 +24,11 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 
 public final class ClientBootstrap {
     public static final KeyMapping TOGGLE = new KeyMapping(
-            "key.mcreload.toggle", KeyConflictContext.IN_GAME, InputConstants.UNKNOWN, "key.categories.mcreload");
+            "key.kinetrix.toggle", KeyConflictContext.IN_GAME, InputConstants.UNKNOWN, "key.categories.kinetrix");
 
     public static final KeyMapping EMOTES = new KeyMapping(
-            "key.mcreload.emotes", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM,
-            org.lwjgl.glfw.GLFW.GLFW_KEY_B, "key.categories.mcreload");
+            "key.kinetrix.emotes", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM,
+            org.lwjgl.glfw.GLFW.GLFW_KEY_B, "key.categories.kinetrix");
 
     public static void init(IEventBus modBus) {
         modBus.addListener(ClientBootstrap::onRegisterKeys);
@@ -46,7 +46,7 @@ public final class ClientBootstrap {
         // Every client-side player (you and everyone you can see) gets its own rig: our
         // procedural layer at the bottom of the animation stack and the harmonizer on top.
         PlayerAnimationAccess.REGISTER_ANIMATION_EVENT.register(ClientBootstrap::attach);
-        McReloadAnim.LOG.info("[mcreload] Player animations registered with playerAnimator.");
+        McReloadAnim.LOG.info("[kinetrix] Player animations registered with playerAnimator.");
     }
 
     private static void attach(AbstractClientPlayer player, AnimationStack stack) {
@@ -84,7 +84,7 @@ public final class ClientBootstrap {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null) {
                 mc.player.displayClientMessage(Component.translatable(
-                        enabled ? "message.mcreload.enabled" : "message.mcreload.disabled"), true);
+                        enabled ? "message.kinetrix.enabled" : "message.kinetrix.disabled"), true);
             }
         }
     }

@@ -19,8 +19,8 @@ public final class ModCompat {
         ironsSpells = mods.isLoaded(IronsSpellsCompat.MODID);
         emotecraft = mods.isLoaded("emotecraft");
 
-        if (betterCombat) McReloadAnim.LOG.info("[mcreload] Better Combat detected: attack animations will be blended.");
-        if (emotecraft) McReloadAnim.LOG.info("[mcreload] Emotecraft detected: emotes will be blended.");
+        if (betterCombat) McReloadAnim.LOG.info("[kinetrix] Better Combat detected: attack animations will be blended.");
+        if (emotecraft) McReloadAnim.LOG.info("[kinetrix] Emotecraft detected: emotes will be blended.");
         IronsSpellsCompat.init();
     }
 

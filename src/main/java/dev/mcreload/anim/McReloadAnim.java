@@ -20,7 +20,7 @@ import org.slf4j.Logger;
  */
 @Mod(McReloadAnim.MODID)
 public final class McReloadAnim {
-    public static final String MODID = "mcreload";
+    public static final String MODID = "kinetrix";
     public static final Logger LOG = LogUtils.getLogger();
 
     public McReloadAnim() {

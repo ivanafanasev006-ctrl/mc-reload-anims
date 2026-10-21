@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 /** Emote menu: a grid of buttons; picking one plays it and closes the menu. */
 public final class EmoteScreen extends Screen {
     public EmoteScreen() {
-        super(Component.translatable("screen.mcreload.emotes"));
+        super(Component.translatable("screen.kinetrix.emotes"));
     }
 
     @Override
@@ -26,7 +26,7 @@ public final class EmoteScreen extends Screen {
             final int emote = i;
             int x = x0 + (i % cols) * (bw + gap), y = y0 + (i / cols) * (bh + gap);
             addRenderableWidget(Button.builder(
-                    Component.translatable("emote.mcreload." + MotionState.EMOTE_KEYS[i]),
+                    Component.translatable("emote.kinetrix." + MotionState.EMOTE_KEYS[i]),
                     b -> play(emote)).bounds(x, y, bw, bh).build());
         }
     }
@@ -44,7 +44,7 @@ public final class EmoteScreen extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float pt) {
         renderBackground(g);
         g.drawCenteredString(font, title, width / 2, 20, 0xFFFFFF);
-        g.drawCenteredString(font, Component.translatable("screen.mcreload.emotes.hint"), width / 2, 34, 0xA0A0A0);
+        g.drawCenteredString(font, Component.translatable("screen.kinetrix.emotes.hint"), width / 2, 34, 0xA0A0A0);
         super.render(g, mouseX, mouseY, pt);
     }
 
