@@ -338,7 +338,7 @@ public final class MotionState {
                 float impact = -minAirVy;
                 ItemStack main = player.getMainHandItem();
                 boolean swordOnly = Weapons.isMeleeWeapon(main) && player.getOffhandItem().isEmpty();
-                if (impact > 0.38f && chillW.v > 0.45f) {
+                if (impact > 0.25f && chillW.v > 0.45f) {
                     // Fell backwards lying back (jumped back holding S): roll out over the shoulder.
                     landKind = LAND_BACKROLL;
                     landStart = time;

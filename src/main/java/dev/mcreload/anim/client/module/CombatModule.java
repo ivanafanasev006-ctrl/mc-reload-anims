@@ -342,7 +342,7 @@ final class CombatModule implements AnimModule {
         if (reel > 0.001f) {
             // Strike: rod snapped up and back, leaning back against the fish.
             float jerk = AngleMath.ease(tr / 0.15f) * (1f - AngleMath.ease((tr - 0.25f) / 0.5f));
-            x = Mth.lerp(jerk, x, -2.05f);
+            x = Mth.lerp(jerk, x, -1.80f);
             bend = Mth.lerp(jerk, bend, 0.55f);
             lean -= 0.18f * jerk;
             twist += 0.15f * jerk;

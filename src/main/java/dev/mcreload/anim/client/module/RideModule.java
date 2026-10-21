@@ -127,7 +127,7 @@ final class RideModule implements AnimModule {
 
         // ---- body
         float post = Math.max(0f, Mth.sin(phase));                 // trot: up every other beat
-        float lift = 0.08f * post * trot + 0.06f * gallop + 0.10f * rise - 0.07f * landing;
+        float lift = 0.08f * post * trot + 0.10f * gallop + 0.10f * rise - 0.07f * landing;
         f.body().py += lift * w;
         // Hips swinging with the walk.
         f.body().rz += 0.05f * Mth.sin(phase) * walk * w;
@@ -136,7 +136,7 @@ final class RideModule implements AnimModule {
         f.body().rx += (0.07f * Mth.sin(phase * 2f) * gallop + 0.03f * Mth.sin(phase * 2f) * trot) * w;
         // Leaning: into speed, folding over the neck on a jump, onto the neck when rearing,
         // sitting back for the landing.
-        float forward = 0.04f * walk + 0.12f * trot + 0.30f * gallop + 0.45f * rise + 0.25f * drop + 0.55f * rear
+        float forward = 0.05f * walk + 0.15f * trot + 0.45f * gallop + 0.45f * rise + 0.25f * drop + 0.55f * rear
                 - 0.18f * landing + 0.08f * still * graze;
         f.body().rx -= forward * 0.45f * w;
         Rigging.leanTorso(f, s, forward * 0.70f * w);

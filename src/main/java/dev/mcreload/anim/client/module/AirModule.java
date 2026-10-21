@@ -42,10 +42,12 @@ final class AirModule implements AnimModule {
                 float fallW = air * fall * (1f - dive);
                 float diveW = air * fall * dive;
                 if (jumpW > 0.001f) jump(m, f, s, jumpW, arms, pt);
-                // A high drop with only a blade in hand: get ready to plant it on landing.
+                // Dropping with only a blade in hand: as soon as we are clearly falling, both
+                // hands take the sword up overhead, ready to plant it on landing.
                 boolean bladeOnly = m.holdingBlade && rig.player.getOffhandItem().isEmpty();
-                float bladeW = bladeOnly ? fallW : 0f;
-                if (fallW - bladeW > 0.001f) fall(m, f, s, fallW - bladeW, arms);
+                float bladeW = bladeOnly ? air * AngleMath.clamp((-m.vertical - 0.12f) / 0.30f, 0f, 1f) : 0f;
+                float plainFall = fallW * (1f - bladeW);
+                if (plainFall > 0.001f) fall(m, f, s, plainFall, arms);
                 if (bladeW > 0.001f) bladeFall(m, f, s, bladeW, arms, m.mainRight ? 1f : -1f);
                 if (diveW > 0.001f) skydive(m, f, s, diveW, arms);
             }

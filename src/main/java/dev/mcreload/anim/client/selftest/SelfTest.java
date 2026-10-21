@@ -132,7 +132,8 @@ public final class SelfTest {
 
     private static void setup(Minecraft mc) {
         if (timer != 1) {
-            if (timer > 60) {
+            // Start only once the server has actually built the test track (slow CI machines).
+            if (timer > 60 && worldReady) {
                 phase = Phase.RUNNING;
                 timer = 0;
                 scenarioIndex = 0;
@@ -177,6 +178,7 @@ public final class SelfTest {
                 lvl.setBlock(new BlockPos(LADDER_X, y, 0), floor, 2);
                 lvl.setBlock(new BlockPos(LADDER_X + 1, y, 0), ladder, 2);
             }
+            worldReady = true;
         });
     }
 
@@ -194,6 +196,7 @@ public final class SelfTest {
     private interface Driver { void tick(Minecraft mc, int t); }
 
     private static final ScriptedInput INPUT = new ScriptedInput();
+    private static volatile boolean worldReady;
     private static int framesInWindow;
     private static int currentWindow = -1;
     private static long lastShotNanos;
@@ -399,6 +402,12 @@ public final class SelfTest {
                     rig == null ? "-" : String.format("%.2f", rig.motion.sprintW.v),
                     rig == null ? "-" : String.format("%.2f", rig.motion.airW.v),
                     String.format("%.2f", mc.player.walkAnimation.speed()));
+            if (mc.player.getVehicle() instanceof net.minecraft.world.entity.LivingEntity v) {
+                McReloadAnim.LOG.info("[kinetrix] self-test {} mount pos=({}, {}) onGround={} walkSpeed={} vy={} zza={}",
+                        currentLabel, String.format("%.2f", v.getX()), String.format("%.2f", v.getY()), v.onGround(),
+                        String.format("%.2f", v.walkAnimation.speed()),
+                        rig == null ? "-" : String.format("%.3f", rig.motion.mountVy.v), String.format("%.2f", mc.player.zza));
+            }
         }
 
         Scenario s = SCENARIOS.get(scenarioIndex);
