@@ -203,7 +203,11 @@ public final class SelfTest {
     private static void buildScenarios() {
         ItemStack none = ItemStack.EMPTY;
         SCENARIOS.add(new Scenario("00_stand", 30, sp -> place(sp, 2, Y, 0, -90, none),
-                (mc, t) -> move(mc, false, false, false, false), new Window(15, 30, 2, 0.4f)));
+                (mc, t) -> {
+                    move(mc, false, false, false, false);
+                    var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player);
+                    if (r != null) { r.motion.idleSince = r.motion.time; r.motion.idleAction = -1; }
+                }, new Window(15, 30, 2, 0.4f)));
         SCENARIOS.add(new Scenario("02_walk", 40, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> move(mc, true, false, false, false), new Window(20, 40, 5, 0.08f)));
         SCENARIOS.add(new Scenario("02b_walk_sword", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
@@ -255,6 +259,20 @@ public final class SelfTest {
                 (mc, t) -> move(mc, false, false, false, false), new Window(5, 40, 8, 0.05f)));
         SCENARIOS.add(new Scenario("11e_jump_in", 50, sp -> place(sp, POOL_X - 3, Y, 0, -90, none),
                 (mc, t) -> move(mc, t > 4 && t < 20, t > 4 && t < 20, false, t == 14 || t == 15), new Window(14, 40, 8, 0.05f)));
+        SCENARIOS.add(new Scenario("13_ladder", 50, sp -> place(sp, LADDER_X + 1, Y, 0, 90, none),
+                (mc, t) -> move(mc, true, false, false, false), new Window(15, 50, 4, 0.2f)));
+        SCENARIOS.add(new Scenario("25_eat", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.GOLDEN_APPLE, 8)),
+                (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 38, 3, 0.25f)));
+        SCENARIOS.add(new Scenario("11_swim", 50, sp -> place(sp, POOL_X + 2, Y - 3, 0, -90, none),
+                (mc, t) -> move(mc, t > 5, t > 5, false, false), new Window(35, 50, 2, 0.15f)));
+        SCENARIOS.add(new Scenario("22_throw", 30, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.COBBLESTONE, 16)),
+                (mc, t) -> {
+                    boolean throwNow = t == 8;
+                    mc.options.keyDrop.setDown(throwNow);
+                    if (throwNow) mc.player.swing(InteractionHand.MAIN_HAND);
+                }, new Window(8, 24, 4, 0.04f)));
+        SCENARIOS.add(new Scenario("23b_crossbow_load_aim", 60, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.CROSSBOW)),
+                (mc, t) -> mc.options.keyUse.setDown(t > 4 && t < 40), new Window(15, 35, 2, 0.4f), new Window(48, 60, 1, 0.3f)));
         String[] idles = {"stretch", "scratch_look", "stick_fencing", "hands_on_hips", "yawn", "look_at_hands",
                 "neck", "impatient", "kick_pebble", "squats"};
         for (int i = 0; i < idles.length; i++) {

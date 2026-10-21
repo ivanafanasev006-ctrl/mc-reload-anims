@@ -182,7 +182,7 @@ final class CombatModule implements AnimModule {
             net.minecraft.world.InteractionHand used = rig.player.getUsedItemHand();
             boolean offHasItem = !rig.player.getItemInHand(used == net.minecraft.world.InteractionHand.MAIN_HAND
                     ? net.minecraft.world.InteractionHand.OFF_HAND : net.minecraft.world.InteractionHand.MAIN_HAND).isEmpty();
-            if (offHasItem) otherArm.overrideRoll(side * 1.45f, bow);
+            // (Vanilla keeps it as is; turning it only made it stick out.)
             if (m.bowStyle == 1) {
                 // Horizontal bow drawn from above: roll the bow arm flat.
                 useArm.overrideRoll(side * 1.15f, bow);

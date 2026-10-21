@@ -144,14 +144,16 @@ final class ReactionModule implements AnimModule {
         rear.overrideBend(s.knee() * 1.60f, e);
         // Hips come down to the height of the front shin (about 6 pixels).
         f.body().py -= (6f / 16f * 0.9375f) * e;
-        Rigging.leanTorso(f, s, 0.30f * e);
+        float lean = 0.35f;
+        Rigging.leanTorso(f, s, lean * e);
         f.head().rx += 0.20f * e;
-        // Both hands on the hilt in front of the body: raised high, then driven down.
-        float x = Mth.lerp(stab, -2.60f, -0.85f);
-        main.override(x, -side * 0.50f, side * 0.05f, e);
-        off.override(x + 0.10f, side * 0.50f, -side * 0.05f, e);
-        main.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.45f), e);
-        off.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.55f), e);
+        // Both hands on the hilt in front of the body: raised high, then driven down until the
+        // arms are level (relative to the world), so the turned-over blade points straight down.
+        float x = Mth.lerp(stab, -2.60f, -Mth.HALF_PI + lean);
+        main.override(x, -side * 0.42f, side * 0.05f, e);
+        off.override(x + 0.12f, side * 0.48f, -side * 0.05f, e);
+        main.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.10f), e);
+        off.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.30f), e);
         // Blade turned over in the fists to point down into the ground.
         main.overrideRoll(side * Mth.PI, e * stab);
         f.body().py += 0.05f * (1f - stab) * e;

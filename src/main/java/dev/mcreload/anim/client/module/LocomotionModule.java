@@ -169,7 +169,10 @@ final class LocomotionModule implements AnimModule {
         }
 
         Rigging.twistUpper(f, deg(-40f) * c * w);
-        Rigging.leanTorso(f, s, deg(10f + 10f * Mth.cos(ls * 2f)) * w);
+        // Leaning into the run: the whole body a little, the chest more.
+        f.body().rx -= deg(12f) * amt * w;
+        f.head().rx -= deg(12f) * amt * w;
+        Rigging.leanTorso(f, s, deg(12f + 8f * Mth.cos(ls * 2f)) * w);
         f.body().py += px(1.5f) * Mth.cos(ls * 2f + 0.6f) * w;
         // Into turns with the shoulders.
         float yaw = AngleMath.clamp(m.turn.v * 0.3f, -10f, 10f);
@@ -177,13 +180,12 @@ final class LocomotionModule implements AnimModule {
     }
 
     /**
-     * Sneak (Mo'Bends): a low creep with the upper body leaning well forward, long careful steps,
-     * the knees alternating, arms a little out in front and to the sides.
+     * Sneak (Mo'Bends): the upper body leans well forward and bobs with each step, long careful
+     * strides with the knees bending in turn, arms a little forward and out to the sides.
      */
     private static void sneak(PoseFrame f, Signs s, float w, float arms, float ls, float amt0, float move, MotionState m) {
-        float amt = Math.max(amt0 * 1.4f, 0f);
         float c = Mth.cos(ls), sn = Mth.sin(ls);
-        // Undo vanilla's crouch (whole torso tipped 0.5 rad, parts shifted): we bend at the waist.
+        // Undo vanilla's crouch (whole torso tipped 0.5 rad, parts shifted down): we bend at the waist.
         f.torso().overrideX(0f, w);
         f.torso().py -= 3.2f * w;
         f.head().py -= 4.2f * w;
@@ -194,33 +196,25 @@ final class LocomotionModule implements AnimModule {
         f.rightLeg().py -= 0.2f * w;
         f.leftLeg().py -= 0.2f * w;
 
-        float legSwing = 1.1f * amt * move;
-        float rx = deg(-25f) + c * legSwing, lx = deg(-25f) - c * legSwing;
-        legX(f.rightLeg(), rx, w);
-        legX(f.leftLeg(), lx, w);
-        f.rightLeg().targetZ(deg(8f), w);
-        f.leftLeg().targetZ(deg(-8f), w);
-        float rKnee = deg(50f) + deg(25f) * AngleMath.clamp(0.5f + 2.5f * sn, 0f, 1f) * move;
-        float lKnee = deg(50f) + deg(25f) * AngleMath.clamp(0.5f - 2.5f * sn, 0f, 1f) * move;
+        float legSwing = 1.54f * amt0;
+        legX(f.rightLeg(), deg(-5f) + c * legSwing, w);
+        legX(f.leftLeg(), deg(-5f) - c * legSwing, w);
+        f.rightLeg().targetZ(deg(10f), w);
+        f.leftLeg().targetZ(deg(-10f), w);
+        float rK = AngleMath.clamp(0.5f + 2.5f * sn, 0f, 1f);
+        float rKnee = deg(10f) + deg(35f) * (move > 0.1f ? rK : 0.5f);
+        float lKnee = deg(10f) + deg(35f) * (move > 0.1f ? 1f - rK : 0.5f);
         f.rightLeg().bend += s.knee() * rKnee * w;
         f.leftLeg().bend += s.knee() * lKnee * w;
-        // Keep the planted foot on the ground: drop the hips by what the legs lost in height.
-        float seg = 6f;
-        float er = seg * Mth.cos(rx) + seg * Mth.cos(rx + rKnee);
-        float el = seg * Mth.cos(lx) + seg * Mth.cos(lx + lKnee);
-        float drop = 12f - Math.max(er, el);
-        // The renderer already lowers a sneaking player by 2 pixels.
-        f.body().py -= px(Math.max(0f, drop - 2.1f)) * w;
+        f.body().py -= px(1.3f) * w;
 
         float aw = w * arms;
-        armPose(f.rightArm(), deg(-25f) + deg(20f) * -c * move, deg(14f), aw);
-        armPose(f.leftArm(), deg(-25f) + deg(20f) * c * move, deg(-14f), aw);
-        f.rightArm().bend += s.elbow() * deg(20f) * aw;
-        f.leftArm().bend += s.elbow() * deg(20f) * aw;
+        armPose(f.rightArm(), deg(-20f) + deg(20f) * -c * move, deg(10f), aw);
+        armPose(f.leftArm(), deg(-20f) + deg(20f) * c * move, deg(-10f), aw);
+        f.rightArm().bend += s.elbow() * deg(15f) * aw;
+        f.leftArm().bend += s.elbow() * deg(15f) * aw;
 
-        float lean = deg(28f + 5f * Mth.cos(ls * 2f) * move);
-        Rigging.leanTorso(f, s, lean * w);
-        Rigging.twistUpper(f, deg(-12f) * c * move * w);
+        Rigging.leanTorso(f, s, deg(25f + 5f * Mth.cos(ls * 2f) * move) * w);
         // Nervous look-around while standing still.
         float still = 1f - move;
         f.head().ry += (0.35f * Mth.sin(m.time * 0.9f + m.seed) + 0.06f * Mth.sin(m.time * 2.3f)) * still * w;

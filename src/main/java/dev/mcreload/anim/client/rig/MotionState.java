@@ -111,6 +111,7 @@ public final class MotionState {
     private boolean wasInWater;
     private int lastWaterTick = -1000;
     private boolean rollEarly;
+    private int lastSprintTick = -1000;
     /** Diving in from a height: streamlined "dolphin" entry. */
     public float diveStart = -100f;
     /** Swapping items between hands (F): hands meet in the middle and part again. */
@@ -201,12 +202,13 @@ public final class MotionState {
         boolean special = player.isInWater() || player.isFallFlying() || player.onClimbable()
                 || player.isPassenger() || player.getAbilities().flying;
         float tickSpeed = (float) Math.sqrt(vx * vx + vz * vz);
-        if (ground && wasOnGround && !special && wasSprinting && prevTickSpeed > 0.2f && tickSpeed < prevTickSpeed * 0.6f && Cfg.locomotion) {
+        if (ground && wasOnGround && !special && player.tickCount - lastSprintTick <= 3 && prevTickSpeed > 0.2f && tickSpeed < prevTickSpeed * 0.6f && Cfg.locomotion) {
             // Sprint released: skid to a stop.
             if (time - brakeStart > 0.6f) brakeStart = time;
         }
         prevTickSpeed = tickSpeed;
         wasSprinting = player.isSprinting();
+        if (wasSprinting) lastSprintTick = player.tickCount;
         if (player.isFallFlying()) lastGlideTick = player.tickCount;
 
         // Diving into water from a height: streamlined dolphin entry; never "land" on the bottom.
