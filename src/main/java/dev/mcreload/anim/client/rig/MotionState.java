@@ -206,6 +206,8 @@ public final class MotionState {
             airStartY = y;
             lastWaterTick = -1000;
             teleportTick = player.tickCount;
+            // A teleport is a cut: drop the water poses at once instead of fading them out.
+            if (!player.isInWater()) { waterW.v = 0f; swimW.v = 0f; paddleW.v = 0f; }
         }
         prevYawRate = yawRate;
         yawRate = Mth.wrapDegrees(player.yBodyRot - player.yBodyRotO);

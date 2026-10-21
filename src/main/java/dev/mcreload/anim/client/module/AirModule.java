@@ -130,7 +130,7 @@ final class AirModule implements AnimModule {
 
     /**
      * Dropping from a height with a sword: both hands on the hilt raised over the head, the blade
-     * turned forward, knees drawn up and the back rounded over it, ready to drive it into the
+     * pointing up, knees drawn up and the back rounded over it, ready to drive it into the
      * ground on landing (see ReactionModule#plantBlade, which starts from this pose).
      */
     private static void bladeFall(MotionState m, PoseFrame f, Signs s, float w, float arms, float side) {
@@ -143,8 +143,8 @@ final class AirModule implements AnimModule {
         off.override(-2.45f + 0.05f * a, side * 0.62f, -side * 0.10f, aw);
         main.overrideBend(s.elbow() * 0.35f, aw);
         off.overrideBend(s.elbow() * 0.45f, aw);
-        main.overrideRoll(side * Mth.PI, aw);
-        m.itemTiltTarget = 0f;
+        // Blade straight up over the head (turned in the fist, see ReactionModule#plantBlade).
+        m.itemTiltTarget = Math.max(m.itemTiltTarget, 0.95f * aw);
         // Knees drawn up, one ahead of the other, ready to take the landing on one knee.
         PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
         PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();

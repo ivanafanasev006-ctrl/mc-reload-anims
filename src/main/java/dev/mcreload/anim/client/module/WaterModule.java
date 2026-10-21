@@ -101,9 +101,10 @@ final class WaterModule implements AnimModule {
         float w = m.diveAirW.v * gate * (1f - m.waterW.v);
         if (w <= 0.001f) return;
         streamline(f, s, w, w * m.armsFree.v);
-        // Tipping over: the steeper the fall, the more head-first, up to straight down.
+        // Tipping over head-first (body.rx -PI/2 is lying flat, -PI is upside down): the steeper
+        // and longer the fall, the closer to straight down.
         float steep = AngleMath.clamp(-m.vertical / 0.7f, 0f, 1f);
-        f.body().rx -= (0.9f + 0.7f * steep) * w;
+        f.body().rx -= (1.35f + 1.30f * steep) * w;
         f.head().rx += 0.25f * w;
     }
 
@@ -114,8 +115,9 @@ final class WaterModule implements AnimModule {
         float e = Math.min(1f, t / 0.05f) * (1f - AngleMath.ease((t - 0.55f) / 0.45f)) * gate * (1f - m.swimW.v);
         if (e <= 0.001f) return;
         streamline(f, s, e, e * m.armsFree.v);
-        // Head straight down at first, then the dolphin curve back toward horizontal.
-        float pitch = Mth.lerp(AngleMath.ease((t - 0.25f) / 0.6f), 1.55f, 0.9f);
+        // Head-first, steeply down at first (PI = straight down), then the dolphin curve back up
+        // to level under the surface.
+        float pitch = Mth.lerp(AngleMath.ease((t - 0.20f) / 0.65f), 2.65f, 1.50f);
         f.body().rx -= pitch * e;
         float wave = Mth.sin(t * Mth.TWO_PI * 1.8f);
         f.rightLeg().overrideX(0.25f * wave, e);
