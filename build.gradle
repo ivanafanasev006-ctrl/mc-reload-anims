@@ -2,6 +2,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 version = mod_version
@@ -43,6 +44,11 @@ minecraft {
     }
 }
 
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+    config "${mod_id}.mixins.json"
+}
+
 repositories {
     maven {
         name = 'KosmX (playerAnimator)'
@@ -61,6 +67,9 @@ dependencies {
     // playerAnimator: the only hard dependency. Better Combat and Iron's Spells are
     // detected at runtime, so the jar works with or without them.
     implementation fg.deobf("dev.kosmx.player-anim:player-animation-lib-forge:${player_anim_version}")
+
+    // Our own elbow/knee/waist joints are drawn through a few small mixins.
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
 tasks.named('processResources', ProcessResources).configure {

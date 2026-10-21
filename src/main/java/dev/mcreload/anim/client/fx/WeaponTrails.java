@@ -150,7 +150,7 @@ public final class WeaponTrails {
         boolean hasBodyRot = rig.finalPose(PoseFrame.BODY, 1, BODY_ROT);
         boolean hasBodyPos = rig.finalPose(PoseFrame.BODY, 0, BODY_POS);
 
-        Matrix4f mat = handMatrix(player, ROT, POS, hasBodyRot ? BODY_ROT : null, hasBodyPos ? BODY_POS : null, left, pt);
+        Matrix4f mat = handMatrix(player, rig, ROT, POS, hasBodyRot ? BODY_ROT : null, hasBodyPos ? BODY_POS : null, left, pt);
 
         // Item model's third-person transform (ItemTransform.apply), then ItemRenderer's centering.
         ItemDisplayContext ctx = left ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
@@ -176,6 +176,14 @@ public final class WeaponTrails {
      */
     static Matrix4f handMatrix(AbstractClientPlayer player, float[] rot, float[] armPos, float[] bodyRot, float[] bodyPos,
                                boolean left, float pt) {
+        return handMatrix(player, null, rot, armPos, bodyRot, bodyPos, left, pt);
+    }
+
+    private static final float[] T_ROT = new float[3], T_POS = new float[3], T_BEND = new float[3], A_BEND = new float[3];
+
+    /** Same as above, with our elbow and waist joints taken into account when the rig is known. */
+    static Matrix4f handMatrix(AbstractClientPlayer player, PlayerRig rig, float[] rot, float[] armPos, float[] bodyRot,
+                               float[] bodyPos, boolean left, float pt) {
         Matrix4f mat = new Matrix4f();
         Vec3 pos = player.getPosition(pt);
         mat.translate((float) pos.x, (float) pos.y, (float) pos.z);
@@ -198,9 +206,30 @@ public final class WeaponTrails {
         mat.scale(0.9375f, 0.9375f, 0.9375f);
         mat.translate(0f, -1.501f, 0f);
 
+        boolean joints = rig != null && dev.mcreload.anim.client.joint.Joints.active();
+        // Waist joint: the arm rides on the bent upper body.
+        if (joints && rig.finalPose(PoseFrame.TORSO, 2, T_BEND) && Math.abs(T_BEND[1]) > 1e-4f) {
+            boolean hasT = rig.finalPose(PoseFrame.TORSO, 1, T_ROT);
+            boolean hasP = rig.finalPose(PoseFrame.TORSO, 0, T_POS);
+            Quaternionf q = hasT ? new Quaternionf().rotationZYX(T_ROT[2], T_ROT[1], T_ROT[0]) : new Quaternionf();
+            float tx = hasP ? T_POS[0] : 0f, ty = hasP ? T_POS[1] : 0f, tz = hasP ? T_POS[2] : 0f;
+            mat.translate(tx / 16f, ty / 16f, tz / 16f);
+            mat.rotate(q);
+            dev.mcreload.anim.client.joint.Joint.hinge(mat, 6f, 0f, 0f, 4f, 2f, true, T_BEND[0], T_BEND[1]);
+            mat.rotate(q.conjugate());
+            mat.translate(-tx / 16f, -ty / 16f, -tz / 16f);
+        }
+
         // The arm, exactly as ModelPart.translateAndRotate.
         mat.translate(armPos[0] / 16f, armPos[1] / 16f, armPos[2] / 16f);
         mat.rotate(new Quaternionf().rotationZYX(rot[2], rot[1], rot[0]));
+
+        // Elbow joint.
+        if (joints && rig.finalPose(left ? PoseFrame.LEFT_ARM : PoseFrame.RIGHT_ARM, 2, A_BEND)) {
+            boolean slim = "slim".equals(player.getModelName());
+            float cx = (left ? 1f : -1f) * (slim ? 0.5f : 1f);
+            dev.mcreload.anim.client.joint.Joint.hinge(mat, 4f, cx, 0f, slim ? 1.5f : 2f, 2f, false, A_BEND[0], A_BEND[1]);
+        }
 
         // ItemInHandLayer.renderArmWithItem
         mat.rotate(Axis.XP.rotationDegrees(-90f));

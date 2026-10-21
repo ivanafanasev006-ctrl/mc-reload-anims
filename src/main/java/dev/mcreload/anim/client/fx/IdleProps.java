@@ -53,7 +53,7 @@ public final class IdleProps {
             if (!rig.finalPose(armPart, 1, ROT) || !rig.finalPose(armPart, 0, POS)) continue;
             boolean hasBodyRot = rig.finalPose(PoseFrame.BODY, 1, BODY_ROT);
             boolean hasBodyPos = rig.finalPose(PoseFrame.BODY, 0, BODY_POS);
-            Matrix4f mat = WeaponTrails.handMatrix(player, ROT, POS, hasBodyRot ? BODY_ROT : null,
+            Matrix4f mat = WeaponTrails.handMatrix(player, rig, ROT, POS, hasBodyRot ? BODY_ROT : null,
                     hasBodyPos ? BODY_POS : null, left, pt);
 
             PoseStack ps = event.getPoseStack();
