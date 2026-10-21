@@ -12,9 +12,19 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import com.mojang.blaze3d.vertex.PoseStack;
+import dev.mcreload.anim.client.rig.PlayerRig;
+import dev.mcreload.anim.client.rig.RigRegistry;
+import net.minecraft.client.player.AbstractClientPlayer;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Joints for the player's armour models; straight arms in first person. */
+/**
+ * Joints for the player's armour models; straight arms in first person; and a smooth way out of
+ * the swimming pose. Vanilla drops two parts of it at once the moment you stop swimming (the
+ * pitch term once you are out of the water, and a one-block shift of the model), which made the
+ * body and head jerk when climbing out onto land. Here both fade out with the swim amount.
+ */
 @Mixin(PlayerRenderer.class)
 public abstract class PlayerRendererMixin {
     @Inject(method = "<init>", at = @At("RETURN"))
@@ -44,5 +54,46 @@ public abstract class PlayerRendererMixin {
     @Inject(method = "renderHand", at = @At("RETURN"))
     private void mcreload$firstPersonOff(CallbackInfo ci) {
         Joints.firstPerson = false;
+    }
+    @Unique
+    private static final String SETUP_ROT =
+            "setupRotations(Lnet/minecraft/client/player/AbstractClientPlayer;Lcom/mojang/blaze3d/vertex/PoseStack;FFF)V";
+    @Unique
+    private AbstractClientPlayer kinetrix$player;
+    @Unique
+    private float kinetrix$pt;
+
+    @Inject(method = SETUP_ROT, at = @At("HEAD"))
+    private void kinetrix$capture(AbstractClientPlayer player, PoseStack ps, float age, float yaw, float pt, CallbackInfo ci) {
+        kinetrix$player = player;
+        kinetrix$pt = pt;
+    }
+
+    @Unique
+    private static boolean kinetrix$fading(AbstractClientPlayer player) {
+        PlayerRig rig = RigRegistry.get(player);
+        return rig != null && rig.motion.swimFading();
+    }
+
+    @Redirect(method = SETUP_ROT, at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/player/AbstractClientPlayer;isInWater()Z"))
+    private boolean kinetrix$stillInWater(AbstractClientPlayer player) {
+        if (player.isInWater()) return true;
+        PlayerRig rig = RigRegistry.get(player);
+        return rig != null && rig.motion.swimFading() && rig.motion.wasInWaterRecently();
+    }
+
+    @Redirect(method = SETUP_ROT, at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/player/AbstractClientPlayer;isVisuallySwimming()Z"))
+    private boolean kinetrix$stillSwimming(AbstractClientPlayer player) {
+        return player.isVisuallySwimming() || kinetrix$fading(player);
+    }
+
+    @Redirect(method = SETUP_ROT, at = @At(value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/PoseStack;translate(FFF)V"))
+    private void kinetrix$swimShift(PoseStack ps, float x, float y, float z) {
+        // The swim pose's shift, faded in and out with the swim amount instead of all at once.
+        float k = kinetrix$player != null ? kinetrix$player.getSwimAmount(kinetrix$pt) : 1f;
+        ps.translate(x * k, y * k, z * k);
     }
 }

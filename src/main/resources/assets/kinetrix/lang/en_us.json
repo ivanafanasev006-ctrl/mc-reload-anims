@@ -3,7 +3,7 @@
   "key.kinetrix.toggle": "Toggle player animations",
   "message.kinetrix.enabled": "Kinetrix animations: ON",
   "message.kinetrix.disabled": "Kinetrix animations: OFF",
-  "emote.kinetrix.dance": "Dance",
+  "emote.kinetrix.dance": "Default Dance",
   "emote.kinetrix.wave": "Wave",
   "emote.kinetrix.clap": "Clap",
   "emote.kinetrix.facepalm": "Facepalm",
@@ -20,5 +20,10 @@
   "emote.kinetrix.pushups": "Push-ups",
   "key.kinetrix.emotes": "Emote menu",
   "screen.kinetrix.emotes": "Emotes",
-  "screen.kinetrix.emotes.hint": "Move, attack or get hit to stop"
+  "screen.kinetrix.emotes.hint": "Move, attack or get hit to stop",
+  "emote.kinetrix.running_man": "Running Man",
+  "emote.kinetrix.robot": "Robot",
+  "emote.kinetrix.guitar": "Air Guitar",
+  "emote.kinetrix.flex": "Flex",
+  "emote.kinetrix.meditate": "Meditate"
 }

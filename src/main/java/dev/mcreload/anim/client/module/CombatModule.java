@@ -114,8 +114,14 @@ final class CombatModule implements AnimModule {
         float offX = Mth.lerp(two, k.offX(), k.armX() - 0.05f);
         float offY = Mth.lerp(two, 0f, side * k.armY() + side * 0.55f);
         float offZ = Mth.lerp(two, -side * k.offZ(), -side * k.armZ() * 0.3f);
-        off.override(offX, offY, offZ, w);
-        off.overrideBend(s.elbow() * Mth.lerp(two, k.offElbow(), k.elbow() + 0.35f), w);
+        if (MotionState.isTool(kind)) {
+            // Tools are worked with one hand: the free arm hangs relaxed and steady.
+            off.override(-0.30f, 0f, -side * 0.12f, w);
+            off.overrideBend(s.elbow() * 0.35f, w);
+        } else {
+            off.override(offX, offY, offZ, w);
+            off.overrideBend(s.elbow() * Mth.lerp(two, k.offElbow(), k.elbow() + 0.35f), w);
+        }
 
         Rigging.twistUpper(f, side * k.twist() * w);
         // Weapons pitch the whole body into the strike; working a block in front of the feet

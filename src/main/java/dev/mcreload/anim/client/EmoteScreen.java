@@ -17,7 +17,7 @@ public final class EmoteScreen extends Screen {
 
     @Override
     protected void init() {
-        int cols = 3, bw = 120, bh = 20, gap = 4;
+        int cols = 4, bw = 110, bh = 20, gap = 4;
         int n = MotionState.EMOTE_COUNT;
         int rows = (n + cols - 1) / cols;
         int x0 = (width - (cols * bw + (cols - 1) * gap)) / 2;

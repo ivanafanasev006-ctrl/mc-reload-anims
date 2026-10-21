@@ -44,11 +44,12 @@ final class AirModule implements AnimModule {
                 if (jumpW > 0.001f) jump(m, f, s, jumpW, arms, pt);
                 // A real drop (faster than any ordinary jump comes down) with only a blade in
                 // hand: both hands take the sword up overhead, ready to plant it on landing.
-                boolean bladeOnly = m.holdingBlade && rig.player.getOffhandItem().isEmpty();
+                boolean bladeOnly = m.holdingBlade;
                 float bladeW = bladeOnly ? air * AngleMath.clamp((-m.vertical - 0.50f) / 0.25f, 0f, 1f) : 0f;
                 float plainFall = fallW * (1f - bladeW);
                 if (plainFall > 0.001f) fall(m, f, s, plainFall, arms);
-                if (bladeW > 0.001f) bladeFall(m, f, s, bladeW, arms, m.mainRight ? 1f : -1f);
+                if (bladeW > 0.001f) bladeFall(m, f, s, bladeW, arms, m.mainRight ? 1f : -1f,
+                        rig.player.getOffhandItem().isEmpty());
                 if (diveW > 0.001f) skydive(m, f, s, diveW, arms);
             }
         }
@@ -135,14 +136,18 @@ final class AirModule implements AnimModule {
      * pointing up, knees drawn up and the back rounded over it, ready to drive it into the
      * ground on landing (see ReactionModule#plantBlade, which starts from this pose).
      */
-    private static void bladeFall(MotionState m, PoseFrame f, Signs s, float w, float arms, float side) {
+    private static void bladeFall(MotionState m, PoseFrame f, Signs s, float w, float arms, float side, boolean two) {
         float t = m.time;
         float a = Mth.sin(t * 6.0f + m.seed), c = Mth.sin(t * 4.5f + m.seed + 1f);
         float aw = w * arms;
         PartPose main = side > 0 ? f.rightArm() : f.leftArm();
         PartPose off = side > 0 ? f.leftArm() : f.rightArm();
         main.override(-2.55f + 0.05f * a, -side * 0.30f, side * 0.10f, aw);
-        off.override(-2.45f + 0.05f * a, side * 0.62f, -side * 0.10f, aw);
+        if (two) {
+            off.override(-2.45f + 0.05f * a, side * 0.62f, -side * 0.10f, aw);
+        } else {
+            off.override(-1.30f + 0.10f * a, 0f, -side * (0.95f + 0.10f * a), aw);
+        }
         main.overrideBend(s.elbow() * 0.35f, aw);
         off.overrideBend(s.elbow() * 0.45f, aw);
         // Blade straight up over the head (turned in the fist, see ReactionModule#plantBlade).

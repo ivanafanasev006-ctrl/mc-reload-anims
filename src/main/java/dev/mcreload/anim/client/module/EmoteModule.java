@@ -48,6 +48,11 @@ final class EmoteModule implements AnimModule {
             case MotionState.EMOTE_CRY -> cry(f, s, env, aw, t);
             case MotionState.EMOTE_FLOSS -> floss(f, s, env, aw, t);
             case MotionState.EMOTE_PUSHUPS -> pushups(f, s, env, aw, t);
+            case MotionState.EMOTE_RUNNING_MAN -> runningMan(f, s, env, aw, t);
+            case MotionState.EMOTE_ROBOT -> robot(f, s, env, aw, t);
+            case MotionState.EMOTE_GUITAR -> guitar(f, s, env, aw, t, main, off, side);
+            case MotionState.EMOTE_FLEX -> flex(f, s, env, aw, t);
+            case MotionState.EMOTE_MEDITATE -> meditate(f, s, env, aw, t);
             default -> { }
         }
     }
@@ -74,44 +79,171 @@ final class EmoteModule implements AnimModule {
     // ------------------------------------------------------------------ dances
 
     /**
-     * A "default dance": 8 beats of arms swinging across the chest in turn with a bounce in the
-     * knees, then 8 beats of alternating kicks with both arms swinging the other way. ~128 bpm.
+     * The "default dance", in three 8-beat parts at ~128 bpm, looping:
+     * <ol>
+     *   <li>bouncing on the knees, fists in front of the chest, forearms swinging across the body
+     *       one up and one down, alternating every beat, the hips and head going with them;</li>
+     *   <li>the kicks: a little hop on one leg while the other kicks out forward, both arms swung
+     *       low to the other side, alternating every beat;</li>
+     *   <li>feet wide and knees bent, shoulders rolling side to side while both fists pump up from
+     *       the shoulders and down again, head nodding to the beat.</li>
+     * </ol>
      */
     private static void dance(PoseFrame f, Signs s, float e, float aw, float t) {
         float beat = t * 2.13f;
-        int bar = (int) (beat / 8f) % 2;
+        int part = (int) (beat / 8f) % 3;
         int b = (int) beat;
         float in = beat - b;
         float sideBeat = (b % 2 == 0) ? 1f : -1f;
-        // Smooth hit on each beat.
+        // Each beat snaps over in the first third, then holds: crisp but not jerky.
         float hit = AngleMath.ease(Math.min(1f, in / 0.35f));
-        float prev = -sideBeat;
-        float sw = Mth.lerp(hit, prev, sideBeat);       // -1..1 swing for this beat
-
-        // Bounce on every beat.
+        float sw = Mth.lerp(hit, -sideBeat, sideBeat);       // -1..1 for this beat
         float bounce = pulse(beat);
-        Rigging.crouch(f, s, 0.22f * bounce * e);
-        f.head().rx += 0.10f * bounce * e;
 
-        if (bar == 0) {
-            // Arms swing across the body diagonally, one up one down, alternating each beat.
-            float r = Math.max(0f, sw), l = Math.max(0f, -sw);
-            arm(f.rightArm(), s, Mth.lerp(r, -2.35f, -1.05f), Mth.lerp(r, 0.10f, -0.85f), Mth.lerp(r, 0.55f, 0f), 0.25f, aw);
-            arm(f.leftArm(), s, Mth.lerp(l, -2.35f, -1.05f), Mth.lerp(l, -0.10f, 0.85f), Mth.lerp(l, -0.55f, 0f), 0.25f, aw);
-            f.body().rz += 0.08f * sw * e;
-            f.body().px += 0.05f * sw * e;
-            Rigging.twistUpper(f, -0.25f * sw * e);
-            f.head().ry += 0.20f * sw * e;
-        } else {
-            // Kicks: one leg flicks out in front on each beat, arms swing together the other way.
-            PartPose kick = sideBeat > 0 ? f.rightLeg() : f.leftLeg();
-            float k = Mth.sin(Mth.PI * Math.min(1f, in / 0.6f));
-            leg(kick, s, -0.95f * k, 0f, 0.9f * (1f - k) * k + 0.1f, e * Math.max(0.2f, k));
-            arm(f.rightArm(), s, -1.35f, -0.75f * sw, 0.25f, 0.55f, aw);
-            arm(f.leftArm(), s, -1.35f, -0.75f * sw, -0.25f, 0.55f, aw);
-            Rigging.twistUpper(f, 0.35f * sw * e);
-            f.body().rz -= 0.06f * sw * e;
+        switch (part) {
+            case 0 -> {
+                Rigging.crouch(f, s, (0.10f + 0.20f * bounce) * e);
+                f.head().rx += 0.10f * bounce * e;
+                float r = Math.max(0f, sw), l = Math.max(0f, -sw);
+                arm(f.rightArm(), s, Mth.lerp(r, -2.35f, -1.05f), Mth.lerp(r, 0.10f, -0.85f), Mth.lerp(r, 0.55f, 0f), 0.30f, aw);
+                arm(f.leftArm(), s, Mth.lerp(l, -2.35f, -1.05f), Mth.lerp(l, -0.10f, 0.85f), Mth.lerp(l, -0.55f, 0f), 0.30f, aw);
+                f.body().rz += 0.08f * sw * e;
+                f.body().px += 0.05f * sw * e;
+                Rigging.twistUpper(f, -0.25f * sw * e);
+                f.head().ry += 0.20f * sw * e;
+            }
+            case 1 -> {
+                PartPose kick = sideBeat > 0 ? f.rightLeg() : f.leftLeg();
+                PartPose stand = sideBeat > 0 ? f.leftLeg() : f.rightLeg();
+                float k = Mth.sin(Mth.PI * Math.min(1f, in / 0.6f));
+                leg(kick, s, -1.00f * k, sideBeat * 0.12f * k, 0.9f * (1f - k) * k + 0.1f, e * Math.max(0.25f, k));
+                stand.bend += s.knee() * 0.25f * (1f - k) * e;
+                f.body().py += 0.08f * k * e;                      // the hop
+                arm(f.rightArm(), s, -0.55f, -0.70f * sw, 0.30f, 0.45f, aw);
+                arm(f.leftArm(), s, -0.55f, -0.70f * sw, -0.30f, 0.45f, aw);
+                Rigging.twistUpper(f, 0.35f * sw * e);
+                f.body().rz -= 0.06f * sw * e;
+                Rigging.leanTorso(f, s, 0.10f * k * e);
+            }
+            default -> {
+                Rigging.legsOut(f, 0.22f * e);
+                Rigging.crouch(f, s, (0.22f + 0.12f * bounce) * e);
+                float pump = Math.abs(Mth.sin(beat * Mth.PI));    // up on every beat
+                arm(f.rightArm(), s, -0.40f - 2.30f * pump, 0f, 0.55f - 0.25f * pump, 1.60f - 1.30f * pump, aw);
+                arm(f.leftArm(), s, -0.40f - 2.30f * pump, 0f, -0.55f + 0.25f * pump, 1.60f - 1.30f * pump, aw);
+                float roll = Mth.sin(beat * Mth.PI * 0.5f);
+                Rigging.twistUpper(f, 0.30f * roll * e);
+                f.body().rz += 0.06f * roll * e;
+                f.head().rx += 0.15f * bounce * e;
+            }
         }
+    }
+
+    /**
+     * The running man: one knee comes up high while the other foot slides back along the floor,
+     * then they swap, the body bobbing down on each step; fists pumping at the chest.
+     */
+    private static void runningMan(PoseFrame f, Signs s, float e, float aw, float t) {
+        float beat = t * 2.2f;
+        float ph = beat * Mth.PI;
+        float c = Mth.cos(ph), sn = Mth.sin(ph);
+        float r = Math.max(0f, c), l = Math.max(0f, -c);
+        // Up knee: thigh forward and knee bent; the other leg back and straightening as it slides.
+        leg(f.rightLeg(), s, -1.20f * r + 0.45f * l, 0.05f, 1.40f * r + 0.15f, e);
+        leg(f.leftLeg(), s, -1.20f * l + 0.45f * r, -0.05f, 1.40f * l + 0.15f, e);
+        f.body().py -= 0.06f * Math.abs(sn) * e;
+        f.body().py += 0.04f * e;
+        Rigging.leanTorso(f, s, 0.12f * e);
+        float pump = Math.abs(sn);
+        arm(f.rightArm(), s, -1.10f + 0.35f * c, -0.30f, 0.15f, 1.50f, aw);
+        arm(f.leftArm(), s, -1.10f - 0.35f * c, 0.30f, -0.15f, 1.50f, aw);
+        f.head().rx += 0.10f * pump * e;
+        f.body().rz += 0.04f * sn * e;
+    }
+
+    /**
+     * The robot: stiff, mechanical poses held and then jerked to the next one twice a beat, the
+     * head ticking round in steps; arms bent at right angles.
+     */
+    private static void robot(PoseFrame f, Signs s, float e, float aw, float t) {
+        float step = t * 3.2f;
+        int i = (int) step;
+        float in = step - i;
+        float k = AngleMath.ease(Math.min(1f, in / 0.18f));         // quick move, then hold
+        float[][] poses = {
+                // rArm x, z, elbow, lArm x, z, elbow, head yaw, twist, crouch
+                {-1.57f, 0.10f, 1.57f, 0f, -0.15f, 1.57f, 0.00f, 0.00f, 0.10f},
+                {-1.57f, 0.10f, 0.00f, -1.57f, -0.10f, 1.57f, 0.50f, 0.20f, 0.10f},
+                {0f, 0.15f, 1.57f, -1.57f, -0.10f, 0.00f, -0.50f, -0.20f, 0.20f},
+                {-3.00f, 0.10f, 1.57f, -1.57f, -0.10f, 1.57f, 0.00f, 0.00f, 0.20f},
+                {-1.57f, 0.90f, 1.57f, -1.57f, -0.90f, 1.57f, 0.40f, 0.15f, 0.10f},
+                {-1.57f, 0.10f, 1.57f, -3.00f, -0.10f, 1.57f, -0.40f, -0.15f, 0.25f},
+        };
+        float[] a = poses[(i + poses.length - 1) % poses.length], b = poses[i % poses.length];
+        float[] p = new float[a.length];
+        for (int j = 0; j < a.length; j++) p[j] = Mth.lerp(k, a[j], b[j]);
+        arm(f.rightArm(), s, p[0], 0f, p[1], p[2], aw);
+        arm(f.leftArm(), s, p[3], 0f, p[4], p[5], aw);
+        f.head().ry += p[6] * e;
+        Rigging.twistUpper(f, p[7] * e);
+        Rigging.crouch(f, s, p[8] * e);
+    }
+
+    /** Air guitar: leaning back, one hand strumming at the hip, the other up the neck, head banging. */
+    private static void guitar(PoseFrame f, Signs s, float e, float aw, float t, PartPose main, PartPose off, float side) {
+        float strum = Mth.sin(t * 14f);
+        float bang = pulse(t * 2.4f);
+        arm(main, s, -0.75f + 0.18f * strum, -side * 0.55f, side * 0.20f, 1.20f, aw);
+        arm(off, s, -1.25f, side * 0.45f, -side * 0.25f, 0.45f + 0.10f * Mth.sin(t * 3f), aw);
+        Rigging.leanTorso(f, s, (-0.18f + 0.35f * bang) * e);
+        f.head().rx += (0.45f * bang - 0.15f) * e;
+        Rigging.legsOut(f, 0.18f * e);
+        Rigging.crouch(f, s, (0.20f + 0.08f * bang) * e);
+        Rigging.twistUpper(f, side * 0.25f * e);
+    }
+
+    /** Flexing: a double biceps from the front, then a side chest each way. */
+    private static void flex(PoseFrame f, Signs s, float e, float aw, float t) {
+        float a = seg(t, 0f, 0.35f) * (1f - seg(t, 1.30f, 1.55f));
+        float b = seg(t, 1.40f, 1.70f) * (1f - seg(t, 2.50f, 2.75f));
+        float c = seg(t, 2.65f, 2.95f);
+        float shake = 0.03f * Mth.sin(t * 40f);
+        // Double biceps.
+        arm(f.rightArm(), s, -0.20f + shake, 0f, 1.45f, 1.90f, aw * a);
+        arm(f.leftArm(), s, -0.20f - shake, 0f, -1.45f, 1.90f, aw * a);
+        Rigging.legsOut(f, 0.15f * a * e);
+        f.head().rx -= 0.10f * a * e;
+        // Side chest, right then left: hands clasped in front of the belly, chest turned.
+        for (int i = 0; i < 2; i++) {
+            float w = i == 0 ? b : c;
+            if (w <= 0.001f) continue;
+            float d = i == 0 ? 1f : -1f;
+            arm(f.rightArm(), s, -0.70f + shake, -0.55f, 0.10f, 1.50f, aw * w);
+            arm(f.leftArm(), s, -0.75f - shake, 0.55f, -0.10f, 1.45f, aw * w);
+            Rigging.twistUpper(f, d * 0.45f * w * e);
+            f.head().ry -= d * 0.45f * w * e;
+            PartPose front = d > 0 ? f.leftLeg() : f.rightLeg();
+            front.rx -= 0.20f * w * e;
+            front.bend += s.knee() * 0.35f * w * e;
+        }
+        Rigging.leanTorso(f, s, -0.05f * e);
+    }
+
+    /** Meditating: sitting cross-legged in mid-air, hands on the knees, slowly rising and sinking. */
+    private static void meditate(PoseFrame f, Signs s, float e, float aw, float t) {
+        float sit = seg(t, 0f, 0.8f);
+        float w = e * sit;
+        float breathe = Mth.sin(t * 1.4f);
+        // Hips down to the ground, then floating a little above it.
+        f.body().py -= (12f / 16f * 0.9375f - 0.18f - 0.06f * breathe) * w;
+        leg(f.rightLeg(), s, -1.45f, 0.30f, 2.30f, w);
+        leg(f.leftLeg(), s, -1.45f, -0.30f, 2.30f, w);
+        f.rightLeg().overrideY(0.55f, w);
+        f.leftLeg().overrideY(-0.55f, w);
+        arm(f.rightArm(), s, -0.85f, -0.25f, 0.20f, 0.45f, aw * sit);
+        arm(f.leftArm(), s, -0.85f, 0.25f, -0.20f, 0.45f, aw * sit);
+        Rigging.leanTorso(f, s, 0.02f * breathe * w);
+        f.head().rx += (0.12f + 0.03f * breathe) * w;
     }
 
     /** The floss: straight arms swing side to side, one in front of the hips and one behind, hips the other way. */

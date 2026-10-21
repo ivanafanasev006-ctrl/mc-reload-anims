@@ -224,6 +224,10 @@ public final class SelfTest {
                 new Window(8, 26, 4, 0.05f), new Window(32, 40, 1, 0.3f)));
         SCENARIOS.add(new Scenario("10b_hand_digging", 40, sp -> placeLook(sp, 2, Y, 0, -90, 60, none),
                 (mc, t) -> { if (t >= 8 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 36, 6, 0.05f)));
+        SCENARIOS.add(new Scenario("10c_shovel", 36, sp -> placeLook(sp, 2, Y, 0, -90, 60, new ItemStack(Items.IRON_SHOVEL)),
+                (mc, t) -> { if (t >= 6 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 34, 6, 0.05f)));
+        SCENARIOS.add(new Scenario("10d_dig_shield", 36, sp -> { placeLook(sp, 2, Y, 0, -90, 60, none); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD)); },
+                (mc, t) -> { if (t >= 6 && t % 3 == 0) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(10, 34, 5, 0.05f)));
         SCENARIOS.add(new Scenario("16_place_block", 30, sp -> placeLook(sp, 2, Y, 0, -90, 50, new ItemStack(Items.OAK_PLANKS, 16)),
                 (mc, t) -> {
                     boolean use = t == 8;
@@ -237,6 +241,8 @@ public final class SelfTest {
                 new Window(10, 15, 1, 0.2f), new Window(22, 45, 4, 0.12f)));
         SCENARIOS.add(new Scenario("28_sneak_toggle", 50, sp -> place(sp, 2, Y, 3, -90, none),
                 (mc, t) -> move(mc, t > 4, false, t > 8 && (t / 3) % 2 == 0, false), new Window(9, 50, 10, 0.0f)));
+        SCENARIOS.add(new Scenario("29b_back_drop", 50, sp -> place(sp, 10, Y + 4, 3, -90, none),
+                (mc, t) -> moveBack(mc, t < 40), new Window(2, 30, 9, 0.02f)));
         SCENARIOS.add(new Scenario("29_back_jump", 50, sp -> place(sp, 10, Y, 3, -90, none),
                 (mc, t) -> { moveBack(mc, t < 40); INPUT.jump = t >= 8 && t < 10; }, new Window(9, 36, 9, 0.02f)));
         SCENARIOS.add(new Scenario("30_crossbow", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.CROSSBOW)),
@@ -266,6 +272,8 @@ public final class SelfTest {
                 (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 38, 3, 0.25f)));
         SCENARIOS.add(new Scenario("07c_sword_landing", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
                 (mc, t) -> move(mc, false, false, false, false), new Window(8, 18, 5, 0.0f), new Window(19, 45, 5, 0.06f)));
+        SCENARIOS.add(new Scenario("07d_sword_landing_totem", 50, sp -> { place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TOTEM_OF_UNDYING)); },
+                (mc, t) -> move(mc, false, false, false, false), new Window(10, 40, 6, 0.06f)));
         SCENARIOS.add(new Scenario("26_explosion", 45, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 34, 4, 0.08f)));
         SCENARIOS.add(new Scenario("26b_explosion_sword", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
@@ -287,9 +295,12 @@ public final class SelfTest {
                 (mc, t) -> move(mc, false, false, false, false), new Window(5, 40, 8, 0.05f)));
         SCENARIOS.add(new Scenario("11f_chill_fall", 70, sp -> place(sp, POOL_X + 14, Y + 14, 0, 90, none),
                 (mc, t) -> moveBack(mc, true), new Window(6, 60, 8, 0.12f)));
+        SCENARIOS.add(new Scenario("11h_exit_water", 80, sp -> { place(sp, POOL_X + 5, Y - 3, 0, 90, none); sp.setXRot(-20f); },
+                (mc, t) -> { move(mc, t > 3, t > 3, false, t > 20); mc.player.setXRot(t > 20 ? 0f : -20f); },
+                new Window(14, 80, 10, 0.08f)));
         SCENARIOS.add(new Scenario("11g_surfacing", 60, sp -> place(sp, POOL_X + 8, Y - 3, 0, -90, none),
                 (mc, t) -> move(mc, false, false, false, true), new Window(10, 60, 6, 0.2f)));
-        for (int i : new int[]{MotionState_EMOTE_WAVE, MotionState_EMOTE_FACEPALM, MotionState_EMOTE_SALUTE, MotionState_EMOTE_CLAP}) {
+        for (int i : new int[]{MotionState_EMOTE_WAVE, MotionState_EMOTE_FACEPALM, 0, 15, 16, 17, 18, 19}) {
             final int emote = i;
             SCENARIOS.add(new Scenario("40_emote_" + dev.mcreload.anim.client.rig.MotionState.EMOTE_KEYS[i], 60,
                     sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),

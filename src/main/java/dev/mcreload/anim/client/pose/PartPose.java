@@ -87,6 +87,12 @@ public final class PartPose {
         rx *= 1f - weight;
     }
 
+    public void overrideY(float y, float weight) {
+        if (weight <= 0f) return;
+        if (wy <= 0f) { ty = y; wy = weight; } else { ty = AngleMath.lerpAngle(ty, y, weight); wy += (1f - wy) * weight; }
+        ry *= 1f - weight;
+    }
+
     public void overrideBend(float value, float weight) {
         if (weight <= 0f) return;
         bend += (value - bend) * weight;

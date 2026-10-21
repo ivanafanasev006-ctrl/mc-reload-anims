@@ -3,7 +3,7 @@
   "key.kinetrix.toggle": "Вкл/выкл анимации игрока",
   "message.kinetrix.enabled": "Анимации Kinetrix: ВКЛ",
   "message.kinetrix.disabled": "Анимации Kinetrix: ВЫКЛ",
-  "emote.kinetrix.dance": "Танец",
+  "emote.kinetrix.dance": "Default dance",
   "emote.kinetrix.wave": "Помахать",
   "emote.kinetrix.clap": "Хлопать",
   "emote.kinetrix.facepalm": "Фейспалм",
@@ -20,5 +20,10 @@
   "emote.kinetrix.pushups": "Отжимания",
   "key.kinetrix.emotes": "Меню эмоций",
   "screen.kinetrix.emotes": "Эмоции",
-  "screen.kinetrix.emotes.hint": "Двинься, ударь или получи урон, чтобы прервать"
+  "screen.kinetrix.emotes.hint": "Двинься, ударь или получи урон, чтобы прервать",
+  "emote.kinetrix.running_man": "Раннинг мэн",
+  "emote.kinetrix.robot": "Робот",
+  "emote.kinetrix.guitar": "Воздушная гитара",
+  "emote.kinetrix.flex": "Покрасоваться",
+  "emote.kinetrix.meditate": "Медитация"
 }

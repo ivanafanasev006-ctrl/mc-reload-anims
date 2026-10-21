@@ -52,6 +52,14 @@ final class WaterModule implements AnimModule {
         diveAir(m, f, s, gate);
         dive(m, f, s, gate);
         chill(m, f, s, gate);
+
+        // Coming out of the swimming pose (onto land, or just stopping): vanilla snaps the head
+        // from its swimming angle straight to the look pitch. Ease it across with the swim amount.
+        float sa = rig.player.getSwimAmount(pt);
+        if (sa > 0.001f && !rig.player.isVisuallySwimming() && m.swimFading()) {
+            float pitch = Mth.lerp(pt, rig.player.xRotO, rig.player.getXRot()) * Mth.DEG_TO_RAD;
+            f.head().overrideX(Mth.lerp(sa, pitch, -Mth.PI / 4f), 1f);
+        }
     }
 
     /**

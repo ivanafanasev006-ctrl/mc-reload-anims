@@ -130,6 +130,9 @@ public final class MotionState {
     private boolean wasInWater;
     private int lastWaterTick = -1000;
     private int teleportTick = -1000;
+    private int lastVisSwimTick = -1000;
+    /** Speed (blocks/tick) of the last tick in the air, for judging how hard a landing was. */
+    private float lastAirSpeed;
     private boolean rollEarly;
     private int lastSprintTick = -1000;
     // ---- fishing
@@ -213,7 +216,7 @@ public final class MotionState {
     private boolean diveEligible;
     private float fallHeight;
     /** Falling backwards into water from high up: lying back with the hands behind the head. */
-    public final Smooth chillW = new Smooth(4f);
+    public final Smooth chillW = new Smooth(7f);
     public float chillSplashStart = -100f;
     /** How far the shoulders sit below the water surface (blocks), for floating higher. */
     public float surfaceDepth;
@@ -258,6 +261,8 @@ public final class MotionState {
             if (time - brakeStart > 0.6f) brakeStart = time;
         }
         prevTickSpeed = tickSpeed;
+        if (!ground) lastAirSpeed = (float) Math.sqrt(vx * vx + vy * vy + vz * vz);
+        if (player.isVisuallySwimming()) lastVisSwimTick = player.tickCount;
         wasSprinting = player.isSprinting();
         if (wasSprinting) lastSprintTick = player.tickCount;
         if (player.isFallFlying()) lastGlideTick = player.tickCount;
@@ -344,7 +349,7 @@ public final class MotionState {
             // touchdown instead of a tick or two after it.
             if (!special && !rollEarly && Cfg.landing && -minAirVy > 0.62f && movingForward() && chillW.v < 0.45f
                     && player.tickCount - lastRideTick >= 10
-                    && !(Weapons.isMeleeWeapon(player.getMainHandItem()) && player.getOffhandItem().isEmpty())) {
+                    && !Weapons.isMeleeWeapon(player.getMainHandItem())) {
                 double gap = groundGap();
                 if (gap >= 0 && gap < -vy * 1.1) {
                     landKind = LAND_ROLL;
@@ -354,8 +359,19 @@ public final class MotionState {
             }
         } else {
             if (!wasOnGround && player.tickCount - lastGlideTick < 4) {
-                // Coming in on an elytra: just absorb it.
-                if (Cfg.landing) land.impulse(0.8f);
+                // Coming in on an elytra. A gentle touchdown is just absorbed; slamming in fast
+                // (diving into the ground) ends in a forward roll when W is held, otherwise a
+                // hard, deep landing.
+                if (Cfg.landing) {
+                    if (lastAirSpeed > 0.65f && movingForward()) {
+                        landKind = LAND_ROLL;
+                        landStart = time;
+                    } else if (lastAirSpeed > 0.65f) {
+                        land.impulse(1.35f);
+                    } else {
+                        land.impulse(0.8f);
+                    }
+                }
             } else if (rollEarly) {
                 // Already rolling.
             } else if (player.tickCount - lastRideTick < 10) {
@@ -363,7 +379,7 @@ public final class MotionState {
             } else if (!wasOnGround && airTicks > 2 && !special && Cfg.landing) {
                 float impact = -minAirVy;
                 ItemStack main = player.getMainHandItem();
-                boolean swordOnly = Weapons.isMeleeWeapon(main) && player.getOffhandItem().isEmpty();
+                boolean swordOnly = Weapons.isMeleeWeapon(main);
                 if (impact > 0.25f && chillW.v > 0.45f) {
                     // Fell backwards lying back (jumped back holding S): roll out over the shoulder.
                     landKind = LAND_BACKROLL;
@@ -538,7 +554,8 @@ public final class MotionState {
         // air with the hands behind the head; landing, roll out backwards (or float, in water).
         boolean backwards = isLocalPressingBack()
                 || (!(player instanceof net.minecraft.client.player.LocalPlayer) && forward.v < -0.05f);
-        chillW.to(air && backwards && airTicks >= 3 ? 1f : 0f, dt);
+        // Only a real drop (well below where we took off), never an ordinary jump on flat ground.
+        chillW.to(air && backwards && airTicks >= 3 && fallHeight >= 1.2f ? 1f : 0f, dt);
         if (ground) chillW.v = Math.max(0f, chillW.v - dt * 5f);   // short hop: straight back up
         // Heading for water from dry land with enough drop: the dolphin dive starts from the top
         // of the jump (or as soon as we go over the edge) and lasts until we hit the water.
@@ -612,9 +629,11 @@ public final class MotionState {
     // ---- emotes (played from the emote menu; client side)
     public static final int EMOTE_DANCE = 0, EMOTE_WAVE = 1, EMOTE_CLAP = 2, EMOTE_FACEPALM = 3, EMOTE_SHRUG = 4,
             EMOTE_SALUTE = 5, EMOTE_BOW = 6, EMOTE_SIT = 7, EMOTE_THUMBS = 8, EMOTE_VICTORY = 9, EMOTE_POINT = 10,
-            EMOTE_LAUGH = 11, EMOTE_CRY = 12, EMOTE_FLOSS = 13, EMOTE_PUSHUPS = 14, EMOTE_COUNT = 15;
+            EMOTE_LAUGH = 11, EMOTE_CRY = 12, EMOTE_FLOSS = 13, EMOTE_PUSHUPS = 14, EMOTE_RUNNING_MAN = 15,
+            EMOTE_ROBOT = 16, EMOTE_GUITAR = 17, EMOTE_FLEX = 18, EMOTE_MEDITATE = 19, EMOTE_COUNT = 20;
     public static final String[] EMOTE_KEYS = {"dance", "wave", "clap", "facepalm", "shrug", "salute", "bow", "sit",
-            "thumbs", "victory", "point", "laugh", "cry", "floss", "pushups"};
+            "thumbs", "victory", "point", "laugh", "cry", "floss", "pushups", "running_man", "robot", "guitar",
+            "flex", "meditate"};
     public int emote = -1;
     public float emoteStart = -100f;
     public final Smooth emoteW = new Smooth(6f);
@@ -623,7 +642,9 @@ public final class MotionState {
     /** Seconds; 0 = loops until you move. */
     public static float emoteDuration(int e) {
         return switch (e) {
-            case EMOTE_DANCE, EMOTE_SIT, EMOTE_FLOSS, EMOTE_PUSHUPS -> 0f;
+            case EMOTE_DANCE, EMOTE_SIT, EMOTE_FLOSS, EMOTE_PUSHUPS, EMOTE_RUNNING_MAN, EMOTE_ROBOT,
+                 EMOTE_GUITAR, EMOTE_MEDITATE -> 0f;
+            case EMOTE_FLEX -> 4.2f;
             case EMOTE_WAVE, EMOTE_SALUTE, EMOTE_BOW -> 2.4f;
             case EMOTE_SHRUG -> 1.8f;
             case EMOTE_THUMBS, EMOTE_POINT -> 2.0f;
@@ -745,6 +766,15 @@ public final class MotionState {
         return -1f;
     }
 
+    /** Vanilla is still fading out of the swimming pose (left the water or stopped swimming). */
+    public boolean swimFading() {
+        return player.tickCount - lastVisSwimTick < 20;
+    }
+
+    public boolean wasInWaterRecently() {
+        return player.tickCount - lastWaterTick < 20;
+    }
+
     /** Water within a few blocks below the feet, with nothing solid in between. */
     private boolean waterBelow() {
         net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
@@ -820,8 +850,11 @@ public final class MotionState {
             slashKind = THROW;
             slashDuration = 0.65f;
         } else if (kind == FIST_BLOCK) {
-            // Digging with bare hands: one fist after the other.
-            fistSide = -fistSide;
+            // Digging with bare hands: one fist after the other (only the free hand if the other
+            // one holds something, like a shield or a totem).
+            boolean otherFree = player.getItemInHand(player.swingingArm == InteractionHand.MAIN_HAND
+                    ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND).isEmpty();
+            fistSide = otherFree ? -fistSide : 1f;
             slashSide *= fistSide;
             slashKind = kind;
             slashDuration = 0.42f;
@@ -856,6 +889,10 @@ public final class MotionState {
             return PLACE;
         }
         if (held.isEmpty()) return targetingBlock() ? FIST_BLOCK : PUNCH;
+        boolean blade = Weapons.isMeleeWeapon(held);
+        boolean tool = held.getItem() instanceof net.minecraft.world.item.DiggerItem;
+        // Anything else in the hand (a block, a stick...) hitting a block: a one-handed knock.
+        if (!blade && !tool && targetingBlock()) return PICK;
         Item item = held.getItem();
         if (item instanceof PickaxeItem) return PICK;
         if (item instanceof ShovelItem) return SHOVEL;

@@ -51,7 +51,9 @@ final class ReactionModule implements AnimModule {
             boolean free = !rig.player.isFallFlying() && !rig.player.isPassenger() && !rig.player.isSleeping();
             if (m.landKind == MotionState.LAND_ROLL) roll(m, f, s, free ? 1f : gate, free ? 1f : arms);
             if (m.landKind == MotionState.LAND_BACKROLL && gate > 0.001f) backRoll(m, f, s, gate, arms);
-            if (m.landKind == MotionState.LAND_SWORD && gate > 0.001f) swordLanding(m, f, s, gate, main, off, side);
+            if (m.landKind == MotionState.LAND_SWORD && gate > 0.001f) {
+                swordLanding(m, f, s, gate, main, off, side, rig.player.getOffhandItem().isEmpty());
+            }
         }
     }
 
@@ -134,7 +136,8 @@ final class ReactionModule implements AnimModule {
      * the head comes up to look ahead, breathing; then the sword is pulled out and the fighter
      * stands up. Every part blends in and out smoothly - nothing pops.
      */
-    private static void swordLanding(MotionState m, PoseFrame f, Signs s, float gate, PartPose main, PartPose off, float side) {
+    private static void swordLanding(MotionState m, PoseFrame f, Signs s, float gate, PartPose main, PartPose off,
+                                     float side, boolean two) {
         float T = m.since(m.landStart);
         float t = T / SWORD_LAND_SECONDS;
         if (t >= 1f || t < 0f) return;
@@ -150,7 +153,7 @@ final class ReactionModule implements AnimModule {
         float headUp = AngleMath.ease((T - 0.22f) / 0.30f);
         // Getting up: the sword comes out as the body rises.
         float rise = AngleMath.ease((t - 0.58f) / 0.32f);
-        plantBlade(m, f, s, e, main, off, side, stab * (1f - rise), lean, 0.05f * slam, headUp);
+        plantBlade(m, f, s, e, main, off, side, stab * (1f - rise), lean, 0.05f * slam, headUp, two);
     }
 
     private static void blast(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate, float arms,
@@ -160,7 +163,7 @@ final class ReactionModule implements AnimModule {
         if (t >= 1f || t < 0f) return;
         boolean blade = Weapons.isMeleeWeapon(rig.player.getMainHandItem());
         if (blade) {
-            bladeBrace(m, f, s, gate * m.explodeStrength, main, off, side, T);
+            bladeBrace(m, f, s, gate, main, off, side, T, rig.player.getOffhandItem().isEmpty());
             return;
         }
         float e = AngleMath.ease(t / 0.04f) * (1f - AngleMath.ease((t - 0.58f) / 0.42f)) * m.explodeStrength * gate;
@@ -189,7 +192,7 @@ final class ReactionModule implements AnimModule {
      * sword out. The same clean vertical plant as the hero landing.
      */
     private static void bladeBrace(MotionState m, PoseFrame f, Signs s, float g, PartPose main, PartPose off,
-                                   float side, float T) {
+                                   float side, float T, boolean two) {
         float t = T / BLAST_SECONDS;
         // Rocked back: in over 0.08 s, gone by ~0.3 s.
         float rock = AngleMath.ease(T / 0.08f) * (1f - AngleMath.ease((T - 0.12f) / 0.20f)) * g;
@@ -201,16 +204,21 @@ final class ReactionModule implements AnimModule {
             f.body().rx += 0.10f * rock;
             float aw = rock * m.armsFree.v;
             main.override(-2.30f, -side * 0.28f, side * 0.10f, aw);
-            off.override(-2.20f, side * 0.62f, -side * 0.10f, aw);
+            if (two) {
+                off.override(-2.20f, side * 0.62f, -side * 0.10f, aw);
+                off.overrideBend(s.elbow() * 0.35f, aw);
+            } else {
+                off.override(-1.40f, 0f, -side * 0.90f, aw);
+                off.overrideBend(s.elbow() * 0.40f, aw);
+            }
             main.overrideBend(s.elbow() * 0.30f, aw);
-            off.overrideBend(s.elbow() * 0.35f, aw);
             m.itemTiltTarget = Math.max(m.itemTiltTarget, 0.95f * rock);
         }
         if (e > 0.001f) {
             float stab = AngleMath.ease((T - 0.14f) / 0.14f);
             float rise = AngleMath.ease((t - 0.58f) / 0.32f);
             float shove = Mth.sin(Mth.PI * AngleMath.clamp((T - 0.15f) / 0.5f, 0f, 1f));
-            plantBlade(m, f, s, e, main, off, side, stab * (1f - rise), 0.38f + 0.10f * shove, 0.03f * shove, 0.3f);
+            plantBlade(m, f, s, e, main, off, side, stab * (1f - rise), 0.38f + 0.10f * shove, 0.03f * shove, 0.3f, two);
         }
         // Shoved back by the blast, sliding to a stop.
         f.body().pz += 0.28f * AngleMath.ease(T / 0.5f) * Math.max(rock, e);
@@ -226,7 +234,7 @@ final class ReactionModule implements AnimModule {
      * @param headUp 0 = looking down at the blade, 1 = looking ahead
      */
     private static void plantBlade(MotionState m, PoseFrame f, Signs s, float e, PartPose main, PartPose off, float side,
-                                   float stab, float lean, float drop, float headUp) {
+                                   float stab, float lean, float drop, float headUp, boolean two) {
         // Kneel: free-side foot planted forward, sword-side knee on the ground.
         PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
         PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();
@@ -238,17 +246,23 @@ final class ReactionModule implements AnimModule {
         f.body().py -= (6f / 16f * 0.9375f + drop) * e;
         Rigging.leanTorso(f, s, lean * e);
         f.head().rx += Mth.lerp(headUp, 0.45f, -0.25f) * e;
-        // Both hands on the hilt well in front of the body: raised high with the blade pointing
-        // up, then driven down until the arms are about level in the world (they ride on the
-        // leaning torso) while the blade turns over in the fists (item tilt, a rotation about the
-        // fist's own axis, so it can never flip through the body the way an arm roll can) and
-        // goes into the ground point-first in front of the front knee, on the sword side.
-        float x = Mth.lerp(stab, -2.60f, -1.50f - lean - 0.30f);
+        // Both hands on the hilt in front of the body: raised high with the blade pointing up,
+        // then driven down until the fists are low in front of the front knee (the arms ride on
+        // the leaning torso, so the lean is taken off their angle), while the blade turns over in
+        // the fists (item tilt: a rotation about the fist's own axis, so it can never flip through
+        // the body) to stand straight up and down, its point driven well into the ground.
+        float x = Mth.lerp(stab, -2.60f, -1.30f - lean);
         main.override(x, -side * 0.28f, side * 0.05f, e);
-        off.override(x + 0.10f, side * 0.62f, -side * 0.05f, e);
         main.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.10f), e);
-        off.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.30f), e);
-        m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.lerp(stab, 0.95f, Mth.PI) * e);
+        if (two) {
+            off.override(x + 0.10f, side * 0.62f, -side * 0.05f, e);
+            off.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.30f), e);
+        } else {
+            // Something in the other hand: it rests on the front knee instead.
+            off.override(-0.75f - lean, side * 0.10f, -side * 0.15f, e);
+            off.overrideBend(s.elbow() * 0.55f, e);
+        }
+        m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.lerp(stab, 0.95f, Mth.PI - 0.50f) * e);
         m.armsHeld = Math.max(m.armsHeld, e);
         f.body().py += 0.05f * (1f - stab) * e;
     }
