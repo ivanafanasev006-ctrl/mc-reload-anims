@@ -261,15 +261,15 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("33_trident_throw", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.TRIDENT)),
                 (mc, t) -> mc.options.keyUse.setDown(t > 5 && t < 30), new Window(14, 29, 2, 0.2f), new Window(30, 42, 4, 0.03f)));
         SCENARIOS.add(new Scenario("34_trident_stab", 30, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.TRIDENT)),
-                (mc, t) -> { if (t == 8) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(8, 22, 4, 0.04f)));
+                (mc, t) -> { if (t == 8) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(8, 24, 6, 0.0f)));
         SCENARIOS.add(new Scenario("25_eat", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.GOLDEN_APPLE, 8)),
                 (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 38, 3, 0.25f)));
         SCENARIOS.add(new Scenario("07c_sword_landing", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> move(mc, false, false, false, false), new Window(6, 18, 3, 0.0f), new Window(19, 45, 5, 0.06f)));
+                (mc, t) -> move(mc, false, false, false, false), new Window(8, 18, 5, 0.0f), new Window(19, 45, 5, 0.06f)));
         SCENARIOS.add(new Scenario("26_explosion", 45, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 34, 4, 0.08f)));
         SCENARIOS.add(new Scenario("26b_explosion_sword", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 34, 4, 0.08f)));
+                (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 40, 7, 0.05f)));
         SCENARIOS.add(new Scenario("27_totem", 50, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> { if (t == 8) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.onTotem(); } },
                 new Window(14, 50, 3, 0.3f)));

@@ -69,7 +69,7 @@ public final class MotionState {
     /** A melee weapon in the main hand. */
     public boolean holdingBlade;
     /** Held item tipped forward in the hand (radians), smoothed; modules raise the target. */
-    public final Smooth itemTilt = new Smooth(16f);
+    public final Smooth itemTilt = new Smooth(24f);
     public float itemTiltTarget;
     /** 0..1 this frame: both hands are fixed on something (set by modules, cleared every frame). */
     public float armsHeld;
