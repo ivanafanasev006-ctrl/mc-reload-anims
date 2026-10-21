@@ -94,11 +94,13 @@ final class RideModule implements AnimModule {
      * </ul>
      */
     private static void mount(LivingEntity mount, MotionState m, PoseFrame f, Signs s, float w, float pt) {
-        float speed = Math.min(mount.walkAnimation.speed(pt), 1.2f);
+        // Gait from how fast we really go (the mount's leg animation saturates at a horse's
+        // normal speed, so it can't tell a trot from a gallop): blocks per tick.
+        float v = m.speed.v;
         float phase = mount.walkAnimation.position(pt) * 0.6662f;
-        float moving = Mth.clamp(speed / 0.12f, 0f, 1f);
-        float trot = Mth.clamp((speed - 0.30f) / 0.20f, 0f, 1f) * (1f - Mth.clamp((speed - 0.65f) / 0.20f, 0f, 1f));
-        float gallop = Mth.clamp((speed - 0.65f) / 0.20f, 0f, 1f);
+        float moving = Mth.clamp(v / 0.04f, 0f, 1f);
+        float gallop = Mth.clamp((v - 0.26f) / 0.10f, 0f, 1f);
+        float trot = Mth.clamp((v - 0.11f) / 0.08f, 0f, 1f) * (1f - gallop);
         float walk = moving * (1f - trot) * (1f - gallop);
         float still = 1f - moving;
 
