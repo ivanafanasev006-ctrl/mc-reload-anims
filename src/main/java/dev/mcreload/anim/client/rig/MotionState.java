@@ -107,6 +107,8 @@ public final class MotionState {
     public final Spring hitBack = new Spring(120f, 12f);
     public static final int LAND_NONE = 0, LAND_ROLL = 1, LAND_SWORD = 2, LAND_BACKROLL = 3;
     public int landKind = LAND_NONE;
+    /** Riding: when the vehicle last moved / was paddled (seat idles start after that). */
+    public float rideIdleStart;
     /** How far back (radians) the body was already lying when the back roll started. */
     public float backRollFrom;
     /** How far back the body lies right now in a backwards fall (radians, set by WaterModule#chill). */
@@ -538,6 +540,10 @@ public final class MotionState {
             rodSide = rodArm == HumanoidArm.RIGHT ? 1f : -1f;
         }
         fishingW.to((rodInMain || rodInOff) && player.fishing != null && !blocked ? 1f : 0f, dt);
+        // The item's turn in the hand only matters modulo a full turn: after a spin, take the
+        // shortest way back instead of unwinding every turn.
+        float tiltErr = itemTilt.v - itemTiltTarget;
+        if (Math.abs(tiltErr) > Mth.PI) itemTilt.v -= Mth.TWO_PI * Math.round(tiltErr / Mth.TWO_PI);
         itemTilt.to(itemTiltTarget, dt);
         itemTiltTarget = 0f;
         armsHeld = 0f;
@@ -624,7 +630,13 @@ public final class MotionState {
 
     public static final int IDLE_STRETCH = 0, IDLE_SCRATCH = 1, IDLE_SHADOWBOX = 2, IDLE_LOOK = 3,
             IDLE_YAWN = 4, IDLE_HANDS = 5, IDLE_NECK = 6, IDLE_IMPATIENT = 7, IDLE_KICK = 8, IDLE_SQUATS = 9,
-            IDLE_COUNT = 10;
+            IDLE_COUNT = 10,
+            // Fidgets with whatever is in the main hand.
+            IDLE_ITEM_SPIN = 10, IDLE_ITEM_INSPECT = 11, IDLE_ITEM_TOSS = 12, IDLE_ITEM_PRACTICE = 13,
+            IDLE_ITEM_SHOULDER = 14, IDLE_ITEM_LEAN = 15, IDLE_FLINT = 16, IDLE_BUCKET = 17, IDLE_ROD = 18,
+            IDLE_LANTERN = 19, IDLE_BLOCK = 20;
+    /** Generic fidgets that leave the main hand alone (fine with something in it). */
+    private static final int[] HANDS_BUSY_IDLES = {IDLE_LOOK, IDLE_NECK, IDLE_IMPATIENT, IDLE_KICK};
 
     // ---- emotes (played from the emote menu; client side)
     public static final int EMOTE_DANCE = 0, EMOTE_WAVE = 1, EMOTE_CLAP = 2, EMOTE_FACEPALM = 3, EMOTE_SHRUG = 4,
@@ -688,8 +700,18 @@ public final class MotionState {
             nextIdleAt = 8f + rng.nextFloat() * 4f;
         }
         if (idleAction < 0 && emote < 0 && time - idleSince > nextIdleAt) {
-            int pick = rng.nextInt(IDLE_COUNT);
-            if (pick == lastIdleAction) pick = (pick + 1) % IDLE_COUNT;
+            int pick;
+            ItemStack held = player.getMainHandItem();
+            if (!held.isEmpty()) {
+                // Something in hand: mostly play with it, now and then a fidget that leaves it be.
+                int[] own = itemIdles(held);
+                int[] pool = rng.nextFloat() < 0.75f ? own : HANDS_BUSY_IDLES;
+                pick = pool[rng.nextInt(pool.length)];
+                if (pick == lastIdleAction) pick = pool[(java.util.Arrays.binarySearch(pool, pick) + 1 + pool.length) % pool.length];
+            } else {
+                pick = rng.nextInt(IDLE_COUNT);
+                if (pick == lastIdleAction) pick = (pick + 1) % IDLE_COUNT;
+            }
             idleAction = lastIdleAction = pick;
             idleActionStart = time;
         }
@@ -705,8 +727,37 @@ public final class MotionState {
         idleW.v = 1f;
     }
 
+    /** Which fidgets suit the item (sorted ascending). */
+    public static int[] itemIdles(ItemStack stack) {
+        Item it = stack.getItem();
+        if (it instanceof net.minecraft.world.item.SwordItem)
+            return new int[]{IDLE_ITEM_SPIN, IDLE_ITEM_INSPECT, IDLE_ITEM_TOSS, IDLE_ITEM_PRACTICE};
+        if (it instanceof AxeItem) return new int[]{IDLE_ITEM_INSPECT, IDLE_ITEM_TOSS, IDLE_ITEM_PRACTICE, IDLE_ITEM_SHOULDER};
+        if (it instanceof PickaxeItem) return new int[]{IDLE_ITEM_TOSS, IDLE_ITEM_PRACTICE, IDLE_ITEM_SHOULDER};
+        if (it instanceof ShovelItem || it instanceof HoeItem) return new int[]{IDLE_ITEM_SPIN, IDLE_ITEM_SHOULDER, IDLE_ITEM_LEAN};
+        if (it instanceof net.minecraft.world.item.TridentItem) return new int[]{IDLE_ITEM_SPIN, IDLE_ITEM_PRACTICE, IDLE_ITEM_LEAN};
+        if (it instanceof net.minecraft.world.item.FlintAndSteelItem) return new int[]{IDLE_ITEM_TOSS, IDLE_FLINT};
+        if (it instanceof net.minecraft.world.item.BucketItem || it instanceof net.minecraft.world.item.MilkBucketItem
+                || it instanceof net.minecraft.world.item.SolidBucketItem) return new int[]{IDLE_BUCKET};
+        if (it instanceof net.minecraft.world.item.FishingRodItem) return new int[]{IDLE_ITEM_SPIN, IDLE_ROD};
+        if (it instanceof net.minecraft.world.item.BlockItem bi) {
+            if (bi.getBlock() instanceof net.minecraft.world.level.block.LanternBlock) return new int[]{IDLE_LANTERN};
+            return new int[]{IDLE_ITEM_TOSS, IDLE_BLOCK};
+        }
+        if (Weapons.isMeleeWeapon(stack)) return new int[]{IDLE_ITEM_SPIN, IDLE_ITEM_INSPECT, IDLE_ITEM_PRACTICE};
+        return new int[]{IDLE_ITEM_INSPECT, IDLE_ITEM_TOSS};
+    }
+
     public static float idleDuration(int action) {
         return switch (action) {
+            case IDLE_ITEM_SPIN, IDLE_ITEM_PRACTICE, IDLE_ROD -> 3.0f;
+            case IDLE_ITEM_INSPECT -> 3.6f;
+            case IDLE_ITEM_TOSS -> 2.4f;
+            case IDLE_ITEM_SHOULDER -> 4.0f;
+            case IDLE_ITEM_LEAN -> 4.5f;
+            case IDLE_FLINT -> 2.6f;
+            case IDLE_BUCKET, IDLE_LANTERN -> 3.2f;
+            case IDLE_BLOCK -> 3.4f;
             case IDLE_STRETCH -> 4.0f;
             case IDLE_SCRATCH, IDLE_IMPATIENT, IDLE_SQUATS -> 3.5f;
             case IDLE_SHADOWBOX -> 3.2f;
@@ -764,6 +815,10 @@ public final class MotionState {
             pos.move(net.minecraft.core.Direction.DOWN);
         }
         return -1f;
+    }
+
+    public AbstractClientPlayer playerRef() {
+        return player;
     }
 
     /** Vanilla is still fading out of the swimming pose (left the water or stopped swimming). */

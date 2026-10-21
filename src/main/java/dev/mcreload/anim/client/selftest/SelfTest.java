@@ -178,6 +178,8 @@ public final class SelfTest {
                 lvl.setBlock(new BlockPos(LADDER_X, y, 0), floor, 2);
                 lvl.setBlock(new BlockPos(LADDER_X + 1, y, 0), ladder, 2);
             }
+            // A long straight railway for the minecart.
+            for (int x = -10; x <= 60; x++) lvl.setBlock(new BlockPos(x, Y, 7), Blocks.RAIL.defaultBlockState(), 2);
             worldReady = true;
         });
     }
@@ -300,6 +302,42 @@ public final class SelfTest {
                 new Window(30, 90, 12, 0.05f)));
         SCENARIOS.add(new Scenario("11g_surfacing", 60, sp -> place(sp, POOL_X + 8, Y - 3, 0, -90, none),
                 (mc, t) -> move(mc, false, false, false, true), new Window(10, 60, 6, 0.2f)));
+        SCENARIOS.add(new Scenario("05_fist_guard", 40, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> { if (t == 5 || t == 12) mc.player.swing(InteractionHand.MAIN_HAND); },
+                new Window(22, 40, 2, 0.3f)));
+        // Playing with the item in hand (fidgets forced on).
+        int[][] fidgets = {
+                {dev.mcreload.anim.client.rig.MotionState.IDLE_ITEM_SPIN, 0},
+                {dev.mcreload.anim.client.rig.MotionState.IDLE_ITEM_INSPECT, 0},
+                {dev.mcreload.anim.client.rig.MotionState.IDLE_ITEM_TOSS, 1},
+                {dev.mcreload.anim.client.rig.MotionState.IDLE_ITEM_SHOULDER, 2},
+                {dev.mcreload.anim.client.rig.MotionState.IDLE_ITEM_LEAN, 3},
+                {dev.mcreload.anim.client.rig.MotionState.IDLE_LANTERN, 4},
+                {dev.mcreload.anim.client.rig.MotionState.IDLE_BLOCK, 5},
+                {dev.mcreload.anim.client.rig.MotionState.IDLE_BUCKET, 6},
+        };
+        net.minecraft.world.item.Item[] fidgetItems = {Items.DIAMOND_SWORD, Items.IRON_PICKAXE, Items.IRON_AXE,
+                Items.IRON_SHOVEL, Items.LANTERN, Items.GRASS_BLOCK, Items.WATER_BUCKET};
+        for (int[] fd : fidgets) {
+            final int action = fd[0];
+            final net.minecraft.world.item.Item item = fidgetItems[fd[1]];
+            SCENARIOS.add(new Scenario("45_fidget_" + action, 75, sp -> place(sp, 2, Y, 0, -90, new ItemStack(item)),
+                    (mc, t) -> {
+                        move(mc, false, false, false, false);
+                        if (t == 8) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.forceIdle(action); }
+                    }, new Window(16, 72, 4, 0.25f)));
+        }
+        // Riding a minecart down the line, then sitting about once it has stopped.
+        SCENARIOS.add(new Scenario("47_minecart", 260, SelfTest::boardMinecart,
+                (mc, t) -> move(mc, false, false, false, false),
+                new Window(8, 60, 4, 0.2f), new Window(150, 260, 6, 0.6f)));
+        SCENARIOS.add(new Scenario("48_boat_idle", 200, SelfTest::boardBoat,
+                (mc, t) -> move(mc, false, false, false, false), new Window(60, 200, 6, 0.6f)));
+        // Mobs: walking over, then standing about.
+        SCENARIOS.add(new Scenario("50_mobs_hostile", 120, sp -> spawnMobs(sp, true),
+                (mc, t) -> move(mc, false, false, false, false), new Window(20, 120, 6, 0.4f)));
+        SCENARIOS.add(new Scenario("51_mobs_animals", 120, sp -> spawnMobs(sp, false),
+                (mc, t) -> move(mc, false, false, false, false), new Window(20, 120, 6, 0.4f)));
         for (int i : new int[]{MotionState_EMOTE_WAVE, MotionState_EMOTE_FACEPALM, 0, 15, 16, 17, 18, 19}) {
             final int emote = i;
             SCENARIOS.add(new Scenario("40_emote_" + dev.mcreload.anim.client.rig.MotionState.EMOTE_KEYS[i], 60,
@@ -383,6 +421,51 @@ public final class SelfTest {
     private static void placeLook(ServerPlayer sp, double x, double y, double z, float yaw, float pitch, ItemStack hand) {
         place(sp, x, y, z, yaw, hand);
         sp.teleportTo(sp.serverLevel(), x + 0.5, y, z + 0.5, yaw, pitch);
+    }
+
+    private static void boardMinecart(ServerPlayer sp) {
+        sp.stopRiding();
+        place(sp, 0, Y, 7, -90, ItemStack.EMPTY);
+        net.minecraft.world.entity.vehicle.Minecart cart =
+                new net.minecraft.world.entity.vehicle.Minecart(sp.serverLevel(), 0.5, Y, 7.5);
+        sp.serverLevel().addFreshEntity(cart);
+        sp.startRiding(cart, true);
+        cart.setDeltaMovement(0.6, 0, 0);
+    }
+
+    /** A row of mobs behind the player (so the front camera sees them), told to walk past. */
+    private static void spawnMobs(ServerPlayer sp, boolean hostile) {
+        sp.stopRiding();
+        double px = 40.5, pz = 0.5;
+        place(sp, 40, Y, 0, -90, ItemStack.EMPTY);
+        ServerLevel lvl = sp.serverLevel();
+        lvl.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, sp.getBoundingBox().inflate(40)).forEach(e -> e.discard());
+        net.minecraft.world.entity.EntityType<?>[] types = hostile
+                ? new net.minecraft.world.entity.EntityType<?>[]{net.minecraft.world.entity.EntityType.ZOMBIE,
+                net.minecraft.world.entity.EntityType.SKELETON, net.minecraft.world.entity.EntityType.VILLAGER,
+                net.minecraft.world.entity.EntityType.IRON_GOLEM, net.minecraft.world.entity.EntityType.CREEPER,
+                net.minecraft.world.entity.EntityType.SPIDER, net.minecraft.world.entity.EntityType.ZOMBIE,
+                net.minecraft.world.entity.EntityType.WANDERING_TRADER}
+                : new net.minecraft.world.entity.EntityType<?>[]{net.minecraft.world.entity.EntityType.WOLF,
+                net.minecraft.world.entity.EntityType.CAT, net.minecraft.world.entity.EntityType.CHICKEN,
+                net.minecraft.world.entity.EntityType.COW, net.minecraft.world.entity.EntityType.PIG,
+                net.minecraft.world.entity.EntityType.SHEEP, net.minecraft.world.entity.EntityType.HORSE,
+                net.minecraft.world.entity.EntityType.LLAMA};
+        for (int i = 0; i < types.length; i++) {
+            net.minecraft.world.entity.Entity ent = types[i].create(lvl);
+            if (!(ent instanceof net.minecraft.world.entity.Mob mob)) continue;
+            double x = px - 5.0 - (i % 2) * 2.5, z = pz - 5.6 + i * 1.6;
+            mob.moveTo(x, Y, z, 0f, 0f);
+            mob.setPersistenceRequired();
+            mob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+            if (mob instanceof net.minecraft.world.entity.monster.AbstractSkeleton)
+                mob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+            if (i == 6 && mob instanceof net.minecraft.world.entity.monster.Zombie z2) z2.setBaby(true);
+            if (mob instanceof net.minecraft.world.entity.TamableAnimal ta) ta.tame(sp);
+            lvl.addFreshEntity(mob);
+            // Half of them walk across, the others stay put.
+            if (i % 2 == 0) mob.getNavigation().moveTo(x - 6.0, Y, z, 1.0);
+        }
     }
 
     private static void boardBoat(ServerPlayer sp) {

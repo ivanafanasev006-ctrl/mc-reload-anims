@@ -36,6 +36,11 @@ final class RideModule implements AnimModule {
         Entity vehicle = rig.player.getVehicle();
         if (vehicle instanceof Boat boat) {
             boat(boat, m, f, s, w, pt);
+            boolean paddling = boat.getPaddleState(0) || boat.getPaddleState(1);
+            idleInSeat(m, f, s, w, paddling || m.horizontalSpeed > 0.02f, true);
+        } else if (vehicle instanceof net.minecraft.world.entity.vehicle.AbstractMinecart cart) {
+            minecart(cart, m, f, s, w, pt);
+            idleInSeat(m, f, s, w, m.horizontalSpeed > 0.01f, false);
         } else if (vehicle instanceof LivingEntity mount) {
             mount(mount, m, f, s, w, pt);
         } else if (vehicle != null) {
@@ -45,6 +50,140 @@ final class RideModule implements AnimModule {
             f.leftArm().targetX(-0.65f, arms);
             Rigging.elbows(f, s, 0.45f * arms);
             f.body().rz += 0.04f * Mth.sin(m.time * 2.1f + m.seed) * w;
+        }
+    }
+
+    /**
+     * Riding a minecart: hands on the rim, rocking with every bump, leaning into the sideways
+     * pull and against speeding up or braking; at full speed, both arms thrown up in the air.
+     */
+    private static void minecart(net.minecraft.world.entity.vehicle.AbstractMinecart cart, MotionState m, PoseFrame f,
+                                 Signs s, float w, float pt) {
+        float arms = w * m.armsFree.v;
+        float v = m.horizontalSpeed;
+        float moving = Mth.clamp(v / 0.05f, 0f, 1f);
+        float fast = Mth.clamp((v - 0.30f) / 0.10f, 0f, 1f);
+        // Hands on the rim either side.
+        f.rightArm().override(-0.40f, 0f, 0.62f, arms);
+        f.leftArm().override(-0.40f, 0f, -0.62f, arms);
+        f.rightArm().overrideBend(s.elbow() * 0.45f, arms);
+        f.leftArm().overrideBend(s.elbow() * 0.45f, arms);
+        // Rattling along: little jolts and a rock from side to side.
+        float rattle = Mth.sin(m.time * 23f + m.seed) * Mth.sin(m.time * 7.1f) * moving;
+        f.body().rz += (0.03f * rattle + 0.04f * Mth.sin(m.time * 2.3f + m.seed) * moving) * w;
+        f.head().rz -= 0.02f * rattle * w;
+        // Pulled sideways on the bends, thrown back when it speeds up, forward when it brakes.
+        f.body().rz -= Mth.clamp(m.strafe.v * 2.5f, -0.20f, 0.20f) * w;
+        Rigging.leanTorso(f, s, (-0.35f * m.swayF.x - 0.10f * moving) * w);
+        f.head().rx += 0.15f * m.swayF.x * w;
+        // Full speed: arms up, whooping.
+        if (fast > 0.001f) {
+            float wave = Mth.sin(m.time * 6f);
+            f.rightArm().override(-2.85f + 0.10f * wave, 0f, 0.35f, arms * fast);
+            f.leftArm().override(-2.85f - 0.10f * wave, 0f, -0.35f, arms * fast);
+            f.rightArm().overrideBend(s.elbow() * 0.15f, arms * fast);
+            f.leftArm().overrideBend(s.elbow() * 0.15f, arms * fast);
+            f.head().rx -= 0.20f * fast * w;
+            Rigging.leanTorso(f, s, -0.12f * fast * w);
+        }
+    }
+
+    // ------------------------------------------------------------------ sitting about in a boat or cart
+
+    private static final int SEAT_REST = 0, SEAT_LEAN_BACK = 1, SEAT_LOOK = 2, SEAT_STRETCH = 3, SEAT_SIDE = 4,
+            SEAT_DRUM = 5, SEAT_COUNT = 6;
+    private static final float SEAT_BLOCK = 5.5f;
+
+    /**
+     * Sitting still in a boat or minecart: every few seconds a different thing to do, cross-faded:
+     * resting, leaning back with the hands behind the head, looking about shading the eyes,
+     * stretching, leaning over the side (a hand trailing in the water from a boat), drumming the
+     * fingers on the rim.
+     */
+    private static void idleInSeat(MotionState m, PoseFrame f, Signs s, float w, boolean busy, boolean boat) {
+        if (busy) {
+            m.rideIdleStart = m.time;
+            return;
+        }
+        float T = m.since(m.rideIdleStart) - 1.5f;
+        if (T <= 0f) return;
+        int k = (int) (T / SEAT_BLOCK);
+        float in = T - k * SEAT_BLOCK;
+        int cur = seatPick(k, m.seed), prev = k == 0 ? SEAT_REST : seatPick(k - 1, m.seed);
+        float blend = dev.mcreload.anim.client.math.AngleMath.ease(in / 0.8f);
+        float aw = w * m.armsFree.v;
+        float start = dev.mcreload.anim.client.math.AngleMath.ease(T / 0.8f);
+        seatPose(f, s, m, prev, w * (1f - blend) * start, aw * (1f - blend) * start, in + SEAT_BLOCK, boat);
+        seatPose(f, s, m, cur, w * blend * start, aw * blend * start, in, boat);
+    }
+
+    private static int seatPick(int k, float seed) {
+        int h = (int) ((k * 2654435761L + (long) (seed * 1000f)) >>> 9);
+        int p = Math.floorMod(h, SEAT_COUNT);
+        if (k > 0) {
+            int q = Math.floorMod((int) (((k - 1) * 2654435761L + (long) (seed * 1000f)) >>> 9), SEAT_COUNT);
+            if (p == q) p = (p + 1) % SEAT_COUNT;
+        }
+        return p;
+    }
+
+    private static void seatPose(PoseFrame f, Signs s, MotionState m, int v, float w, float aw, float t, boolean boat) {
+        if (w <= 0.001f) return;
+        float side = m.mainRight ? 1f : -1f;
+        PartPose main = side > 0 ? f.rightArm() : f.leftArm();
+        PartPose off = side > 0 ? f.leftArm() : f.rightArm();
+        switch (v) {
+            case SEAT_LEAN_BACK -> {
+                f.rightArm().override(-2.85f, -0.25f, 0.55f, aw);
+                f.leftArm().override(-2.85f, 0.25f, -0.55f, aw);
+                f.rightArm().overrideBend(s.elbow() * 1.75f, aw);
+                f.leftArm().overrideBend(s.elbow() * 1.75f, aw);
+                Rigging.leanTorso(f, s, -0.30f * w);
+                f.head().rx -= 0.15f * w;
+            }
+            case SEAT_LOOK -> {
+                float look = Mth.sin(t * 0.9f);
+                main.override(-2.30f, -side * 0.45f, side * 0.25f, aw);
+                main.overrideBend(s.elbow() * 1.50f, aw);
+                f.head().ry += 0.70f * look * w;
+                f.head().rx -= 0.10f * w;
+                Rigging.twistUpper(f, -0.15f * look * w);
+            }
+            case SEAT_STRETCH -> {
+                float up = Mth.sin(Mth.PI * Mth.clamp(t / 3.5f, 0f, 1f));
+                f.rightArm().override(-2.95f, 0f, 0.30f, aw * up);
+                f.leftArm().override(-2.95f, 0f, -0.30f, aw * up);
+                f.rightArm().overrideBend(0f, aw * up);
+                f.leftArm().overrideBend(0f, aw * up);
+                Rigging.leanTorso(f, s, -0.20f * up * w);
+                f.body().rz += 0.10f * Mth.sin(t * 1.6f) * up * w;
+                f.head().rx -= 0.25f * up * w;
+            }
+            case SEAT_SIDE -> {
+                // Lean over the side; from a boat a hand trails in the water.
+                f.body().rz += side * 0.22f * w;
+                f.head().rz -= side * 0.10f * w;
+                f.head().rx += 0.35f * w;
+                main.override(boat ? 0.10f : -0.30f, 0f, side * (boat ? 0.95f : 0.70f), aw);
+                main.overrideBend(s.elbow() * (boat ? 0.10f + 0.10f * Mth.sin(t * 2f) : 0.40f), aw);
+                off.override(-0.40f, 0f, -side * 0.60f, aw);
+                off.overrideBend(s.elbow() * 0.45f, aw);
+            }
+            case SEAT_DRUM -> {
+                // Bored: fingers drumming on the rim, the head bobbing to a tune.
+                float tap = Math.abs(Mth.sin(t * 9f));
+                main.override(-0.55f + 0.10f * tap, 0f, side * 0.55f, aw);
+                main.overrideBend(s.elbow() * (0.60f + 0.15f * tap), aw);
+                off.override(-0.40f, 0f, -side * 0.62f, aw);
+                off.overrideBend(s.elbow() * 0.45f, aw);
+                f.head().rx += 0.06f * Mth.sin(t * 4.5f) * w;
+                f.head().rz += 0.05f * Mth.sin(t * 2.25f) * w;
+            }
+            default -> {
+                // Resting: just breathing, the odd glance around.
+                f.head().ry += 0.30f * Mth.sin(t * 0.5f) * w;
+                f.body().rz += 0.02f * Mth.sin(t * 1.4f) * w;
+            }
         }
     }
 
@@ -166,5 +305,26 @@ final class RideModule implements AnimModule {
         f.rightArm().overrideBend(s.elbow() * elbow, arms);
         f.leftArm().overrideBend(s.elbow() * Mth.lerp(pat, elbow, 0.35f), arms);
         Rigging.leanTorso(f, s, 0.10f * pat * w);
+
+        // Pig / strider steered with a carrot or fungus on a stick: that arm holds it out in
+        // front of the mount's nose, dangling the bait; the other hand on the saddle.
+        boolean stickR = isBaitStick(m, true), stickL = isBaitStick(m, false);
+        if (stickR || stickL) {
+            PartPose stickArm = stickR ? f.rightArm() : f.leftArm();
+            PartPose other = stickR ? f.leftArm() : f.rightArm();
+            float out = stickR ? 1f : -1f;
+            stickArm.override(-1.25f + 0.06f * Mth.sin(m.time * 3f), -out * 0.10f, out * 0.05f, arms);
+            stickArm.overrideBend(s.elbow() * 0.25f, arms);
+            other.override(-0.35f, 0f, -out * 0.25f, arms);
+            other.overrideBend(s.elbow() * 0.60f, arms);
+        }
+    }
+
+    private static boolean isBaitStick(MotionState m, boolean right) {
+        net.minecraft.world.entity.player.Player p = m.playerRef();
+        net.minecraft.world.entity.HumanoidArm mainArm = p.getMainArm();
+        boolean mainIsRight = mainArm == net.minecraft.world.entity.HumanoidArm.RIGHT;
+        net.minecraft.world.item.ItemStack st = (right == mainIsRight) ? p.getMainHandItem() : p.getOffhandItem();
+        return st.getItem() instanceof net.minecraft.world.item.FoodOnAStickItem<?>;
     }
 }

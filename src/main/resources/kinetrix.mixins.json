@@ -6,6 +6,13 @@
   "refmap": "kinetrix.refmap.json",
   "client": [
     "AgeableListModelMixin",
+    "ChickenModelAccessor",
+    "HorseModelAccessor",
+    "LivingEntityRendererMixin",
+    "LlamaModelAccessor",
+    "OcelotModelAccessor",
+    "QuadrupedModelAccessor",
+    "WolfModelAccessor",
     "CubeAccessor",
     "HumanoidArmorLayerAccessor",
     "HumanoidModelMixin",

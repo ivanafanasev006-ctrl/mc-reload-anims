@@ -74,7 +74,9 @@ final class FistModule implements AnimModule {
     /** @param side +1 right arm, -1 left arm. */
     private static void guardArm(PartPose arm, Signs s, float side, float w) {
         // Override, so the guard holds even while walking (no averaging with the walk arm swing).
-        arm.override(-1.35f, -0.35f * side, -0.10f * side, w);
-        arm.overrideBend(s.elbow() * 1.75f, w);
+        // Fists up in front of the chest, held away from it: upper arms angled forward and a
+        // little out, elbows bent only ~50 degrees, so nothing presses into the chest.
+        arm.override(-0.95f, -0.18f * side, 0.14f * side, w);
+        arm.overrideBend(s.elbow() * 0.85f, w);
     }
 }

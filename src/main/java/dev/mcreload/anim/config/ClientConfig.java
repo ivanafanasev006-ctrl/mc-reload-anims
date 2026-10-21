@@ -15,6 +15,7 @@ public final class ClientConfig {
     public static final ForgeConfigSpec.BooleanValue IDLE;
     public static final ForgeConfigSpec.BooleanValue IDLE_ACTIONS;
     public static final ForgeConfigSpec.BooleanValue TWO_HANDED;
+    public static final ForgeConfigSpec.BooleanValue MOBS, MOB_JOINTS;
     public static final ForgeConfigSpec.BooleanValue AIRBORNE;
     public static final ForgeConfigSpec.BooleanValue LANDING;
     public static final ForgeConfigSpec.BooleanValue WATER;
@@ -62,6 +63,11 @@ public final class ClientConfig {
                 .define("idleActions", true);
         TWO_HANDED = b.comment("Hold swords with both hands (samurai grip) when the other hand is empty.")
                 .define("twoHandedSwords", false);
+        MOBS = b.comment("Livelier mobs: breathing, weight shifting, head and tail movement, step bounce and sway for",
+                        "zombies, skeletons, villagers, golems, creepers, spiders, animals and others (looks only).")
+                .define("mobs", true);
+        MOB_JOINTS = b.comment("Humanoid mobs (zombies, skeletons, piglins...) bend their knees, elbows and waist too.")
+                .define("mobJoints", true);
         AIRBORNE = b.comment("Jump tuck and falling flail.")
                 .define("airborne", true);
         LANDING = b.comment("Landing squash after a fall.")

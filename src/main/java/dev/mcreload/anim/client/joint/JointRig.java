@@ -129,6 +129,16 @@ public final class JointRig {
         j.set(b.getLeft(), b.getRight());
     }
 
+    /** Bends set directly (mobs: no playerAnimator). Axis 0 = forward/back. */
+    public void setBends(float rightArmBend, float leftArmBend, float rightLegBend, float leftLegBend, float torsoBend) {
+        if (rightArm != null) rightArm.set(0f, rightArmBend);
+        if (leftArm != null) leftArm.set(0f, leftArmBend);
+        if (rightLeg != null) rightLeg.set(0f, rightLegBend);
+        if (leftLeg != null) leftLeg.set(0f, leftLegBend);
+        if (torso != null) torso.set(0f, torsoBend);
+        itemTilt = 0f;
+    }
+
     public void copyFrom(JointRig o) {
         copy(rightArm, o.rightArm);
         copy(leftArm, o.leftArm);

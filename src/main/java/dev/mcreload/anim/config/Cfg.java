@@ -13,7 +13,8 @@ public final class Cfg {
     public static volatile float liveliness = 0.6f;
 
     public static volatile boolean locomotion = true, idle = true, airborne = true, landing = true,
-            water = true, climbing = true, combat = true, reactions = true, idleActions = true, twoHanded = false;
+            water = true, climbing = true, combat = true, reactions = true, idleActions = true, twoHanded = false,
+            mobs = true, mobJoints = true;
 
     public static volatile boolean trails = true;
     public static volatile float trailSeconds = 0.22f, trailOpacity = 0.75f;
@@ -36,6 +37,8 @@ public final class Cfg {
         idle = ClientConfig.IDLE.get();
         idleActions = ClientConfig.IDLE_ACTIONS.get();
         twoHanded = ClientConfig.TWO_HANDED.get();
+        mobs = ClientConfig.MOBS.get();
+        mobJoints = ClientConfig.MOB_JOINTS.get();
         airborne = ClientConfig.AIRBORNE.get();
         landing = ClientConfig.LANDING.get();
         water = ClientConfig.WATER.get();

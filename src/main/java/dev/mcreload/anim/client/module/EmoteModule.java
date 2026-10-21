@@ -219,8 +219,10 @@ final class EmoteModule implements AnimModule {
             float w = i == 0 ? b : c;
             if (w <= 0.001f) continue;
             float d = i == 0 ? 1f : -1f;
-            arm(f.rightArm(), s, -0.70f + shake, -0.55f, 0.10f, 1.50f, aw * w);
-            arm(f.leftArm(), s, -0.75f - shake, 0.55f, -0.10f, 1.45f, aw * w);
+            // Forearms well out in front of the belly, one fist a little above the other, so
+            // nothing lies flat against the body or the other hand.
+            arm(f.rightArm(), s, -0.95f + shake, -0.42f, 0.18f, 1.15f, aw * w);
+            arm(f.leftArm(), s, -1.10f - shake, 0.42f, -0.18f, 1.05f, aw * w);
             Rigging.twistUpper(f, d * 0.45f * w * e);
             f.head().ry -= d * 0.45f * w * e;
             PartPose front = d > 0 ? f.leftLeg() : f.rightLeg();
@@ -248,10 +250,15 @@ final class EmoteModule implements AnimModule {
         float breathe = Mth.sin(t * 1.4f);
         // Hips down to the ground, then floating a little above it.
         f.body().py -= (12f / 16f * 0.9375f - 0.18f - 0.06f * breathe) * w;
-        // Cross-legged: thighs forward and spread, each turned about its own axis so the knee
-        // folds the shin in across the front instead of back underneath.
-        crossLeg(f.rightLeg(), s, 1f, w);
-        crossLeg(f.leftLeg(), s, -1f, w);
+        // Sitting with the knees wide and the soles together in front (butterfly): thighs
+        // forward and spread, knees folding sideways so each shin comes in toward the middle;
+        // one leg a touch higher so the shins never lie flat against each other.
+        f.rightLeg().override(-1.42f, 0.70f, 0f, w);
+        f.leftLeg().override(-1.52f, -0.70f, 0f, w);
+        f.rightLeg().overrideBendAxis(Mth.HALF_PI, w);
+        f.leftLeg().overrideBendAxis(-Mth.HALF_PI, w);
+        f.rightLeg().overrideBend(s.knee() * 1.45f, w);
+        f.leftLeg().overrideBend(s.knee() * 1.45f, w);
         arm(f.rightArm(), s, -0.85f, -0.25f, 0.20f, 0.45f, aw * sit);
         arm(f.leftArm(), s, -0.85f, 0.25f, -0.20f, 0.45f, aw * sit);
         Rigging.leanTorso(f, s, 0.02f * breathe * w);

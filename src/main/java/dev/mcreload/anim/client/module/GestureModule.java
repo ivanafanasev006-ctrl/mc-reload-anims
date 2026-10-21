@@ -72,8 +72,191 @@ final class GestureModule implements AnimModule {
             case MotionState.IDLE_IMPATIENT -> impatient(f, s, env, aw, t, side);
             case MotionState.IDLE_KICK -> kickPebble(f, s, env, aw, t, side);
             case MotionState.IDLE_SQUATS -> squats(f, s, env, aw, t);
+            case MotionState.IDLE_ITEM_SPIN -> itemSpin(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_ITEM_INSPECT -> itemInspect(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_ITEM_TOSS -> itemToss(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_ITEM_PRACTICE -> itemPractice(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_ITEM_SHOULDER -> itemShoulder(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_ITEM_LEAN -> itemLean(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_FLINT -> flint(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_BUCKET -> bucket(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_ROD -> rod(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_LANTERN -> lantern(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_BLOCK -> blockInspect(m, f, s, env, aw, t, main, off, side);
             default -> lookAround(f, s, env, aw, t, m);
         }
+    }
+
+    // ------------------------------------------------------------------ playing with the held item
+
+    /**
+     * A flourish: the arm comes out to the side, the weapon / tool twirls round twice in the
+     * fingers with the wrist circling, then it is swept down and brought back to rest, the eyes
+     * following it.
+     */
+    private static void itemSpin(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                                 PartPose main, PartPose off, float side) {
+        float out = seg(t, 0f, 0.4f) * (1f - seg(t, 2.3f, 2.9f));
+        float spin = seg(t, 0.35f, 1.9f);
+        float circle = Mth.sin(t * 10f) * spin * (1f - spin) * 4f;
+        main.override(-1.15f + 0.15f * circle, side * (0.55f + 0.10f * Mth.cos(t * 10f) * spin * (1f - spin) * 4f),
+                side * 0.30f, aw * out);
+        main.overrideBend(s.elbow() * 0.45f, aw * out);
+        m.itemTiltTarget = 2f * Mth.TWO_PI * spin * e;
+        Rigging.twistUpper(f, side * 0.15f * out * e);
+        f.head().ry -= side * 0.35f * out * e;
+        f.head().rx += 0.10f * out * e;
+    }
+
+    /**
+     * Looking it over: brought up in front of the face and turned this way and that, the other
+     * hand running along it from below; then lowered with a satisfied nod.
+     */
+    private static void itemInspect(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                                    PartPose main, PartPose off, float side) {
+        float up = seg(t, 0f, 0.5f) * (1f - seg(t, 3.0f, 3.5f));
+        main.override(-1.55f, -side * 0.35f, side * 0.10f, aw * up);
+        main.overrideBend(s.elbow() * 1.05f, aw * up);
+        main.overrideRoll(side * 0.85f * Mth.sin(t * 1.4f) * seg(t, 0.4f, 0.9f), aw * up);
+        // The free hand strokes along it, from the hilt outward, twice.
+        float stroke = (t * 0.9f) % 1f;
+        float sw = seg(t, 0.8f, 1.1f) * (1f - seg(t, 2.6f, 2.9f));
+        off.override(-1.20f - 0.45f * stroke, side * 0.50f, -side * 0.05f, aw * sw);
+        off.overrideBend(s.elbow() * (1.20f - 0.60f * stroke), aw * sw);
+        f.head().rx += (0.20f + 0.10f * seg(t, 2.9f, 3.2f)) * up * e;
+        f.head().ry -= side * 0.15f * up * e;
+    }
+
+    /**
+     * Tossing it up and catching it: a dip, a flick of the wrist, the item flipping over once in
+     * the air (in the fingers), the eyes following it up, a little give in the knees on the catch.
+     */
+    private static void itemToss(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                                 PartPose main, PartPose off, float side) {
+        float dip = Mth.sin(Mth.PI * Mth.clamp(t / 0.4f, 0f, 1f));
+        float flick = seg(t, 0.35f, 0.55f) * (1f - seg(t, 1.05f, 1.35f));
+        float flip = seg(t, 0.40f, 1.15f);
+        float catchDip = Mth.sin(Mth.PI * Mth.clamp((t - 1.15f) / 0.45f, 0f, 1f));
+        float hold = seg(t, 0f, 0.3f) * (1f - seg(t, 1.9f, 2.3f));
+        main.override(-0.95f - 1.25f * flick + 0.25f * dip + 0.20f * catchDip, -side * 0.15f, side * 0.10f, aw * hold);
+        main.overrideBend(s.elbow() * (0.90f - 0.55f * flick), aw * hold);
+        m.itemTiltTarget = Mth.TWO_PI * flip * e;
+        f.head().rx -= (0.45f * flick - 0.15f * catchDip) * e;
+        Rigging.crouch(f, s, (0.10f * dip + 0.15f * catchDip) * e);
+    }
+
+    /** A couple of practice swings at the air, the body turning into each one. */
+    private static void itemPractice(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                                     PartPose main, PartPose off, float side) {
+        float hold = seg(t, 0f, 0.3f) * (1f - seg(t, 2.5f, 2.9f));
+        float sw1 = seg(t, 0.45f, 0.75f), sw2 = seg(t, 1.45f, 1.75f);
+        float wind = seg(t, 0.15f, 0.45f) * (1f - sw1) + seg(t, 1.15f, 1.45f) * (1f - sw2) * sw1;
+        float through = Math.max(sw1 * (1f - seg(t, 0.9f, 1.15f)), sw2 * (1f - seg(t, 1.9f, 2.4f)));
+        main.override(-1.0f - 1.6f * wind + 0.5f * through, side * (0.45f * wind - 0.55f * through),
+                side * 0.20f, aw * hold);
+        main.overrideBend(s.elbow() * (0.6f + 0.6f * wind - 0.4f * through), aw * hold);
+        m.itemTiltTarget = 1.0f * (wind + through) * e;
+        Rigging.twistUpper(f, side * (0.35f * wind - 0.40f * through) * e);
+        Rigging.leanTorso(f, s, 0.15f * through * e);
+        PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
+        lead.rx -= 0.25f * hold * e;
+        lead.bend += s.knee() * 0.25f * hold * e;
+    }
+
+    /** Resting it on the shoulder, the other hand on the hip, weight on one leg, looking about. */
+    private static void itemShoulder(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                                     PartPose main, PartPose off, float side) {
+        float up = seg(t, 0f, 0.6f) * (1f - seg(t, 3.4f, 4.0f));
+        main.override(-2.25f, -side * 0.15f, side * 0.20f, aw * up);
+        main.overrideBend(s.elbow() * 1.90f, aw * up);
+        m.itemTiltTarget = 2.30f * up * e;
+        off.override(0.25f, 0f, -side * 0.55f, aw * up);
+        off.overrideBend(s.elbow() * -1.30f, aw * up);
+        f.body().rz -= side * 0.04f * up * e;
+        PartPose rest = side > 0 ? f.leftLeg() : f.rightLeg();
+        rest.bend += s.knee() * 0.30f * up * e;
+        rest.rz -= side * 0.08f * up * e;
+        f.head().ry += 0.45f * Mth.sin(t * 0.9f) * up * e;
+    }
+
+    /** Planting it on the ground in front and leaning on it with both hands on top. */
+    private static void itemLean(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                                 PartPose main, PartPose off, float side) {
+        float lean = seg(t, 0f, 0.7f) * (1f - seg(t, 3.8f, 4.5f));
+        main.override(-0.80f, -side * 0.25f, 0f, aw * lean);
+        main.overrideBend(s.elbow() * 0.35f, aw * lean);
+        m.itemTiltTarget = Mth.PI * lean * e;
+        off.override(-0.85f, side * 0.45f, 0f, aw * lean);
+        off.overrideBend(s.elbow() * 0.45f, aw * lean);
+        Rigging.leanTorso(f, s, 0.18f * lean * e);
+        PartPose cross = side > 0 ? f.rightLeg() : f.leftLeg();
+        cross.rz += side * 0.10f * lean * e;
+        cross.bend += s.knee() * 0.25f * lean * e;
+        f.head().ry += 0.30f * Mth.sin(t * 0.8f) * lean * e;
+    }
+
+    /** Clicking the flint and steel together twice, looking at the sparks. */
+    private static void flint(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                              PartPose main, PartPose off, float side) {
+        float up = seg(t, 0f, 0.4f) * (1f - seg(t, 2.1f, 2.6f));
+        float click = Math.max(Mth.sin(Mth.PI * Mth.clamp((t - 0.8f) / 0.25f, 0f, 1f)),
+                Mth.sin(Mth.PI * Mth.clamp((t - 1.4f) / 0.25f, 0f, 1f)));
+        main.override(-1.15f + 0.35f * click, -side * 0.40f, 0f, aw * up);
+        main.overrideBend(s.elbow() * 1.15f, aw * up);
+        off.override(-1.10f, side * 0.45f, 0f, aw * up);
+        off.overrideBend(s.elbow() * 1.25f, aw * up);
+        f.head().rx += 0.30f * up * e;
+    }
+
+    /** Peering into the bucket, tipping it, then swinging it idly at the side. */
+    private static void bucket(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                               PartPose main, PartPose off, float side) {
+        float peek = seg(t, 0f, 0.5f) * (1f - seg(t, 1.6f, 2.0f));
+        main.override(-1.65f, -side * 0.30f, 0f, aw * peek);
+        main.overrideBend(s.elbow() * 1.35f, aw * peek);
+        main.overrideRoll(side * 0.55f * seg(t, 0.5f, 1.0f), aw * peek);
+        f.head().rx += 0.35f * peek * e;
+        float swing = seg(t, 1.7f, 2.0f) * (1f - seg(t, 2.7f, 3.2f));
+        main.override(0.45f * Mth.sin((t - 1.7f) * 5f), 0f, side * 0.12f, aw * swing);
+        main.overrideBend(0f, aw * swing);
+    }
+
+    /** Checking the rod: the free hand pulls at the line, then a test flick. */
+    private static void rod(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                            PartPose main, PartPose off, float side) {
+        float hold = seg(t, 0f, 0.4f) * (1f - seg(t, 2.5f, 3.0f));
+        float flick = Mth.sin(Mth.PI * Mth.clamp((t - 1.7f) / 0.35f, 0f, 1f));
+        main.override(-1.20f - 0.50f * flick, -side * 0.10f, side * 0.10f, aw * hold);
+        main.overrideBend(s.elbow() * (0.90f - 0.40f * flick), aw * hold);
+        float pull = seg(t, 0.4f, 0.7f) * (1f - seg(t, 1.4f, 1.6f));
+        off.override(-2.00f + 0.25f * Mth.sin(t * 6f) * pull, side * 0.30f, 0f, aw * pull);
+        off.overrideBend(s.elbow() * 0.60f, aw * pull);
+        f.head().rx -= 0.20f * pull * e;
+    }
+
+    /** Holding the lantern up at eye level, giving it a shake, looking around by its light. */
+    private static void lantern(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                                PartPose main, PartPose off, float side) {
+        float up = seg(t, 0f, 0.5f) * (1f - seg(t, 2.7f, 3.2f));
+        float shake = Mth.sin(t * 15f) * Mth.sin(Mth.PI * Mth.clamp((t - 0.6f) / 0.8f, 0f, 1f));
+        main.override(-2.00f + 0.10f * shake, -side * 0.15f, side * 0.05f * shake, aw * up);
+        main.overrideBend(s.elbow() * 0.85f, aw * up);
+        f.head().ry += 0.55f * Mth.sin((t - 1.4f) * 1.6f) * seg(t, 1.4f, 1.8f) * up * e;
+        f.head().rx -= 0.10f * up * e;
+    }
+
+    /** Turning a block over in the hand, looking at each side, the other hand steadying it. */
+    private static void blockInspect(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                                     PartPose main, PartPose off, float side) {
+        float up = seg(t, 0f, 0.5f) * (1f - seg(t, 2.9f, 3.4f));
+        main.override(-1.30f, -side * 0.35f, 0f, aw * up);
+        main.overrideBend(s.elbow() * 1.10f, aw * up);
+        main.overrideRoll(side * 1.0f * Mth.sin(t * 1.3f) * seg(t, 0.4f, 0.8f), aw * up);
+        m.itemTiltTarget = 0.6f * Mth.sin(t * 0.9f) * seg(t, 0.4f, 0.8f) * up * e;
+        float touch = seg(t, 1.0f, 1.3f) * (1f - seg(t, 2.2f, 2.5f));
+        off.override(-1.20f, side * 0.50f, 0f, aw * touch);
+        off.overrideBend(s.elbow() * 1.10f, aw * touch);
+        f.head().rx += 0.25f * up * e;
     }
 
     /** Arms up overhead, lean to each side, twist the shoulders round, arms back down. */
