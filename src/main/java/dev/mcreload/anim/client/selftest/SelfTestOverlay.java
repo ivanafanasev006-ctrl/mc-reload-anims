@@ -47,6 +47,10 @@ final class SelfTestOverlay {
 
     private static void drawPlayer(GuiGraphics g, int x, int y, int scale, float viewDeg, float pitchDeg, LocalPlayer player, float pt) {
         float bodyYaw = Mth.rotLerp(pt, player.yBodyRotO, player.yBodyRot);
+        // Riding, the renderer turns the body with the mount: view it the same way.
+        if (player.getVehicle() instanceof net.minecraft.world.entity.LivingEntity mount) {
+            bodyYaw = Mth.rotLerp(pt, mount.yBodyRotO, mount.yBodyRot);
+        }
         // Top view: tip the model so we look down on the head, feet at the panel centre.
         Quaternionf pose = new Quaternionf().rotateZ(Mth.PI).rotateX(pitchDeg * Mth.DEG_TO_RAD)
                 .rotateY((viewDeg + bodyYaw - 180f) * Mth.DEG_TO_RAD);
