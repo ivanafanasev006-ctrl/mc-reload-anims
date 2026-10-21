@@ -131,32 +131,30 @@ final class ReactionModule implements AnimModule {
     }
 
     /**
-     * Drops low with the whole body leaning in and drives the blade point-first into the ground:
-     * sword arm out in front, wrist turned over so the blade points straight down; the free hand
-     * braces on the knee.
+     * Down on one knee with the sword driven point-first into the ground in front: both hands on
+     * the hilt, raised high first and then thrust down, the body leaning over it.
      */
     private static void plantBlade(PoseFrame f, Signs s, float e, PartPose main, PartPose off, float side, float depth, float stab) {
-        Rigging.crouch(f, s, depth * e);
-        f.body().rx -= 0.40f * e;
-        Rigging.leanTorso(f, s, 0.55f * e);
-        f.head().rx -= 0.55f * e;
-        // Free-side leg forward, sword-side knee nearly down next to the blade.
+        // Kneel: free-side foot planted forward, sword-side knee on the ground.
         PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
         PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();
-        lead.overrideX(-1.45f, e);
-        lead.overrideBend(s.knee() * 1.70f, e);
-        rear.overrideX(-0.20f, e);
-        rear.overrideBend(s.knee() * 2.0f, e);
-        // Down on one knee: drop the hips far enough that the lead foot and rear knee touch.
-        f.body().py -= Math.max(0f, 0.31f - 2f * Rigging.LEG_SEGMENT_BLOCKS * (1f - Mth.cos(depth))) * e;
-        // Out beside the body so the blade goes into the ground next to the knee, not through the leg.
-        // Raised high first, then driven down hard into the ground.
-        main.override(Mth.lerp(stab, -2.70f, -1.45f), 0f, side * Mth.lerp(stab, 0.20f, 0.38f), e);
-        main.overrideBend(s.elbow() * Mth.lerp(stab, 0.60f, 0.15f), e);
-        f.body().py += 0.06f * (1f - stab) * e;
-        main.overrideRoll(Mth.PI, e);
-        off.override(-0.75f, side * 0.25f, -side * 0.30f, e);
-        off.overrideBend(s.elbow() * 0.60f, e);
+        lead.override(-1.50f, 0f, -side * 0.10f, e);
+        lead.overrideBend(s.knee() * 1.50f, e);
+        rear.override(0.05f, 0f, side * 0.10f, e);
+        rear.overrideBend(s.knee() * 1.60f, e);
+        // Hips come down to the height of the front shin (about 6 pixels).
+        f.body().py -= (6f / 16f * 0.9375f) * e;
+        Rigging.leanTorso(f, s, 0.30f * e);
+        f.head().rx += 0.20f * e;
+        // Both hands on the hilt in front of the body: raised high, then driven down.
+        float x = Mth.lerp(stab, -2.60f, -0.85f);
+        main.override(x, -side * 0.50f, side * 0.05f, e);
+        off.override(x + 0.10f, side * 0.50f, -side * 0.05f, e);
+        main.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.45f), e);
+        off.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.55f), e);
+        // Blade turned over in the fists to point down into the ground.
+        main.overrideRoll(side * Mth.PI, e * stab);
+        f.body().py += 0.05f * (1f - stab) * e;
     }
 
     private static void totem(MotionState m, PoseFrame f, Signs s, float gate, float arms) {

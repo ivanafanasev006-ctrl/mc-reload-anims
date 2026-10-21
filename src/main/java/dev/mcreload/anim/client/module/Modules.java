@@ -10,6 +10,7 @@ public final class Modules {
             new WaterModule(),
             new ClimbModule(),
             new CombatModule(),
+            new BladeModule(),
             new FistModule(),
             new GestureModule(),
             new EmoteModule(),

@@ -34,7 +34,6 @@ final class CombatModule implements AnimModule {
     public void apply(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float pt) {
         float gate = m.gate.v;
         if (gate <= 0.001f) return;
-        stance(rig, m, f, s, gate);
         swing(rig, m, f, s, gate, pt);
         useItems(rig, m, f, s, gate);
     }
@@ -80,8 +79,9 @@ final class CombatModule implements AnimModule {
             toolSwing(rig.player, m, f, s, gate, pt);
             return;
         }
-        boolean keyed = MotionState.isWeapon(kind) || MotionState.isLooping(kind) || kind == MotionState.THROW;
-        if (!keyed) return;  // fists: FistModule
+        // Swords and axes: BladeModule. Fists: FistModule.
+        boolean keyed = MotionState.isLooping(kind) || kind == MotionState.THROW;
+        if (!keyed) return;
         float t = m.slashProgress();
         if (t >= 1.3f) return;
 

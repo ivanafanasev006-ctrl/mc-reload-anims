@@ -69,6 +69,25 @@ public final class AngleMath {
         xyz[2] = (float) (xyz[2] + wrap(z - xyz[2]));
     }
 
+    /**
+     * Euler angles (x, y, z) such that ModelPart's rotationZYX(z, y, x) reproduces {@code q}.
+     */
+    public static void toModelEuler(org.joml.Quaternionf q, float[] out) {
+        org.joml.Vector3f c0 = q.transform(new org.joml.Vector3f(1f, 0f, 0f));
+        org.joml.Vector3f c1 = q.transform(new org.joml.Vector3f(0f, 1f, 0f));
+        org.joml.Vector3f c2 = q.transform(new org.joml.Vector3f(0f, 0f, 1f));
+        // Columns of R = Rz Ry Rx: R20 = c0.z, R21 = c1.z, R22 = c2.z, R10 = c0.y, R00 = c0.x.
+        double sy = Math.max(-1.0, Math.min(1.0, -c0.z()));
+        out[1] = (float) Math.asin(sy);
+        if (Math.abs(sy) < 0.9999) {
+            out[0] = (float) Math.atan2(c1.z(), c2.z());
+            out[2] = (float) Math.atan2(c0.y(), c0.x());
+        } else {
+            out[0] = 0f;
+            out[2] = (float) Math.atan2(-c1.x(), c1.y());
+        }
+    }
+
     private static double wrap(double d) {
         d %= Math.PI * 2.0;
         if (d > Math.PI) d -= Math.PI * 2.0;

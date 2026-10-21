@@ -60,6 +60,13 @@ public final class MotionState {
     public float vertical;
     public float horizontalSpeed;
     public float sneakPhase;
+    /** Last skid after a sprint. */
+    public float brakeStart = -100f;
+    /** A melee weapon in the main hand. */
+    public boolean holdingBlade;
+    /** Held item tipped forward in the hand (radians), smoothed; modules raise the target. */
+    public final Smooth itemTilt = new Smooth(16f);
+    public float itemTiltTarget;
     /** Loose-limb inertia: forward, sideways and vertical (from body accelerations), and turning. */
     public final dev.mcreload.anim.client.math.Wobble swayF = new dev.mcreload.anim.client.math.Wobble(60f, 7f, 1.2f),
             swayS = new dev.mcreload.anim.client.math.Wobble(60f, 7f, 1.2f),
@@ -196,7 +203,7 @@ public final class MotionState {
         float tickSpeed = (float) Math.sqrt(vx * vx + vz * vz);
         if (ground && wasOnGround && !special && wasSprinting && prevTickSpeed > 0.2f && tickSpeed < prevTickSpeed * 0.6f && Cfg.locomotion) {
             // Sprint released: skid to a stop.
-            brake.impulse(Mth.clamp((prevTickSpeed - tickSpeed) / 0.18f, 0.4f, 1.1f));
+            if (time - brakeStart > 0.6f) brakeStart = time;
         }
         prevTickSpeed = tickSpeed;
         wasSprinting = player.isSprinting();
@@ -230,10 +237,9 @@ public final class MotionState {
                 }
             }
         } else {
-            if (!wasOnGround && Cfg.landing && player.tickCount - lastGlideTick < 4 && tickSpeed > 0.15f) {
-                // Coming in on an elytra: tumble out of it with a roll.
-                landKind = LAND_ROLL;
-                landStart = time;
+            if (!wasOnGround && player.tickCount - lastGlideTick < 4) {
+                // Coming in on an elytra: just absorb it.
+                if (Cfg.landing) land.impulse(0.8f);
             } else if (rollEarly) {
                 // Already rolling.
             } else if (!wasOnGround && airTicks > 2 && !special && Cfg.landing) {
@@ -382,6 +388,9 @@ public final class MotionState {
         castW.to(cast.casting() ? 1f : 0f, dt);
 
         mainRight = player.getMainArm() == HumanoidArm.RIGHT;
+        itemTilt.to(itemTiltTarget, dt);
+        itemTiltTarget = 0f;
+        holdingBlade = Weapons.isMeleeWeapon(player.getMainHandItem());
         speed.to(horizontalSpeed, dt);
         // Sneaking: our own step cycle, fast enough that the feet really step instead of gliding.
         if (player.isCrouching()) sneakPhase += dt * 88f * Math.min(horizontalSpeed, 0.12f);
@@ -391,7 +400,7 @@ public final class MotionState {
         paddleW.to(treading ? Mth.clamp(horizontalSpeed / 0.07f, 0f, 1f) : 0f, dt);
         if (treading) paddlePhase += dt * (2.2f + 10f * Math.min(horizontalSpeed, 0.15f));
         // About to drop into water: start the dolphin dive in the air.
-        diveAirW.to(air && vertical < 0.04f && airTicks > 2 && waterBelow() ? 1f : 0f, dt);
+        diveAirW.to(air && vertical < -0.30f && airTicks > 4 && waterBelow() ? 1f : 0f, dt);
 
         // Climbing: the cycle follows the height actually gained, so hands match the speed.
         double py = Mth.lerp(pt, player.yo, player.getY());
@@ -409,8 +418,10 @@ public final class MotionState {
         ItemStack mainItem = player.getMainHandItem(), offItem = player.getOffhandItem();
         boolean weapon = Weapons.isMeleeWeapon(mainItem);
         boolean recentlyFought = time - slashStart < 3.0f;
+        // Guard only for a few seconds after a fight, standing still; otherwise a weapon is just held.
         readyW.to(weapon && ground && !blocked && !swimming && sprintW.v < 0.5f
-                && (moveF() < 0.7f || recentlyFought) && !player.isUsingItem() ? 1f : 0f, dt);
+                && recentlyFought && time - slashStart > slashDuration * 0.9f
+                && moveF() < 0.3f && !player.isUsingItem() ? 1f : 0f, dt);
         twoHandW.to(Cfg.twoHanded && weapon && offItem.isEmpty() ? 1f : 0f, dt);
         boolean crossInHand = mainItem.getItem() instanceof CrossbowItem || offItem.getItem() instanceof CrossbowItem;
         boolean charged = CrossbowItem.isCharged(mainItem) || CrossbowItem.isCharged(offItem);

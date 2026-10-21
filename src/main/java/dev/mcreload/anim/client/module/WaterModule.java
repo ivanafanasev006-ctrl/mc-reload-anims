@@ -18,7 +18,7 @@ import net.minecraft.util.Mth;
  * a turn apart, the body rolls toward the recovering arm, the legs flutter-kick.</p>
  */
 final class WaterModule implements AnimModule {
-    private static final float DIVE_SECONDS = 1.1f;
+    private static final float DIVE_SECONDS = 0.85f;
 
     @Override
     public boolean enabled() {
@@ -114,7 +114,8 @@ final class WaterModule implements AnimModule {
     private static void dive(MotionState m, PoseFrame f, Signs s, float gate) {
         float t = m.since(m.diveStart) / DIVE_SECONDS;
         if (t < 0f || t >= 1f) return;
-        float e = Math.min(1f, t / 0.08f) * (1f - dev.mcreload.anim.client.math.AngleMath.ease((t - 0.55f) / 0.45f)) * gate;
+        float e = Math.min(1f, t / 0.08f) * (1f - dev.mcreload.anim.client.math.AngleMath.ease((t - 0.45f) / 0.55f)) * gate
+                * (1f - m.swimW.v);
         if (e <= 0.001f) return;
         float wave = Mth.sin(t * Mth.TWO_PI * 2.2f);
         float aw = e * m.armsFree.v;

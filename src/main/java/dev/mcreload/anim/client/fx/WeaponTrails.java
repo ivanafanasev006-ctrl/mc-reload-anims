@@ -230,6 +230,12 @@ public final class WeaponTrails {
             float cx = (left ? 1f : -1f) * (slim ? 0.5f : 1f);
             dev.mcreload.anim.client.joint.Joint.hinge(mat, 4f, cx, 0f, slim ? 1.5f : 2f, 2f, false, A_BEND[0], A_BEND[1]);
         }
+        // Weapon turned in the fist.
+        if (joints && left != rig.motion.mainRight && Math.abs(rig.motion.itemTilt.v) > 1e-3f) {
+            mat.translate(0f, 10f / 16f, -1f / 16f);
+            mat.rotate(new Quaternionf().rotationX(-rig.motion.itemTilt.v));
+            mat.translate(0f, -10f / 16f, 1f / 16f);
+        }
 
         // ItemInHandLayer.renderArmWithItem
         mat.rotate(Axis.XP.rotationDegrees(-90f));

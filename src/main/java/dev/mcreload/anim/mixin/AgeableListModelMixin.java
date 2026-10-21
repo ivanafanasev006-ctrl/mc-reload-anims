@@ -31,11 +31,19 @@ public abstract class AgeableListModelMixin {
         if (rig == null || !rig.torsoBent() || model.young) return;
         for (ModelPart p : headParts()) if (!rig.isUpper(p)) p.render(ps, vc, light, overlay, r, g, b, a);
         for (ModelPart p : bodyParts()) if (!rig.isUpper(p)) p.render(ps, vc, light, overlay, r, g, b, a);
-        ps.pushPose();
-        rig.applyUpperBody(ps, model.body);
-        for (ModelPart p : headParts()) if (rig.isUpper(p)) p.render(ps, vc, light, overlay, r, g, b, a);
-        for (ModelPart p : bodyParts()) if (rig.isUpper(p)) p.render(ps, vc, light, overlay, r, g, b, a);
-        ps.popPose();
+        for (ModelPart p : headParts()) mcreload$upper(rig, model, p, ps, vc, light, overlay, r, g, b, a);
+        for (ModelPart p : bodyParts()) mcreload$upper(rig, model, p, ps, vc, light, overlay, r, g, b, a);
         ci.cancel();
+    }
+
+    @org.spongepowered.asm.mixin.Unique
+    private static void mcreload$upper(JointRig rig, HumanoidModel<?> model, ModelPart p, PoseStack ps, VertexConsumer vc,
+                                       int light, int overlay, float r, float g, float b, float a) {
+        if (!rig.isUpper(p)) return;
+        ps.pushPose();
+        if (rig.isHead(p)) rig.applyNeck(ps, model.body, p);
+        else rig.applyUpperBody(ps, model.body);
+        p.render(ps, vc, light, overlay, r, g, b, a);
+        ps.popPose();
     }
 }

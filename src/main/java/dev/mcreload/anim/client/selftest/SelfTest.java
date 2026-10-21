@@ -202,10 +202,20 @@ public final class SelfTest {
 
     private static void buildScenarios() {
         ItemStack none = ItemStack.EMPTY;
+        SCENARIOS.add(new Scenario("00_stand", 30, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, false, false, false, false), new Window(15, 30, 2, 0.4f)));
+        SCENARIOS.add(new Scenario("02_walk", 40, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, true, false, false, false), new Window(20, 40, 5, 0.08f)));
+        SCENARIOS.add(new Scenario("02b_walk_sword", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> move(mc, true, false, false, false), new Window(20, 40, 3, 0.1f)));
+        SCENARIOS.add(new Scenario("03b_sprint_brake", 45, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, t < 25, t < 25, false, false), new Window(25, 36, 3, 0.07f)));
         SCENARIOS.add(new Scenario("03_sprint", 40, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> move(mc, true, true, false, false), new Window(20, 40, 6, 0.05f)));
         SCENARIOS.add(new Scenario("04_sneak", 60, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> move(mc, true, false, true, false), new Window(25, 60, 6, 0.12f)));
+        SCENARIOS.add(new Scenario("04b_sneak_still", 30, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> move(mc, false, false, true, false), new Window(18, 30, 1, 0.3f)));
         SCENARIOS.add(new Scenario("05_sword_sprint_carry", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
                 (mc, t) -> move(mc, true, true, false, false), new Window(22, 40, 3, 0.08f)));
         SCENARIOS.add(new Scenario("06_standing_jump", 40, sp -> place(sp, 2, Y, 0, -90, none),
@@ -222,6 +232,9 @@ public final class SelfTest {
                 (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 5, 0.03f)));
         SCENARIOS.add(new Scenario("08c_slash_3", 16, sp -> {},
                 (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 5, 0.03f)));
+        SCENARIOS.add(new Scenario("08d_spin", 30, sp -> {},
+                (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 20, 5, 0.03f),
+                new Window(24, 30, 1, 0.2f)));
         SCENARIOS.add(new Scenario("09_axe", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_AXE)),
                 (mc, t) -> { if (t == 8 || t == 30) mc.player.swing(InteractionHand.MAIN_HAND); },
                 new Window(8, 26, 4, 0.05f), new Window(30, 48, 4, 0.05f)));

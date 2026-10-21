@@ -30,7 +30,6 @@ final class PhysicsModule implements AnimModule {
         f.rightArm().rx -= 0.90f * fwd * arms;
         f.leftArm().rx -= 0.90f * fwd * arms;
         Rigging.leanTorso(f, s, 0.30f * fwd * g);
-        f.head().rx += 0.15f * fwd * g;
 
         // Strafing: both arms swing the other way.
         f.rightArm().rz += 0.70f * side * arms;
@@ -49,6 +48,6 @@ final class PhysicsModule implements AnimModule {
         // Turning: arms and shoulders swing round behind the turn.
         f.rightArm().ry += 0.60f * turn * arms;
         f.leftArm().ry += 0.60f * turn * arms;
-        Rigging.twistUpper(f, 0.25f * turn * g);
+        Rigging.twistUpper(f, 0.12f * turn * g);
     }
 }

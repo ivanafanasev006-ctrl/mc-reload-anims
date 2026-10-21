@@ -26,6 +26,21 @@ public final class Rigging {
     }
 
     /**
+     * Twist the upper body but leave the arm ROTATIONS alone (the caller has already composed
+     * the twist into them); only the shoulders move round with the chest.
+     */
+    public static void twistShoulders(PoseFrame f, float angle) {
+        if (angle == 0f) return;
+        float dx = SHOULDER * (1f - Mth.cos(angle));
+        float dz = SHOULDER * Mth.sin(angle);
+        f.torso().ry += angle;
+        f.rightArm().px += dx;
+        f.rightArm().pz += dz;
+        f.leftArm().px -= dx;
+        f.leftArm().pz -= dz;
+    }
+
+    /**
      * Bend both knees while keeping the feet planted: thighs swing forward by {@code theta},
      * shins fold back by 2*theta and the whole body drops by exactly the height that loses.
      */

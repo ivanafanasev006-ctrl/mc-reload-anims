@@ -26,6 +26,8 @@ public final class JointRig {
     public final Joint rightArm, leftArm, rightLeg, leftLeg, torso;
     /** Parts carried by the upper torso (head, arms and their overlays). */
     private final Set<ModelPart> upper = Collections.newSetFromMap(new IdentityHashMap<>());
+    /** Of those, the head: it rides along with the neck but keeps looking where the player looks. */
+    private final Set<ModelPart> heads = Collections.newSetFromMap(new IdentityHashMap<>());
 
     private JointRig(Joint ra, Joint la, Joint rl, Joint ll, Joint t) {
         rightArm = ra;
@@ -44,6 +46,8 @@ public final class JointRig {
                 Joint.build(WAIST_JOINT, true, m.body, m.jacket));
         rig.upper.add(m.head);
         rig.upper.add(m.hat);
+        rig.heads.add(m.head);
+        rig.heads.add(m.hat);
         rig.upper.add(m.rightArm);
         rig.upper.add(m.leftArm);
         rig.upper.add(m.rightSleeve);
@@ -60,13 +64,33 @@ public final class JointRig {
                 Joint.build(WAIST_JOINT, true, m.body));
         rig.upper.add(m.head);
         rig.upper.add(m.hat);
+        rig.heads.add(m.head);
+        rig.heads.add(m.hat);
         rig.upper.add(m.rightArm);
         rig.upper.add(m.leftArm);
         return rig;
     }
 
+    /** Held item tipped in the main hand (radians), and which hand that is. */
+    private float itemTilt;
+    private boolean mainRight = true;
+
     public boolean isUpper(ModelPart p) {
         return upper.contains(p);
+    }
+
+    public boolean isHead(ModelPart p) {
+        return heads.contains(p);
+    }
+
+    /** Moves a head part along with the bent neck without turning it. */
+    public void applyNeck(PoseStack ps, ModelPart body, ModelPart head) {
+        if (!torsoBent()) return;
+        PoseStack tmp = new PoseStack();
+        applyUpperBody(tmp, body);
+        org.joml.Vector4f p = new org.joml.Vector4f(head.x / 16f, head.y / 16f, head.z / 16f, 1f);
+        tmp.last().pose().transform(p);
+        ps.translate(p.x() - head.x / 16f, p.y() - head.y / 16f, p.z() - head.z / 16f);
     }
 
     public boolean torsoBent() {
@@ -85,6 +109,14 @@ public final class JointRig {
         set(rightLeg, anim, "rightLeg");
         set(leftLeg, anim, "leftLeg");
         set(torso, anim, "torso");
+        itemTilt = 0f;
+        if (!Joints.firstPerson && entity instanceof net.minecraft.client.player.AbstractClientPlayer p) {
+            dev.mcreload.anim.client.rig.PlayerRig r = dev.mcreload.anim.client.rig.RigRegistry.get(p);
+            if (r != null) {
+                itemTilt = r.motion.itemTilt.v;
+                mainRight = r.motion.mainRight;
+            }
+        }
     }
 
     private static void set(Joint j, AnimationApplier anim, String name) {
@@ -128,5 +160,11 @@ public final class JointRig {
     public void applyElbow(PoseStack ps, HumanoidArm arm) {
         Joint j = arm == HumanoidArm.RIGHT ? rightArm : leftArm;
         if (j != null) j.apply(ps);
+        // Turn the held weapon in the hand (pivot at the fist).
+        if (Math.abs(itemTilt) > 1e-3f && (arm == HumanoidArm.RIGHT) == mainRight) {
+            ps.translate(0f, 10f / 16f, -1f / 16f);
+            ps.mulPose(new Quaternionf().rotationX(-itemTilt));
+            ps.translate(0f, -10f / 16f, 1f / 16f);
+        }
     }
 }
