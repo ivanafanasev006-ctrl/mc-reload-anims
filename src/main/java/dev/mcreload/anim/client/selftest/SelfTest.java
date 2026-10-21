@@ -295,9 +295,9 @@ public final class SelfTest {
                 (mc, t) -> move(mc, false, false, false, false), new Window(5, 40, 8, 0.05f)));
         SCENARIOS.add(new Scenario("11f_chill_fall", 70, sp -> place(sp, POOL_X + 14, Y + 14, 0, 90, none),
                 (mc, t) -> moveBack(mc, true), new Window(6, 60, 8, 0.12f)));
-        SCENARIOS.add(new Scenario("11h_exit_water", 80, sp -> { place(sp, POOL_X + 5, Y - 3, 0, 90, none); sp.setXRot(-20f); },
-                (mc, t) -> { move(mc, t > 3, t > 3, false, t > 20); mc.player.setXRot(t > 20 ? 0f : -20f); },
-                new Window(14, 80, 10, 0.08f)));
+        SCENARIOS.add(new Scenario("11h_exit_water", 90, sp -> { place(sp, POOL_X + 8, Y - 3, 0, 90, none); sp.setXRot(-12f); },
+                (mc, t) -> { move(mc, t > 3, t > 3, false, t > 10); mc.player.setXRot(-12f); },
+                new Window(30, 90, 12, 0.05f)));
         SCENARIOS.add(new Scenario("11g_surfacing", 60, sp -> place(sp, POOL_X + 8, Y - 3, 0, -90, none),
                 (mc, t) -> move(mc, false, false, false, true), new Window(10, 60, 6, 0.2f)));
         for (int i : new int[]{MotionState_EMOTE_WAVE, MotionState_EMOTE_FACEPALM, 0, 15, 16, 17, 18, 19}) {

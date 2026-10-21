@@ -149,7 +149,7 @@ final class ReactionModule implements AnimModule {
         float slam = T < 0.14f ? AngleMath.ease(T / 0.14f)
                 : (float) Math.exp(-(T - 0.14f) * 6f) * Mth.cos((T - 0.14f) * 11f);
         float breathe = Mth.sin(T * 8f) * (float) Math.exp(-T * 2.2f);
-        float lean = 0.30f + 0.30f * Math.max(0f, slam) + 0.04f * breathe;
+        float lean = 0.40f + 0.30f * Math.max(0f, slam) + 0.04f * breathe;
         float headUp = AngleMath.ease((T - 0.22f) / 0.30f);
         // Getting up: the sword comes out as the body rises.
         float rise = AngleMath.ease((t - 0.58f) / 0.32f);
@@ -251,7 +251,7 @@ final class ReactionModule implements AnimModule {
         // the leaning torso, so the lean is taken off their angle), while the blade turns over in
         // the fists (item tilt: a rotation about the fist's own axis, so it can never flip through
         // the body) to stand straight up and down, its point driven well into the ground.
-        float x = Mth.lerp(stab, -2.60f, -1.30f - lean);
+        float x = Mth.lerp(stab, -2.60f, -0.70f - lean);
         main.override(x, -side * 0.28f, side * 0.05f, e);
         main.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.10f), e);
         if (two) {
@@ -262,7 +262,7 @@ final class ReactionModule implements AnimModule {
             off.override(-0.75f - lean, side * 0.10f, -side * 0.15f, e);
             off.overrideBend(s.elbow() * 0.55f, e);
         }
-        m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.lerp(stab, 0.95f, Mth.PI - 0.50f) * e);
+        m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.lerp(stab, 0.95f, Mth.PI - 1.10f) * e);
         m.armsHeld = Math.max(m.armsHeld, e);
         f.body().py += 0.05f * (1f - stab) * e;
     }

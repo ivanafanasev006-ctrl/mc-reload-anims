@@ -208,9 +208,10 @@ final class EmoteModule implements AnimModule {
         float b = seg(t, 1.40f, 1.70f) * (1f - seg(t, 2.50f, 2.75f));
         float c = seg(t, 2.65f, 2.95f);
         float shake = 0.03f * Mth.sin(t * 40f);
-        // Double biceps.
-        arm(f.rightArm(), s, -0.20f + shake, 0f, 1.45f, 1.90f, aw * a);
-        arm(f.leftArm(), s, -0.20f - shake, 0f, -1.45f, 1.90f, aw * a);
+        // Double biceps: upper arms out level to the sides, forearms straight up (the arm is
+        // raised forward first so its elbow folds upward, then swung out to the side).
+        arm(f.rightArm(), s, -1.57f + shake, 1.35f, 0f, 1.95f, aw * a);
+        arm(f.leftArm(), s, -1.57f - shake, -1.35f, 0f, 1.95f, aw * a);
         Rigging.legsOut(f, 0.15f * a * e);
         f.head().rx -= 0.10f * a * e;
         // Side chest, right then left: hands clasped in front of the belly, chest turned.
@@ -229,6 +230,17 @@ final class EmoteModule implements AnimModule {
         Rigging.leanTorso(f, s, -0.05f * e);
     }
 
+    private static final float[] EUL = new float[3];
+
+    /** @param side +1 right leg, -1 left leg. */
+    private static void crossLeg(PartPose leg, Signs s, float side, float w) {
+        org.joml.Quaternionf q = new org.joml.Quaternionf().rotationY(side * 0.55f)
+                .rotateX(-1.45f).rotateY(side * 1.45f);
+        AngleMath.toModelEuler(q, EUL);
+        leg.override(EUL[0], EUL[1], EUL[2], w);
+        leg.overrideBend(s.knee() * (side > 0 ? 2.25f : 2.10f), w);
+    }
+
     /** Meditating: sitting cross-legged in mid-air, hands on the knees, slowly rising and sinking. */
     private static void meditate(PoseFrame f, Signs s, float e, float aw, float t) {
         float sit = seg(t, 0f, 0.8f);
@@ -236,10 +248,10 @@ final class EmoteModule implements AnimModule {
         float breathe = Mth.sin(t * 1.4f);
         // Hips down to the ground, then floating a little above it.
         f.body().py -= (12f / 16f * 0.9375f - 0.18f - 0.06f * breathe) * w;
-        leg(f.rightLeg(), s, -1.45f, 0.30f, 2.30f, w);
-        leg(f.leftLeg(), s, -1.45f, -0.30f, 2.30f, w);
-        f.rightLeg().overrideY(0.55f, w);
-        f.leftLeg().overrideY(-0.55f, w);
+        // Cross-legged: thighs forward and spread, each turned about its own axis so the knee
+        // folds the shin in across the front instead of back underneath.
+        crossLeg(f.rightLeg(), s, 1f, w);
+        crossLeg(f.leftLeg(), s, -1f, w);
         arm(f.rightArm(), s, -0.85f, -0.25f, 0.20f, 0.45f, aw * sit);
         arm(f.leftArm(), s, -0.85f, 0.25f, -0.20f, 0.45f, aw * sit);
         Rigging.leanTorso(f, s, 0.02f * breathe * w);
