@@ -159,15 +159,17 @@ final class ReactionModule implements AnimModule {
         float lean = 0.35f;
         Rigging.leanTorso(f, s, lean * e);
         f.head().rx += 0.20f * e;
-        // Both hands on the hilt in front of the body: raised high, then driven down until the
-        // arms are level (relative to the world), so the turned-over blade points straight down.
-        float x = Mth.lerp(stab, -2.60f, -Mth.HALF_PI + lean);
-        main.override(x, -side * 0.42f, side * 0.05f, e);
-        off.override(x + 0.12f, side * 0.48f, -side * 0.05f, e);
+        // Both hands on the hilt well in front of the body: raised high, then driven down until
+        // the arms are about level in the world (the arms ride on the leaning torso, and the
+        // sword sits tilted back in the fist), so the turned-over blade goes into the ground
+        // point-first in front of the front knee, on the sword side, never back through the legs.
+        float x = Mth.lerp(stab, -2.60f, -Mth.HALF_PI - lean - 0.35f);
+        main.override(x, -side * 0.28f, side * 0.05f, e);
+        off.override(x + 0.10f, side * 0.62f, -side * 0.05f, e);
         main.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.10f), e);
         off.overrideBend(s.elbow() * Mth.lerp(stab, 0.20f, 0.30f), e);
         // Blade turned over in the fists to point down into the ground.
-        main.overrideRoll(side * Mth.PI, e * stab);
+        main.overrideRoll(side * Mth.PI, e);
         f.body().py += 0.05f * (1f - stab) * e;
     }
 

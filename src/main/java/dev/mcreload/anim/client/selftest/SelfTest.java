@@ -235,7 +235,7 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("25_eat", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.GOLDEN_APPLE, 8)),
                 (mc, t) -> mc.options.keyUse.setDown(t > 5), new Window(15, 38, 3, 0.25f)));
         SCENARIOS.add(new Scenario("07c_sword_landing", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
-                (mc, t) -> move(mc, false, false, false, false), new Window(20, 45, 5, 0.06f)));
+                (mc, t) -> move(mc, false, false, false, false), new Window(6, 18, 3, 0.0f), new Window(19, 45, 5, 0.06f)));
         SCENARIOS.add(new Scenario("26_explosion", 45, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 34, 4, 0.08f)));
         SCENARIOS.add(new Scenario("26b_explosion_sword", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
@@ -261,8 +261,8 @@ public final class SelfTest {
                     sp -> place(sp, 2, Y, 0, -90, ItemStack.EMPTY),
                     (mc, t) -> {
                         move(mc, false, false, false, false);
-                        if (t == 6) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.playEmote(emote); }
-                    }, new Window(14, 50, 3, 0.35f)));
+                        if (t == 16) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.playEmote(emote); }
+                    }, new Window(24, 58, 3, 0.35f)));
         }
     }
 

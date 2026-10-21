@@ -99,7 +99,7 @@ final class CombatModule implements AnimModule {
         PartPose arm = side > 0 ? f.rightArm() : f.leftArm();
         PartPose off = side > 0 ? f.leftArm() : f.rightArm();
         // Tools aim at the block you look at: lower strikes when looking down.
-        boolean aims = MotionState.isLooping(kind);
+        boolean aims = MotionState.isLooping(kind) || kind == MotionState.PLACE;
         float aim = aims ? rig.player.getXRot() * Mth.DEG_TO_RAD * 0.5f : 0f;
         arm.override(k.armX() + aim, side * k.armY(), side * k.armZ(), w);
         arm.overrideBend(s.elbow() * k.elbow(), w);
@@ -115,9 +115,19 @@ final class CombatModule implements AnimModule {
         off.overrideBend(s.elbow() * Mth.lerp(two, k.offElbow(), k.elbow() + 0.35f), w);
 
         Rigging.twistUpper(f, side * k.twist() * w);
-        f.body().rx += k.lean() * w;
-        f.head().rx += k.lean() * 0.9f * w;
-        f.body().rz -= side * 0.06f * Math.max(0f, -k.lean()) * w;
+        // Weapons pitch the whole body into the strike; working a block in front of the feet
+        // bends at the waist and knees instead, so the feet stay planted.
+        boolean weapon = MotionState.isWeapon(kind);
+        float bodyLean = weapon ? k.lean() : k.lean() * 0.25f;
+        f.body().rx += bodyLean * w;
+        f.head().rx += bodyLean * 0.9f * w;
+        f.body().rz -= side * 0.06f * Math.max(0f, -bodyLean) * w;
+        if (!weapon) {
+            float waist = -k.lean() * 1.6f;
+            Rigging.leanTorso(f, s, waist * w);
+            f.head().rx -= waist * 0.6f * w;
+            Rigging.crouch(f, s, waist * 0.5f * w);
+        }
         if (k.spin() > 0f) {
             // Full turn; wraps to 0 at the end so it never unwinds.
             float turn = (k.spin() % 1f) * Mth.TWO_PI;

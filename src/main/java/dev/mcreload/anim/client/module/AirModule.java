@@ -42,7 +42,11 @@ final class AirModule implements AnimModule {
                 float fallW = air * fall * (1f - dive);
                 float diveW = air * fall * dive;
                 if (jumpW > 0.001f) jump(m, f, s, jumpW, arms, pt);
-                if (fallW > 0.001f) fall(m, f, s, fallW, arms);
+                // A high drop with only a blade in hand: get ready to plant it on landing.
+                boolean bladeOnly = m.holdingBlade && rig.player.getOffhandItem().isEmpty();
+                float bladeW = bladeOnly ? fallW : 0f;
+                if (fallW - bladeW > 0.001f) fall(m, f, s, fallW - bladeW, arms);
+                if (bladeW > 0.001f) bladeFall(m, f, s, bladeW, arms, m.mainRight ? 1f : -1f);
                 if (diveW > 0.001f) skydive(m, f, s, diveW, arms);
             }
         }
@@ -122,6 +126,36 @@ final class AirModule implements AnimModule {
         leg(f.leftLeg(), s, 0.15f - 0.38f * c, 0.55f + 0.45f * Math.max(0f, -c), w);
         Rigging.legsOut(f, 0.12f * w);
         Rigging.leanTorso(f, s, -0.08f * w);
+    }
+
+    /**
+     * Dropping from a height with a sword: both hands on the hilt raised over the head, the blade
+     * turned forward, knees drawn up and the back rounded over it, ready to drive it into the
+     * ground on landing (see ReactionModule#plantBlade, which starts from this pose).
+     */
+    private static void bladeFall(MotionState m, PoseFrame f, Signs s, float w, float arms, float side) {
+        float t = m.time;
+        float a = Mth.sin(t * 6.0f + m.seed), c = Mth.sin(t * 4.5f + m.seed + 1f);
+        float aw = w * arms;
+        PartPose main = side > 0 ? f.rightArm() : f.leftArm();
+        PartPose off = side > 0 ? f.leftArm() : f.rightArm();
+        main.override(-2.55f + 0.05f * a, -side * 0.30f, side * 0.10f, aw);
+        off.override(-2.45f + 0.05f * a, side * 0.62f, -side * 0.10f, aw);
+        main.overrideBend(s.elbow() * 0.35f, aw);
+        off.overrideBend(s.elbow() * 0.45f, aw);
+        main.overrideRoll(side * Mth.PI, aw);
+        m.itemTiltTarget = 0f;
+        // Knees drawn up, one ahead of the other, ready to take the landing on one knee.
+        PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
+        PartPose rear = side > 0 ? f.rightLeg() : f.leftLeg();
+        lead.override(-1.05f + 0.08f * c, 0f, -side * 0.12f, w);
+        lead.overrideBend(s.knee() * 1.35f, w);
+        rear.override(-0.20f - 0.08f * c, 0f, side * 0.12f, w);
+        rear.overrideBend(s.knee() * 1.10f, w);
+        // Rounded over the blade, head down watching the landing spot.
+        Rigging.leanTorso(f, s, 0.22f * w);
+        f.head().rx += 0.35f * w;
+        f.body().rx += 0.05f * a * w;
     }
 
     private static void skydive(MotionState m, PoseFrame f, Signs s, float w, float arms) {

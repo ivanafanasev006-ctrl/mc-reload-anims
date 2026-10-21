@@ -110,6 +110,7 @@ public final class MotionState {
     private int lastGlideTick = -1000;
     private boolean wasInWater;
     private int lastWaterTick = -1000;
+    private int teleportTick = -1000;
     private boolean rollEarly;
     private int lastSprintTick = -1000;
     /** Diving in from a height: streamlined "dolphin" entry. */
@@ -204,6 +205,7 @@ public final class MotionState {
             pvx = pvy = pvz = 0;
             airStartY = y;
             lastWaterTick = -1000;
+            teleportTick = player.tickCount;
         }
         prevYawRate = yawRate;
         yawRate = Mth.wrapDegrees(player.yBodyRot - player.yBodyRotO);
@@ -222,7 +224,8 @@ public final class MotionState {
         if (player.isFallFlying()) lastGlideTick = player.tickCount;
 
         // Diving into water from a height: streamlined dolphin entry; never "land" on the bottom.
-        boolean inWater = player.isInWater();
+        // Right after a teleport the fluid state is still the old one for a tick or two.
+        boolean inWater = player.isInWater() && player.tickCount - teleportTick > 2;
         // Height fallen since the feet last left solid ground (not water).
         if (ground || player.onClimbable()) airStartY = player.getY();
         float fallen = (float) (airStartY - player.getY());
@@ -366,7 +369,7 @@ public final class MotionState {
         boolean swimming = player.isVisuallySwimming();
         // Bobbing at the surface flips in and out of the water every few ticks: treat the last
         // moments in the water as still in it, so the pose doesn't flicker between air and water.
-        boolean wet = player.isInWater() || player.tickCount - lastWaterTick < 10;
+        boolean wet = (player.isInWater() && player.tickCount - teleportTick > 2) || player.tickCount - lastWaterTick < 10;
         boolean treading = wet && !ground && !swimming;
         boolean climbing = player.onClimbable() && !ground && !riding;
         boolean air = !ground && !wet && !climbing && !blocked;
