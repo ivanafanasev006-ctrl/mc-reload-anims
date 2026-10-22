@@ -7,24 +7,32 @@ import net.minecraft.client.model.geom.ModelPart;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import org.joml.Matrix3f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
+
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * A hinge (elbow, knee or waist) shared by a body part and its overlay layer (sleeve, trousers,
- * jacket). The part's own cubes are no longer drawn; instead two {@link JointPart} children draw
- * the half above and the half below the joint line, and the moving half rotates about the outer
- * edge of the joint so no gap opens on the outside of the bend (like Mo'Bends' limbs).
+ * jacket). The faces of the part's cubes are cut along the joint line once; while the joint is
+ * bent, the model draws the part itself through {@link #draw}: the half that stays, then the half
+ * that moves, rotated about the outer edge of the joint so no gap opens on the outside of the bend
+ * (like Mo'Bends' limbs). The model parts themselves are never changed (no extra children, no
+ * hidden cubes), so renderers that cache model parts (Oculus, Sodium ports, EMF...) cannot lose
+ * anything: a straight limb is simply drawn the vanilla way.
  */
 public final class Joint {
     /** Joint line (model pixels, part space), centre and half size of the limb at the joint. */
     final float jy, cx, cz, hx, hz;
     /** True if the half ABOVE the joint moves (waist), false if the half below does (elbow, knee). */
     final boolean upperMoves;
-    private final List<JointPart> moving = new ArrayList<>();
-    private final List<ModelPart> owners = new ArrayList<>();
+    /** For every part cut by this joint: its faces, the half that stays and the half that moves. */
+    private final Map<ModelPart, Halves> halves = new IdentityHashMap<>();
 
     public float axis, bend;
     private boolean bent;
@@ -41,8 +49,9 @@ public final class Joint {
     }
 
     /**
-     * Cuts the given parts at {@code jy}. The first part defines the joint geometry (its first cube
-     * is the plain, un-inflated limb for player models). Returns null if nothing could be cut.
+     * Cuts the faces of the given parts at {@code jy}. The first part defines the joint geometry
+     * (its first cube is the plain, un-inflated limb for player models). Returns null if nothing
+     * could be cut.
      */
     static Joint build(float jy, boolean upperMoves, ModelPart... parts) {
         if (parts.length == 0 || parts[0] == null) return null;
@@ -56,12 +65,11 @@ public final class Joint {
         for (ModelPart p : parts) {
             if (p != null) j.cut(p);
         }
-        return j.owners.isEmpty() ? null : j;
+        return j.halves.isEmpty() ? null : j;
     }
 
     private void cut(ModelPart part) {
-        ModelPartAccessor acc = (ModelPartAccessor) (Object) part;
-        List<ModelPart.Cube> cubes = acc.mcreload$cubes();
+        List<ModelPart.Cube> cubes = ((ModelPartAccessor) (Object) part).mcreload$cubes();
         if (cubes.isEmpty()) return;
         List<float[][]> above = new ArrayList<>(), below = new ArrayList<>();
         for (ModelPart.Cube cube : cubes) {
@@ -69,15 +77,76 @@ public final class Joint {
                 Clip.split(poly, jy, above, below);
             }
         }
-        JointPart top = new JointPart(above), bottom = new JointPart(below);
-        Map<String, ModelPart> children = new HashMap<>(acc.mcreload$children());
-        children.put("mcreload_upper", top);
-        children.put("mcreload_lower", bottom);
-        acc.mcreload$setChildren(children);
-        // Keep the cubes (other code picks random cubes, e.g. stuck arrows) but don't draw them.
-        part.skipDraw = true;
-        moving.add(upperMoves ? top : bottom);
-        owners.add(part);
+        halves.put(part, new Halves(upperMoves ? below : above, upperMoves ? above : below));
+    }
+
+    /** This joint cuts the given part. */
+    public boolean owns(ModelPart part) {
+        return halves.containsKey(part);
+    }
+
+    /**
+     * Draws a part cut by this joint, bent (the model calls this instead of {@code part.render}).
+     * Returns false if the part is not one of ours.
+     */
+    public boolean draw(ModelPart part, PoseStack ps, VertexConsumer vc, int light, int overlay,
+                        float r, float g, float b, float a) {
+        Halves h = halves.get(part);
+        if (h == null) return false;
+        if (!part.visible) return true;
+        ps.pushPose();
+        part.translateAndRotate(ps);
+        if (!part.skipDraw) {
+            h.still.emit(ps.last(), vc, light, overlay, r, g, b, a);
+            ps.pushPose();
+            apply(ps);
+            h.moving.emit(ps.last(), vc, light, overlay, r, g, b, a);
+            ps.popPose();
+        }
+        for (ModelPart child : ((ModelPartAccessor) (Object) part).mcreload$children().values()) {
+            child.render(ps, vc, light, overlay, r, g, b, a);
+        }
+        ps.popPose();
+        return true;
+    }
+
+    /** The cut faces of one part: quads as 4 x (x, y, z, u, v) in model pixels plus a normal. */
+    private record Halves(Quads still, Quads moving) {
+        Halves(List<float[][]> still, List<float[][]> moving) {
+            this(new Quads(still), new Quads(moving));
+        }
+    }
+
+    private static final class Quads {
+        final float[] verts, normals;
+        final int count;
+        private final Vector3f nv = new Vector3f();
+        private final Vector4f pv = new Vector4f();
+
+        Quads(List<float[][]> polys) {
+            count = polys.size();
+            verts = new float[count * 20];
+            normals = new float[count * 3];
+            for (int i = 0; i < count; i++) {
+                float[][] q = polys.get(i);
+                for (int k = 0; k < 4; k++) System.arraycopy(q[k], 0, verts, i * 20 + k * 5, 5);
+                System.arraycopy(q[4], 0, normals, i * 3, 3);
+            }
+        }
+
+        void emit(PoseStack.Pose pose, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
+            Matrix4f m = pose.pose();
+            Matrix3f n = pose.normal();
+            for (int i = 0; i < count; i++) {
+                n.transform(nv.set(normals[i * 3], normals[i * 3 + 1], normals[i * 3 + 2]));
+                for (int k = 0; k < 4; k++) {
+                    int o = i * 20 + k * 5;
+                    m.transform(pv.set(verts[o] / 16f, verts[o + 1] / 16f, verts[o + 2] / 16f, 1f));
+                    vc.vertex(pv.x(), pv.y(), pv.z(), r, g, b, a, verts[o + 3], verts[o + 4], overlay, light,
+                            nv.x(), nv.y(), nv.z());
+                }
+            }
+        }
     }
 
     /** Sets the bend (playerAnimator convention: axis angle around Y, bend angle). */
@@ -86,7 +155,6 @@ public final class Joint {
         this.bend = bend;
         bent = Math.abs(bend) > 1e-4f;
         if (bent) hinge(axis, bend, pivot, rot);
-        for (JointPart p : moving) p.setHinge(bent, pivot[0], pivot[1], pivot[2], rot);
     }
 
     public boolean bent() {

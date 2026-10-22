@@ -116,6 +116,34 @@ public final class JointRig {
         ps.translate(p.x() - head.x / 16f, p.y() - head.y / 16f, p.z() - head.z / 16f);
     }
 
+    /** Any joint bent this frame: the model then draws its parts through {@link #draw}. */
+    public boolean anyBent() {
+        return bent(rightArm) || bent(leftArm) || bent(rightLeg) || bent(leftLeg) || bent(torso);
+    }
+
+    private static boolean bent(Joint j) {
+        return j != null && j.bent();
+    }
+
+    /**
+     * Draws a part of this model: bent if one of the joints cuts it and is bent, otherwise the
+     * vanilla way. The caller has already applied the upper-body transform if needed.
+     */
+    public void draw(ModelPart p, com.mojang.blaze3d.vertex.PoseStack ps, com.mojang.blaze3d.vertex.VertexConsumer vc,
+                     int light, int overlay, float r, float g, float b, float a) {
+        Joint j = jointOf(p);
+        if (j != null && j.bent() && !dev.mcreload.anim.compat.SkinLayersCompat.drawsPart(p)
+                && j.draw(p, ps, vc, light, overlay, r, g, b, a)) return;
+        p.render(ps, vc, light, overlay, r, g, b, a);
+    }
+
+    private Joint jointOf(ModelPart p) {
+        for (Joint j : new Joint[]{rightArm, leftArm, rightLeg, leftLeg, torso}) {
+            if (j != null && j.owns(p)) return j;
+        }
+        return null;
+    }
+
     public boolean torsoBent() {
         return torso != null && torso.bent();
     }

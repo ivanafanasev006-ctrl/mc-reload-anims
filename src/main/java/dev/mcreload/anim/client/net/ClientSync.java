@@ -24,12 +24,18 @@ public final class ClientSync {
 
     private static boolean canSend() {
         if (!Cfg.sync || !Cfg.enabled) return false;
+        return serverHasKinetrix();
+    }
+
+    /** The server we are on runs Kinetrix (always true in single player and for a LAN host). */
+    public static boolean serverHasKinetrix() {
         Minecraft mc = Minecraft.getInstance();
         ClientPacketListener conn = mc.getConnection();
         if (conn == null || mc.player == null) return false;
         if (conn != lastConnection) {
             lastConnection = conn;
             lastBits = -1;
+            dev.mcreload.anim.net.Posture.CLIENT_SIT.clear();
         }
         try {
             return KinetrixNet.CHANNEL.isRemotePresent(conn.getConnection());
@@ -65,6 +71,12 @@ public final class ClientSync {
         }
     }
 
+    /** Crawl / sit requests: sent whenever the server can take them, even with sync turned off. */
+    public static void posture(byte type, int value) {
+        if (!serverHasKinetrix()) return;
+        KinetrixNet.CHANNEL.sendToServer(new AnimPacket(0, type, value));
+    }
+
     /** A one-off choice of your own player (emote, fidget, landing) for the others to see. */
     public static void event(AbstractClientPlayer player, byte type, int value) {
         if (player != Minecraft.getInstance().player || !canSend()) return;
@@ -75,7 +87,17 @@ public final class ClientSync {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || !p.valid()) return;
         Entity e = mc.level.getEntity(p.entityId());
-        if (!(e instanceof AbstractClientPlayer player) || player == mc.player) return;
+        if (!(e instanceof AbstractClientPlayer player)) return;
+        if (player == mc.player) {
+            // The server ended our crawl or stood us up (or refused).
+            if (p.type() == AnimPacket.CRAWL || p.type() == AnimPacket.SIT) dev.mcreload.anim.client.PostureControl.serverReset(p.type());
+            return;
+        }
+        if (p.type() == AnimPacket.SIT) {
+            boolean changed = p.value() > 0 ? dev.mcreload.anim.net.Posture.CLIENT_SIT.add(player.getUUID())
+                    : dev.mcreload.anim.net.Posture.CLIENT_SIT.remove(player.getUUID());
+            if (changed) player.refreshDimensions();
+        }
         PlayerRig rig = RigRegistry.get(player);
         if (rig != null) rig.motion.onRemote(p.type(), p.value());
     }

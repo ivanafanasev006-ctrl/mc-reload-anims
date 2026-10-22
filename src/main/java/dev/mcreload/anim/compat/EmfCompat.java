@@ -1,7 +1,6 @@
 package dev.mcreload.anim.compat;
 
 import dev.mcreload.anim.McReloadAnim;
-import dev.mcreload.anim.client.joint.JointPart;
 import dev.mcreload.anim.config.Cfg;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -40,13 +39,23 @@ public final class EmfCompat {
         return player;
     }
 
+    /** A player model layer (body or armour) that EMF is about to replace. */
+    public static boolean keepVanilla(net.minecraft.client.model.geom.ModelLayerLocation layer) {
+        if (layer == null) return false;
+        net.minecraft.resources.ResourceLocation id = layer.getModel();
+        if (!"minecraft".equals(id.getNamespace())) return false;
+        String path = id.getPath();
+        if (!path.equals("player") && !path.equals("player_slim")) return false;
+        return keepVanilla(path + ("main".equals(layer.getLayer()) ? "" : "_" + layer.getLayer()));
+    }
+
     /**
      * True for a model part that belongs to another mod's model system (EMF parts, GeckoLib
      * bones...): such parts may swap their cubes and children at any time, so they are never cut
      * into jointed halves.
      */
     public static boolean foreignPart(ModelPart p) {
-        return p != null && p.getClass() != ModelPart.class && !(p instanceof JointPart);
+        return p != null && p.getClass() != ModelPart.class;
     }
 
     private static final Map<EntityModel<?>, Boolean> CUSTOM = Collections.synchronizedMap(new WeakHashMap<>());

@@ -46,7 +46,8 @@ final class LocomotionModule implements AnimModule {
         // the weight catches up. Our own sneak pose then blends in smoothly on top.
         if (rig.player.isCrouching()) cancelVanillaCrouch(f);
 
-        float ground = m.gate.v * (1f - m.airW.v) * (1f - m.swimW.v) * (1f - m.climbW.v) * (1f - m.waterW.v);
+        float ground = m.gate.v * (1f - m.airW.v) * (1f - m.swimW.v) * (1f - m.climbW.v) * (1f - m.waterW.v)
+                * (1f - m.crawlW.v) * (1f - m.sitW.v);
         if (ground <= 0.001f) return;
 
         float ls = rig.player.walkAnimation.position(pt) * 0.6662f;

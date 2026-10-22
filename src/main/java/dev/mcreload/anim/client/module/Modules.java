@@ -14,6 +14,7 @@ public final class Modules {
             new FistModule(),
             new GestureModule(),
             new EmoteModule(),
+            new PostureModule(),
             new RideModule(),
             new FlightModule(),
             new ReactionModule(),

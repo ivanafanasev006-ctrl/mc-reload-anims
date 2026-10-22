@@ -23,7 +23,11 @@ public record AnimPacket(int entityId, byte type, int value) {
     public static final byte IDLE = 2;
     /** A special landing: forward roll, back roll, sword plant (value = kind). */
     public static final byte LAND = 3;
-    public static final byte TYPES = 4;
+    /** Crawling on request (key C): 1 = get down, 0 = get up. Applied by the server, not relayed (the pose syncs itself). */
+    public static final byte CRAWL = 4;
+    /** Sitting (key X): 0 = standing, 1..3 = sitting in that style. Applied by the server and relayed. */
+    public static final byte SIT = 5;
+    public static final byte TYPES = 6;
 
     public static final int BIT_FORWARD = 1, BIT_BACK = 2, BIT_LEFT = 4, BIT_RIGHT = 8, BIT_JUMP = 16,
             BIT_SNEAK = 32, BIT_USE = 64, BIT_TARGET_BLOCK = 128, BIT_ATTACK = 256;
@@ -49,6 +53,8 @@ public record AnimPacket(int entityId, byte type, int value) {
             case EMOTE -> value >= -1 && value < 64;
             case IDLE -> value >= -1 && value < 64;
             case LAND -> value >= 0 && value < 8;
+            case CRAWL -> value == 0 || value == 1;
+            case SIT -> value >= 0 && value <= Posture.SIT_STYLES;
             default -> false;
         };
     }
@@ -56,7 +62,7 @@ public record AnimPacket(int entityId, byte type, int value) {
     public static void handle(AnimPacket p, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context c = ctx.get();
         if (c.getDirection().getReceptionSide().isServer()) {
-            KinetrixNet.relay(c.getSender(), p);
+            KinetrixNet.fromClient(c.getSender(), p);
         } else {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.mcreload.anim.client.net.ClientSync.receive(p));
         }

@@ -62,6 +62,8 @@ public final class ClientBootstrap {
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.register(TOGGLE);
         event.register(EMOTES);
+        event.register(PostureControl.CRAWL);
+        event.register(PostureControl.SIT);
     }
 
     private static void onConfigLoad(ModConfigEvent.Loading event) {
@@ -76,6 +78,7 @@ public final class ClientBootstrap {
         if (event.phase != TickEvent.Phase.END) return;
         Cfg.refresh();
         dev.mcreload.anim.client.net.ClientSync.tick();
+        PostureControl.tick();
         while (EMOTES.consumeClick()) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && mc.screen == null) mc.setScreen(new EmoteScreen());

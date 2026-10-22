@@ -342,18 +342,6 @@ public final class SelfTest {
                 new Window(8, 60, 4, 0.2f), new Window(215, 330, 6, 0.5f)));
         SCENARIOS.add(new Scenario("48_boat_idle", 200, SelfTest::boardBoat,
                 (mc, t) -> move(mc, false, false, false, false), new Window(60, 200, 6, 0.6f)));
-        // Mobs, seen through the player's eyes: walking up, then standing about.
-        for (int g = 0; g < 3; g++) {
-            final int group = g;
-            SCENARIOS.add(new Scenario("5" + g + "_mobs", 130, sp -> spawnMobs(sp, group),
-                    (mc, t) -> {
-                        move(mc, false, false, false, false);
-                        mc.options.setCameraType(CameraType.FIRST_PERSON);
-                        noPanels = true;
-                        mc.player.setXRot(12f);
-                        walkMobs(mc, t);
-                    }, new Window(16, 60, 3, 0.3f), new Window(70, 130, 4, 0.5f)));
-        }
         for (int i : new int[]{MotionState_EMOTE_WAVE, MotionState_EMOTE_FACEPALM, 0, 15, 16, 17, 18, 19}) {
             final int emote = i;
             SCENARIOS.add(new Scenario("40_emote_" + dev.mcreload.anim.client.rig.MotionState.EMOTE_KEYS[i], 60,
@@ -425,6 +413,32 @@ public final class SelfTest {
                 }, new Window(14, 40, 4, 0.12f), new Window(62, 88, 2, 0.3f), new Window(96, 126, 4, 0.12f),
                 new Window(130, 148, 3, 0.05f), new Window(158, 185, 2, 0.4f), new Window(196, 240, 4, 0.4f),
                 new Window(258, 290, 8, 0.03f)));
+        // Crawl (key C) under a one-block glass ceiling and out again, then stand up (key C again).
+        SCENARIOS.add(new Scenario("70_crawl", 125, sp -> {
+                    place(sp, 1, Y, -6, -90, none);
+                    for (int x = 3; x <= 4; x++) sp.serverLevel().setBlock(new BlockPos(x, Y + 1, -6), Blocks.GLASS.defaultBlockState(), 3);
+                },
+                (mc, t) -> {
+                    if (t == 4 || t == 104) net.minecraft.client.KeyMapping.click(dev.mcreload.anim.client.PostureControl.CRAWL.getKey());
+                    move(mc, t > 30 && t < 100, false, false, false);
+                }, new Window(14, 30, 2, 0.3f), new Window(36, 98, 8, 0.12f), new Window(106, 125, 2, 0.3f)));
+        // Sitting (key X) in each of the three ways, then standing up again by walking off.
+        for (int style = 0; style < dev.mcreload.anim.net.Posture.SIT_STYLES; style++) {
+            final int st = style;
+            SCENARIOS.add(new Scenario("71_sit_" + style, 70, sp -> place(sp, 2, Y, 0, -90, none),
+                    (mc, t) -> {
+                        move(mc, t >= 62, false, false, false);
+                        if (t == 4) net.minecraft.client.KeyMapping.click(dev.mcreload.anim.client.PostureControl.SIT.getKey());
+                        if (t == 8) { var m = localMotion(mc); if (m != null) m.sitStyle = st; }
+                    }, new Window(4, 16, 3, 0.1f), new Window(24, 60, 2, 0.6f), new Window(62, 70, 2, 0.15f)));
+        }
+        // The friend crawls past and sits down (as their client would tell us).
+        SCENARIOS.add(new Scenario("72_friend_posture", 150, sp -> place(sp, 2, Y, -1, -90, none),
+                (mc, t) -> {
+                    move(mc, false, false, false, false);
+                    noPanels = true;
+                    friendPosture(mc, t);
+                }, new Window(14, 60, 5, 0.25f), new Window(80, 140, 3, 0.5f)));
         // Last: hand the player model to Entity Model Features (Fresh Moves) to check nothing breaks.
         if (dev.mcreload.anim.compat.EmfCompat.LOADED) SCENARIOS.add(new Scenario("99_emf_player", 140, sp -> { place(sp, 2, Y, 0, -90, none); armor(sp); },
                 (mc, t) -> {
@@ -502,6 +516,46 @@ public final class SelfTest {
                 if (f.getY() <= Y + 1e-3) f.setOnGround(true);
             } else if (t == 296) {
                 sync(me, f, dev.mcreload.anim.net.AnimPacket.STATE, 0);
+                srv.getPlayerList().broadcastAll(new net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket(
+                        java.util.List.of(f.getUUID())));
+                lvl.removePlayerImmediately(f, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+                friend = null;
+            }
+        });
+    }
+
+    /** The friend crawling along and then sitting down (style from their client). */
+    private static void friendPosture(Minecraft mc, int t) {
+        IntegratedServer srv = mc.getSingleplayerServer();
+        if (srv == null) return;
+        srv.execute(() -> {
+            ServerPlayer me = srv.getPlayerList().getPlayers().get(0);
+            ServerLevel lvl = me.serverLevel();
+            if (t == 5) {
+                com.mojang.authlib.GameProfile prof = new com.mojang.authlib.GameProfile(
+                        java.util.UUID.fromString("0f6c4b32-7c2a-4d4e-9a77-1b1e5d0c0a02"), "Friend");
+                friend = net.minecraftforge.common.util.FakePlayerFactory.get(lvl, prof);
+                friend.moveTo(-5.5, Y, 1.5, -90f, 0f);
+                friend.setYHeadRot(-90f);
+                friend.yBodyRot = -90f;
+                friend.setOnGround(true);
+                friend.setPose(net.minecraft.world.entity.Pose.SWIMMING);
+                srv.getPlayerList().broadcastAll(net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
+                        .createPlayerInitializing(java.util.List.of(friend)));
+                lvl.addNewPlayer(friend);
+                return;
+            }
+            net.minecraftforge.common.util.FakePlayer f = friend;
+            if (f == null) return;
+            if (t >= 10 && t < 60) {
+                f.setPose(net.minecraft.world.entity.Pose.SWIMMING);
+                if (t >= 20) step(f, 0.05, 0);
+            } else if (t == 64) {
+                f.setPose(net.minecraft.world.entity.Pose.STANDING);
+            } else if (t == 72) {
+                sync(me, f, dev.mcreload.anim.net.AnimPacket.SIT, 3);
+            } else if (t == 144) {
+                sync(me, f, dev.mcreload.anim.net.AnimPacket.SIT, 0);
                 srv.getPlayerList().broadcastAll(new net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket(
                         java.util.List.of(f.getUUID())));
                 lvl.removePlayerImmediately(f, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
@@ -611,61 +665,6 @@ public final class SelfTest {
         sp.serverLevel().addFreshEntity(cart);
         sp.startRiding(cart, true);
         cart.setDeltaMovement(0.6, 0, 0);
-    }
-
-    private static final List<net.minecraft.world.entity.Mob> MOBS = new ArrayList<>();
-
-    /** A row of mobs in front of the player, frozen (no AI) so the test can walk them itself. */
-    private static void spawnMobs(ServerPlayer sp, int group) {
-        sp.stopRiding();
-        place(sp, 40, Y, 0, 90, ItemStack.EMPTY);
-        ServerLevel lvl = sp.serverLevel();
-        MOBS.forEach(net.minecraft.world.entity.Entity::discard);
-        MOBS.clear();
-        net.minecraft.world.entity.EntityType<?>[][] groups = {
-                {net.minecraft.world.entity.EntityType.ZOMBIE, net.minecraft.world.entity.EntityType.SKELETON,
-                        net.minecraft.world.entity.EntityType.ZOMBIE, net.minecraft.world.entity.EntityType.VILLAGER,
-                        net.minecraft.world.entity.EntityType.ZOMBIFIED_PIGLIN, net.minecraft.world.entity.EntityType.WANDERING_TRADER},
-                {net.minecraft.world.entity.EntityType.IRON_GOLEM, net.minecraft.world.entity.EntityType.CREEPER,
-                        net.minecraft.world.entity.EntityType.SPIDER, net.minecraft.world.entity.EntityType.WOLF,
-                        net.minecraft.world.entity.EntityType.CAT},
-                {net.minecraft.world.entity.EntityType.CHICKEN, net.minecraft.world.entity.EntityType.COW,
-                        net.minecraft.world.entity.EntityType.PIG, net.minecraft.world.entity.EntityType.SHEEP,
-                        net.minecraft.world.entity.EntityType.HORSE, net.minecraft.world.entity.EntityType.LLAMA}};
-        net.minecraft.world.entity.EntityType<?>[] types = groups[group];
-        float spacing = group == 1 ? 2.0f : 1.6f;
-        for (int i = 0; i < types.length; i++) {
-            net.minecraft.world.entity.Entity ent = types[i].create(lvl);
-            if (!(ent instanceof net.minecraft.world.entity.Mob mob)) continue;
-            double z = 0.5 - spacing * (types.length - 1) / 2.0 + i * spacing;
-            mob.moveTo(32.5, Y, z, -90f, 0f);
-            mob.setYHeadRot(-90f);
-            mob.yBodyRot = -90f;
-            mob.setNoAi(true);
-            mob.setPersistenceRequired();
-            mob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
-            if (mob instanceof net.minecraft.world.entity.monster.AbstractSkeleton)
-                mob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
-            if (mob instanceof net.minecraft.world.entity.monster.ZombifiedPiglin)
-                mob.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.GOLDEN_SWORD));
-            if (group == 0 && i == 2 && mob instanceof net.minecraft.world.entity.monster.Zombie z2) z2.setBaby(true);
-            if (mob instanceof net.minecraft.world.entity.TamableAnimal ta) ta.tame(sp);
-            lvl.addFreshEntity(mob);
-            MOBS.add(mob);
-        }
-    }
-
-    /** Walk the mobs toward the player for a couple of seconds (server side), then let them stand. */
-    private static void walkMobs(Minecraft mc, int t) {
-        IntegratedServer srv = mc.getSingleplayerServer();
-        if (srv == null || t < 12 || t > 55) return;
-        srv.execute(() -> {
-            for (net.minecraft.world.entity.Mob mob : MOBS) {
-                mob.moveTo(mob.getX() + 0.07, mob.getY(), mob.getZ(), -90f, 0f);
-                mob.setYHeadRot(-90f);
-                mob.yBodyRot = -90f;
-            }
-        });
     }
 
     private static void boardBoat(ServerPlayer sp) {

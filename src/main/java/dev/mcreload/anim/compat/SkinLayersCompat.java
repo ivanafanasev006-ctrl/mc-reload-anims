@@ -26,5 +26,22 @@ public final class SkinLayersCompat {
         }
     }
 
+    private static boolean injectorBroken;
+
+    /**
+     * Skin Layers 3D (compatibility mode) draws its 3D layer from inside this part's render
+     * call: the part must then be rendered the normal way (the layer still bends, see
+     * SkinLayersBend).
+     */
+    public static boolean drawsPart(net.minecraft.client.model.geom.ModelPart p) {
+        if (!active || injectorBroken) return false;
+        try {
+            return SkinLayersBend.hasInjectedMesh(p);
+        } catch (Throwable t) {
+            injectorBroken = true;
+            return false;
+        }
+    }
+
     private SkinLayersCompat() {}
 }

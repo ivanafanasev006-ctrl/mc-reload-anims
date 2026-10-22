@@ -53,6 +53,10 @@ final class SkinLayersBend implements MeshTransformerProvider {
         });
     }
 
+    static boolean hasInjectedMesh(ModelPart part) {
+        return part instanceof dev.tr7zw.skinlayers.accessor.ModelPartInjector inj && inj.getInjectedMesh() != null;
+    }
+
     @Override
     public MeshTransformer prepareTransformer(ModelPart vanillaModel) {
         PartBinding b = PartBinding.of(vanillaModel);

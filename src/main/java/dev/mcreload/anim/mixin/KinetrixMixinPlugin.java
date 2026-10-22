@@ -22,7 +22,10 @@ public final class KinetrixMixinPlugin implements IMixinConfigPlugin {
     @Override
     public List<String> getMixins() {
         List<String> extra = new ArrayList<>();
-        if (loaded("entity_model_features")) extra.add("compat.EmfConfigMixin");
+        if (loaded("entity_model_features")) {
+            extra.add("compat.EmfConfigMixin");
+            extra.add("compat.EmfManagerMixin");
+        }
         return extra;
     }
 

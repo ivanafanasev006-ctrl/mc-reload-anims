@@ -25,5 +25,8 @@
   "emote.kinetrix.robot": "Робот",
   "emote.kinetrix.guitar": "Воздушная гитара",
   "emote.kinetrix.flex": "Покрасоваться",
-  "emote.kinetrix.meditate": "Медитация"
+  "emote.kinetrix.meditate": "Медитация",
+  "key.kinetrix.crawl": "Ползти (пролезть в проём в 1 блок)",
+  "key.kinetrix.sit": "Сесть",
+  "message.kinetrix.crawl_needs_server": "Для ползания Kinetrix должен стоять и на сервере"
 }

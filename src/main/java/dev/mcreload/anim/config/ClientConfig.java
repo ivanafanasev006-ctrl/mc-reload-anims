@@ -15,13 +15,15 @@ public final class ClientConfig {
     public static final ForgeConfigSpec.BooleanValue IDLE;
     public static final ForgeConfigSpec.BooleanValue IDLE_ACTIONS;
     public static final ForgeConfigSpec.BooleanValue TWO_HANDED;
-    public static final ForgeConfigSpec.BooleanValue MOBS, MOB_JOINTS;
     public static final ForgeConfigSpec.BooleanValue AIRBORNE;
     public static final ForgeConfigSpec.BooleanValue LANDING;
     public static final ForgeConfigSpec.BooleanValue WATER;
     public static final ForgeConfigSpec.BooleanValue CLIMBING;
     public static final ForgeConfigSpec.BooleanValue COMBAT;
     public static final ForgeConfigSpec.BooleanValue REACTIONS;
+    public static final ForgeConfigSpec.BooleanValue POSTURES;
+    public static final ForgeConfigSpec.BooleanValue TOGGLE_CRAWL;
+    public static final ForgeConfigSpec.BooleanValue TOGGLE_SIT;
 
     public static final ForgeConfigSpec.BooleanValue TRAILS;
     public static final ForgeConfigSpec.DoubleValue TRAIL_SECONDS;
@@ -64,15 +66,10 @@ public final class ClientConfig {
                 .define("locomotion", true);
         IDLE = b.comment("Breathing and weight shifting while standing still.")
                 .define("idle", true);
-        IDLE_ACTIONS = b.comment("After standing still for a while: stretching, scratching the head, shadow-boxing, looking around.")
+        IDLE_ACTIONS = b.comment("After standing still for a while: stretching, looking around, cracking the neck, kicking a pebble; playing with the item in hand.")
                 .define("idleActions", true);
         TWO_HANDED = b.comment("Hold swords with both hands (samurai grip) when the other hand is empty.")
                 .define("twoHandedSwords", false);
-        MOBS = b.comment("Livelier mobs: breathing, weight shifting, head and tail movement, step bounce and sway for",
-                        "zombies, skeletons, villagers, golems, creepers, spiders, animals and others (looks only).")
-                .define("mobs", true);
-        MOB_JOINTS = b.comment("Humanoid mobs (zombies, skeletons, piglins...) bend their knees, elbows and waist too.")
-                .define("mobJoints", true);
         AIRBORNE = b.comment("Jump tuck and falling flail.")
                 .define("airborne", true);
         LANDING = b.comment("Landing squash after a fall.")
@@ -85,6 +82,16 @@ public final class ClientConfig {
                 .define("combat", true);
         REACTIONS = b.comment("Recoil when taking damage.")
                 .define("reactions", true);
+        POSTURES = b.comment("Crawling on the ground (a cave-diver crawl, not a swim stroke) and sitting.")
+                .define("postures", true);
+        b.pop();
+
+        b.comment("Crawl (C) and sit (X) keys, see Controls. Crawling needs Kinetrix on the server too",
+                "(single player and the host of a LAN game always have it).").push("controls");
+        TOGGLE_CRAWL = b.comment("true = press the crawl key to get down and again to get up; false = crawl while it is held.")
+                .define("toggleCrawl", true);
+        TOGGLE_SIT = b.comment("true = press the sit key to sit down and again (or move) to stand up; false = sit while it is held.")
+                .define("toggleSit", true);
         b.pop();
 
         b.comment("White wind streak behind swung weapons (our slashes and Better Combat attacks).").push("trails");

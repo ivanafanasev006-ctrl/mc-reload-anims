@@ -43,14 +43,25 @@ public final class KinetrixNet {
                 .add();
         MinecraftForge.EVENT_BUS.addListener(KinetrixNet::onStartTracking);
         MinecraftForge.EVENT_BUS.addListener(KinetrixNet::onLogout);
+        Posture.init();
     }
 
-    static void relay(ServerPlayer sender, AnimPacket p) {
+    /** A packet from a player's own client. */
+    static void fromClient(ServerPlayer sender, AnimPacket p) {
         if (sender == null || !p.valid() || !allowed(sender)) return;
-        AnimPacket out = new AnimPacket(sender.getId(), p.type(), p.value());
-        if (p.type() == AnimPacket.STATE || p.type() == AnimPacket.EMOTE) {
-            int[] last = LAST.computeIfAbsent(sender.getUUID(), u -> new int[]{0, -1});
-            last[p.type() == AnimPacket.STATE ? 0 : 1] = p.value();
+        switch (p.type()) {
+            case AnimPacket.CRAWL -> Posture.requestCrawl(sender, p.value() == 1);
+            case AnimPacket.SIT -> Posture.requestSit(sender, p.value());
+            default -> relay(sender, p.type(), p.value());
+        }
+    }
+
+    /** Tells everyone who can see {@code sender} (and has Kinetrix) about them; remembers STATE, EMOTE and SIT for late viewers. */
+    static void relay(ServerPlayer sender, byte type, int value) {
+        AnimPacket out = new AnimPacket(sender.getId(), type, value);
+        if (type == AnimPacket.STATE || type == AnimPacket.EMOTE || type == AnimPacket.SIT) {
+            int[] last = LAST.computeIfAbsent(sender.getUUID(), u -> new int[]{0, -1, 0});
+            last[type == AnimPacket.STATE ? 0 : type == AnimPacket.EMOTE ? 1 : 2] = value;
         }
         // Everyone near enough to see this player, who has Kinetrix (others never get our packets).
         double range = Math.max(64.0, sender.server.getPlayerList().getViewDistance() * 16.0);
@@ -60,8 +71,14 @@ public final class KinetrixNet {
         }
     }
 
+    /** The server changed something about the player's own state (stood them up, ended a crawl): tell their client. */
+    static void toOwner(ServerPlayer player, byte type, int value) {
+        if (!hasKinetrix(player)) return;
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new AnimPacket(player.getId(), type, value));
+    }
+
     /** A real, connected player whose client has Kinetrix (fake players from other mods have no client). */
-    private static boolean hasKinetrix(ServerPlayer p) {
+    static boolean hasKinetrix(ServerPlayer p) {
         if (p instanceof net.minecraftforge.common.util.FakePlayer || p.connection == null) return false;
         try {
             return CHANNEL.isRemotePresent(p.connection.connection);
@@ -88,6 +105,9 @@ public final class KinetrixNet {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> viewer), new AnimPacket(tracked.getId(), AnimPacket.STATE, last[0]));
         if (last[1] >= 0) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> viewer), new AnimPacket(tracked.getId(), AnimPacket.EMOTE, last[1]));
+        }
+        if (last[2] > 0) {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> viewer), new AnimPacket(tracked.getId(), AnimPacket.SIT, last[2]));
         }
     }
 

@@ -88,6 +88,19 @@ public final class MotionState {
     public final Smooth sprintW = new Smooth(6f), sneakW = new Smooth(9f), groundW = new Smooth(14f);
     public final Smooth airW = new Smooth(12f), fallW = new Smooth(3f), skydiveW = new Smooth(1.5f);
     public final Smooth swimW = new Smooth(5f), waterW = new Smooth(5f), climbW = new Smooth(8f);
+    /** Crawling on land (vanilla crawl pose: our key, Personality's, or squeezed under a block). */
+    public final Smooth crawlW = new Smooth(6f), crawlMoveW = new Smooth(5f);
+    /** Sitting on the ground (our key, or Personality's). */
+    public final Smooth sitW = new Smooth(4f);
+    public boolean crawling, sitting;
+    /** Crawl cycle, in cycles (one cycle = a pull with each arm), driven by the distance crawled. */
+    public float crawlPhase;
+    /** Sitting style 0..2 we sat down in, when, and whether Personality already lowers the model. */
+    public int sitStyle;
+    public float sitStart = -100f;
+    public boolean personalitySit;
+    /** Another player's sitting style as their client reported it (0 = not sitting). */
+    private int remoteSit;
     public final Smooth blockW = new Smooth(10f), bowW = new Smooth(9f), crossbowW = new Smooth(9f), spearW = new Smooth(9f);
     public final Smooth eatW = new Smooth(8f), drinkW = new Smooth(8f), hornW = new Smooth(8f);
     public final Smooth castW = new Smooth(6f);
@@ -258,7 +271,7 @@ public final class MotionState {
 
         boolean ground = player.onGround();
         boolean special = player.isInWater() || player.isFallFlying() || player.onClimbable()
-                || player.isPassenger() || player.getAbilities().flying;
+                || player.isPassenger() || player.getAbilities().flying || player.isVisuallyCrawling();
         float tickSpeed = (float) Math.sqrt(vx * vx + vz * vz);
         if (ground && wasOnGround && !special && player.tickCount - lastSprintTick <= 3 && prevTickSpeed > 0.2f && tickSpeed < prevTickSpeed * 0.6f && Cfg.locomotion) {
             // Sprint released: skid to a stop.
@@ -499,22 +512,29 @@ public final class MotionState {
         boolean blocked = riding || player.isSleeping() || gliding || player.isAutoSpinAttack() || creativeFlying;
         gate.to(blocked ? 0f : 1f, dt);
 
-        boolean swimming = player.isVisuallySwimming();
+        // The vanilla crawl pose on land is our crawl; in water it is swimming.
+        crawling = player.isVisuallyCrawling() && !blocked && Cfg.postures;
+        boolean swimming = player.isVisuallySwimming() && !crawling;
         // Treading water (see tick(): deep water only, with hysteresis).
         boolean treading = treadHold > 0 && !swimming && !riding;
         boolean wet = treading || swimming;
-        boolean climbing = player.onClimbable() && !ground && !riding;
-        boolean air = !ground && !wet && !climbing && !blocked;
+        boolean climbing = player.onClimbable() && !ground && !riding && !crawling;
+        boolean air = !ground && !wet && !climbing && !blocked && !crawling;
+        updateSit(blocked || crawling || wet);
 
         sprintW.to(player.isSprinting() && horizontalSpeed > 0.05f ? 1f : 0f, dt);
         sneakW.to(player.isCrouching() ? 1f : 0f, dt);
-        groundW.to(ground ? 1f : 0f, dt);
+        // On the ground on our feet (crawling and sitting have their own module).
+        groundW.to(ground && !crawling && !sitting ? 1f : 0f, dt);
         airW.to(air ? 1f : 0f, dt);
         fallW.to(air ? Mth.clamp((-vertical - 0.40f) / 0.5f, 0f, 1f) : 0f, dt);
         skydiveW.to(air ? Mth.clamp((-vertical - 1.4f) / 0.8f, 0f, 1f) : 0f, dt);
         swimW.to(swimming ? 1f : 0f, dt);
         waterW.to(treading ? 1f : 0f, dt);
         climbW.to(climbing ? 1f : 0f, dt);
+        crawlW.to(crawling ? 1f : 0f, dt);
+        crawlMoveW.to(crawling ? Mth.clamp(horizontalSpeed / 0.03f, 0f, 1f) : 0f, dt);
+        sitW.to(sitting ? 1f : 0f, dt);
         blockW.to(player.isBlocking() ? 1f : 0f, dt);
         rideW.to(riding && !player.isSleeping() ? 1f : 0f, dt);
         flyW.to(creativeFlying && !ground ? 1f : 0f, dt);
@@ -569,6 +589,9 @@ public final class MotionState {
         if (player.isCrouching()) sneakPhase += dt * 88f * Math.min(horizontalSpeed, 0.12f);
         // Front crawl: about one stroke per second per arm, a bit faster when sprint-swimming.
         if (swimming) swimPhase += dt * (2.4f + 2.6f * Math.min(1f, horizontalSpeed / 0.2f));
+        // Crawling: the cycle follows the ground covered (backwards when backing out), so the
+        // hands and knees grip instead of sliding. One cycle = about one block.
+        if (crawling) crawlPhase += (forward.v < -0.01f ? -1f : 1f) * horizontalSpeed * 20f * dt / CRAWL_CYCLE_BLOCKS;
         // Paddling along at the surface without sprinting.
         paddleW.to(treading ? Mth.clamp(horizontalSpeed / 0.07f, 0f, 1f) : 0f, dt);
         if (treading) paddlePhase += dt * (2.2f + 10f * Math.min(horizontalSpeed, 0.15f));
@@ -603,7 +626,7 @@ public final class MotionState {
         boolean weapon = Weapons.isMeleeWeapon(mainItem) && !(mainItem.getItem() instanceof net.minecraft.world.item.TridentItem);
         boolean recentlyFought = time - slashStart < 3.0f;
         // Guard only for a few seconds after a fight, standing still; otherwise a weapon is just held.
-        readyW.to(weapon && ground && !blocked && !swimming && sprintW.v < 0.5f
+        readyW.to(weapon && ground && !blocked && !swimming && !crawling && !sitting && sprintW.v < 0.5f
                 && recentlyFought && time - slashStart > slashDuration * 0.9f
                 && moveF() < 0.3f && !player.isUsingItem() ? 1f : 0f, dt);
         twoHandW.to(Cfg.twoHanded && weapon && offItem.isEmpty() ? 1f : 0f, dt);
@@ -620,7 +643,7 @@ public final class MotionState {
         if (drawing && !wasDrawingBow) bowStyle ^= 1;
         wasDrawingBow = drawing;
 
-        updateIdle(ground && !blocked && !swimming && !player.isInWater() && !climbing && !player.isUsingItem()
+        updateIdle(ground && !blocked && !swimming && !crawling && !sitting && !player.isInWater() && !climbing && !player.isUsingItem()
                 && !player.isCrouching() && horizontalSpeed < 0.01f && time - slashStart > 2f
                 && time - swapStart > 1f && player.hurtTime == 0, dt);
         updateEmote(dt);
@@ -651,8 +674,13 @@ public final class MotionState {
             IDLE_ITEM_SPIN = 10, IDLE_ITEM_INSPECT = 11, IDLE_ITEM_TOSS = 12, IDLE_ITEM_PRACTICE = 13,
             IDLE_ITEM_SHOULDER = 14, IDLE_ITEM_LEAN = 15, IDLE_FLINT = 16, IDLE_BUCKET = 17, IDLE_ROD = 18,
             IDLE_LANTERN = 19, IDLE_BLOCK = 20;
+    /**
+     * The empty-hand fidgets that are played: only the polished ones that keep the hands off the
+     * body (no hand through the head or chest, nothing silly).
+     */
+    private static final int[] EMPTY_HAND_IDLES = {IDLE_STRETCH, IDLE_LOOK, IDLE_NECK, IDLE_KICK};
     /** Generic fidgets that leave the main hand alone (fine with something in it). */
-    private static final int[] HANDS_BUSY_IDLES = {IDLE_LOOK, IDLE_NECK, IDLE_IMPATIENT, IDLE_KICK};
+    private static final int[] HANDS_BUSY_IDLES = {IDLE_LOOK, IDLE_NECK, IDLE_KICK};
 
     // ---- multiplayer sync (see ClientSync / KinetrixNet)
     /** Keys this player holds, as their own client reported them (AnimPacket.BIT_*). */
@@ -713,6 +741,10 @@ public final class MotionState {
                     idleAction = -1;
                 }
             }
+            case dev.mcreload.anim.net.AnimPacket.SIT -> {
+                remoteSynced = true;
+                remoteSit = value;
+            }
             case dev.mcreload.anim.net.AnimPacket.LAND -> {
                 remoteSynced = true;
                 pendingLand = value;
@@ -742,6 +774,24 @@ public final class MotionState {
     /** Your own landing choice, for the others to see. */
     private void sendLand() {
         if (isLocal()) dev.mcreload.anim.client.net.ClientSync.event(player, dev.mcreload.anim.net.AnimPacket.LAND, landKind);
+    }
+
+    /** Blocks crawled per crawl cycle (a pull with each arm). */
+    private static final float CRAWL_CYCLE_BLOCKS = 1.0f;
+
+    /** Sitting: your own (key X), another player's (from their client), or Personality's. */
+    private void updateSit(boolean blocked) {
+        int style;
+        if (isLocal()) style = dev.mcreload.anim.client.PostureControl.localSit();
+        else style = remoteSit;
+        personalitySit = style == 0 && dev.mcreload.anim.compat.PersonalityCompat.isSitting(player);
+        if (personalitySit) style = 1 + (int) (seed * 7f) % dev.mcreload.anim.net.Posture.SIT_STYLES;
+        boolean now = style > 0 && !blocked && Cfg.postures;
+        if (now && !sitting) {
+            sitStyle = style - 1;
+            sitStart = time;
+        }
+        sitting = now;
     }
 
     // ---- emotes (played from the emote menu; client side)
@@ -786,7 +836,8 @@ public final class MotionState {
         if (emote >= 0) {
             float d = emoteDuration(emote);
             boolean busy = horizontalSpeed > 0.03f || player.swinging || player.isUsingItem() || player.hurtTime > 0
-                    || !player.onGround() || player.isPassenger() || player.isSleeping() || player.isInWater();
+                    || !player.onGround() || player.isPassenger() || player.isSleeping() || player.isInWater()
+                    || crawling || sitting;
             if (busy) emoteMovingTicks++; else emoteMovingTicks = 0;
             if ((d > 0f && time - emoteStart > d) || emoteMovingTicks > 2) {
                 emote = -1;
@@ -821,10 +872,11 @@ public final class MotionState {
                 int[] own = itemIdles(held);
                 int[] pool = rng.nextFloat() < 0.75f ? own : HANDS_BUSY_IDLES;
                 pick = pool[rng.nextInt(pool.length)];
-                if (pick == lastIdleAction) pick = pool[(java.util.Arrays.binarySearch(pool, pick) + 1 + pool.length) % pool.length];
+                if (pick == lastIdleAction && pool.length > 1) pick = pool[(java.util.Arrays.binarySearch(pool, pick) + 1 + pool.length) % pool.length];
             } else {
-                pick = rng.nextInt(IDLE_COUNT);
-                if (pick == lastIdleAction) pick = (pick + 1) % IDLE_COUNT;
+                int i = rng.nextInt(EMPTY_HAND_IDLES.length);
+                pick = EMPTY_HAND_IDLES[i];
+                if (pick == lastIdleAction) pick = EMPTY_HAND_IDLES[(i + 1) % EMPTY_HAND_IDLES.length];
             }
             idleAction = lastIdleAction = pick;
             idleActionStart = time;
@@ -846,21 +898,21 @@ public final class MotionState {
     public static int[] itemIdles(ItemStack stack) {
         Item it = stack.getItem();
         if (it instanceof net.minecraft.world.item.SwordItem)
-            return new int[]{IDLE_ITEM_SPIN, IDLE_ITEM_INSPECT, IDLE_ITEM_TOSS, IDLE_ITEM_PRACTICE};
-        if (it instanceof AxeItem) return new int[]{IDLE_ITEM_INSPECT, IDLE_ITEM_TOSS, IDLE_ITEM_PRACTICE, IDLE_ITEM_SHOULDER};
-        if (it instanceof PickaxeItem) return new int[]{IDLE_ITEM_TOSS, IDLE_ITEM_PRACTICE, IDLE_ITEM_SHOULDER};
+            return new int[]{IDLE_ITEM_SPIN, IDLE_ITEM_INSPECT, IDLE_ITEM_PRACTICE};
+        if (it instanceof AxeItem) return new int[]{IDLE_ITEM_INSPECT, IDLE_ITEM_PRACTICE, IDLE_ITEM_SHOULDER};
+        if (it instanceof PickaxeItem) return new int[]{IDLE_ITEM_PRACTICE, IDLE_ITEM_SHOULDER};
         if (it instanceof ShovelItem || it instanceof HoeItem) return new int[]{IDLE_ITEM_SPIN, IDLE_ITEM_SHOULDER, IDLE_ITEM_LEAN};
         if (it instanceof net.minecraft.world.item.TridentItem) return new int[]{IDLE_ITEM_SPIN, IDLE_ITEM_PRACTICE, IDLE_ITEM_LEAN};
-        if (it instanceof net.minecraft.world.item.FlintAndSteelItem) return new int[]{IDLE_ITEM_TOSS, IDLE_FLINT};
+        if (it instanceof net.minecraft.world.item.FlintAndSteelItem) return new int[]{IDLE_FLINT};
         if (it instanceof net.minecraft.world.item.BucketItem || it instanceof net.minecraft.world.item.MilkBucketItem
                 || it instanceof net.minecraft.world.item.SolidBucketItem) return new int[]{IDLE_BUCKET};
         if (it instanceof net.minecraft.world.item.FishingRodItem) return new int[]{IDLE_ITEM_SPIN, IDLE_ROD};
         if (it instanceof net.minecraft.world.item.BlockItem bi) {
             if (bi.getBlock() instanceof net.minecraft.world.level.block.LanternBlock) return new int[]{IDLE_LANTERN};
-            return new int[]{IDLE_ITEM_TOSS, IDLE_BLOCK};
+            return new int[]{IDLE_BLOCK};
         }
         if (Weapons.isMeleeWeapon(stack)) return new int[]{IDLE_ITEM_SPIN, IDLE_ITEM_INSPECT, IDLE_ITEM_PRACTICE};
-        return new int[]{IDLE_ITEM_INSPECT, IDLE_ITEM_TOSS};
+        return new int[]{IDLE_ITEM_INSPECT};
     }
 
     public static float idleDuration(int action) {

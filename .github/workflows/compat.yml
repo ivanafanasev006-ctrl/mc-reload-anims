@@ -3,6 +3,8 @@ name: Compatibility self-test
 # A real (production) Forge client, like a player's: the reobfuscated Kinetrix jar next to
 # Entity Model Features + Fresh Moves, Skin Layers 3D, Better Combat, Vintage Animations and
 # Embeddium, plus a second, server-driven player for the multiplayer sync.
+# A second job runs the renderer stack of the Otherworld pack: Xenon + Oculus with the
+# Complementary shaders, and the pack's (older) EMF / ETF versions with Fresh Moves.
 on:
   push:
     branches: [main]
@@ -14,6 +16,9 @@ on:
       only:
         description: 'scenario regex (no commas)'
         default: ''
+      shaders_only:
+        description: 'scenario regex for the shaders job (no commas)'
+        default: ''
 
 permissions:
   contents: write
@@ -24,7 +29,8 @@ concurrency:
 
 env:
   FORGE: '1.20.1-47.4.20'
-  DEFAULT_ONLY: '^(00_stand|03b|05_fist|08a|10b|28_sneak|29_back_jump|40_emote_(dance|flex|meditate)|45_fidget_10|6[0-9]_|99_)'
+  SHADERS_ONLY: '^(00_stand|60_armor_walk|61_armor_flex|70_crawl|71_sit_1|99_)'
+  DEFAULT_ONLY: '^(00_stand|03b|05_fist|08a|10b|28_sneak|29_back_jump|40_emote_(dance|flex|meditate)|45_fidget_10|6[0-9]_|7[0-9]_|99_)'
 
 jobs:
   compat:
@@ -118,3 +124,117 @@ jobs:
           git add -A
           git commit -qm "Compat self-test of ${GITHUB_SHA::7} (run ${{ github.run_number }})"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" selftest-compat
+
+  shaders:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Kinetrix
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build --no-daemon --stacktrace -q
+          ls -la build/libs
+
+      - name: Install virtual display, software OpenGL and the launcher
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 mesa-utils x11-xserver-utils jq unzip > /dev/null
+          pip install -q portablemc
+          portablemc --main-dir mc start --dry "forge::${FORGE}" 2>&1 | tail -5
+
+      - name: Mods (Otherworld renderer stack), shaders and resource packs
+        run: |
+          mkdir -p mc/mods mc/resourcepacks mc/shaderpacks mc/config /tmp/out
+          cp $(ls build/libs/*.jar | grep -v -- '-sources') mc/mods/
+          UA='Mozilla/5.0 (X11; Linux x86_64) kinetrix-ci'
+          # CurseForge file (project id, file id), as in the modpack manifest.
+          cf() {
+            local url
+            url=$(curl -sS -A "$UA" -o /dev/null -w '%{redirect_url}' "https://www.curseforge.com/api/v1/mods/$1/files/$2/download" || true)
+            if [ -z "$url" ]; then echo "CF $1/$2: no redirect"; return 1; fi
+            local name; name=$(basename "${url%%\?*}"); name=${name//%2B/+}; name=${name//%20/ }
+            echo "CF $1/$2 -> $name"
+            curl -sSL -A "$UA" -o "mc/mods/$name" "$url" && unzip -tq "mc/mods/$name" > /dev/null 2>&1 || { echo "  bad download"; rm -f "mc/mods/$name"; return 1; }
+          }
+          # Modrinth: a version id, or the newest Forge 1.20.1 version of a project whose number starts with a prefix.
+          mrid() {
+            local url; url=$(curl -sS "https://api.modrinth.com/v2/version/$1" | jq -r '[.files[] | select(.primary)][0].url // .files[0].url')
+            echo "MR $1 -> $url"; curl -sSL -o "mc/mods/$(basename "${url//%2B/+}")" "$url"
+          }
+          mrpick() {
+            local url; url=$(curl -sS "https://api.modrinth.com/v2/project/$1/version?loaders=%5B%22forge%22%5D&game_versions=%5B%221.20.1%22%5D" \
+              | jq -r --arg p "$2" '[.[] | select(.version_number | contains($p))][0] | ([.files[] | select(.primary)][0].url // .files[0].url) // empty')
+            if [ -z "$url" ]; then echo "MR $1 ($2): none"; return 1; fi
+            echo "MR $1 ($2) -> $url"; curl -sSL -o "mc/mods/$(basename "${url//%2B/+}")" "$url"
+          }
+          mrid xe2EVE6q                                           # playerAnimator 1.0.2-rc1
+          mrid egmtcJdf                                           # Skin Layers 3D 1.11.1
+          cf 568563 5982136 || mrpick entitytexturefeatures 6.2   # ETF (pack version)
+          cf 844662 5646339 || mrpick entity-model-features 2.2   # EMF 2.2.x (pack version)
+          cf 564239 5752040 || mrid UTbfe5d1                      # Xenon (pack) or Embeddium
+          cf 581495 6020952 || mrpick oculus 1.7                  # Oculus (pack version)
+          ls -la mc/mods | tee /tmp/out/mods.txt
+          for j in mc/mods/*.jar; do echo "$(basename "$j"): $(unzip -p "$j" META-INF/mods.toml 2>/dev/null | grep -E '^\s*modId' | head -1)"; done | tee -a /tmp/out/mods.txt
+          # Complementary Unbound (the pack uses r5.7.1 with Euphoria Patches).
+          SURL=$(curl -sS "https://api.modrinth.com/v2/project/complementary-unbound/version" \
+            | jq -r '([.[] | select(.version_number | contains("5.7.1"))][0] // .[0]) | .files[0].url')
+          echo "shaderpack -> $SURL"
+          SNAME=$(basename "${SURL//%2B/+}"); SNAME=${SNAME//%20/ }
+          curl -sSL -o "mc/shaderpacks/$SNAME" "$SURL"
+          ls -la mc/shaderpacks | tee -a /tmp/out/mods.txt
+          printf '%s\n' 'enableShaders=true' "shaderPack=$SNAME" 'disableUpdateMessage=true' > mc/config/oculus.properties
+          cat mc/config/oculus.properties
+          curl -sSL -o mc/resourcepacks/FreshMoves.zip "https://cdn.modrinth.com/data/slufHzC2/versions/lHNQh6Gv/-1.21.2%20Fresh%20Moves%20v3.1%20%28No%20Animated%20Eyes%29.zip"
+          P=mc/resourcepacks/kinetrix-testskin
+          mkdir -p $P/assets/minecraft/textures/entity/player/wide $P/assets/minecraft/textures/entity/player/slim
+          echo '{"pack":{"pack_format":15,"description":"Kinetrix test skin"}}' > $P/pack.mcmeta
+          for n in alex ari efe kai makena noor steve sunny zuri; do
+            cp ci/compat/testskin.png $P/assets/minecraft/textures/entity/player/wide/$n.png
+            cp ci/compat/testskin.png $P/assets/minecraft/textures/entity/player/slim/$n.png
+          done
+          printf '%s\n' \
+            'onboardAccessibility:false' 'pauseOnLostFocus:false' 'renderDistance:4' 'simulationDistance:5' \
+            'maxFps:30' 'tutorialStep:none' 'joinedFirstServer:true' 'soundCategory_master:0.0' 'graphicsMode:1' \
+            'resourcePacks:["vanilla","mod_resources","file/FreshMoves.zip","file/kinetrix-testskin"]' > mc/options.txt
+
+      - name: Run Minecraft with shaders
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          MESA_GL_VERSION_OVERRIDE: '4.6'
+          MESA_GLSL_VERSION_OVERRIDE: '460'
+          GALLIUM_DRIVER: llvmpipe
+          LP_NUM_THREADS: '4'
+        run: |
+          ONLY="${{ github.event.inputs.shaders_only }}"; ONLY="${ONLY:-$SHADERS_ONLY}"
+          timeout 40m xvfb-run -a -s "-screen 0 960x540x24" portablemc --main-dir mc start "forge::${FORGE}" \
+            -u Tester --resolution 960x540 \
+            "--jvm-arg=-Xmx3G,-Dmcreload.selftest=true,-Dmcreload.selftest.only=${ONLY}" 2>&1 | tee runclient.log | tail -40 || true
+
+      - name: Publish screenshots to the 'selftest-shaders' branch
+        if: always()
+        run: |
+          mkdir -p /tmp/out
+          cp mc/screenshots/*.png /tmp/out/ 2>/dev/null || true
+          cp mc/logs/latest.log /tmp/out/latest.log 2>/dev/null || true
+          cp mc/crash-reports/*.txt /tmp/out/ 2>/dev/null || true
+          cp mc/config/oculus.properties /tmp/out/ 2>/dev/null || true
+          tail -n 600 runclient.log > /tmp/out/runclient-tail.log 2>/dev/null || true
+          ls -la /tmp/out
+          cd /tmp/out
+          git init -q -b selftest-shaders
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -qm "Shaders self-test of ${GITHUB_SHA::7} (run ${{ github.run_number }})"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" selftest-shaders

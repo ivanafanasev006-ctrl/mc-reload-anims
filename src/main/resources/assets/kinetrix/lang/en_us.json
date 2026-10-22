@@ -25,5 +25,8 @@
   "emote.kinetrix.robot": "Robot",
   "emote.kinetrix.guitar": "Air Guitar",
   "emote.kinetrix.flex": "Flex",
-  "emote.kinetrix.meditate": "Meditate"
+  "emote.kinetrix.meditate": "Meditate",
+  "key.kinetrix.crawl": "Crawl (fits through 1-block gaps)",
+  "key.kinetrix.sit": "Sit down",
+  "message.kinetrix.crawl_needs_server": "Crawling needs Kinetrix on the server too"
 }
