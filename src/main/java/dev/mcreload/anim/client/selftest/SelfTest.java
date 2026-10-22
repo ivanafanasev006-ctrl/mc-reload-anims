@@ -58,6 +58,13 @@ public final class SelfTest {
         MinecraftForge.EVENT_BUS.addListener(SelfTest::onHud);
         MinecraftForge.EVENT_BUS.addListener(SelfTestOverlay::onRenderGui);
         buildScenarios();
+        // -Dmcreload.selftest.only=<regex>: run just those scenarios (e.g. the compatibility run).
+        String only = System.getProperty("mcreload.selftest.only", "");
+        if (!only.isBlank()) {
+            java.util.regex.Pattern pat = java.util.regex.Pattern.compile(only);
+            SCENARIOS.removeIf(sc -> !pat.matcher(sc.name()).find());
+            McReloadAnim.LOG.info("[kinetrix] self-test: {} scenarios match '{}'", SCENARIOS.size(), only);
+        }
         McReloadAnim.LOG.info("[kinetrix] SELF-TEST MODE");
     }
 
@@ -356,6 +363,154 @@ public final class SelfTest {
                         if (t == 16) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.playEmote(emote); }
                     }, new Window(24, 58, 3, 0.35f)));
         }
+        buildCompatScenarios();
+    }
+
+    private static void armor(ServerPlayer sp) {
+        sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
+        sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
+        sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS, new ItemStack(Items.DIAMOND_LEGGINGS));
+        sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, new ItemStack(Items.DIAMOND_BOOTS));
+    }
+
+    private static dev.mcreload.anim.client.rig.MotionState localMotion(Minecraft mc) {
+        var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player);
+        return r == null ? null : r.motion;
+    }
+
+    /** Armour, empty-hand fidgets (also with a torch in the other hand), Better Combat, mining, a friend. */
+    private static void buildCompatScenarios() {
+        ItemStack none = ItemStack.EMPTY;
+        SCENARIOS.add(new Scenario("60_armor_walk", 64, sp -> { place(sp, 2, Y, 0, -90, none); armor(sp); },
+                (mc, t) -> move(mc, t > 10 && t < 40, false, t >= 44, false),
+                new Window(14, 38, 3, 0.15f), new Window(48, 64, 2, 0.2f)));
+        SCENARIOS.add(new Scenario("61_armor_flex", 80, sp -> { place(sp, 2, Y, 0, -90, none); armor(sp); },
+                (mc, t) -> {
+                    move(mc, false, false, false, false);
+                    if (t == 10) { var m = localMotion(mc); if (m != null) m.playEmote(dev.mcreload.anim.client.rig.MotionState.EMOTE_FLEX); }
+                }, new Window(30, 80, 3, 0.5f)));
+        SCENARIOS.add(new Scenario("62_attack_key", 44, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
+                (mc, t) -> { if (t == 10 || t == 24) net.minecraft.client.KeyMapping.click(mc.options.keyAttack.getKey()); },
+                new Window(10, 40, 8, 0.03f)));
+        SCENARIOS.add(new Scenario("63_pick_mining", 50, sp -> placeLook(sp, 2, Y, 0, -90, 60, new ItemStack(Items.IRON_PICKAXE)),
+                (mc, t) -> mc.options.keyAttack.setDown(t > 8 && t < 45), new Window(12, 45, 5, 0.12f)));
+        // Empty-hand fidgets, then the same with a torch in the other hand.
+        int[] idles = {dev.mcreload.anim.client.rig.MotionState.IDLE_STRETCH, dev.mcreload.anim.client.rig.MotionState.IDLE_SCRATCH,
+                dev.mcreload.anim.client.rig.MotionState.IDLE_SHADOWBOX, dev.mcreload.anim.client.rig.MotionState.IDLE_YAWN,
+                dev.mcreload.anim.client.rig.MotionState.IDLE_HANDS, dev.mcreload.anim.client.rig.MotionState.IDLE_SQUATS};
+        for (int torch = 0; torch < 2; torch++) {
+            for (int action : idles) {
+                final int a = action;
+                final boolean withTorch = torch == 1;
+                SCENARIOS.add(new Scenario("64_idle" + (withTorch ? "_torch_" : "_") + action, 80,
+                        sp -> { place(sp, 2, Y, 0, -90, none); if (withTorch) sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TORCH)); },
+                        (mc, t) -> {
+                            move(mc, false, false, false, false);
+                            if (t == 8) { var m = localMotion(mc); if (m != null) m.forceIdle(a); }
+                        }, new Window(12, 76, 6, 0.25f)));
+            }
+        }
+        SCENARIOS.add(new Scenario("65_friend", 300, sp -> place(sp, 2, Y, -1, -90, none),
+                (mc, t) -> {
+                    move(mc, false, false, false, false);
+                    noPanels = true;
+                    friend(mc, t);
+                }, new Window(14, 40, 4, 0.12f), new Window(62, 88, 2, 0.3f), new Window(96, 126, 4, 0.12f),
+                new Window(130, 148, 3, 0.05f), new Window(158, 185, 2, 0.4f), new Window(196, 240, 4, 0.4f),
+                new Window(258, 290, 8, 0.03f)));
+        // Last: hand the player model to Entity Model Features (Fresh Moves) to check nothing breaks.
+        if (dev.mcreload.anim.compat.EmfCompat.LOADED) SCENARIOS.add(new Scenario("99_emf_player", 140, sp -> { place(sp, 2, Y, 0, -90, none); armor(sp); },
+                (mc, t) -> {
+                    move(mc, t > 90 && t < 120, false, false, false);
+                    if (t == 6) {
+                        dev.mcreload.anim.config.ClientConfig.PLAYER_OVER_EMF.set(false);
+                        dev.mcreload.anim.config.Cfg.refresh();
+                        mc.reloadResourcePacks();
+                    }
+                }, new Window(40, 88, 2, 0.5f), new Window(94, 120, 3, 0.15f), new Window(124, 140, 1, 0.3f)));
+    }
+
+    private static net.minecraftforge.common.util.FakePlayer friend;
+
+    /** A second player, driven from the server, with Kinetrix sync messages sent for it. */
+    private static void friend(Minecraft mc, int t) {
+        IntegratedServer srv = mc.getSingleplayerServer();
+        if (srv == null) return;
+        srv.execute(() -> {
+            ServerPlayer me = srv.getPlayerList().getPlayers().get(0);
+            ServerLevel lvl = me.serverLevel();
+            if (t == 5) {
+                com.mojang.authlib.GameProfile prof = new com.mojang.authlib.GameProfile(
+                        java.util.UUID.fromString("0f6c4b32-7c2a-4d4e-9a77-1b1e5d0c0a01"), "Friend");
+                friend = net.minecraftforge.common.util.FakePlayerFactory.get(lvl, prof);
+                friend.moveTo(-6.5, Y, 1.5, -90f, 0f);
+                friend.setYHeadRot(-90f);
+                friend.yBodyRot = -90f;
+                friend.setOnGround(true);
+                srv.getPlayerList().broadcastAll(net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
+                        .createPlayerInitializing(java.util.List.of(friend)));
+                lvl.addNewPlayer(friend);
+                return;
+            }
+            net.minecraftforge.common.util.FakePlayer f = friend;
+            if (f == null) return;
+            if (t >= 10 && t < 40) {                       // sprints up past us
+                f.setSprinting(true);
+                step(f, 0.28, 0);
+            } else if (t == 40) {
+                f.setSprinting(false);
+            } else if (t >= 60 && t < 90) {               // sneaks
+                f.setShiftKeyDown(true);
+                f.setPose(net.minecraft.world.entity.Pose.CROUCHING);
+                if (t >= 70 && t < 80) step(f, 0.06, 0);
+            } else if (t == 90) {
+                f.setShiftKeyDown(false);
+                f.setPose(net.minecraft.world.entity.Pose.STANDING);
+                sync(me, f, dev.mcreload.anim.net.AnimPacket.STATE, dev.mcreload.anim.net.AnimPacket.BIT_TARGET_BLOCK);
+            } else if (t > 95 && t < 126) {               // digs with bare hands (aiming at a block)
+                if (t % 4 == 0) f.swing(InteractionHand.MAIN_HAND, true);
+            } else if (t == 128) {
+                sync(me, f, dev.mcreload.anim.net.AnimPacket.STATE, 0);
+            } else if (t == 131 || t == 139) {           // punches someone
+                f.swing(InteractionHand.MAIN_HAND, true);
+            } else if (t == 152) {                        // eats
+                f.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.APPLE, 4));
+                f.startUsingItem(InteractionHand.MAIN_HAND);
+            } else if (t == 186) {
+                f.stopUsingItem();
+                f.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            } else if (t == 190) {                        // emote chosen on their screen
+                sync(me, f, dev.mcreload.anim.net.AnimPacket.EMOTE, dev.mcreload.anim.client.rig.MotionState.EMOTE_RUNNING_MAN);
+            } else if (t == 244) {
+                sync(me, f, dev.mcreload.anim.net.AnimPacket.EMOTE, -1);
+                sync(me, f, dev.mcreload.anim.net.AnimPacket.STATE, dev.mcreload.anim.net.AnimPacket.BIT_FORWARD);
+            } else if (t > 246 && t <= 258) {             // up onto a ledge...
+                f.setOnGround(false);
+                f.moveTo(f.getX() + 0.12, f.getY() + 0.42, f.getZ(), -90f, 0f);
+            } else if (t > 258 && t <= 264) {             // ...and a hard drop, rolling out
+                f.moveTo(f.getX() + 0.12, Math.max(Y, f.getY() - 0.85), f.getZ(), -90f, 0f);
+                if (t == 263) sync(me, f, dev.mcreload.anim.net.AnimPacket.LAND, dev.mcreload.anim.client.rig.MotionState.LAND_ROLL);
+                if (f.getY() <= Y + 1e-3) f.setOnGround(true);
+            } else if (t == 296) {
+                sync(me, f, dev.mcreload.anim.net.AnimPacket.STATE, 0);
+                srv.getPlayerList().broadcastAll(new net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket(
+                        java.util.List.of(f.getUUID())));
+                lvl.removePlayerImmediately(f, net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+                friend = null;
+            }
+        });
+    }
+
+    private static void step(ServerPlayer f, double dx, double dz) {
+        f.moveTo(f.getX() + dx, f.getY(), f.getZ() + dz, -90f, 0f);
+        f.setYHeadRot(-90f);
+        f.yBodyRot = -90f;
+        f.setOnGround(true);
+    }
+
+    private static void sync(ServerPlayer to, ServerPlayer about, byte type, int value) {
+        dev.mcreload.anim.net.KinetrixNet.CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> to),
+                new dev.mcreload.anim.net.AnimPacket(about.getId(), type, value));
     }
 
     private static final int MotionState_EMOTE_WAVE = dev.mcreload.anim.client.rig.MotionState.EMOTE_WAVE,
@@ -548,6 +703,8 @@ public final class SelfTest {
 
         Scenario s = SCENARIOS.get(scenarioIndex);
         currentLabel = s.name();
+        // A resource reload (loading overlay) pauses the script until it is done.
+        if (mc.getOverlay() != null) return;
         if (scenarioTick == 0) {
             mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
             mc.options.keyUse.setDown(false);
@@ -594,6 +751,9 @@ public final class SelfTest {
         if (sp.isSleeping()) sp.stopSleeping();
         if (sp.isFallFlying()) sp.stopFallFlying();
         sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, ItemStack.EMPTY);
+        sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, ItemStack.EMPTY);
+        sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS, ItemStack.EMPTY);
+        sp.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, ItemStack.EMPTY);
         sp.serverLevel().setDayTime(6000);
         sp.setItemInHand(InteractionHand.MAIN_HAND, hand.copy());
         sp.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);

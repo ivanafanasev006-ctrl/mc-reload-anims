@@ -35,6 +35,11 @@ public final class ClientConfig {
     public static final ForgeConfigSpec.DoubleValue KEEP_LEGS;
     public static final ForgeConfigSpec.DoubleValue KEEP_HEAD;
     public static final ForgeConfigSpec.BooleanValue IRONS_SPELLS;
+    public static final ForgeConfigSpec.BooleanValue PLAYER_OVER_EMF;
+    public static final ForgeConfigSpec.BooleanValue OWN_MOVES_FIRST;
+    public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> PRIORITY_OVER;
+    public static final ForgeConfigSpec.BooleanValue BEND_SKIN_LAYERS;
+    public static final ForgeConfigSpec.BooleanValue SYNC;
 
     public static final ForgeConfigSpec.BooleanValue INVERT_KNEE;
     public static final ForgeConfigSpec.BooleanValue INVERT_ELBOW;
@@ -107,6 +112,23 @@ public final class ClientConfig {
                 .defineInRange("keepHeadLook", 0.0, 0.0, 1.0);
         IRONS_SPELLS = b.comment("Extra casting stance, school-flavoured posture and release recoil for Iron's Spells 'n Spellbooks.")
                 .define("ironsSpellsStance", true);
+        OWN_MOVES_FIRST = b.comment("While a Kinetrix emote, roll or landing is playing, other mods' player animations are muted.")
+                .define("ownMovesFirst", true);
+        PRIORITY_OVER = b.comment("Player Animator based mods (mod ids or animation namespaces) that only replace vanilla",
+                        "animations (walking, mining, chopping...). Kinetrix always wins over them: their layers are muted.",
+                        "Combat and magic mods (Better Combat, Iron's Spells...) are not listed and keep playing on top.")
+                .defineListAllowEmpty(java.util.List.of("priorityOverMods"),
+                        () -> java.util.List.of("vintage_animations", "vintageanimations"), o -> o instanceof String);
+        PLAYER_OVER_EMF = b.comment("Entity Model Features (Fresh Animations / Fresh Moves): keep the player on the vanilla model so",
+                        "Kinetrix animates it with joints. Resource packs like Fresh Moves otherwise replace the player model and",
+                        "animate it on top of Kinetrix. Mobs keep their Fresh Animations models. Takes effect after F3+T.")
+                .define("playerOverEmf", true);
+        BEND_SKIN_LAYERS = b.comment("Skin Layers 3D: bend the 3D outer skin layer at the elbows, knees and waist too.")
+                .define("bendSkinLayers", true);
+        SYNC = b.comment("Multiplayer: share your emotes, rolls, landings, idle fidgets and what you are doing (mining or",
+                        "fighting, keys held) with other players who have Kinetrix. Needs Kinetrix on the server",
+                        "(or on the host when playing over LAN); without it everyone is animated from what the game shows.")
+                .define("syncWithOtherPlayers", true);
         b.pop();
 
         b.comment("Flip these if a bend goes the wrong way with your setup.").push("debug");

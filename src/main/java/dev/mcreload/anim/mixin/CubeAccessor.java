@@ -8,4 +8,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface CubeAccessor {
     @Accessor("polygons")
     ModelPart.Polygon[] mcreload$polygons();
+
+    @org.spongepowered.asm.mixin.Mutable
+    @Accessor("polygons")
+    void kinetrix$setPolygons(ModelPart.Polygon[] polygons);
 }

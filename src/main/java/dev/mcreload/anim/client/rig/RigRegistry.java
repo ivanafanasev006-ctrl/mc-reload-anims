@@ -12,6 +12,7 @@ import java.util.Map;
  */
 public final class RigRegistry {
     private static final Map<AbstractClientPlayer, PlayerRig> RIGS = new MapMaker().weakKeys().makeMap();
+    private static final Map<Object, PlayerRig> BY_STACK = new MapMaker().weakKeys().makeMap();
 
     public static void put(AbstractClientPlayer player, PlayerRig rig) {
         RIGS.put(player, rig);
@@ -19,6 +20,15 @@ public final class RigRegistry {
 
     public static PlayerRig get(AbstractClientPlayer player) {
         return RIGS.get(player);
+    }
+
+    /** The rig living in a player's playerAnimator stack. */
+    public static void putStack(Object stack, PlayerRig rig) {
+        BY_STACK.put(stack, rig);
+    }
+
+    public static PlayerRig byStack(Object stack) {
+        return BY_STACK.get(stack);
     }
 
     private RigRegistry() {}

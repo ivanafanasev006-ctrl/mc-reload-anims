@@ -14,6 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class HumanoidModelMixin implements JointHolder {
     @Unique
     private JointRig mcreload$joints;
+    /** Joints were tried on this model and it cannot have them (another mod's model parts). */
+    @Unique
+    private boolean kinetrix$noJoints;
 
     @Override
     public JointRig mcreload$getJoints() {
@@ -28,11 +31,13 @@ public abstract class HumanoidModelMixin implements JointHolder {
     @Inject(method = "copyPropertiesTo", at = @At("RETURN"))
     private void mcreload$copyJoints(HumanoidModel<?> target, CallbackInfo ci) {
         JointRig dst = ((JointHolder) target).mcreload$getJoints();
-        if (dst == null && mcreload$joints != null && dev.mcreload.anim.client.joint.Joints.enabled()) {
+        if (dst == null && mcreload$joints != null && dev.mcreload.anim.client.joint.Joints.enabled()
+                && !((HumanoidModelMixin) (Object) target).kinetrix$noJoints) {
             // Any layer model that follows this one (armour, drowned / stray overlays...) gets
             // joints too, the first time it is used, so it bends along with the body.
             dst = JointRig.forArmor(target);
             ((JointHolder) target).mcreload$setJoints(dst);
+            if (dst == null) ((HumanoidModelMixin) (Object) target).kinetrix$noJoints = true;
         }
         if (dst == null) return;
         if (mcreload$joints != null) dst.copyFrom(mcreload$joints);

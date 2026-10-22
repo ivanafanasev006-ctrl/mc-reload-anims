@@ -23,6 +23,9 @@ public final class Cfg {
     public static volatile boolean harmonizer = true;
     public static volatile float fadeIn = 0.10f, fadeOut = 0.22f, yield = 0.85f, keepLegs = 0.85f, keepHead = 0f;
     public static volatile boolean ironsSpells = true;
+    public static volatile boolean playerOverEmf = true, ownMovesFirst = true, bendSkinLayers = true, sync = true;
+    public static volatile java.util.Set<String> priorityOver = java.util.Set.of("vintage_animations", "vintageanimations");
+    private static java.util.List<? extends String> priorityList;
 
     public static volatile Signs signs = Signs.DEFAULT;
 
@@ -58,6 +61,17 @@ public final class Cfg {
         keepLegs = ClientConfig.KEEP_LEGS.get().floatValue();
         keepHead = ClientConfig.KEEP_HEAD.get().floatValue();
         ironsSpells = ClientConfig.IRONS_SPELLS.get();
+        playerOverEmf = ClientConfig.PLAYER_OVER_EMF.get();
+        ownMovesFirst = ClientConfig.OWN_MOVES_FIRST.get();
+        bendSkinLayers = ClientConfig.BEND_SKIN_LAYERS.get();
+        sync = ClientConfig.SYNC.get();
+        java.util.List<? extends String> pl = ClientConfig.PRIORITY_OVER.get();
+        if (pl != priorityList) {
+            priorityList = pl;
+            java.util.Set<String> set = new java.util.HashSet<>();
+            for (String id : pl) if (id != null && !id.isBlank()) set.add(id.trim().toLowerCase(java.util.Locale.ROOT));
+            priorityOver = java.util.Set.copyOf(set);
+        }
 
         signs = Signs.of(ClientConfig.INVERT_KNEE.get(), ClientConfig.INVERT_ELBOW.get(), ClientConfig.INVERT_TORSO.get());
     }

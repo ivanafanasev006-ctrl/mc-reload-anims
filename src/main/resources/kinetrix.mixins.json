@@ -19,7 +19,9 @@
     "LivingEntityRendererAccessor",
     "ModelPartAccessor",
     "PlayerModelMixin",
-    "PlayerRendererMixin"
+    "PlayerRendererMixin",
+    "compat.AnimationStackMixin",
+    "compat.EmfConfigMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -34,6 +34,8 @@ public final class ClientBootstrap {
         modBus.addListener(ClientBootstrap::onRegisterKeys);
         modBus.addListener(ClientBootstrap::onConfigLoad);
         modBus.addListener(ClientBootstrap::onConfigReload);
+        modBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent e) ->
+                e.enqueueWork(dev.mcreload.anim.compat.SkinLayersCompat::init));
         MinecraftForge.EVENT_BUS.addListener(ClientBootstrap::onClientTick);
         MinecraftForge.EVENT_BUS.addListener(WeaponTrails::onRenderLevel);
         MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.fx.IdleProps::onRenderLevel);
@@ -52,6 +54,7 @@ public final class ClientBootstrap {
     private static void attach(AbstractClientPlayer player, AnimationStack stack) {
         PlayerRig rig = new PlayerRig(player);
         RigRegistry.put(player, rig);
+        RigRegistry.putStack(stack, rig);
         stack.addAnimLayer(PlayerRig.BASE_PRIORITY, rig.baseLayer());
         stack.addAnimLayer(PlayerRig.HARMONIZER_PRIORITY, rig.harmonizerLayer());
     }
@@ -72,6 +75,7 @@ public final class ClientBootstrap {
     private static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Cfg.refresh();
+        dev.mcreload.anim.client.net.ClientSync.tick();
         while (EMOTES.consumeClick()) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && mc.screen == null) mc.setScreen(new EmoteScreen());

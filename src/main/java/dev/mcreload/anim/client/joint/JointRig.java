@@ -37,7 +37,28 @@ public final class JointRig {
         torso = t;
     }
 
+    /**
+     * Parts owned by another model system (Entity Model Features swaps their cubes and children
+     * between variants at will) are never cut: the model stays unjointed but intact.
+     */
+    private static boolean foreign(ModelPart... parts) {
+        for (ModelPart p : parts) {
+            if (dev.mcreload.anim.compat.EmfCompat.foreignPart(p)) {
+                if (!warnedForeign) {
+                    warnedForeign = true;
+                    dev.mcreload.anim.McReloadAnim.LOG.warn("[kinetrix] A model is made of another mod's parts ({}); it will not get"
+                            + " jointed elbows/knees. With Entity Model Features, enable compat.playerOverEmf.", p.getClass().getName());
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean warnedForeign;
+
     public static JointRig forPlayer(PlayerModel<?> m) {
+        if (foreign(m.body, m.head, m.rightArm, m.leftArm, m.rightLeg, m.leftLeg, m.jacket, m.rightSleeve, m.leftSleeve)) return null;
         JointRig rig = new JointRig(
                 Joint.build(ARM_JOINT, false, m.rightArm, m.rightSleeve),
                 Joint.build(ARM_JOINT, false, m.leftArm, m.leftSleeve),
@@ -52,10 +73,12 @@ public final class JointRig {
         rig.upper.add(m.leftArm);
         rig.upper.add(m.rightSleeve);
         rig.upper.add(m.leftSleeve);
+        PartBinding.bind(m, rig);
         return rig;
     }
 
     public static JointRig forArmor(HumanoidModel<?> m) {
+        if (foreign(m.body, m.head, m.rightArm, m.leftArm, m.rightLeg, m.leftLeg)) return null;
         JointRig rig = new JointRig(
                 Joint.build(ARM_JOINT, false, m.rightArm),
                 Joint.build(ARM_JOINT, false, m.leftArm),

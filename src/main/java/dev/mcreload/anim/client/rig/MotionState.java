@@ -337,7 +337,7 @@ public final class MotionState {
             // Falling backwards lying back: start the back roll the moment we touch down, like
             // the forward roll.
             if (!special && !rollEarly && Cfg.landing && chillW.v > 0.45f && -vy > 0.2
-                    && player.tickCount - lastRideTick >= 10) {
+                    && player.tickCount - lastRideTick >= 10 && !remoteDriven()) {
                 double gap = groundGap();
                 if (gap >= 0 && gap < -vy * 1.1) {
                     landKind = LAND_BACKROLL;
@@ -345,18 +345,20 @@ public final class MotionState {
                     backRollFrom = backLie;
                     chillW.v = 0f;
                     rollEarly = true;
+                    sendLand();
                 }
             }
             // About to hit the ground hard while running on: start the roll at the moment of
             // touchdown instead of a tick or two after it.
             if (!special && !rollEarly && Cfg.landing && -minAirVy > 0.62f && movingForward() && chillW.v < 0.45f
                     && player.tickCount - lastRideTick >= 10
-                    && !Weapons.isMeleeWeapon(player.getMainHandItem())) {
+                    && !Weapons.isMeleeWeapon(player.getMainHandItem()) && !remoteDriven()) {
                 double gap = groundGap();
                 if (gap >= 0 && gap < -vy * 1.1) {
                     landKind = LAND_ROLL;
                     landStart = time;
                     rollEarly = true;
+                    sendLand();
                 }
             }
         } else {
@@ -365,9 +367,12 @@ public final class MotionState {
                 // (diving into the ground) ends in a forward roll when W is held, otherwise a
                 // hard, deep landing.
                 if (Cfg.landing) {
-                    if (lastAirSpeed > 0.65f && movingForward()) {
+                    if (remoteDriven() && takePendingLand()) {
+                        // Their client rolled.
+                    } else if (lastAirSpeed > 0.65f && movingForward() && !remoteDriven()) {
                         landKind = LAND_ROLL;
                         landStart = time;
+                        sendLand();
                     } else if (lastAirSpeed > 0.65f) {
                         land.impulse(1.35f);
                     } else {
@@ -382,20 +387,29 @@ public final class MotionState {
                 float impact = -minAirVy;
                 ItemStack main = player.getMainHandItem();
                 boolean swordOnly = Weapons.isMeleeWeapon(main);
-                if (impact > 0.25f && chillW.v > 0.45f) {
+                if (remoteDriven()) {
+                    // Rolls and sword plants: whatever their own client chose (it knows the keys).
+                    if (!takePendingLand()) {
+                        if (impact > 0.62f) land.impulse(1.25f);
+                        else if (impact > 0.18f) land.impulse(Mth.clamp((impact - 0.12f) / 0.85f, 0.15f, 1.25f));
+                    }
+                } else if (impact > 0.25f && chillW.v > 0.45f) {
                     // Fell backwards lying back (jumped back holding S): roll out over the shoulder.
                     landKind = LAND_BACKROLL;
                     landStart = time;
                     backRollFrom = backLie;
                     chillW.v = 0f;
+                    sendLand();
                 } else if (impact > 0.62f && swordOnly) {
                     // High drop with only a blade in hand: plant it in the ground.
                     landKind = LAND_SWORD;
                     landStart = time;
+                    sendLand();
                 } else if (impact > 0.62f && movingForward()) {
                     // High drop while running on: break the fall with a forward roll.
                     landKind = LAND_ROLL;
                     landStart = time;
+                    sendLand();
                 } else if (impact > 0.62f) {
                     // High drop standing still: just a deeper crouch.
                     land.impulse(1.25f);
@@ -559,7 +573,7 @@ public final class MotionState {
         // Jumping or falling backwards (holding S, or clearly moving backwards): lie back in the
         // air with the hands behind the head; landing, roll out backwards (or float, in water).
         boolean backwards = isLocalPressingBack()
-                || (!(player instanceof net.minecraft.client.player.LocalPlayer) && forward.v < -0.05f);
+                || (!isLocal() && !remoteDriven() && forward.v < -0.05f);
         // Only a real drop (well below where we took off), never an ordinary jump on flat ground.
         chillW.to(air && backwards && airTicks >= 3 && fallHeight >= 1.2f ? 1f : 0f, dt);
         if (ground) chillW.v = Math.max(0f, chillW.v - dt * 5f);   // short hop: straight back up
@@ -638,6 +652,96 @@ public final class MotionState {
     /** Generic fidgets that leave the main hand alone (fine with something in it). */
     private static final int[] HANDS_BUSY_IDLES = {IDLE_LOOK, IDLE_NECK, IDLE_IMPATIENT, IDLE_KICK};
 
+    // ---- multiplayer sync (see ClientSync / KinetrixNet)
+    /** Keys this player holds, as their own client reported them (AnimPacket.BIT_*). */
+    private int remoteBits;
+    /** Their client runs Kinetrix and talks to us through the server. */
+    private boolean remoteSynced;
+    /** A special landing their client chose, waiting for them to touch down on our screen. */
+    private int pendingLand = -1;
+    private float pendingLandTime = -100f;
+
+    private boolean isLocal() {
+        return player instanceof net.minecraft.client.player.LocalPlayer;
+    }
+
+    /** Another player whose own client tells us what they do (instead of us guessing). */
+    public boolean remoteDriven() {
+        return remoteSynced && !isLocal();
+    }
+
+    private boolean remoteBit(int bit) {
+        return remoteDriven() && (remoteBits & bit) != 0;
+    }
+
+    /**
+     * One of our own full-body moves is playing (an emote, a roll, a sword landing): other
+     * mods' player animations wait until it is over.
+     */
+    public boolean fullBodyMove() {
+        if (emote >= 0) return true;
+        float t = since(landStart);
+        if (t < 0f) return false;
+        return switch (landKind) {
+            case LAND_ROLL, LAND_BACKROLL -> t < 0.45f;
+            case LAND_SWORD -> t < 1.2f;
+            default -> false;
+        };
+    }
+
+    /** Sync data about this (other) player, from their client through the server. */
+    public void onRemote(byte type, int value) {
+        if (isLocal()) return;
+        switch (type) {
+            case dev.mcreload.anim.net.AnimPacket.STATE -> {
+                remoteBits = value;
+                remoteSynced = true;
+            }
+            case dev.mcreload.anim.net.AnimPacket.EMOTE -> {
+                remoteSynced = true;
+                if (value >= 0 && value < EMOTE_COUNT) startEmote(value);
+                else emote = -1;
+            }
+            case dev.mcreload.anim.net.AnimPacket.IDLE -> {
+                remoteSynced = true;
+                if (value >= 0) {
+                    idleAction = lastIdleAction = value;
+                    idleActionStart = time;
+                } else {
+                    idleAction = -1;
+                }
+            }
+            case dev.mcreload.anim.net.AnimPacket.LAND -> {
+                remoteSynced = true;
+                pendingLand = value;
+                pendingLandTime = time;
+                // Arrived after they already touched down here: roll now.
+                if (player.onGround() && groundTicks > 0 && groundTicks < 12) takePendingLand();
+            }
+            default -> {}
+        }
+    }
+
+    private boolean takePendingLand() {
+        if (pendingLand < 0 || time - pendingLandTime > 2f) {
+            pendingLand = -1;
+            return false;
+        }
+        landKind = pendingLand;
+        landStart = time;
+        if (landKind == LAND_BACKROLL) {
+            backRollFrom = backLie;
+            chillW.v = 0f;
+        }
+        pendingLand = -1;
+        return true;
+    }
+
+    /** Your own landing choice, for the others to see. */
+    private void sendLand() {
+        if (isLocal()) dev.mcreload.anim.client.net.ClientSync.event(player, dev.mcreload.anim.net.AnimPacket.LAND, landKind);
+    }
+
     // ---- emotes (played from the emote menu; client side)
     public static final int EMOTE_DANCE = 0, EMOTE_WAVE = 1, EMOTE_CLAP = 2, EMOTE_FACEPALM = 3, EMOTE_SHRUG = 4,
             EMOTE_SALUTE = 5, EMOTE_BOW = 6, EMOTE_SIT = 7, EMOTE_THUMBS = 8, EMOTE_VICTORY = 9, EMOTE_POINT = 10,
@@ -666,6 +770,11 @@ public final class MotionState {
     }
 
     public void playEmote(int e) {
+        startEmote(e);
+        if (isLocal()) dev.mcreload.anim.client.net.ClientSync.event(player, dev.mcreload.anim.net.AnimPacket.EMOTE, e);
+    }
+
+    private void startEmote(int e) {
         emote = e;
         emoteStart = time;
         emoteMovingTicks = 0;
@@ -677,7 +786,10 @@ public final class MotionState {
             boolean busy = horizontalSpeed > 0.03f || player.swinging || player.isUsingItem() || player.hurtTime > 0
                     || !player.onGround() || player.isPassenger() || player.isSleeping() || player.isInWater();
             if (busy) emoteMovingTicks++; else emoteMovingTicks = 0;
-            if ((d > 0f && time - emoteStart > d) || emoteMovingTicks > 2) emote = -1;
+            if ((d > 0f && time - emoteStart > d) || emoteMovingTicks > 2) {
+                emote = -1;
+                if (isLocal()) dev.mcreload.anim.client.net.ClientSync.event(player, dev.mcreload.anim.net.AnimPacket.EMOTE, -1);
+            }
         }
         emoteW.to(emote >= 0 ? 1f : 0f, dt);
         if (emote >= 0) idleSince = time;
@@ -699,7 +811,7 @@ public final class MotionState {
             idleSince = time;
             nextIdleAt = 8f + rng.nextFloat() * 4f;
         }
-        if (idleAction < 0 && emote < 0 && time - idleSince > nextIdleAt) {
+        if (idleAction < 0 && emote < 0 && time - idleSince > nextIdleAt && !remoteDriven()) {
             int pick;
             ItemStack held = player.getMainHandItem();
             if (!held.isEmpty()) {
@@ -714,6 +826,7 @@ public final class MotionState {
             }
             idleAction = lastIdleAction = pick;
             idleActionStart = time;
+            if (isLocal()) dev.mcreload.anim.client.net.ClientSync.event(player, dev.mcreload.anim.net.AnimPacket.IDLE, pick);
         }
         idleW.to(idleAction >= 0 ? 1f : 0f, dt);
     }
@@ -783,7 +896,8 @@ public final class MotionState {
     }
 
     private boolean isLocalPressingBack() {
-        return player instanceof net.minecraft.client.player.LocalPlayer lp && lp.input != null && lp.input.forwardImpulse < -0.1f;
+        if (player instanceof net.minecraft.client.player.LocalPlayer lp) return lp.input != null && lp.input.forwardImpulse < -0.1f;
+        return remoteBit(dev.mcreload.anim.net.AnimPacket.BIT_BACK);
     }
 
     /** Distance from the shoulders (1.3 blocks up) down to... i.e. how deep the shoulders are under the surface. */
@@ -846,6 +960,7 @@ public final class MotionState {
         if (player instanceof net.minecraft.client.player.LocalPlayer lp && lp.input != null) {
             return lp.input.forwardImpulse > 0.1f;
         }
+        if (remoteDriven()) return remoteBit(dev.mcreload.anim.net.AnimPacket.BIT_FORWARD);
         return Math.sqrt(vx * vx + vz * vz) > 0.12;
     }
 
@@ -940,7 +1055,7 @@ public final class MotionState {
         if (held.getItem() instanceof net.minecraft.world.item.FishingRodItem) return FISH;
         if (held.getItem() instanceof net.minecraft.world.item.TridentItem && !isLocalUsing()) return STAB;
         // Right-click on a block (placing, opening, using an item on it): a press of the hand.
-        if (isLocalUsing() || (player != Minecraft.getInstance().player && held.getItem() instanceof net.minecraft.world.item.BlockItem)) {
+        if (isLocalUsing() || (!isLocal() && !remoteDriven() && held.getItem() instanceof net.minecraft.world.item.BlockItem)) {
             return PLACE;
         }
         if (held.isEmpty()) return targetingBlock() ? FIST_BLOCK : PUNCH;
@@ -959,7 +1074,8 @@ public final class MotionState {
 
     private boolean isLocalUsing() {
         Minecraft mc = Minecraft.getInstance();
-        return player == mc.player && mc.options.keyUse.isDown();
+        if (player == mc.player) return mc.options.keyUse.isDown();
+        return remoteBit(dev.mcreload.anim.net.AnimPacket.BIT_USE);
     }
 
     /** Vanilla swings the arm when you drop an item (Q): detect it for your own player. */
@@ -971,7 +1087,8 @@ public final class MotionState {
     /** For you: are you hitting a block (chopping a tree) rather than a mob? Others: assume a mob. */
     private boolean targetingBlock() {
         Minecraft mc = Minecraft.getInstance();
-        return player == mc.player && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK;
+        if (player == mc.player) return mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK;
+        return remoteBit(dev.mcreload.anim.net.AnimPacket.BIT_TARGET_BLOCK);
     }
 
     /** Sword combo strikes. */

@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Cuts a model quad by the horizontal plane y = jy into the part above and the part below. */
-final class Clip {
+public final class Clip {
     private static final float EPS = 1e-4f;
 
-    static void split(ModelPart.Polygon poly, float jy, List<float[][]> above, List<float[][]> below) {
+    public static void split(ModelPart.Polygon poly, float jy, List<float[][]> above, List<float[][]> below) {
         ModelPart.Vertex[] vs = poly.vertices;
         if (vs.length < 3) return;
         List<float[]> pts = new ArrayList<>(vs.length);

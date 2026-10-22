@@ -93,6 +93,25 @@ public final class Joint {
         return bent;
     }
 
+    /** Joint line (part space, pixels). */
+    public float jointY() {
+        return jy;
+    }
+
+    public boolean upperMoves() {
+        return upperMoves;
+    }
+
+    /** Hinge pivot (part space, pixels); valid while {@link #bent()}. */
+    public float[] pivot() {
+        return pivot;
+    }
+
+    /** Hinge rotation; valid while {@link #bent()}. */
+    public Quaternionf rotation() {
+        return rot;
+    }
+
     /** The hinge transform in part space. */
     public void apply(PoseStack ps) {
         if (!bent) return;

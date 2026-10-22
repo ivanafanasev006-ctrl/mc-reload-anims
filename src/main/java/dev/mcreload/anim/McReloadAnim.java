@@ -14,9 +14,9 @@ import net.minecraftforge.network.NetworkConstants;
 import org.slf4j.Logger;
 
 /**
- * Entry point. Everything this mod does is client side: it only changes how players are drawn.
- * The mod is therefore safe to have on a server (it does nothing there) and is not required
- * on the server for clients to use it.
+ * Entry point. Almost everything this mod does is client side: it only changes how players are
+ * drawn. On a server (or the host of a LAN game) it also passes animation sync messages between
+ * players (emotes, rolls, keys held); it is never required there, and clients without it can join.
  */
 @Mod(McReloadAnim.MODID)
 public final class McReloadAnim {
@@ -29,6 +29,8 @@ public final class McReloadAnim {
                 () -> new IExtensionPoint.DisplayTest(() -> NetworkConstants.IGNORESERVERONLY, (remote, fromServer) -> true));
 
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        // Multiplayer sync channel (both sides; optional on both ends).
+        dev.mcreload.anim.net.KinetrixNet.init();
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC, MODID + "-client.toml");
             // Only touched on the client, so the class (and playerAnimator) is never loaded on a server.

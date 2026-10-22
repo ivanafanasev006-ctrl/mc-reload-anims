@@ -1,0 +1,99 @@
+name: Compatibility self-test
+
+# Runs the game with Entity Model Features + Fresh Moves, Skin Layers 3D, Better Combat,
+# Vintage Animations and Embeddium next to Kinetrix, plus a second (server-driven) player.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mods:
+        description: 'compat mods (all or comma list: emf,skin,bc,vintage,embeddium)'
+        default: 'all'
+      only:
+        description: 'scenario regex'
+        default: '^(00_stand|03b|05_fist|08a|10b|28_sneak|29_back_jump|40_emote_(dance|flex|meditate)|45_fidget_10|6\d_|99_)'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: compat
+  cancel-in-progress: true
+
+jobs:
+  compat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install virtual display and software OpenGL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 mesa-utils x11-xserver-utils > /dev/null
+
+      - name: Resource packs (Fresh Moves, test skin with full outer layers)
+        run: |
+          mkdir -p run/resourcepacks /tmp/out
+          curl -sSL -o run/resourcepacks/FreshMoves.zip "https://cdn.modrinth.com/data/slufHzC2/versions/lHNQh6Gv/-1.21.2%20Fresh%20Moves%20v3.1%20%28No%20Animated%20Eyes%29.zip"
+          unzip -l run/resourcepacks/FreshMoves.zip > /tmp/out/freshmoves-files.txt || true
+          P=run/resourcepacks/kinetrix-testskin
+          mkdir -p $P/assets/minecraft/textures/entity/player/wide $P/assets/minecraft/textures/entity/player/slim
+          echo '{"pack":{"pack_format":15,"description":"Kinetrix test skin"}}' > $P/pack.mcmeta
+          for n in alex ari efe kai makena noor steve sunny zuri; do
+            cp ci/compat/testskin.png $P/assets/minecraft/textures/entity/player/wide/$n.png
+            cp ci/compat/testskin.png $P/assets/minecraft/textures/entity/player/slim/$n.png
+          done
+          cat > run/options.txt <<'OPT'
+          onboardAccessibility:false
+          pauseOnLostFocus:false
+          renderDistance:6
+          simulationDistance:6
+          maxFps:60
+          tutorialStep:none
+          joinedFirstServer:true
+          soundCategory_master:0.0
+          resourcePacks:["vanilla","mod_resources","file/FreshMoves.zip","file/kinetrix-testskin"]
+          incompatibleResourcePacks:["file/FreshMoves.zip","file/kinetrix-testskin"]
+          OPT
+          sed -i 's/^ *//' run/options.txt
+          cat run/options.txt
+
+      - name: Run Minecraft with the compatibility test
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          MESA_GL_VERSION_OVERRIDE: '4.5'
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          chmod +x ./gradlew
+          MODS="${{ github.event.inputs.mods }}"; MODS="${MODS:-all}"
+          ONLY="${{ github.event.inputs.only }}"
+          ONLY="${ONLY:-^(00_stand|03b|05_fist|08a|10b|28_sneak|29_back_jump|40_emote_(dance|flex|meditate)|45_fidget_10|6[0-9]_|99_)}"
+          timeout 30m xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient -Pselftest -Pcompat="$MODS" -PselftestOnly="$ONLY" --no-daemon --stacktrace 2>&1 | tee runclient.log || true
+
+      - name: Publish screenshots to the 'selftest-compat' branch
+        if: always()
+        run: |
+          mkdir -p /tmp/out
+          cp run/screenshots/*.png /tmp/out/ 2>/dev/null || true
+          cp run/logs/latest.log /tmp/out/latest.log 2>/dev/null || true
+          cp run/logs/debug.log /tmp/out/debug.log 2>/dev/null || true
+          tail -n 600 runclient.log > /tmp/out/runclient-tail.log 2>/dev/null || true
+          ls -la /tmp/out
+          cd /tmp/out
+          git init -q -b selftest-compat
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -qm "Compat self-test of ${GITHUB_SHA::7} (run ${{ github.run_number }})"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" selftest-compat

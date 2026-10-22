@@ -56,10 +56,14 @@ public final class MobAnimator {
     private static final List<ModelPart> touched = new ArrayList<>();
     private static final List<PartPose> saved = new ArrayList<>();
     private static JointRig bentRig;
+    /** Models that cannot be jointed (another mod's model parts). */
+    private static final java.util.Map<HumanoidModel<?>, Boolean> NO_JOINTS = new java.util.WeakHashMap<>();
 
     public static void apply(LivingEntity e, EntityModel<?> model, PoseStack ps, float pt) {
         if (!Cfg.enabled || !Cfg.mobs || e instanceof Player || e instanceof ArmorStand || e.isInvisible()
                 || e.isSleeping() || e.deathTime > 0) return;
+        // Fresh Animations & co. (Entity Model Features) animate this model themselves.
+        if (dev.mcreload.anim.compat.EmfCompat.isEmfModel(model)) return;
         try {
             float t = (e.tickCount + pt) / 20f;
             float seed = (e.getUUID().hashCode() & 1023) / 1023f * Mth.TWO_PI;
@@ -253,8 +257,13 @@ public final class MobAnimator {
         JointHolder holder = (JointHolder) m;
         JointRig rig = holder.mcreload$getJoints();
         if (rig == null) {
+            if (NO_JOINTS.containsKey(m)) return;
             rig = JointRig.forArmor(m);
             holder.mcreload$setJoints(rig);
+            if (rig == null) {
+                NO_JOINTS.put(m, Boolean.TRUE);
+                return;
+            }
         }
         Signs s = Cfg.signs;
         float rKnee, lKnee, torso;
