@@ -124,6 +124,8 @@ public final class WeaponTrails {
             foreign = true;
         }
         if (!Weapons.isMeleeWeapon(stack)) return;
+        // Better Combat Particle already draws its own slash effect for Better Combat attacks.
+        if (foreign && ModCompat.bcParticle) return;
 
         Vec3[] points = bladePoints(player, rig, armPart, arm == HumanoidArm.LEFT, stack, pt);
         if (points == null) return;

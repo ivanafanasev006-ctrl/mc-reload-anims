@@ -195,7 +195,9 @@ public final class MotionState {
     // ---- melee / tools ----
     public static final int SLASH_H = 0, SLASH_V = 1, SLASH_BACK = 2, SPIN = 3, PUNCH = 4, TOOL = 5,
             PICK = 6, SHOVEL = 7, HOE = 8, CHOP = 9, AXE_OVER = 10, AXE_SWEEP = 11, THROW = 12, FIST_BLOCK = 13, PLACE = 14,
-            FISH = 15, STAB = 16;
+            FISH = 15, STAB = 16,
+            /** An attack animated by another mod (Better Combat): nothing of ours plays. */
+            FOREIGN_ATTACK = 99;
     /** Sword combo order: forehand, backhand, overhead, spinning finisher. */
     private static final int[] SWORD_COMBO = {SLASH_H, SLASH_BACK, SLASH_V, SPIN};
     public int slashKind = -1;
@@ -996,6 +998,14 @@ public final class MotionState {
         // Weapons: allow chaining once the hit has landed.
         if (isWeapon(kind) && isWeapon(slashKind) && progress < 0.55f) return;
 
+        // Better Combat owns the attacks of its weapons: its animation plays, ours stays out of it.
+        if ((isSlash(kind) || kind == AXE_OVER || kind == STAB) && dev.mcreload.anim.compat.BetterCombatCompat.handles(held)) {
+            slashKind = FOREIGN_ATTACK;
+            slashStart = time;
+            slashDuration = 0.6f;
+            slashChained = false;
+            return;
+        }
         slashChained = progress < 1.3f && ((isWeapon(kind) && isWeapon(slashKind)) || (isLooping(kind) && kind == slashKind));
         slashSide = arm == HumanoidArm.RIGHT ? 1f : -1f;
         float cooldown = player.getCurrentItemAttackStrengthDelay() / 20f;
