@@ -419,7 +419,7 @@ public final class SelfTest {
                     for (int x = 3; x <= 4; x++) sp.serverLevel().setBlock(new BlockPos(x, Y + 1, -6), Blocks.GLASS.defaultBlockState(), 3);
                 },
                 (mc, t) -> {
-                    if (t == 4 || t == 104) net.minecraft.client.KeyMapping.click(dev.mcreload.anim.client.PostureControl.CRAWL.getKey());
+                    if (t == 6 || t == 104) dev.mcreload.anim.client.PostureControl.testPress(true);
                     move(mc, t > 30 && t < 100, false, false, false);
                 }, new Window(14, 30, 2, 0.3f), new Window(36, 98, 8, 0.12f), new Window(106, 125, 2, 0.3f)));
         // Sitting (key X) in each of the three ways, then standing up again by walking off.
@@ -428,9 +428,9 @@ public final class SelfTest {
             SCENARIOS.add(new Scenario("71_sit_" + style, 70, sp -> place(sp, 2, Y, 0, -90, none),
                     (mc, t) -> {
                         move(mc, t >= 62, false, false, false);
-                        if (t == 4) net.minecraft.client.KeyMapping.click(dev.mcreload.anim.client.PostureControl.SIT.getKey());
-                        if (t == 8) { var m = localMotion(mc); if (m != null) m.sitStyle = st; }
-                    }, new Window(4, 16, 3, 0.1f), new Window(24, 60, 2, 0.6f), new Window(62, 70, 2, 0.15f)));
+                        if (t == 6) dev.mcreload.anim.client.PostureControl.testPress(false);
+                        if (t >= 8 && t <= 20) { var m = localMotion(mc); if (m != null && m.sitting) m.sitStyle = st; }
+                    }, new Window(6, 18, 3, 0.1f), new Window(24, 60, 2, 0.6f), new Window(62, 70, 2, 0.15f)));
         }
         // The friend crawls past and sits down (as their client would tell us).
         SCENARIOS.add(new Scenario("72_friend_posture", 150, sp -> place(sp, 2, Y, -1, -90, none),

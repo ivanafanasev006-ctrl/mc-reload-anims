@@ -148,6 +148,8 @@ final class PostureModule implements AnimModule {
         arm.override(rx, 0f, rz, w);
         arm.overrideBendAxis(side > 0 ? -Mth.HALF_PI : Mth.HALF_PI, w);
         arm.overrideBend(s.elbow() * k[3], w);
+        // The shoulder goes with the reach (ahead = -y here) and back with the pull.
+        arm.py -= 1.6f * AngleMath.clamp((k[1] - 0.3f) / 0.65f, -0.5f, 1f) * w;
     }
 
     /**

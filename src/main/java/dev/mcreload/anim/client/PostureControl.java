@@ -40,6 +40,15 @@ public final class PostureControl {
     /** 0 = standing, 1..3 = sitting in that style. */
     private static int sit;
     private static boolean sitShared;
+    /** Sit pressed a moment ago while it could not start yet (landing from a hop): sit when possible. */
+    private static int sitQueued;
+    /** Presses made by the self-test (it cannot type on the keyboard). */
+    private static boolean testCrawl, testSit;
+
+    /** Self-test: press the crawl or the sit key once. */
+    public static void testPress(boolean crawl) {
+        if (crawl) testCrawl = true; else testSit = true;
+    }
     private static final java.util.Random RNG = new java.util.Random();
 
     /** Your sitting style (0 = not sitting), for your own rig. */
@@ -68,6 +77,8 @@ public final class PostureControl {
         if (sitDown && !sitWasDown) sitPressed = true;
         crawlWasDown = crawlDown;
         sitWasDown = sitDown;
+        if (testCrawl) { crawlPressed = true; testCrawl = false; }
+        if (testSit) { sitPressed = true; testSit = false; }
         if (p == null) return;
         boolean server = ClientSync.serverHasKinetrix();
 
@@ -99,10 +110,18 @@ public final class PostureControl {
         boolean wantSit;
         if (Cfg.toggleSit) wantSit = sitPressed ? sit == 0 : sit > 0;
         else wantSit = sitDown;
+        if (sitQueued > 0) {
+            sitQueued = moving(p) ? 0 : sitQueued - 1;
+            if (sitQueued > 0 && sit == 0 && !sitPressed) wantSit = true;
+        }
         if (crawling || p.isVisuallyCrawling()) wantSit = false;
         if (wantSit && sit == 0) {
             double h = p.getDeltaMovement().horizontalDistanceSqr();
-            if (!Posture.canSit(p) || h > 0.003 || moving(p)) wantSit = false;
+            boolean able = Posture.canSit(p) && h <= 0.003 && !moving(p);
+            // Pressed in the air (a little hop, just teleported): sit as soon as we land.
+            if (!able && sitPressed && Cfg.toggleSit && !p.onGround() && !moving(p)) sitQueued = 12;
+            if (!able) wantSit = false;
+            else sitQueued = 0;
         }
         if (sit > 0 && (moving(p) || !Posture.canKeepSitting(p) || p.isShiftKeyDown())) wantSit = false;
         if (wantSit && sit == 0) setSit(p, 1 + RNG.nextInt(Posture.SIT_STYLES), server);
