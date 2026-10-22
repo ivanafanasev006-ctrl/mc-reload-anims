@@ -182,23 +182,24 @@ final class SkinLayersBend implements MeshTransformerProvider {
 
     private static final Map<ModelPart.Cube, CubeState> CUBES = Collections.synchronizedMap(new WeakHashMap<>());
 
-    /** A cube whose faces were cut at the joint line, with the unbent corner positions. */
+    /**
+     * A cube whose faces were cut along the voxel rows around the joint line, with the unbent
+     * corner positions. Like the voxels, every corner bends on its own side, so the flat faces
+     * follow the voxels exactly (the row across the joint is sheared, not torn).
+     */
     private static final class CubeState {
         final float cut;
         final ModelPart.Polygon[] original;
         final ModelPart.Polygon[] polys;
-        final boolean[] upper;
         final float[] pos, normals;
 
-        private CubeState(float cut, ModelPart.Polygon[] original, List<ModelPart.Polygon> polys, List<Boolean> upper) {
+        private CubeState(float cut, ModelPart.Polygon[] original, List<ModelPart.Polygon> polys) {
             this.cut = cut;
             this.original = original;
             this.polys = polys.toArray(new ModelPart.Polygon[0]);
-            this.upper = new boolean[this.polys.length];
             this.pos = new float[this.polys.length * 12];
             this.normals = new float[this.polys.length * 3];
             for (int i = 0; i < this.polys.length; i++) {
-                this.upper[i] = upper.get(i);
                 ModelPart.Polygon p = this.polys[i];
                 for (int k = 0; k < 4; k++) {
                     Vector3f v = p.vertices[k].pos;
@@ -215,15 +216,19 @@ final class SkinLayersBend implements MeshTransformerProvider {
         static CubeState split(ModelPart.Cube cube, float cut) {
             CubeAccessor acc = (CubeAccessor) (Object) cube;
             ModelPart.Polygon[] old = acc.mcreload$polygons();
-            List<ModelPart.Polygon> out = new ArrayList<>();
-            List<Boolean> side = new ArrayList<>();
-            for (ModelPart.Polygon p : old) {
-                List<float[][]> above = new ArrayList<>(), below = new ArrayList<>();
-                Clip.split(p, cut, above, below);
-                for (float[][] q : above) { out.add(polygon(q)); side.add(true); }
-                for (float[][] q : below) { out.add(polygon(q)); side.add(false); }
+            List<ModelPart.Polygon> polys = new ArrayList<>(java.util.Arrays.asList(old));
+            float lo = (float) Math.floor(cut), hi = (float) Math.ceil(cut);
+            for (float line : hi > lo ? new float[]{lo, hi} : new float[]{lo}) {
+                List<ModelPart.Polygon> next = new ArrayList<>();
+                for (ModelPart.Polygon p : polys) {
+                    List<float[][]> above = new ArrayList<>(), below = new ArrayList<>();
+                    Clip.split(p, line, above, below);
+                    for (float[][] q : above) next.add(polygon(q));
+                    for (float[][] q : below) next.add(polygon(q));
+                }
+                polys = next;
             }
-            CubeState st = new CubeState(cut, old, out, side);
+            CubeState st = new CubeState(cut, old, polys);
             acc.kinetrix$setPolygons(st.polys);
             return st;
         }
@@ -241,22 +246,22 @@ final class SkinLayersBend implements MeshTransformerProvider {
             return p;
         }
 
-        /** Restores the straight corners, then hinges the moving side (bender null = straight). */
+        /** Restores the straight corners, then hinges every corner on the moving side (null = straight). */
         void apply(Bender b) {
             for (int i = 0; i < polys.length; i++) {
                 ModelPart.Polygon p = polys[i];
-                boolean move = b != null && (b.upperMoves == upper[i]);
+                int moved = 0;
                 for (int k = 0; k < 4; k++) {
                     int o = i * 12 + k * 3;
                     Vector3f v = p.vertices[k].pos;
-                    if (move) {
-                        b.rotate(v, b.sx * (pos[o] + b.tx), b.sy * (pos[o + 1] + b.ty), b.sz * pos[o + 2]);
-                    } else {
-                        v.set(pos[o], pos[o + 1], pos[o + 2]);
-                    }
+                    v.set(pos[o], pos[o + 1], pos[o + 2]);
+                    if (b != null && b.hinge(v)) moved++;
                 }
                 p.normal.set(normals[i * 3], normals[i * 3 + 1], normals[i * 3 + 2]);
-                if (move) b.rot.transform(p.normal);
+                if (b != null) {
+                    if (moved == 4) b.rot.transform(p.normal);
+                    else if (moved > 0) b.half.transform(p.normal);
+                }
             }
         }
     }

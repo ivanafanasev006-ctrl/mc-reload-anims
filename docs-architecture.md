@@ -1,6 +1,6 @@
 # Kinetrix (бывш. MC Reload Animations): архитектура и решения
 
-Текущая версия: **1.0.0-beta**.
+Текущая версия: **1.0.1-beta**.
 
 **Цель:** анимации игрока в духе Mo' Bends для Forge 1.20.1. Мод работает самостоятельно и плавно смешивается с Better Combat, Iron's Spells 'n Spellbooks и Emotecraft.
 
@@ -15,6 +15,13 @@
 - Около 30 сценариев. Результат пушится в ветку `selftest`.
 - Сценарии стартуют только после того, как сервер достроил трек (`worldReady`): на медленной машине первые сценарии однажды прошли в точке спавна.
 - **Ограничения CI.** Звуковой карты нет, поэтому реакции на звук (взрыв, блок щитом, тотем) тест вызывает напрямую. Элитры запускаются пакетом START_FALL_FLYING, сон через `startSleeping`, безделье через `MotionState.forceIdle`.
+
+## Тест совместимости (`compat.yml`)
+- Настоящий (production) клиент Forge 1.20.1-47.4.20 через лаунчер **portablemc** под Xvfb: собранный reobf-jar Kinetrix + моды с Modrinth (по id версии): playerAnimator, Skin Layers 3D 1.11.1, ETF 6.2.9 + EMF 2.4.1, Cloth Config, Better Combat 1.9.0 + Better Combat Particle, Architectury + Vintage Animations 1.3.0, Embeddium 0.3.31. Ресурспаки: Fresh Moves v3.1 и тестовый скин с полным внешним слоем (`ci/compat/testskin.png`, подменяет все 9 дефолтных скинов).
+- В dev-окружении (`fg.deobf`) Skin Layers 3D не запускается: вложенная библиотека TRansition остаётся с SRG-именами. Поэтому тест совместимости — только production.
+- `options.txt`: паки НЕ класть в `incompatibleResourcePacks` — ванилла тогда снимает их с выбора («now compatible» без добавления).
+- Подмножество сценариев: `-Dmcreload.selftest.only=<regex>`. Сценарий `65_friend` — второй игрок (FakePlayer, сервер двигает его и шлёт sync-пакеты), `99_emf_player` — отдаёт модель игрока EMF (F3+T) и проверяет, что ничего не ломается.
+- FakePlayer не тикает: предмет в руке рассылать вручную (`ClientboundSetEquipmentPacket`).
 
 ## Решения
 - **Платформа:** Forge 1.20.1 (47.x), Java 17, ForgeGradle 6, Gradle 8.8.
@@ -118,6 +125,15 @@
   - **Эмоции**: медитация — «бабочка» (бёдра в стороны, колени складываются вбок через `bendAxis` ±π/2, одна нога чуть выше — без совпадающих граней); «покрасоваться» — руки перед животом на расстоянии, кулаки на разной высоте.
   - Описание для CurseForge: `CURSEFORGE.md`.
 
+- **1.0.1-beta (22.10.2026), сборка Otherworld v8 HF2 (435 модов) + игра с другом по LAN:**
+  - **Причины «дефолтных кубов», невидимой брони и наложения анимаций:** ресурспак **Fresh Moves** через **EMF** подменял модель игрока своими деталями (`EMFModelPart`), анимировал её во время отрисовки поверх всех и переключал состояния деталей (`setFromState` возвращает старые `cubes`/`children`/`skipDraw` → наши половинки суставов терялись); **Skin Layers 3D** рисовал прямой 3D-слой поверх согнутых рук и ног.
+  - **EMF:** `@Pseudo`-миксин на `EMFConfig.isModelDisabled(String)` (есть и в 2.4.1, и в 3.x) возвращает true для `player*` (кроме `player_head`) → игрок остаётся ванильным, его анимирует Kinetrix (`compat.playerOverEmf`, действует после F3+T). Миксин добавляется плагином (`KinetrixMixinPlugin.getMixins`) только если EMF установлен. `JointRig` не режет детали-подклассы `ModelPart` (EMF, GeckoLib...) — модель остаётся целой. Мобы с моделями EMF (Fresh Animations) Kinetrix не трогает (`EMFAnimationApi.isModelCustomizedByEMF` через MethodHandle).
+  - **Skin Layers 3D:** через его API: `MeshTransformerProvider` (по `ModelPart` → `PartBinding` → `Joint`) гнёт вершины вокселей: пространство меша → часть `p = S·(16·m + t)` (S = (baseVoxelSize | bodyVoxelWidthSize, 1.035, baseVoxelSize), t = (±0.998 / ±0.499 для slim, −0.1) у рук, (0, −0.2) у ног и торса), шарнир, обратно. Большой плоский куб (fastRender) один раз режется по линии сустава (`Clip.split`, новые `Polygon` через AT), каждый кадр позиции восстанавливаются и шарнир применяется к движущейся стороне. `LayerFeatureTransformerAPI` двигает 3D-слой головы и рук вместе с наклоном пояса. Компиляция против настоящего jar (`compileOnly fg.deobf("maven.modrinth:3dskinlayers:egmtcJdf")`).
+  - **Мультиплеер:** канал `kinetrix:sync` (SimpleChannel, `acceptMissingOr` с обеих сторон, мод теперь грузится и на сервере; клиент шлёт только если `isRemotePresent`). Пакет `AnimPacket(entityId, type, value)`: STATE (биты W/S/A/D, прыжок, присед, ПКМ, ЛКМ, смотрит на блок), EMOTE, IDLE, LAND (кувырок/кувырок назад/меч). Сервер пересылает игрокам рядом с модом (не FakePlayer), лимит 40/с, помнит STATE/EMOTE для тех, кто подходит позже (`StartTracking`). Удалённый игрок с синхронизацией (`remoteDriven`): клавиши и «бьёт блок / моба» из битов, эмоции и idle только из пакетов, особые приземления — из LAND (ждёт касания земли до 2 с; если пакет опоздал — кувырок сразу).
+  - **Приоритет:** миксин на `AnimationStack` (`@Redirect IAnimation.isActive` в get3DTransform/tick/getFirstPerson*): чужие слои глушатся во время наших движений всем телом (эмоция, кувырок 0.45 с, меч 1.2 с) и всегда — для модов из `compat.priorityOverMods` (по умолчанию `vintage_animations`). Владелец слоя: неймспейс анимации из `PlayerAnimationRegistry` (по identity `KeyframeAnimation`) или имя модуля класса. Проверено: Vintage Animations определяется и глушится.
+  - **Better Combat:** если оружие есть в `WeaponRegistry.getAttributes` (рефлексия), наш удар не запускается (`FOREIGN_ATTACK`) — играет атака BC (и паки вроде Malfu). С Better Combat Particle (`bc_particle`) наш след для атак BC не рисуется.
+  - Xenon (форк Embeddium в сборке) и Embeddium трогают только `ModelPart.compile` — `JointPart.render` их не касается.
+
 ## Отзывы пользователя
 - 0.9.0: хорошо — бег, прыжки, присед, клики, плавание со спринтом, лодка, лестница, перекат. Еда «почти»: нужна еда у рта, а не кулак.
 - 0.8: идеально — бег, прыжки, присед, обычные клики, плавание со спринтом, лодка, лестница, смена рук, кувырок, обычное приземление.
@@ -133,5 +149,4 @@
 
 ## Открытые вопросы
 - Арбалет: доработать перезарядку и походку (опционально).
-- Совместимость с EMF / Fresh Animations: Player.
 - Возможно: многоскок, NeoForge 1.21.1, экран настроек.

@@ -390,10 +390,17 @@ public final class SelfTest {
                     if (t == 10) { var m = localMotion(mc); if (m != null) m.playEmote(dev.mcreload.anim.client.rig.MotionState.EMOTE_FLEX); }
                 }, new Window(30, 80, 3, 0.5f)));
         SCENARIOS.add(new Scenario("62_attack_key", 44, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
-                (mc, t) -> { if (t == 10 || t == 24) net.minecraft.client.KeyMapping.click(mc.options.keyAttack.getKey()); },
-                new Window(10, 40, 8, 0.03f)));
-        SCENARIOS.add(new Scenario("63_pick_mining", 50, sp -> placeLook(sp, 2, Y, 0, -90, 60, new ItemStack(Items.IRON_PICKAXE)),
-                (mc, t) -> mc.options.keyAttack.setDown(t > 8 && t < 45), new Window(12, 45, 5, 0.12f)));
+                (mc, t) -> { if (t == 10 || t == 30) net.minecraft.client.KeyMapping.click(mc.options.keyAttack.getKey()); },
+                new Window(10, 50, 10, 0.2f)));
+        // Mining an obsidian block (survival, so it does not break) with the attack key held.
+        SCENARIOS.add(new Scenario("63_pick_mining", 50, sp -> {
+                    place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_PICKAXE));
+                    sp.setGameMode(GameType.SURVIVAL);
+                    sp.serverLevel().setBlock(new BlockPos(4, Y + 1, 0), Blocks.OBSIDIAN.defaultBlockState(), 3);
+                    sp.serverLevel().setBlock(new BlockPos(4, Y, 0), Blocks.OBSIDIAN.defaultBlockState(), 3);
+                    sp.teleportTo(sp.serverLevel(), 2.5, Y, 0.5, -90, 10f);
+                },
+                (mc, t) -> mc.options.keyAttack.setDown(t > 8 && t < 45), new Window(12, 45, 6, 0.25f)));
         // Empty-hand fidgets, then the same with a torch in the other hand.
         int[] idles = {dev.mcreload.anim.client.rig.MotionState.IDLE_STRETCH, dev.mcreload.anim.client.rig.MotionState.IDLE_SCRATCH,
                 dev.mcreload.anim.client.rig.MotionState.IDLE_SHADOWBOX, dev.mcreload.anim.client.rig.MotionState.IDLE_YAWN,
@@ -766,6 +773,12 @@ public final class SelfTest {
         sp.serverLevel().setDayTime(6000);
         sp.setItemInHand(InteractionHand.MAIN_HAND, hand.copy());
         sp.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+        if (!sp.isCreative()) sp.setGameMode(GameType.CREATIVE);
+        // The obsidian target of the mining test.
+        if (sp.serverLevel().getBlockState(new BlockPos(4, Y, 0)).is(Blocks.OBSIDIAN)) {
+            sp.serverLevel().setBlock(new BlockPos(4, Y, 0), Blocks.AIR.defaultBlockState(), 3);
+            sp.serverLevel().setBlock(new BlockPos(4, Y + 1, 0), Blocks.AIR.defaultBlockState(), 3);
+        }
         sp.getAbilities().flying = false;
         sp.onUpdateAbilities();
         sp.setDeltaMovement(0, 0, 0);
