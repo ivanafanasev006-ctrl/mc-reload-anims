@@ -23,9 +23,12 @@ Zombies, skeletons, piglins, villagers, wandering traders, witches, iron golems,
 ## Compatibility
 
 - **Requires:** [Player Animator](https://www.curseforge.com/minecraft/mc-mods/playeranimator) (by KosmX) for Forge 1.20.1.
-- **Works with:** Better Combat and Iron's Spells 'n Spellbooks (their animations blend in smoothly), Emotecraft and any other Player Animator based mod.
+- **Works with:** Better Combat (and its animation packs such as Malfu Combat Animation), Iron's Spells 'n Spellbooks, Emotecraft and any other Player Animator based mod — attacks and casts play on top and blend in smoothly, while the vanilla-replacement animations stay Kinetrix's.
+- **Entity Model Features / Fresh Animations / Fresh Moves:** the player keeps the vanilla model so Kinetrix can animate it with joints (mobs keep their Fresh Animations models). Can be turned off in the config.
+- **Skin Layers 3D:** the 3D outer skin layer bends at the elbows, knees and waist too.
+- **Embeddium / Oculus / Shoulder Surfing Reloaded:** fine.
 - **Not needed:** bendy-lib — Kinetrix draws the bends itself (if bendy-lib is installed, Kinetrix steps aside and lets it).
-- **Client side only.** Safe on servers, not required there; other players see your animations if they have Kinetrix too.
+- **Client side mod, optional on servers.** Put it on the server (or have it on the host of a LAN world) and players who have Kinetrix see each other's emotes, rolls, landings and idle fidgets exactly as chosen. Players without it can still join.
 
 ## Configuration
 
@@ -47,4 +50,4 @@ This is a beta: please report anything that looks wrong (a short video helps a l
 - 20 эмоций (клавиша **B**).
 - Мобы оживают: дыхание, покачивание при ходьбе, головы и хвосты; зомби, скелеты и пиглины сгибают колени и локти.
 
-**Нужен:** Player Animator. **Совместим:** Better Combat, Iron's Spells 'n Spellbooks, Emotecraft. Только клиент.
+**Нужен:** Player Animator. **Совместим:** Better Combat (и Malfu Combat Animation), Iron's Spells 'n Spellbooks, Emotecraft, Fresh Animations / Fresh Moves (игроку остаётся ванильная модель), Skin Layers 3D (3D-слой гнётся), Embeddium, Shoulder Surfing. Клиентский мод; если поставить его ещё и на сервер (или он есть у хоста LAN-мира), игроки видят эмоции и кувырки друг друга.

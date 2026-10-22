@@ -77,27 +77,6 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
-// Compatibility run (CI): the game starts with the mods Kinetrix has to get along with.
-// -Pcompat=all or a comma list of: emf, skin, bc, vintage, embeddium
-if (project.hasProperty('compat')) {
-    def wanted = project.property('compat').toString().split(',')*.trim()
-    def want = { String k -> wanted.contains('all') || wanted.contains(k) }
-    dependencies {
-        if (want('skin')) runtimeOnly fg.deobf("maven.modrinth:3dskinlayers:${skinlayers_version}")
-        if (want('emf')) {
-            runtimeOnly fg.deobf("maven.modrinth:entitytexturefeatures:rGt1IuJq")   // ETF 6.2.9
-            runtimeOnly fg.deobf("maven.modrinth:entity-model-features:p39UPPar")   // EMF 2.4.1
-        }
-        if (want('bc') || want('vintage')) runtimeOnly fg.deobf("maven.modrinth:cloth-config:t8TXrZvZ")
-        if (want('bc')) runtimeOnly fg.deobf("maven.modrinth:better-combat:rnhiaw3t")
-        if (want('vintage')) {
-            runtimeOnly fg.deobf("maven.modrinth:architectury-api:1MKTLiiG")
-            runtimeOnly fg.deobf("maven.modrinth:vintage-animations:FjjV91bc")
-        }
-        if (want('embeddium')) runtimeOnly fg.deobf("maven.modrinth:embeddium:UTbfe5d1")
-    }
-}
-
 tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [
             minecraft_version      : minecraft_version,

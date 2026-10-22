@@ -4,6 +4,7 @@
   "package": "dev.mcreload.anim.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "kinetrix.refmap.json",
+  "plugin": "dev.mcreload.anim.mixin.KinetrixMixinPlugin",
   "client": [
     "AgeableListModelMixin",
     "ChickenModelAccessor",
@@ -20,8 +21,7 @@
     "ModelPartAccessor",
     "PlayerModelMixin",
     "PlayerRendererMixin",
-    "compat.AnimationStackMixin",
-    "compat.EmfConfigMixin"
+    "compat.AnimationStackMixin"
   ],
   "injectors": {
     "defaultRequire": 1

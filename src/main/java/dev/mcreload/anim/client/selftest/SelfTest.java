@@ -407,7 +407,7 @@ public final class SelfTest {
                         (mc, t) -> {
                             move(mc, false, false, false, false);
                             if (t == 8) { var m = localMotion(mc); if (m != null) m.forceIdle(a); }
-                        }, new Window(12, 76, 6, 0.25f)));
+                        }, new Window(12, 76, 6, 0.55f)));
             }
         }
         SCENARIOS.add(new Scenario("65_friend", 300, sp -> place(sp, 2, Y, -1, -90, none),
@@ -475,10 +475,12 @@ public final class SelfTest {
                 f.swing(InteractionHand.MAIN_HAND, true);
             } else if (t == 152) {                        // eats
                 f.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.APPLE, 4));
+                showHand(lvl, f);
                 f.startUsingItem(InteractionHand.MAIN_HAND);
             } else if (t == 186) {
                 f.stopUsingItem();
                 f.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                showHand(lvl, f);
             } else if (t == 190) {                        // emote chosen on their screen
                 sync(me, f, dev.mcreload.anim.net.AnimPacket.EMOTE, dev.mcreload.anim.client.rig.MotionState.EMOTE_RUNNING_MAN);
             } else if (t == 244) {
@@ -486,9 +488,9 @@ public final class SelfTest {
                 sync(me, f, dev.mcreload.anim.net.AnimPacket.STATE, dev.mcreload.anim.net.AnimPacket.BIT_FORWARD);
             } else if (t > 246 && t <= 258) {             // up onto a ledge...
                 f.setOnGround(false);
-                f.moveTo(f.getX() + 0.12, f.getY() + 0.42, f.getZ(), -90f, 0f);
+                f.moveTo(f.getX() - 0.05, f.getY() + 0.42, f.getZ(), -90f, 0f);
             } else if (t > 258 && t <= 264) {             // ...and a hard drop, rolling out
-                f.moveTo(f.getX() + 0.12, Math.max(Y, f.getY() - 0.85), f.getZ(), -90f, 0f);
+                f.moveTo(f.getX() + 0.05, Math.max(Y, f.getY() - 0.85), f.getZ(), -90f, 0f);
                 if (t == 263) sync(me, f, dev.mcreload.anim.net.AnimPacket.LAND, dev.mcreload.anim.client.rig.MotionState.LAND_ROLL);
                 if (f.getY() <= Y + 1e-3) f.setOnGround(true);
             } else if (t == 296) {
@@ -499,6 +501,13 @@ public final class SelfTest {
                 friend = null;
             }
         });
+    }
+
+    /** Fake players never tick, so their held item has to be sent by hand. */
+    private static void showHand(ServerLevel lvl, ServerPlayer f) {
+        lvl.getChunkSource().broadcast(f, new net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket(f.getId(),
+                java.util.List.of(com.mojang.datafixers.util.Pair.of(net.minecraft.world.entity.EquipmentSlot.MAINHAND,
+                        f.getMainHandItem().copy()))));
     }
 
     private static void step(ServerPlayer f, double dx, double dz) {
