@@ -365,7 +365,9 @@ public final class MotionState {
             }
             airTicks++;
             minAirVy = Math.min(minAirVy, (float) vy);
-            hardDropAhead = !special && holdingBlade && predictedImpact() > HARD_LANDING;
+            // The item itself, not holdingBlade: that is only refreshed per frame, and a sword can
+            // come into the hand on the very tick the drop starts.
+            hardDropAhead = !special && Weapons.isMeleeWeapon(player.getMainHandItem()) && predictedImpact() > HARD_LANDING;
             // Falling backwards lying back: start the back roll the moment we touch down, like
             // the forward roll.
             if (!special && !rollEarly && Cfg.landing && chillW.v > 0.45f && -vy > 0.2
