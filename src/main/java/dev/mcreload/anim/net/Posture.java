@@ -25,8 +25,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * everyone sees who is sitting.</p>
  */
 public final class Posture {
-    /** Number of sitting styles (SIT packet values 1..SIT_STYLES). */
+    /** Number of sitting styles (SIT packet values 1..SIT_STYLES; 1.0.2 had three, so 3 is still accepted). */
     public static final int SIT_STYLES = 3;
+    /**
+     * Ways of sitting played now: leaning back on the hands, and one knee up with an arm on it.
+     * Any style value maps onto one of them (PostureModule), so older clients still sit right.
+     */
+    public static final int SIT_POSES = 2;
     /** Hitbox height and eye height while sitting on the ground (standing: 1.8 and 1.62). */
     public static final float SIT_HEIGHT = 1.2f, SIT_EYE = 1.0f;
 

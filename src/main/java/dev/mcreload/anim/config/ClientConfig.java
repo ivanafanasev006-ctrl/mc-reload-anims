@@ -22,7 +22,6 @@ public final class ClientConfig {
     public static final ForgeConfigSpec.BooleanValue COMBAT;
     public static final ForgeConfigSpec.BooleanValue REACTIONS;
     public static final ForgeConfigSpec.BooleanValue POSTURES;
-    public static final ForgeConfigSpec.BooleanValue TOGGLE_CRAWL;
     public static final ForgeConfigSpec.BooleanValue TOGGLE_SIT;
 
     public static final ForgeConfigSpec.BooleanValue TRAILS;
@@ -87,10 +86,8 @@ public final class ClientConfig {
                 .define("postures", true);
         b.pop();
 
-        b.comment("Crawl (C) and sit (X) keys, see Controls. Crawling needs Kinetrix on the server too",
-                "(single player and the host of a LAN game always have it).").push("controls");
-        TOGGLE_CRAWL = b.comment("true = press the crawl key to get down and again to get up; false = crawl while it is held.")
-                .define("toggleCrawl", true);
+        b.comment("Crawl (C) and sit (X) keys, see Controls. You crawl while the crawl key is held. Crawling needs",
+                "Kinetrix on the server too (single player and the host of a LAN game always have it).").push("controls");
         TOGGLE_SIT = b.comment("true = press the sit key to sit down and again (or move) to stand up; false = sit while it is held.")
                 .define("toggleSit", true);
         b.pop();
@@ -128,8 +125,8 @@ public final class ClientConfig {
                 .defineListAllowEmpty(java.util.List.of("priorityOverMods"),
                         () -> java.util.List.of("vintage_animations", "vintageanimations"), o -> o instanceof String);
         WIDE_MOUNTS = b.comment("Mounts with a big, wide body (mod ids or entity ids, e.g. \"dragnlivestock\" or \"dragnlivestock:o_horse\"):",
-                        "the rider sits lower, the legs spread round the barrel with the shins along its flanks, and the",
-                        "hands reach further forward for the reins. DragN's Livestock Overhaul horses, donkeys and mules by default.")
+                        "the rider sits lower, the legs point forward a little wider apart, and the hands hold the reins",
+                        "low in front, apart, with the elbows bent. DragN's Livestock Overhaul horses, donkeys and mules by default.")
                 .defineListAllowEmpty(java.util.List.of("wideMounts"), () -> java.util.List.of("dragnlivestock"), o -> o instanceof String);
         PLAYER_OVER_EMF = b.comment("Entity Model Features (Fresh Animations / Fresh Moves): keep the player on the vanilla model so",
                         "Kinetrix animates it with joints. Resource packs like Fresh Moves otherwise replace the player model and",

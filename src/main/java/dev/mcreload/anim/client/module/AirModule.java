@@ -43,10 +43,11 @@ final class AirModule implements AnimModule {
                 float diveW = air * fall * dive;
                 if (jumpW > 0.001f) jump(m, f, s, jumpW, arms, pt);
                 // A real drop (faster than any ordinary jump comes down) with a blade in hand and
-                // W not held: both hands take the sword up overhead, ready to plant it on landing.
+                // W not held: both hands raise the sword in front of the face, point down, ready to
+                // plant it on landing.
                 // Holding W, it is the ordinary fall and a forward roll on landing.
                 float bladeW = m.holdingBlade
-                        ? air * m.bladeReadyW.v * AngleMath.clamp((-m.vertical - 0.50f) / 0.25f, 0f, 1f) : 0f;
+                        ? air * m.bladeReadyW.v * AngleMath.clamp((-m.vertical - 0.50f) / 0.12f, 0f, 1f) : 0f;
                 float plainFall = fallW * (1f - bladeW);
                 if (plainFall > 0.001f) fall(m, f, s, plainFall, arms);
                 if (bladeW > 0.001f) bladeFall(m, f, s, bladeW, arms, m.mainRight ? 1f : -1f,
@@ -133,9 +134,11 @@ final class AirModule implements AnimModule {
     }
 
     /**
-     * Dropping from a height with a sword: both hands on the hilt raised over the head, the blade
-     * pointing up, knees drawn up and the back rounded over it, ready to drive it into the
-     * ground on landing (see ReactionModule#plantBlade, which starts from this pose).
+     * Dropping from a height with a sword: both hands on the hilt held up in front of the face,
+     * the blade already pointing down (point first, like a plunging thrust), knees drawn up and
+     * the back rounded over it, ready to drive it into the ground on landing (see
+     * ReactionModule#plantBlade, which starts from exactly this pose, so the blade never turns
+     * over in the hands).
      */
     private static void bladeFall(MotionState m, PoseFrame f, Signs s, float w, float arms, float side, boolean two) {
         float t = m.time;
@@ -143,16 +146,17 @@ final class AirModule implements AnimModule {
         float aw = w * arms;
         PartPose main = side > 0 ? f.rightArm() : f.leftArm();
         PartPose off = side > 0 ? f.leftArm() : f.rightArm();
-        main.override(-2.55f + 0.05f * a, -side * 0.30f, side * 0.10f, aw);
+        // Arm angles are relative to the chest, which leans 0.22 forward here (see ReactionModule#RAISED_ARM).
+        main.override(ReactionModule.RAISED_ARM - 0.22f + 0.04f * a, -side * 0.30f, side * 0.10f, aw);
         if (two) {
-            off.override(-2.45f + 0.05f * a, side * 0.62f, -side * 0.10f, aw);
+            off.override(ReactionModule.RAISED_ARM - 0.22f + 0.10f + 0.04f * a, side * 0.62f, -side * 0.10f, aw);
         } else {
             off.override(-1.30f + 0.10f * a, 0f, -side * (0.95f + 0.10f * a), aw);
         }
-        main.overrideBend(s.elbow() * 0.35f, aw);
-        off.overrideBend(s.elbow() * 0.45f, aw);
-        // Blade straight up over the head (turned in the fist, see ReactionModule#plantBlade).
-        m.itemTiltTarget = Math.max(m.itemTiltTarget, 0.95f * aw);
+        main.overrideBend(s.elbow() * ReactionModule.RAISED_ELBOW, aw);
+        off.overrideBend(s.elbow() * (two ? 0.25f : 0.45f), aw);
+        // Blade pointing down in front of the body (turned in the fist, see ReactionModule#plantBlade).
+        m.itemTiltTarget = Math.max(m.itemTiltTarget, ReactionModule.RAISED_TILT * aw);
         m.armsHeld = Math.max(m.armsHeld, aw);
         // Knees drawn up, one ahead of the other, ready to take the landing on one knee.
         PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
@@ -161,9 +165,9 @@ final class AirModule implements AnimModule {
         lead.overrideBend(s.knee() * 1.35f, w);
         rear.override(-0.20f - 0.08f * c, 0f, side * 0.12f, w);
         rear.overrideBend(s.knee() * 1.10f, w);
-        // Rounded over the blade, head down watching the landing spot.
+        // Rounded over the blade, head down watching the landing spot (over the fists, not into them).
         Rigging.leanTorso(f, s, 0.22f * w);
-        f.head().rx += 0.35f * w;
+        f.head().rx += 0.20f * w;
         f.body().rx += 0.05f * a * w;
     }
 

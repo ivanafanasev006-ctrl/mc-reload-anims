@@ -9,6 +9,7 @@ import dev.mcreload.anim.client.rig.MotionState;
 import dev.mcreload.anim.client.rig.PlayerRig;
 import dev.mcreload.anim.compat.PersonalityCompat;
 import dev.mcreload.anim.config.Cfg;
+import dev.mcreload.anim.net.Posture;
 import net.minecraft.util.Mth;
 
 /**
@@ -24,22 +25,24 @@ import net.minecraft.util.Mth;
  * ground), -z is down into the ground and x is sideways. Limb directions are written in those
  * terms (out, ahead / back, down) and turned into rotations here.</p>
  *
- * <p><b>Sit.</b> Three relaxed ways of sitting on the ground, changing now and then: leaning back
- * on the hands with one knee up, hugging the knees, and one knee up with an arm resting on it and
- * the other leg folded in front.</p>
+ * <p><b>Sit.</b> Two relaxed ways of sitting on the ground, changing now and then: leaning back
+ * on the hands with one knee up, and one knee up with an arm resting on it and the other leg
+ * folded in front.</p>
  */
 final class PostureModule implements AnimModule {
     // Arm keys: {out, ahead, down, elbow}. The pull goes REACH -> MID -> END, the hand planted.
     // MID, END, the resting arms and the drawn-up knee were fitted on a box model of the player
     // over the whole cycle: the forearms no longer fold back into the chest or across the face,
-    // and the drawn-up shin stays out from under the belly.
+    // and the drawn-up shin stays out from under the belly. The knee is drawn up gently: the
+    // thigh stays angled back from the hip (it does not swing out flat beside the body) and the
+    // knee stays well below the hip.
     private static final float[] REACH = {0.22f, 0.95f, 0.22f, 0.25f};
     private static final float[] MID = {0.72f, 0.0f, 0.34f, 1.28f};
     private static final float[] END = {0.53f, -0.06f, 0.21f, 0.54f};
     /** Lying still: propped on the forearms, hands beside the head. */
     private static final float[] REST_ARM = {0.63f, 0.17f, 0.71f, 1.38f};
     // Leg keys: {out, back, down, knee}. The push goes DRAWN -> EXTENDED.
-    private static final float[] DRAWN = {0.84f, -0.06f, 0.0f, 1.64f};
+    private static final float[] DRAWN = {0.50f, 0.45f, 0.02f, 1.05f};
     private static final float[] EXTENDED = {0.22f, 0.97f, 0.05f, 0.25f};
     private static final float[] REST_LEG = {0.14f, 0.99f, 0.0f, 0.12f};
     /** Part of each arm's cycle spent pulling (the rest is the reach forward). */
@@ -179,10 +182,11 @@ final class PostureModule implements AnimModule {
         float aw = w * handsFree(m);
         int k = (int) (t / SIT_SWITCH);
         float in = t - k * SIT_SWITCH;
-        int cur = (m.sitStyle + k) % 3;
+        // Any style value (older clients still send three) maps onto one of the poses.
+        int cur = (m.sitStyle + k) % Posture.SIT_POSES;
         float drop;
         if (k > 0 && in < SIT_BLEND) {
-            int prev = (m.sitStyle + k - 1) % 3;
+            int prev = (m.sitStyle + k - 1) % Posture.SIT_POSES;
             float bl = AngleMath.ease(in / SIT_BLEND);
             drop = style(prev, f, s, w, aw, w * (1f - bl), t);
             drop += style(cur, f, s, w * bl, aw * bl, w * bl, t);
@@ -224,15 +228,6 @@ final class PostureModule implements AnimModule {
                 arm(f.rightArm(), s, 0.40f, 0f, 0.31f, 0f, 0f, aw);
                 arm(f.leftArm(), s, 0.40f, 0f, -0.31f, 0f, 0f, aw);
                 f.head().rx += 0.27f * add;
-            }
-            case 1 -> {
-                // Knees drawn up, arms wrapped round the shins: the elbows fold sideways so the
-                // forearms cross in front of the shins and the hands meet.
-                recline = -0.05f; waist = 0.22f; forward = 1.9f; up = 1.35f; drop = 0.69f;
-                leg(f.rightLeg(), s, -2.15f, 0f, -0.05f, 2.18f, 0f, w);
-                leg(f.leftLeg(), s, -2.15f, 0f, 0.05f, 2.18f, 0f, w);
-                arm(f.rightArm(), s, -1.50f, -0.20f, -0.06f, 0.60f, -Mth.HALF_PI, aw);
-                arm(f.leftArm(), s, -1.50f, 0.20f, 0.06f, 0.60f, Mth.HALF_PI, aw);
             }
             default -> {
                 // Right knee up with the arm resting over it, left leg folded flat in front, left

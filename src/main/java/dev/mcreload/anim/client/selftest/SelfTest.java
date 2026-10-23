@@ -440,22 +440,22 @@ public final class SelfTest {
                 }, new Window(14, 40, 4, 0.12f), new Window(62, 88, 2, 0.3f), new Window(96, 126, 4, 0.12f),
                 new Window(130, 148, 3, 0.05f), new Window(158, 185, 2, 0.4f), new Window(196, 240, 4, 0.4f),
                 new Window(258, 290, 8, 0.03f)));
-        // Crawl (key C) under a one-block glass ceiling and out again, then stand up (key C again).
+        // Crawl (key C held) under a one-block glass ceiling and out again, then stand up (let go of C).
         SCENARIOS.add(new Scenario("70_crawl", 125, sp -> {
                     place(sp, 1, Y, -6, -90, none);
                     for (int x = 3; x <= 4; x++) sp.serverLevel().setBlock(new BlockPos(x, Y + 1, -6), Blocks.GLASS.defaultBlockState(), 3);
                 },
                 (mc, t) -> {
-                    if (t == 6 || t == 104) dev.mcreload.anim.client.PostureControl.testPress(true);
+                    dev.mcreload.anim.client.PostureControl.testHoldCrawl(t >= 6 && t < 104);
                     move(mc, t > 30 && t < 100, false, false, false);
                 }, new Window(14, 30, 2, 0.3f), new Window(36, 98, 8, 0.12f), new Window(106, 125, 2, 0.3f)));
         // Sitting (key X) in each of the three ways, then standing up again by walking off.
-        for (int style = 0; style < dev.mcreload.anim.net.Posture.SIT_STYLES; style++) {
+        for (int style = 0; style < dev.mcreload.anim.net.Posture.SIT_POSES; style++) {
             final int st = style;
             SCENARIOS.add(new Scenario("71_sit_" + style, 70, sp -> place(sp, 2, Y, 0, -90, none),
                     (mc, t) -> {
                         move(mc, t >= 62, false, false, false);
-                        if (t == 6) dev.mcreload.anim.client.PostureControl.testPress(false);
+                        if (t == 6) dev.mcreload.anim.client.PostureControl.testPressSit();
                         if (t >= 8 && t <= 20) { var m = localMotion(mc); if (m != null && m.sitting) m.sitStyle = st; }
                     }, new Window(6, 18, 3, 0.1f), new Window(24, 60, 2, 0.6f), new Window(62, 70, 2, 0.15f)));
         }

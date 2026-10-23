@@ -261,26 +261,22 @@ final class RideModule implements AnimModule {
         float wide = isWideMount(mount) ? 1f : 0f;
 
         // ---- legs: astride, the knees folding up into the stirrups at speed
-        float fold = (0.15f * trot + 0.45f * gallop + 0.40f * jump) * (1f - 0.5f * wide);
+        float fold = 0.15f * trot + 0.45f * gallop + 0.40f * jump;
         float grip = 0.05f * Math.abs(Mth.sin(phase)) * moving;
-        float thigh = Mth.lerp(wide, -1.00f, -0.40f) + 0.20f * gallop + 0.15f * jump;
-        float splay = Mth.lerp(wide, 0.42f, 0.99f), turnOut = Mth.lerp(wide, 0.25f, 0.17f);
-        float knee = Mth.lerp(wide, 1.00f, 0.71f) + fold;
+        float thigh = -1.00f + 0.20f * gallop + 0.15f * jump;
+        // A wide horse: the legs still point forward, just spread and turned out a little more.
+        float splay = Mth.lerp(wide, 0.42f, 0.62f), turnOut = Mth.lerp(wide, 0.25f, 0.35f);
         f.rightLeg().override(thigh, turnOut, splay - grip, w);
         f.leftLeg().override(thigh, -turnOut, -splay + grip, w);
-        f.rightLeg().overrideBend(s.knee() * knee, w);
-        f.leftLeg().overrideBend(s.knee() * knee, w);
+        f.rightLeg().overrideBend(s.knee() * (1.00f + fold), w);
+        f.leftLeg().overrideBend(s.knee() * (1.00f + fold), w);
         if (wide > 0f) {
-            // Round a wide barrel: the hips spread, the thighs go out over the horse's back and
-            // the knees fold down sideways, so the shins hang along its flanks instead of through
-            // them. The seat comes down onto the saddle (the thighs rise into the hips, so they
-            // stay on top of it). Fitted to the Livestock Overhaul horses' models.
-            f.rightLeg().overrideBendAxis(1.11f, w * wide);
-            f.leftLeg().overrideBendAxis(-1.11f, w * wide);
-            f.rightLeg().px -= 2.0f * wide * w;
-            f.leftLeg().px += 2.0f * wide * w;
-            f.rightLeg().py -= 2.4f * wide * w;
-            f.leftLeg().py -= 2.4f * wide * w;
+            // The seat comes down onto the saddle; the thighs rise into the hips (so they stay on
+            // top of it) and start a little wider apart.
+            f.rightLeg().px -= 0.5f * wide * w;
+            f.leftLeg().px += 0.5f * wide * w;
+            f.rightLeg().py -= 1.5f * wide * w;
+            f.leftLeg().py -= 1.5f * wide * w;
             f.body().py -= 0.09f * wide * w;
         }
 
@@ -312,16 +308,19 @@ final class RideModule implements AnimModule {
         // ---- hands on the reins, following the horse's mouth
         float give = 0.10f * Mth.sin(phase * 2f + 0.6f) * (walk + trot) + 0.12f * gallop * Mth.sin(phase * 2f);
         float reach = 0.30f * gallop + 0.55f * rise + 0.35f * drop + 0.50f * rear + 0.40f * graze;
-        // A big horse's neck and reins are further ahead: the arms reach out more, elbows straighter.
-        float armX = Mth.lerp(wide, -0.70f, -0.94f) - reach + give;
-        float elbow = Mth.clamp(Mth.lerp(wide, 0.95f, 0.61f) - 0.45f * gallop - 0.6f * Math.max(rise, rear) - 0.4f * graze,
+        // A big horse: the hands hold the reins low in front, wider apart, the upper arms down by
+        // the sides and the elbows bent (the reins run from its mouth down to the saddle).
+        float armX = Mth.lerp(wide, -0.70f, -0.42f) - reach + give;
+        float elbow = Mth.clamp(Mth.lerp(wide, 0.95f, 0.85f) - 0.45f * gallop - 0.6f * Math.max(rise, rear) - 0.4f * graze,
                 0.15f, 1.2f);
+        float armIn = Mth.lerp(wide, 0.30f, 0.20f), armOut = Mth.lerp(wide, 0.02f, 0.04f);
         // Every eight seconds or so, standing, the free hand pats the neck.
         float patT = (m.time + m.seed * 3f) % 8f;
         float pat = still * (1f - graze) * AngleMath.ease((patT - 5.6f) / 0.3f) * (1f - AngleMath.ease((patT - 7.2f) / 0.3f));
         float tap = pat * Math.abs(Mth.sin(patT * 9f));
-        f.rightArm().override(armX, -0.30f, 0.02f, arms);
-        f.leftArm().override(Mth.lerp(pat, armX, Mth.lerp(wide, -1.05f, -1.25f) + 0.15f * tap), Mth.lerp(pat, 0.30f, 0.15f), -0.02f, arms);
+        f.rightArm().override(armX, -armIn, armOut, arms);
+        f.leftArm().override(Mth.lerp(pat, armX, Mth.lerp(wide, -1.05f, -1.25f) + 0.15f * tap), Mth.lerp(pat, armIn, 0.15f),
+                -armOut, arms);
         f.rightArm().overrideBend(s.elbow() * elbow, arms);
         f.leftArm().overrideBend(s.elbow() * Mth.lerp(pat, elbow, 0.35f), arms);
         Rigging.leanTorso(f, s, 0.10f * pat * w);

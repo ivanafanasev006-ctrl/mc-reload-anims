@@ -33,8 +33,6 @@ public final class PostureControl {
     }
 
     private static LocalPlayer lastPlayer;
-    /** Toggle mode: crawl wanted. */
-    private static boolean crawlToggled;
     /** We forced the crawl pose on. */
     private static boolean crawling;
     /** 0 = standing, 1..3 = sitting in that style. */
@@ -42,12 +40,17 @@ public final class PostureControl {
     private static boolean sitShared;
     /** Sit pressed a moment ago while it could not start yet (landing from a hop): sit when possible. */
     private static int sitQueued;
-    /** Presses made by the self-test (it cannot type on the keyboard). */
+    /** The self-test holding the crawl key / pressing the sit key (it cannot type on the keyboard). */
     private static boolean testCrawl, testSit;
 
-    /** Self-test: press the crawl or the sit key once. */
-    public static void testPress(boolean crawl) {
-        if (crawl) testCrawl = true; else testSit = true;
+    /** Self-test: hold (or let go of) the crawl key. */
+    public static void testHoldCrawl(boolean held) {
+        testCrawl = held;
+    }
+
+    /** Self-test: press the sit key once. */
+    public static void testPressSit() {
+        testSit = true;
     }
     private static final java.util.Random RNG = new java.util.Random();
 
@@ -62,7 +65,6 @@ public final class PostureControl {
         if (p != lastPlayer) {
             // New world, respawn or other dimension: a fresh player entity, nothing carries over.
             lastPlayer = p;
-            crawlToggled = false;
             crawling = false;
             sit = 0;
             sitShared = false;
@@ -72,32 +74,23 @@ public final class PostureControl {
         while (SIT.consumeClick()) sitPressed = true;
         // Vanilla binds C and X too (saving / loading hotbars), and a key shared by two bindings
         // may reach only one of them: read the keyboard as well.
-        boolean crawlDown = held(mc, CRAWL), sitDown = held(mc, SIT);
+        boolean crawlDown = held(mc, CRAWL) || testCrawl, sitDown = held(mc, SIT);
         if (crawlDown && !crawlWasDown) crawlPressed = true;
         if (sitDown && !sitWasDown) sitPressed = true;
         crawlWasDown = crawlDown;
         sitWasDown = sitDown;
-        if (testCrawl) { crawlPressed = true; testCrawl = false; }
         if (testSit) { sitPressed = true; testSit = false; }
         if (p == null) return;
         boolean server = ClientSync.serverHasKinetrix();
 
-        // ---- crawl
-        if (Cfg.toggleCrawl) {
-            if (crawlPressed) crawlToggled = !crawlToggled;
-        } else {
-            crawlToggled = crawlDown;
-        }
-        boolean wantCrawl = crawlToggled;
+        // ---- crawl: only while the key is held (let go to get up; under a low ceiling vanilla keeps
+        // you crawling until there is room)
+        boolean wantCrawl = crawlDown;
         if (wantCrawl && !server) {
-            if (crawlPressed || !crawling) {
-                p.displayClientMessage(Component.translatable("message.kinetrix.crawl_needs_server"), true);
-            }
-            wantCrawl = crawlToggled = false;
+            if (crawlPressed) p.displayClientMessage(Component.translatable("message.kinetrix.crawl_needs_server"), true);
+            wantCrawl = false;
         }
-        if (wantCrawl && !Posture.canCrawl(p)) wantCrawl = crawlToggled = false;
-        // Jumping gets you back up (if there is room; otherwise vanilla keeps you crawling anyway).
-        if (wantCrawl && crawling && Cfg.toggleCrawl && p.input != null && p.input.jumping) wantCrawl = crawlToggled = false;
+        if (wantCrawl && !Posture.canCrawl(p)) wantCrawl = false;
         if (wantCrawl && sit > 0) setSit(p, 0, server);
         if (wantCrawl != crawling) {
             crawling = wantCrawl;
@@ -124,7 +117,7 @@ public final class PostureControl {
             else sitQueued = 0;
         }
         if (sit > 0 && (moving(p) || !Posture.canKeepSitting(p) || p.isShiftKeyDown())) wantSit = false;
-        if (wantSit && sit == 0) setSit(p, 1 + RNG.nextInt(Posture.SIT_STYLES), server);
+        if (wantSit && sit == 0) setSit(p, 1 + RNG.nextInt(Posture.SIT_POSES), server);
         else if (!wantSit && sit > 0) setSit(p, 0, server);
         // The server learnt about Kinetrix late (or we joined while sitting): share it now.
         if (sit > 0 && server && !sitShared) setSit(p, sit, true);
@@ -161,7 +154,7 @@ public final class PostureControl {
         LocalPlayer p = mc.player;
         if (p == null) return;
         if (type == AnimPacket.CRAWL && crawling) {
-            crawling = crawlToggled = false;
+            crawling = false;
             if (p.getForcedPose() == Pose.SWIMMING) p.setForcedPose(null);
         } else if (type == AnimPacket.SIT && sit > 0) {
             sit = 0;

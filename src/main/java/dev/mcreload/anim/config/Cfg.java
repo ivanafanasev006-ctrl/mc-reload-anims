@@ -14,7 +14,7 @@ public final class Cfg {
 
     public static volatile boolean locomotion = true, idle = true, airborne = true, landing = true,
             water = true, climbing = true, combat = true, reactions = true, idleActions = true, twoHanded = false,
-            postures = true, toggleCrawl = true, toggleSit = true;
+            postures = true, toggleSit = true;
 
     public static volatile boolean trails = true;
     public static volatile float trailSeconds = 0.22f, trailOpacity = 0.75f;
@@ -49,7 +49,6 @@ public final class Cfg {
         combat = ClientConfig.COMBAT.get();
         reactions = ClientConfig.REACTIONS.get();
         postures = ClientConfig.POSTURES.get();
-        toggleCrawl = ClientConfig.TOGGLE_CRAWL.get();
         toggleSit = ClientConfig.TOGGLE_SIT.get();
 
         trails = ClientConfig.TRAILS.get();

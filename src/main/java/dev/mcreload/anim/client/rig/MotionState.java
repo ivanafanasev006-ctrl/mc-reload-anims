@@ -727,7 +727,7 @@ public final class MotionState {
         if (t < 0f) return false;
         return switch (landKind) {
             case LAND_ROLL, LAND_BACKROLL -> t < 0.45f;
-            case LAND_SWORD -> t < 1.2f;
+            case LAND_SWORD -> t < 0.8f;
             default -> false;
         };
     }
@@ -798,7 +798,7 @@ public final class MotionState {
         if (isLocal()) style = dev.mcreload.anim.client.PostureControl.localSit();
         else style = remoteSit;
         personalitySit = style == 0 && dev.mcreload.anim.compat.PersonalityCompat.isSitting(player);
-        if (personalitySit) style = 1 + (int) (seed * 7f) % dev.mcreload.anim.net.Posture.SIT_STYLES;
+        if (personalitySit) style = 1 + (int) (seed * 7f) % dev.mcreload.anim.net.Posture.SIT_POSES;
         boolean now = style > 0 && !blocked && Cfg.postures;
         if (now && !sitting) {
             sitStyle = style - 1;
