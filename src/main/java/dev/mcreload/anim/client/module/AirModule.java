@@ -156,7 +156,9 @@ final class AirModule implements AnimModule {
         main.overrideBend(s.elbow() * ReactionModule.RAISED_ELBOW, aw);
         off.overrideBend(s.elbow() * (two ? 0.25f : 0.45f), aw);
         // Blade pointing down in front of the body (turned in the fist, see ReactionModule#plantBlade).
-        m.itemTiltTarget = Math.max(m.itemTiltTarget, ReactionModule.RAISED_TILT * aw);
+        // It turns ahead of the arms (full turn at 60 % of the blend), so it points down from the
+        // start of the raise; it stays in front of the body all the way, never swinging back.
+        m.itemTiltTarget = Math.max(m.itemTiltTarget, ReactionModule.RAISED_TILT * Math.min(1f, 1.6f * aw));
         m.armsHeld = Math.max(m.armsHeld, aw);
         // Knees drawn up, one ahead of the other, ready to take the landing on one knee.
         PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
