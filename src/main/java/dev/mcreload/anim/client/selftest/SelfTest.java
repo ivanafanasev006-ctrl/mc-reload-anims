@@ -53,6 +53,7 @@ public final class SelfTest {
     private static final List<Scenario> SCENARIOS = new ArrayList<>();
     static String currentLabel = "";
     private static int groundTicks;
+    private static int windupShot = -1;
 
     public static void init() {
         MinecraftForge.EVENT_BUS.addListener(SelfTest::onTick);
@@ -736,6 +737,19 @@ public final class SelfTest {
         level.addFreshEntity(rider);
         rider.startRiding(horse, true);
         net.minecraft.world.InteractionResult r = horse.interact(sp, InteractionHand.MAIN_HAND);
+        // A player always takes the front seat from a mob (vanilla Entity#addPassenger); between
+        // two players the one who climbs on second sits behind. Put the villager in front here so
+        // the player is the one behind, as with a friend in the saddle.
+        if (horse.getFirstPassenger() == sp) {
+            try {
+                java.lang.reflect.Field f = net.minecraft.world.entity.Entity.class.getDeclaredField("passengers");
+                f.setAccessible(true);
+                f.set(horse, com.google.common.collect.ImmutableList.of(rider, sp));
+                level.getChunkSource().broadcast(horse, new net.minecraft.network.protocol.game.ClientboundSetPassengersPacket(horse));
+            } catch (ReflectiveOperationException e) {
+                McReloadAnim.LOG.warn("[kinetrix] self-test: could not swap the riders", e);
+            }
+        }
         McReloadAnim.LOG.info("[kinetrix] self-test two riders: interact={} passengers={} behind={}", r,
                 horse.getPassengers().size(), dev.mcreload.anim.ride.TwoRiders.isBehind(sp));
     }
@@ -819,6 +833,16 @@ public final class SelfTest {
         if (phase != Phase.RUNNING || scenarioIndex >= SCENARIOS.size()) return;
         Scenario s = SCENARIOS.get(scenarioIndex);
         int t = scenarioTick;
+        // The sword wind-up lasts only the last 0.28 s of a drop: one extra shot whenever a frame
+        // happens to fall inside it.
+        if (s.name().startsWith("07") && mc.player != null && !mc.player.onGround()) {
+            dev.mcreload.anim.client.rig.PlayerRig rig = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player);
+            if (rig != null && rig.motion.impactIn < 0.2f && windupShot != scenarioIndex) {
+                windupShot = scenarioIndex;
+                Screenshot.grab(mc.gameDirectory, s.name() + "_windup_t" + t + "_in" + Math.round(rig.motion.impactIn * 100) + ".png",
+                        mc.getMainRenderTarget(), msg -> {});
+            }
+        }
         for (int wi = 0; wi < s.windows().length; wi++) {
             Window w = s.windows()[wi];
             if (t < w.from() || t > w.to()) continue;
