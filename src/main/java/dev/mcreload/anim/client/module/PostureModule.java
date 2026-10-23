@@ -30,13 +30,16 @@ import net.minecraft.util.Mth;
  */
 final class PostureModule implements AnimModule {
     // Arm keys: {out, ahead, down, elbow}. The pull goes REACH -> MID -> END, the hand planted.
+    // MID, END, the resting arms and the drawn-up knee were fitted on a box model of the player
+    // over the whole cycle: the forearms no longer fold back into the chest or across the face,
+    // and the drawn-up shin stays out from under the belly.
     private static final float[] REACH = {0.22f, 0.95f, 0.22f, 0.25f};
-    private static final float[] MID = {0.62f, 0.60f, 0.50f, 1.20f};
-    private static final float[] END = {0.85f, -0.02f, 0.58f, 2.15f};
-    /** Lying still: propped on the forearms, hands in front of the face. */
-    private static final float[] REST_ARM = {0.40f, 0.55f, 0.75f, 1.55f};
+    private static final float[] MID = {0.72f, 0.0f, 0.34f, 1.28f};
+    private static final float[] END = {0.53f, -0.06f, 0.21f, 0.54f};
+    /** Lying still: propped on the forearms, hands beside the head. */
+    private static final float[] REST_ARM = {0.63f, 0.17f, 0.71f, 1.38f};
     // Leg keys: {out, back, down, knee}. The push goes DRAWN -> EXTENDED.
-    private static final float[] DRAWN = {0.85f, -0.25f, 0.05f, 2.20f};
+    private static final float[] DRAWN = {0.84f, -0.06f, 0.0f, 1.64f};
     private static final float[] EXTENDED = {0.22f, 0.97f, 0.05f, 0.25f};
     private static final float[] REST_LEG = {0.14f, 0.99f, 0.0f, 0.12f};
     /** Part of each arm's cycle spent pulling (the rest is the reach forward). */
