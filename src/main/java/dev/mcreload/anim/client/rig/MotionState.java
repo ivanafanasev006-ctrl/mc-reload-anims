@@ -70,6 +70,9 @@ public final class MotionState {
     public boolean holdingBlade;
     /** Falling with a blade in hand and W not held: the sword goes up, to be planted on landing. */
     public final Smooth bladeReadyW = new Smooth(8f);
+    /** ParCool is animating one of its parkour moves on this player: our whole layer steps aside. */
+    public boolean parkour;
+    public final Smooth parkourW = new Smooth(12f);
     /** Held item tipped forward in the hand (radians), smoothed; modules raise the target. */
     public final Smooth itemTilt = new Smooth(24f);
     public float itemTiltTarget;
@@ -514,7 +517,9 @@ public final class MotionState {
         boolean creativeFlying = player.getAbilities().flying;
         boolean gliding = player.isFallFlying();
         boolean riding = player.isPassenger();
-        boolean blocked = riding || player.isSleeping() || gliding || player.isAutoSpinAttack() || creativeFlying;
+        parkour = dev.mcreload.anim.compat.ParCoolCompat.animating(player);
+        parkourW.to(parkour ? 1f : 0f, dt);
+        boolean blocked = riding || player.isSleeping() || gliding || player.isAutoSpinAttack() || creativeFlying || parkour;
         gate.to(blocked ? 0f : 1f, dt);
 
         // The vanilla crawl pose on land is our crawl; in water it is swimming.

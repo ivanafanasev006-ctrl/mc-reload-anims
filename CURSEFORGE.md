@@ -26,6 +26,7 @@ Kinetrix replaces Minecraft's stiff six-block puppet movement with procedural, p
 - **Skin Layers 3D:** the 3D outer skin layer bends at the elbows, knees and waist too.
 - **Oculus shaders, Embeddium, Xenon, Shoulder Surfing Reloaded:** fine — body, joints and armour stay visible with shaders on.
 - **Personality:** its crawl and sit get Kinetrix animations; Kinetrix's own C / X keys start unbound so nothing is bound twice.
+- **ParCool:** while ParCool plays one of its parkour moves, Kinetrix steps aside for that player and comes back when it is over.
 - **DragN's Livestock Overhaul:** riding its wide horses, donkeys and mules the rider sits lower with the legs spread round the barrel and the hands reaching for the reins (other horse mods can be added in the config).
 - **Not needed:** bendy-lib — Kinetrix draws the bends itself (if bendy-lib is installed, Kinetrix steps aside and lets it).
 - **Client side mod, optional on servers.** Put it on the server (or have it on the host of a LAN world) and players who have Kinetrix see each other's emotes, rolls, landings, idle fidgets and sitting exactly as chosen, and can crawl (crawling needs the server's agreement). Players without it can still join.
@@ -50,4 +51,4 @@ This is a beta: please report anything that looks wrong (a short video helps a l
 - Езда на лошади, свинье, лавомерке, в лодке и вагонетке, несколько вариантов безделья в сиденье. Большие лошади DragN's Livestock Overhaul: посадка ниже, ноги шире, руки к поводьям.
 - 20 эмоций (клавиша **B**).
 
-**Нужен:** Player Animator. **Совместим:** Better Combat (и Malfu Combat Animation), Iron's Spells 'n Spellbooks, Emotecraft, Fresh Animations / Fresh Moves (игроку остаётся ванильная модель, без смеси анимаций), Skin Layers 3D (3D-слой гнётся), шейдеры Oculus, Embeddium, Xenon, Shoulder Surfing, Personality, DragN's Livestock Overhaul. Клиентский мод; если поставить его ещё и на сервер (или он есть у хоста LAN-мира), игроки видят эмоции и кувырки друг друга.
+**Нужен:** Player Animator. **Совместим:** Better Combat (и Malfu Combat Animation), Iron's Spells 'n Spellbooks, Emotecraft, Fresh Animations / Fresh Moves (игроку остаётся ванильная модель, без смеси анимаций), Skin Layers 3D (3D-слой гнётся), шейдеры Oculus, Embeddium, Xenon, Shoulder Surfing, Personality, DragN's Livestock Overhaul, ParCool (во время его паркур-движений Kinetrix уступает). Клиентский мод; если поставить его ещё и на сервер (или он есть у хоста LAN-мира), игроки видят эмоции и кувырки друг друга.

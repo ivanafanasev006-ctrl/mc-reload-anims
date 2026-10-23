@@ -46,6 +46,23 @@ public abstract class PlayerRendererMixin {
         }
     }
 
+    @Unique
+    private static final String RENDER = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;"
+            + "Lnet/minecraft/client/renderer/MultiBufferSource;I)V";
+
+    /**
+     * Every player drawn with this renderer shares one model, and its joints are set at the end of
+     * setupAnim. A mod that skips setupAnim for its own animation (ParCool does for its parkour
+     * moves) would otherwise draw this player with the bends left over from the player drawn
+     * before: start every player straight.
+     */
+    @Inject(method = RENDER, at = @At("HEAD"))
+    private void kinetrix$straightJoints(AbstractClientPlayer player, float yaw, float pt, PoseStack ps,
+                                         net.minecraft.client.renderer.MultiBufferSource buffers, int light, CallbackInfo ci) {
+        JointRig rig = ((JointHolder) ((PlayerRenderer) (Object) this).getModel()).mcreload$getJoints();
+        if (rig != null) rig.setBends(0f, 0f, 0f, 0f, 0f);
+    }
+
     @Inject(method = "renderHand", at = @At("HEAD"))
     private void mcreload$firstPersonOn(CallbackInfo ci) {
         Joints.firstPerson = true;

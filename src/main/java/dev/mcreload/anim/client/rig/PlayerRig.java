@@ -164,6 +164,15 @@ public final class PlayerRig {
             springs.filter(i, t, tmp, angles);
             x = tmp[0]; y = tmp[1]; z = tmp[2];
         }
+        // Another mod animating the whole player its own way (ParCool's parkour moves): hand the
+        // pose through untouched, fading out of ours and back in again.
+        float pass = motion.parkourW.v;
+        if (pass > 0.001f) {
+            boolean angleX = t == T_ROT || t == T_BEND;
+            x = angleX ? AngleMath.lerpAngle(x, v0.getX(), pass) : x + (v0.getX() - x) * pass;
+            y = t == T_ROT ? AngleMath.lerpAngle(y, v0.getY(), pass) : y + (v0.getY() - y) * pass;
+            z = t == T_ROT ? AngleMath.lerpAngle(z, v0.getZ(), pass) : z + (v0.getZ() - z) * pass;
+        }
         float[] out = baseOut[i][t];
         out[0] = x;
         out[1] = y;
