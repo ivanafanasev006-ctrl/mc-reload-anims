@@ -98,13 +98,13 @@ final class BladeModule implements AnimModule {
     // ------------------------------------------------------------------ sword guard and drawing
 
     /*
-     * The guard (fitted on the model: the blade 2.4 px clear of the chest, 5.5 px of the head):
+     * The guard (fitted on the model: the blade 2.5 px clear of the chest, 4.7 px of the head):
      * sword arm forward and a little out, elbow bent, the fist at the waist and the blade pointing
      * forward and up at the enemy; the other hand up in front of the chest, or the shield held
      * across in front of it; the sword shoulder back, the chest leaning in; standing, the feet
      * staggered (the free side forward), knees bent.
      */
-    private static final float G_MAIN_X = -0.55f, G_MAIN_Y = -0.10f, G_MAIN_Z = 0.15f, G_MAIN_ELBOW = 1.00f, G_TILT = 1.20f;
+    private static final float G_MAIN_X = -0.55f, G_MAIN_Y = -0.10f, G_MAIN_Z = 0.15f, G_MAIN_ELBOW = 1.00f, G_TILT = 0.95f;
     private static final float G_OFF_X = -0.55f, G_OFF_Y = -0.25f, G_OFF_Z = 0.15f, G_OFF_ELBOW = 1.00f;
     private static final float G_SHIELD_X = -0.70f, G_SHIELD_Y = -0.45f, G_SHIELD_Z = 0.05f, G_SHIELD_ELBOW = 0.90f;
     private static final float G_LEAN = 0.15f, G_TWIST = 0.25f;
