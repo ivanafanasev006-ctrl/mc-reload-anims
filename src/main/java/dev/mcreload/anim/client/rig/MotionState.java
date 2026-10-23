@@ -630,7 +630,10 @@ public final class MotionState {
         if (ground) chillW.v = Math.max(0f, chillW.v - dt * 5f);   // short hop: straight back up
         diveAirW.to(overWater && chillW.v < 0.5f ? 1f : 0f, dt);
         // Falling with a blade: sword raised to plant it, unless W is held (that lands in a roll).
-        bladeReadyW.to(holdingBlade && !movingForward() ? 1f : 0f, dt);
+        // Pressing W lets go of it three times faster than it comes up, so stepping off an edge
+        // with W from a standstill never starts turning the blade over before the roll.
+        boolean bladeReady = holdingBlade && !movingForward();
+        bladeReadyW.to(bladeReady ? 1f : 0f, bladeReady ? dt : 3f * dt);
         hardDropW.to(air ? Math.max(hardDropAhead ? 1f : 0f, Mth.clamp((-vertical - 0.50f) / 0.12f, 0f, 1f)) : 0f, dt);
         surfaceDepth = treading ? surfaceDepth() : 0f;
 
