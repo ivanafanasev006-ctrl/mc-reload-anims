@@ -135,9 +135,9 @@ final class AirModule implements AnimModule {
     /**
      * Dropping from a height with a sword: both hands on the hilt held up in front of the face,
      * the blade already pointing down (point first, like a plunging thrust), knees drawn up and
-     * the back rounded over it; over the last moments before touchdown (known from the predicted
-     * drop, MotionState#impactIn) a small wind-up: the arms go straight up over the forehead, the
-     * chest straightens and the head comes up, the point still down. ReactionModule#plantBlade
+     * the back rounded over it; as the ground comes up (the last 0.65 s, known from the predicted
+     * drop, MotionState#impactIn) it winds up more and more: the arms go up over the head, the
+     * back arches and the head comes up, the point still down. ReactionModule#plantBlade
      * starts the strike from exactly that wind-up, so the blade never turns over in the hands.
      */
     private static void bladeFall(MotionState m, PoseFrame f, Signs s, float w, float arms, float side, boolean two) {
@@ -145,7 +145,7 @@ final class AirModule implements AnimModule {
         float a = Mth.sin(t * 6.0f + m.seed), c = Mth.sin(t * 4.5f + m.seed + 1f);
         float aw = w * arms;
         float wind = AngleMath.ease(1f - m.impactIn / ReactionModule.WINDUP_SECONDS);
-        float lean = Mth.lerp(wind, 0.22f, 0f);
+        float lean = Mth.lerp(wind, 0.22f, ReactionModule.WINDUP_LEAN);
         float armW = Mth.lerp(wind, ReactionModule.RAISED_ARM, ReactionModule.WINDUP_ARM);
         float bob = 0.04f * a * (1f - wind);
         PartPose main = side > 0 ? f.rightArm() : f.leftArm();
@@ -173,9 +173,9 @@ final class AirModule implements AnimModule {
         rear.override(-0.20f - 0.08f * c, 0f, side * 0.12f, w);
         rear.overrideBend(s.knee() * 1.10f, w);
         // Rounded over the blade, head down watching the landing spot (over the fists, not into
-        // them); for the wind-up upright, the head up a little so the raised fists clear the face.
+        // them); for the wind-up arched back, the head up so the raised blade clears the face.
         Rigging.leanTorso(f, s, lean * w);
-        f.head().rx += Mth.lerp(wind, 0.20f, -0.15f) * w;
+        f.head().rx += Mth.lerp(wind, 0.20f, ReactionModule.WINDUP_HEAD) * w;
         f.body().rx += 0.05f * a * (1f - wind) * w;
     }
 

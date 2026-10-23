@@ -127,7 +127,16 @@ public final class MotionState {
     public final Smooth guardW = new Smooth(6f);
     public final Smooth sleepW = new Smooth(4f);
     /** Holding a melee weapon and ready to fight (standing / walking, recently attacked). */
-    public final Smooth readyW = new Smooth(4f);
+    /**
+     * Sword guard: a sword in hand, for a couple of seconds after drawing it or after any swing
+     * (at a mob or at the air), standing or walking; see BladeModule#stance.
+     */
+    public final Smooth readyW = new Smooth(6f);
+    /** When the sword was drawn (switched to, or swapped into the main hand); see BladeModule#draw. */
+    public float drawStart = -100f;
+    /** How long drawing the sword into the guard takes, and how long the guard lasts after it / a swing. */
+    public static final float DRAW_SECONDS = 0.6f, GUARD_HOLD = 2.5f;
+    private boolean wasSword, drawArmed;
     /** Weapon in the main hand and nothing in the other: two-handed (samurai) grip. */
     public final Smooth twoHandW = new Smooth(5f);
     public final Smooth crossCarryW = new Smooth(6f), crossAimW = new Smooth(8f);
@@ -493,6 +502,12 @@ public final class MotionState {
                 && !ItemStack.matches(main, off)) {
             swapStart = time;
         }
+        // Drawing a sword: switching to one (or swapping one into the main hand) brings it up into
+        // a fighting guard. Not on the very first tick (joining with a sword already in hand).
+        boolean sword = Weapons.isSword(main);
+        if (sword && drawArmed && (!wasSword || !ItemStack.isSameItem(main, lastMain))) drawStart = time;
+        wasSword = sword;
+        drawArmed = true;
         lastMain = main.copy();
         lastOff = off.copy();
 
@@ -672,11 +687,14 @@ public final class MotionState {
 
         ItemStack mainItem = player.getMainHandItem(), offItem = player.getOffhandItem();
         boolean weapon = Weapons.isMeleeWeapon(mainItem) && !(mainItem.getItem() instanceof net.minecraft.world.item.TridentItem);
-        boolean recentlyFought = time - slashStart < 3.0f;
-        // Guard only for a few seconds after a fight, standing still; otherwise a weapon is just held.
-        readyW.to(weapon && ground && !blocked && !swimming && !crawling && !sitting && sprintW.v < 0.5f
-                && recentlyFought && time - slashStart > slashDuration * 0.9f
-                && moveF() < 0.3f && !player.isUsingItem() ? 1f : 0f, dt);
+        // The sword guard: for a couple of seconds after drawing the sword or after any swing of it
+        // (at a mob or at the air), standing or walking (like the fists' guard), and still while
+        // blocking with a shield in the other hand. Swords only: an axe or a trident is just held.
+        boolean swordInHand = Weapons.isSword(mainItem);
+        boolean afterSwing = isSlash(slashKind) && time - slashStart < slashDuration + GUARD_HOLD;
+        boolean afterDraw = time - drawStart < DRAW_SECONDS + GUARD_HOLD;
+        readyW.to(swordInHand && (afterSwing || afterDraw) && !blocked && !swimming && !crawling && !sitting
+                && sprintW.v < 0.5f && (!player.isUsingItem() || player.isBlocking()) ? 1f : 0f, dt);
         twoHandW.to(Cfg.twoHanded && weapon && offItem.isEmpty() ? 1f : 0f, dt);
         boolean crossInHand = mainItem.getItem() instanceof CrossbowItem || offItem.getItem() instanceof CrossbowItem;
         boolean charged = CrossbowItem.isCharged(mainItem) || CrossbowItem.isCharged(offItem);
@@ -693,7 +711,8 @@ public final class MotionState {
 
         updateIdle(ground && !blocked && !swimming && !crawling && !sitting && !player.isInWater() && !climbing && !player.isUsingItem()
                 && !player.isCrouching() && horizontalSpeed < 0.01f && time - slashStart > 2f
-                && time - swapStart > 1f && player.hurtTime == 0, dt);
+                && time - swapStart > 1f && player.hurtTime == 0 && readyW.v < 0.05f
+                && time - drawStart > DRAW_SECONDS + GUARD_HOLD, dt);
         updateEmote(dt);
 
         boolean fists = mainItem.isEmpty();

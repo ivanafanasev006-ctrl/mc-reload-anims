@@ -37,13 +37,16 @@ final class ReactionModule implements AnimModule {
      */
     static final float RAISED_ARM = -1.45f, RAISED_ELBOW = 0.15f, RAISED_TILT = 2.82f;
     /**
-     * The wind-up over the last moments of the fall (and the start of the strike): arms straight
-     * up over the forehead, the chest upright, the point still down and slanting forward (46
-     * degrees below the horizontal), 1.7 px clear of the face on the model. Same conventions.
+     * The wind-up as the ground comes up (and the start of the strike): arms straight up over the
+     * head, the back arched and the head up, the point still down and slanting forward (42 degrees
+     * below the horizontal). As high as the hands can go with the point down: any higher and the
+     * blade passes through the face (1.5 px clear on the model). Same conventions.
      */
-    static final float WINDUP_ARM = -2.15f, WINDUP_ELBOW = 0f, WINDUP_TILT = 3.10f;
-    /** How long before touchdown the wind-up starts (seconds). */
-    static final float WINDUP_SECONDS = 0.28f;
+    static final float WINDUP_ARM = -2.50f, WINDUP_ELBOW = 0f, WINDUP_TILT = 3.37f;
+    /** The arched back and raised head of the wind-up (chest lean, head pitch). */
+    static final float WINDUP_LEAN = -0.25f, WINDUP_HEAD = -0.35f;
+    /** How long before touchdown the wind-up starts (seconds); it builds up all the way down. */
+    static final float WINDUP_SECONDS = 0.65f;
 
     @Override
     public boolean enabled() {
@@ -149,7 +152,7 @@ final class ReactionModule implements AnimModule {
      * A hero landing with a sword. In the air both hands already hold it up in front of the face,
      * point down, and wind it up over the forehead just before touchdown (see AirModule#bladeFall).
      * Touching down, the legs give and the body sinks into a kneel while both hands drive the blade
-     * down from the wind-up, point-first, into the ground in front of the front knee (0.09 s); the
+     * down from the wind-up, point-first, into the ground in front of the front knee (0.11 s); the
      * shock comes up through the shoulders with a damped bounce, the head comes up to look ahead;
      * then the sword is pulled out and the fighter stands up. Quick (0.5 s), and walking off once
      * the blade is in lets go of it all within 0.15 s; every part blends in and out smoothly.
@@ -165,8 +168,8 @@ final class ReactionModule implements AnimModule {
         // Blend in over the first 0.06 s, out over the last 40 %.
         float e = AngleMath.ease(T / 0.06f) * out;
         if (e <= 0.001f) return;
-        // The strike: from the wind-up over the head down into the ground in 0.09 s.
-        float stab = AngleMath.ease(T / 0.09f);
+        // The strike: from the wind-up over the head down into the ground in 0.11 s.
+        float stab = AngleMath.ease(T / 0.11f);
         // Sinking into the landing and a damped rebound.
         float slam = T < 0.08f ? AngleMath.ease(T / 0.08f)
                 : (float) Math.exp(-(T - 0.08f) * 11f) * Mth.cos((T - 0.08f) * 18f);

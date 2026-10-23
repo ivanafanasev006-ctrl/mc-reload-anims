@@ -26,5 +26,13 @@ public final class Weapons {
         }
     }
 
+    /** A sword (or a modded blade like one): a melee weapon that is not an axe or a trident. */
+    public static boolean isSword(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        Item item = stack.getItem();
+        if (item instanceof AxeItem || item instanceof TridentItem) return false;
+        return isMeleeWeapon(stack);
+    }
+
     private Weapons() {}
 }

@@ -232,6 +232,24 @@ public final class SelfTest {
                 (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 4, 0.03f)));
         SCENARIOS.add(new Scenario("08e_sword_guard", 40, sp -> {},
                 (mc, t) -> {}, new Window(20, 40, 2, 0.4f)));
+        // Drawing a sword: switched to at t=8, a twirl and a step into the guard, which then holds.
+        SCENARIOS.add(new Scenario("08f_sword_draw", 50, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> { if (t == 8) giveMain(mc, new ItemStack(Items.DIAMOND_SWORD)); },
+                new Window(9, 24, 6, 0.0f), new Window(30, 50, 2, 0.3f)));
+        // One swing at the air in a jump, then walking: the guard is held on the move, then fades.
+        SCENARIOS.add(new Scenario("08g_sword_guard_walk", 110, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> {
+                    move(mc, t >= 74 && t < 84, false, false, t >= 74 && t < 76);
+                    if (t == 77) mc.player.swing(InteractionHand.MAIN_HAND);
+                    if (t >= 86 && t < 104) move(mc, true, false, false, false);
+                }, new Window(74, 84, 3, 0.05f), new Window(88, 104, 4, 0.1f)));
+        // Sword and shield: a swing, the guard with the shield across in front, the shield raised
+        // from the guard (the sword stays ready), another swing with the shield kept in front.
+        SCENARIOS.add(new Scenario("08h_sword_shield_guard", 60, sp -> { place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD)); },
+                (mc, t) -> {
+                    if (t == 8 || t == 44) mc.player.swing(InteractionHand.MAIN_HAND);
+                    mc.options.keyUse.setDown(t >= 24 && t < 38);
+                }, new Window(10, 22, 2, 0.2f), new Window(28, 38, 2, 0.2f), new Window(44, 56, 3, 0.05f)));
         SCENARIOS.add(new Scenario("09_axe", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_AXE)),
                 (mc, t) -> { if (t == 8) mc.player.swing(InteractionHand.MAIN_HAND); },
                 new Window(8, 26, 4, 0.05f), new Window(32, 40, 1, 0.3f)));
@@ -713,6 +731,13 @@ public final class SelfTest {
         boat.setYRot(-90);
         sp.serverLevel().addFreshEntity(boat);
         sp.startRiding(boat, true);
+    }
+
+    /** Put an item in the player's main hand on the server (as picking it in the hotbar would). */
+    private static void giveMain(Minecraft mc, ItemStack stack) {
+        IntegratedServer srv = mc.getSingleplayerServer();
+        if (srv == null) return;
+        srv.execute(() -> srv.getPlayerList().getPlayers().get(0).setItemInHand(InteractionHand.MAIN_HAND, stack.copy()));
     }
 
     private static void mountBehind(ServerPlayer sp) {
