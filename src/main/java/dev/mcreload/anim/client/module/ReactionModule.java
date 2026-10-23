@@ -25,8 +25,8 @@ import net.minecraft.world.entity.HumanoidArm;
  * </ul>
  */
 final class ReactionModule implements AnimModule {
-    private static final float ROLL_SECONDS = 0.38f, BACKROLL_SECONDS = 0.38f, SWORD_LAND_SECONDS = 0.8f,
-            BLAST_SECONDS = 1.4f, TOTEM_SECONDS = 2.6f;
+    private static final float ROLL_SECONDS = 0.38f, BACKROLL_SECONDS = 0.38f,
+            SWORD_LAND_SECONDS = MotionState.SWORD_LAND_SECONDS, BLAST_SECONDS = 1.4f, TOTEM_SECONDS = 2.6f;
     /**
      * The sword held up ready to plunge (falling, and the start of the plant): arm angle in the
      * world (radians, the chest's lean is taken off by the caller), elbow, and the turn of the
@@ -36,6 +36,14 @@ final class ReactionModule implements AnimModule {
      * the tilt stays under PI so the blade turns down through the front, away from the face.
      */
     static final float RAISED_ARM = -1.45f, RAISED_ELBOW = 0.15f, RAISED_TILT = 2.82f;
+    /**
+     * The wind-up over the last moments of the fall (and the start of the strike): arms straight
+     * up over the forehead, the chest upright, the point still down and slanting forward (46
+     * degrees below the horizontal), 1.7 px clear of the face on the model. Same conventions.
+     */
+    static final float WINDUP_ARM = -2.15f, WINDUP_ELBOW = 0f, WINDUP_TILT = 3.10f;
+    /** How long before touchdown the wind-up starts (seconds). */
+    static final float WINDUP_SECONDS = 0.28f;
 
     @Override
     public boolean enabled() {
@@ -139,33 +147,38 @@ final class ReactionModule implements AnimModule {
 
     /**
      * A hero landing with a sword. In the air both hands already hold it up in front of the face,
-     * point down (see AirModule#bladeFall). Touching down, the legs give and the body sinks into
-     * a kneel over ~0.1 s while both hands drive the blade straight down, point-first, into the
-     * ground in front of the front knee; the shock comes up through the shoulders with a damped
-     * bounce, the head comes up to look ahead; then the sword is pulled out and the fighter stands
-     * up. Quick (0.8 s), and every part blends in and out smoothly - nothing pops.
+     * point down, and wind it up over the forehead just before touchdown (see AirModule#bladeFall).
+     * Touching down, the legs give and the body sinks into a kneel while both hands drive the blade
+     * down from the wind-up, point-first, into the ground in front of the front knee (0.09 s); the
+     * shock comes up through the shoulders with a damped bounce, the head comes up to look ahead;
+     * then the sword is pulled out and the fighter stands up. Quick (0.5 s), and walking off once
+     * the blade is in lets go of it all within 0.15 s; every part blends in and out smoothly.
      */
     private static void swordLanding(MotionState m, PoseFrame f, Signs s, float gate, PartPose main, PartPose off,
                                      float side, boolean two) {
         float T = m.since(m.landStart);
         float t = T / SWORD_LAND_SECONDS;
         if (t >= 1f || t < 0f) return;
-        // Blend in over the first 0.08 s, out over the last 40 %.
-        float e = AngleMath.ease(T / 0.08f) * (1f - AngleMath.ease((t - 0.60f) / 0.40f)) * gate;
+        // Walking off (or jumping) once the blade is in: everything lets go within 0.15 s.
+        float off0 = m.landRelease >= m.landStart ? AngleMath.ease(m.since(m.landRelease) / 0.15f) : 0f;
+        float out = (1f - AngleMath.ease((t - 0.60f) / 0.40f)) * (1f - off0) * gate;
+        // Blend in over the first 0.06 s, out over the last 40 %.
+        float e = AngleMath.ease(T / 0.06f) * out;
         if (e <= 0.001f) return;
-        float stab = AngleMath.ease(T / 0.10f);
+        // The strike: from the wind-up over the head down into the ground in 0.09 s.
+        float stab = AngleMath.ease(T / 0.09f);
         // Sinking into the landing and a damped rebound.
-        float slam = T < 0.09f ? AngleMath.ease(T / 0.09f)
-                : (float) Math.exp(-(T - 0.09f) * 9f) * Mth.cos((T - 0.09f) * 16f);
-        float breathe = Mth.sin(T * 12f) * (float) Math.exp(-T * 3.3f);
+        float slam = T < 0.08f ? AngleMath.ease(T / 0.08f)
+                : (float) Math.exp(-(T - 0.08f) * 11f) * Mth.cos((T - 0.08f) * 18f);
+        float breathe = Mth.sin(T * 14f) * (float) Math.exp(-T * 4.5f);
         float lean = 0.40f + 0.30f * Math.max(0f, slam) + 0.04f * breathe;
-        float headUp = AngleMath.ease((T - 0.15f) / 0.20f);
+        float headUp = AngleMath.ease((T - 0.12f) / 0.16f);
         // Getting up: the sword comes out as the body rises.
         float rise = AngleMath.ease((t - 0.58f) / 0.32f);
         // The blade's turn in the fists does not blend in: the fall held the sword point down
         // already (AirModule#bladeFall), and fading it in while the air pose fades out would swing
         // the blade forward for a moment on touchdown.
-        float tiltW = (1f - AngleMath.ease((t - 0.60f) / 0.40f)) * gate;
+        float tiltW = out;
         plantBlade(m, f, s, e, tiltW, main, off, side, stab * (1f - rise), lean, 0.05f * slam, headUp, two);
     }
 
@@ -242,7 +255,7 @@ final class ReactionModule implements AnimModule {
      * the hilt, raised high first and then thrust down.
      *
      * @param tiltW  weight of the blade's turn in the fists (usually {@code e})
-     * @param stab   0 = raised in front of the face (point down), 1 = driven into the ground
+     * @param stab   0 = wound up over the forehead (point down), 1 = driven into the ground
      * @param lean   forward lean of the chest (radians); the arms compensate so the blade stays upright
      * @param drop   extra drop of the hips below the kneel (blocks)
      * @param headUp 0 = looking down at the blade, 1 = looking ahead
@@ -260,23 +273,23 @@ final class ReactionModule implements AnimModule {
         f.body().py -= (6f / 16f * 0.9375f + drop) * e;
         Rigging.leanTorso(f, s, lean * e);
         f.head().rx += Mth.lerp(headUp, 0.45f, -0.25f) * e;
-        // Both hands on the hilt in front of the body: held up in front of the face with the
-        // point down, then driven down until the fists are low in front of the front knee (the
-        // arms ride on the leaning torso, so the lean is taken off their angle). The blade's turn
-        // in the fists (item tilt: a rotation about the fist's own axis) follows the forearm, so
-        // the blade keeps pointing down all the way and its point goes well into the ground.
-        float x = Mth.lerp(stab, RAISED_ARM - lean, -0.70f - lean);
+        // Both hands on the hilt: wound up over the forehead with the point down, then driven down
+        // until the fists are low in front of the front knee (the arms ride on the leaning torso,
+        // so the lean is taken off their angle). The blade's turn in the fists (item tilt: a
+        // rotation about the fist's own axis) follows the forearm, so the blade keeps pointing
+        // down all the way and its point goes well into the ground.
+        float x = Mth.lerp(stab, WINDUP_ARM - lean, -0.70f - lean);
         main.override(x, -side * 0.28f, side * 0.05f, e);
-        main.overrideBend(s.elbow() * Mth.lerp(stab, RAISED_ELBOW, 0.10f), e);
+        main.overrideBend(s.elbow() * Mth.lerp(stab, WINDUP_ELBOW, 0.10f), e);
         if (two) {
             off.override(x + 0.10f, side * 0.62f, -side * 0.05f, e);
-            off.overrideBend(s.elbow() * Mth.lerp(stab, 0.25f, 0.30f), e);
+            off.overrideBend(s.elbow() * Mth.lerp(stab, 0.10f, 0.30f), e);
         } else {
             // Something in the other hand: it rests on the front knee instead.
             off.override(-0.75f - lean, side * 0.10f, -side * 0.15f, e);
             off.overrideBend(s.elbow() * 0.55f, e);
         }
-        m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.lerp(stab, RAISED_TILT, Mth.PI - 1.10f) * tiltW);
+        m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.lerp(stab, WINDUP_TILT, Mth.PI - 1.10f) * tiltW);
         m.armsHeld = Math.max(m.armsHeld, e);
         f.body().py += 0.05f * (1f - stab) * e;
     }

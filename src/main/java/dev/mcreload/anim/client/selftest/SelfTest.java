@@ -52,6 +52,7 @@ public final class SelfTest {
     private static int scenarioTick;
     private static final List<Scenario> SCENARIOS = new ArrayList<>();
     static String currentLabel = "";
+    private static int groundTicks;
 
     public static void init() {
         MinecraftForge.EVENT_BUS.addListener(SelfTest::onTick);
@@ -289,6 +290,10 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("07e_sword_fall_forward", 55, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
                 (mc, t) -> move(mc, t < 45, false, false, false), new Window(8, 18, 3, 0.0f), new Window(19, 42, 6, 0.04f)));
         // Holding S (or A / D, or nothing): the sword goes up and is planted on landing.
+        // Landing with the sword planted, then walking off at once: the kneel lets go within 0.15 s.
+        SCENARIOS.add(new Scenario("07g_sword_land_walk_off", 50, sp -> { place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)); groundTicks = 0; },
+                (mc, t) -> { groundTicks = mc.player.onGround() ? groundTicks + 1 : 0; move(mc, groundTicks >= 5 && t < 45, false, false, false); },
+                new Window(8, 18, 3, 0.0f), new Window(19, 40, 7, 0.03f)));
         SCENARIOS.add(new Scenario("07f_sword_fall_back", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
                 (mc, t) -> moveBack(mc, t < 50), new Window(8, 18, 3, 0.0f), new Window(19, 45, 5, 0.06f)));
         SCENARIOS.add(new Scenario("26_explosion", 45, sp -> place(sp, 2, Y, 0, -90, none),
@@ -315,6 +320,11 @@ public final class SelfTest {
                     move(mc, t > 30 && t < 62, t > 44 && t < 62, false, false);
                     if (t == 68 && savedWideMounts != null) dev.mcreload.anim.config.Cfg.wideMounts = savedWideMounts;
                 }, new Window(14, 28, 2, 0.3f), new Window(34, 44, 2, 0.1f), new Window(50, 62, 3, 0.05f)));
+        // Two on one horse: someone (a villager here) in the saddle, the player right-clicks the
+        // horse and climbs on behind (TwoRiders), holds on to the rider, then sneaks to get off.
+        SCENARIOS.add(new Scenario("19c_horse_two_riders", 60, SelfTest::mountBehind,
+                (mc, t) -> move(mc, false, false, t >= 50 && t < 54, false),
+                new Window(8, 46, 3, 0.3f), new Window(54, 60, 1, 0.1f)));
         SCENARIOS.add(new Scenario("11b_tread", 50, sp -> place(sp, POOL_X + 10, Y - 2, 0, -90, none),
                 (mc, t) -> move(mc, false, false, false, t % 10 < 3), new Window(20, 50, 3, 0.3f)));
         SCENARIOS.add(new Scenario("11d_surface_swim", 60, sp -> place(sp, POOL_X + 3, Y - 2, 0, -90, none),
@@ -704,6 +714,32 @@ public final class SelfTest {
         sp.startRiding(boat, true);
     }
 
+    private static void mountBehind(ServerPlayer sp) {
+        sp.stopRiding();
+        place(sp, 2, Y, 0, -90, ItemStack.EMPTY);
+        net.minecraft.server.level.ServerLevel level = sp.serverLevel();
+        net.minecraft.world.phys.AABB area = sp.getBoundingBox().inflate(8);
+        for (var old : level.getEntitiesOfClass(net.minecraft.world.entity.animal.horse.AbstractHorse.class, area)) {
+            old.ejectPassengers();
+            old.discard();
+        }
+        level.getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class, area).forEach(net.minecraft.world.entity.Entity::discard);
+        net.minecraft.world.entity.animal.horse.Horse horse = net.minecraft.world.entity.EntityType.HORSE.create(level);
+        net.minecraft.world.entity.npc.Villager rider = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+        if (horse == null || rider == null) return;
+        horse.moveTo(2.5, Y, 0.5, -90, 0);
+        horse.setTamed(true);
+        horse.equipSaddle(null);
+        level.addFreshEntity(horse);
+        rider.moveTo(2.5, Y, 0.5, -90, 0);
+        rider.setNoAi(true);
+        level.addFreshEntity(rider);
+        rider.startRiding(horse, true);
+        net.minecraft.world.InteractionResult r = horse.interact(sp, InteractionHand.MAIN_HAND);
+        McReloadAnim.LOG.info("[kinetrix] self-test two riders: interact={} passengers={} behind={}", r,
+                horse.getPassengers().size(), dev.mcreload.anim.ride.TwoRiders.isBehind(sp));
+    }
+
     private static void mountHorse(ServerPlayer sp) {
         sp.stopRiding();
         place(sp, 2, Y, 0, -90, ItemStack.EMPTY);
@@ -731,9 +767,9 @@ public final class SelfTest {
             dev.mcreload.anim.client.rig.PlayerRig rig = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player);
             if (rig != null) {
                 var m = rig.motion;
-                McReloadAnim.LOG.info("[kinetrix] self-test {} t={} air vy={} airW={} fallW={} bladeReadyW={} hardDropW={} blade={} armsFree={} toolSwingW={} gate={} tilt={}",
+                McReloadAnim.LOG.info("[kinetrix] self-test {} t={} air vy={} airW={} fallW={} bladeReadyW={} hardDropW={} impactIn={} blade={} armsFree={} toolSwingW={} gate={} tilt={}",
                         currentLabel, scenarioTick, String.format("%.3f", m.vertical), String.format("%.2f", m.airW.v),
-                        String.format("%.2f", m.fallW.v), String.format("%.2f", m.bladeReadyW.v), String.format("%.2f", m.hardDropW.v), m.holdingBlade,
+                        String.format("%.2f", m.fallW.v), String.format("%.2f", m.bladeReadyW.v), String.format("%.2f", m.hardDropW.v), String.format("%.2f", m.impactIn), m.holdingBlade,
                         String.format("%.2f", m.armsFree.v), String.format("%.2f", m.toolSwingW.v),
                         String.format("%.2f", m.gate.v), String.format("%.2f", m.itemTilt.v));
             }

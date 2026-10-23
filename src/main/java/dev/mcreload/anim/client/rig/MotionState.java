@@ -77,6 +77,13 @@ public final class MotionState {
      */
     public final Smooth hardDropW = new Smooth(12f);
     private boolean hardDropAhead;
+    /**
+     * Seconds until this drop touches down (predicted with the hard landing, see
+     * #predictedImpact; 99 when unknown or on the ground): the sword is wound up over the last
+     * moments before it.
+     */
+    public float impactIn = 99f;
+    private int impactTicks = 99;
     /** ParCool is animating one of its parkour moves on this player: our whole layer steps aside. */
     public boolean parkour;
     public final Smooth parkourW = new Smooth(12f);
@@ -131,6 +138,8 @@ public final class MotionState {
     public final Spring hitFront = new Spring(120f, 12f);
     public final Spring hitBack = new Spring(120f, 12f);
     public static final int LAND_NONE = 0, LAND_ROLL = 1, LAND_SWORD = 2, LAND_BACKROLL = 3;
+    /** How long the sword landing lasts (strike, kneel, getting up), unless we walk off sooner. */
+    public static final float SWORD_LAND_SECONDS = 0.5f;
     /** Landing faster than this (blocks per tick) is a hard landing: a roll with W, a sword plant without. */
     static final float HARD_LANDING = 0.62f;
     public int landKind = LAND_NONE;
@@ -150,6 +159,8 @@ public final class MotionState {
     public final float[][] armEulerRef = new float[4][3];
     public final float[] armEulerTime = {-100f, -100f, -100f, -100f};
     public float landStart = -100f;
+    /** When we started moving off during a sword landing (it then lets go at once), or -100. */
+    public float landRelease = -100f;
     public float explodeStart = -100f, explodeStrength;
     public float totemStart = -100f;
     private int hurtPending;
@@ -456,6 +467,7 @@ public final class MotionState {
             minAirVy = 0f;
             rollEarly = false;
             hardDropAhead = false;
+            impactTicks = 99;
         }
         wasOnGround = ground;
 
@@ -636,6 +648,12 @@ public final class MotionState {
         // with W from a standstill never starts turning the blade over before the roll.
         boolean bladeReady = holdingBlade && !movingForward();
         bladeReadyW.to(bladeReady ? 1f : 0f, bladeReady ? dt : 3f * dt);
+        impactIn = air && impactTicks < 99 ? Math.max(0f, (impactTicks - pt) / 20f) : 99f;
+        // Sword landing: walking off (or jumping) once the blade is in lets go of the kneel at
+        // once instead of waiting for it to finish.
+        if (landKind == LAND_SWORD && landRelease < landStart && since(landStart) > 0.12f && wantsToMove()) {
+            landRelease = time;
+        }
         hardDropW.to(air ? Math.max(hardDropAhead ? 1f : 0f, Mth.clamp((-vertical - 0.50f) / 0.12f, 0f, 1f)) : 0f, dt);
         surfaceDepth = treading ? surfaceDepth() : 0f;
 
@@ -744,7 +762,7 @@ public final class MotionState {
         if (t < 0f) return false;
         return switch (landKind) {
             case LAND_ROLL, LAND_BACKROLL -> t < 0.45f;
-            case LAND_SWORD -> t < 0.8f;
+            case LAND_SWORD -> t < SWORD_LAND_SECONDS && !(landRelease >= landStart && since(landRelease) > 0.15f);
             default -> false;
         };
     }
@@ -992,16 +1010,20 @@ public final class MotionState {
      * The speed (blocks per tick, downwards) this fall will hit the ground at, as the landing
      * measures it (the fastest tick of the fall), dropping straight down from here with vanilla
      * gravity and drag onto the ground below. With no ground within 32 blocks (or water first: no
-     * hard landing there), the speed so far.
+     * hard landing there), the speed so far. Also counts the ticks until touchdown (#impactIn).
      */
     private float predictedImpact() {
         double v = -vy, hit = Math.max(0.0, -minAirVy);
         double gap = groundGap(32, true);
+        impactTicks = 99;
         if (gap < 0) return (float) Math.max(hit, v);
         double d = 0;
         for (int i = 0; i < 200; i++) {
             v = (v + 0.08) * 0.98;
-            if (d + v >= gap) return (float) Math.max(hit, gap - d);
+            if (d + v >= gap) {
+                impactTicks = i + 1;
+                return (float) Math.max(hit, gap - d);
+            }
             d += v;
             hit = Math.max(hit, v);
         }
@@ -1069,6 +1091,14 @@ public final class MotionState {
     }
 
     /** Forward input held (your own player) or clearly running on (others). */
+    /** Trying to walk (any direction) or jump: from the keys for us, from the speed for others. */
+    private boolean wantsToMove() {
+        if (player instanceof net.minecraft.client.player.LocalPlayer lp && lp.input != null) {
+            return Math.abs(lp.input.forwardImpulse) > 0.1f || Math.abs(lp.input.leftImpulse) > 0.1f || lp.input.jumping;
+        }
+        return horizontalSpeed > 0.05f;
+    }
+
     private boolean movingForward() {
         if (player instanceof net.minecraft.client.player.LocalPlayer lp && lp.input != null) {
             return lp.input.forwardImpulse > 0.1f;

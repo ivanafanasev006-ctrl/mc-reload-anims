@@ -42,7 +42,7 @@ final class RideModule implements AnimModule {
             minecart(cart, m, f, s, w, pt);
             idleInSeat(m, f, s, w, m.horizontalSpeed > 0.01f, false);
         } else if (vehicle instanceof LivingEntity mount) {
-            mount(mount, m, f, s, w, pt);
+            mount(mount, m, f, s, w, pt, dev.mcreload.anim.ride.TwoRiders.isBehind(rig.player));
         } else if (vehicle != null) {
             // Minecart and other seats: relaxed, hands on knees, swaying with movement.
             float arms = w * m.armsFree.v;
@@ -223,16 +223,18 @@ final class RideModule implements AnimModule {
      *       often a pat on the neck;</li>
      *   <li>walk: the hips follow the horse's back side to side, hands soft;</li>
      *   <li>trot: posting, rising out of the saddle every other beat;</li>
-     *   <li>gallop: up in a jockey's two-point seat, leaning well forward, knees folded, hands
-     *       forward along the neck, rocking with the stride;</li>
+     *   <li>gallop: up out of the saddle, leaning well forward, the thighs swinging back with the
+     *       chest (the knees stay off the belly), hands forward along the neck, rocking with the
+     *       stride;</li>
      *   <li>the horse jumping: folding forward over the neck on take-off with the hands following
      *       the mouth, staying with it in the air, then sitting down deep and absorbing the
      *       landing;</li>
      *   <li>leaning into turns; leaning forward onto the neck when the horse rears; giving the
-     *       reins when it puts its head down to graze.</li>
+     *       reins when it puts its head down to graze;</li>
+     *   <li>riding behind someone (two on one horse): the same seat, hands round their waist.</li>
      * </ul>
      */
-    private static void mount(LivingEntity mount, MotionState m, PoseFrame f, Signs s, float w, float pt) {
+    private static void mount(LivingEntity mount, MotionState m, PoseFrame f, Signs s, float w, float pt, boolean behind) {
         // Gait from how fast we really go (the mount's leg animation saturates at a horse's
         // normal speed, so it can't tell a trot from a gallop): blocks per tick.
         float v = m.speed.v;
@@ -260,23 +262,27 @@ final class RideModule implements AnimModule {
         // A heavy, wide-bodied mount (DragN's Livestock Overhaul...): see compat.wideMounts.
         float wide = isWideMount(mount) ? 1f : 0f;
 
-        // ---- legs: astride, the knees folding up into the stirrups at speed
-        float fold = 0.15f * trot + 0.45f * gallop + 0.40f * jump;
+        // Leaning: into speed, folding over the neck on a jump, onto the neck when rearing,
+        // sitting back for the landing.
+        float forward = 0.05f * walk + 0.15f * trot + 0.39f * gallop + 0.34f * rise + 0.21f * drop + 0.55f * rear
+                - 0.18f * landing + 0.08f * still * graze;
+
+        // ---- legs: astride, down round the horse's sides and a little forward, the knees well
+        // clear of the belly (at least 2 px in every gait, checked on the model): the thighs swing
+        // back as the chest leans forward instead of the knees folding up under it, and a bigger
+        // horse's flanks take a little of the legs (they may sink into it a few pixels).
+        float fold = 0.10f * trot + 0.05f * gallop;
         float grip = 0.05f * Math.abs(Mth.sin(phase)) * moving;
-        float thigh = -1.00f + 0.20f * gallop + 0.15f * jump;
-        // A wide horse: the legs still point forward, just spread and turned out a little more.
-        float splay = Mth.lerp(wide, 0.42f, 0.62f), turnOut = Mth.lerp(wide, 0.25f, 0.35f);
+        float thigh = -0.75f + 0.20f * gallop + 0.15f * jump + 0.50f * forward;
+        float splay = Mth.lerp(wide, 0.52f, 0.72f), turnOut = Mth.lerp(wide, 0.25f, 0.45f);
         f.rightLeg().override(thigh, turnOut, splay - grip, w);
         f.leftLeg().override(thigh, -turnOut, -splay + grip, w);
-        f.rightLeg().overrideBend(s.knee() * (1.00f + fold), w);
-        f.leftLeg().overrideBend(s.knee() * (1.00f + fold), w);
+        f.rightLeg().overrideBend(s.knee() * (0.70f + fold), w);
+        f.leftLeg().overrideBend(s.knee() * (0.70f + fold), w);
         if (wide > 0f) {
-            // The seat comes down onto the saddle; the thighs rise into the hips (so they stay on
-            // top of it) and start a little wider apart.
-            f.rightLeg().px -= 0.5f * wide * w;
-            f.leftLeg().px += 0.5f * wide * w;
-            f.rightLeg().py -= 1.5f * wide * w;
-            f.leftLeg().py -= 1.5f * wide * w;
+            // The seat comes down onto the saddle, the hips a little wider apart.
+            f.rightLeg().px -= 0.8f * wide * w;
+            f.leftLeg().px += 0.8f * wide * w;
             f.body().py -= 0.09f * wide * w;
         }
 
@@ -289,10 +295,6 @@ final class RideModule implements AnimModule {
         f.body().ry += 0.04f * Mth.sin(phase) * walk * w;
         // Rocking-horse motion at the gallop.
         f.body().rx += (0.07f * Mth.sin(phase * 2f) * gallop + 0.03f * Mth.sin(phase * 2f) * trot) * w;
-        // Leaning: into speed, folding over the neck on a jump, onto the neck when rearing,
-        // sitting back for the landing.
-        float forward = 0.05f * walk + 0.15f * trot + 0.45f * gallop + 0.45f * rise + 0.25f * drop + 0.55f * rear
-                - 0.18f * landing + 0.08f * still * graze;
         f.body().rx -= forward * 0.45f * w;
         Rigging.leanTorso(f, s, forward * 0.70f * w);
         f.head().rx -= forward * 0.55f * w;
@@ -316,7 +318,7 @@ final class RideModule implements AnimModule {
         float armIn = Mth.lerp(wide, 0.30f, 0.20f), armOut = Mth.lerp(wide, 0.02f, 0.04f);
         // Every eight seconds or so, standing, the free hand pats the neck.
         float patT = (m.time + m.seed * 3f) % 8f;
-        float pat = still * (1f - graze) * AngleMath.ease((patT - 5.6f) / 0.3f) * (1f - AngleMath.ease((patT - 7.2f) / 0.3f));
+        float pat = behind ? 0f : still * (1f - graze) * AngleMath.ease((patT - 5.6f) / 0.3f) * (1f - AngleMath.ease((patT - 7.2f) / 0.3f));
         float tap = pat * Math.abs(Mth.sin(patT * 9f));
         f.rightArm().override(armX, -armIn, armOut, arms);
         f.leftArm().override(Mth.lerp(pat, armX, Mth.lerp(wide, -1.05f, -1.25f) + 0.15f * tap), Mth.lerp(pat, armIn, 0.15f),
@@ -324,6 +326,16 @@ final class RideModule implements AnimModule {
         f.rightArm().overrideBend(s.elbow() * elbow, arms);
         f.leftArm().overrideBend(s.elbow() * Mth.lerp(pat, elbow, 0.35f), arms);
         Rigging.leanTorso(f, s, 0.10f * pat * w);
+
+        // Riding behind someone (two on one horse, see TwoRiders): both hands hold on to the
+        // rider's waist (fitted on the model: the fists at its sides, the elbows nearly straight).
+        if (behind) {
+            f.rightArm().override(-0.98f, -0.19f, 0.06f, arms);
+            f.leftArm().override(-0.98f, 0.19f, -0.06f, arms);
+            f.rightArm().overrideBend(s.elbow() * 0.17f, arms);
+            f.leftArm().overrideBend(s.elbow() * 0.17f, arms);
+            return;
+        }
 
         // Pig / strider steered with a carrot or fungus on a stick: that arm holds it out in
         // front of the mount's nose, dangling the bait; the other hand on the saddle.

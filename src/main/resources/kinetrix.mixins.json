@@ -5,6 +5,10 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "kinetrix.refmap.json",
   "plugin": "dev.mcreload.anim.mixin.KinetrixMixinPlugin",
+  "mixins": [
+    "AbstractHorseMixin",
+    "EntityRidingMixin"
+  ],
   "client": [
     "AgeableListModelMixin",
     "CubeAccessor",
