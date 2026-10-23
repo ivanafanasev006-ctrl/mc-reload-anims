@@ -162,7 +162,11 @@ final class ReactionModule implements AnimModule {
         float headUp = AngleMath.ease((T - 0.15f) / 0.20f);
         // Getting up: the sword comes out as the body rises.
         float rise = AngleMath.ease((t - 0.58f) / 0.32f);
-        plantBlade(m, f, s, e, main, off, side, stab * (1f - rise), lean, 0.05f * slam, headUp, two);
+        // The blade's turn in the fists does not blend in: the fall held the sword point down
+        // already (AirModule#bladeFall), and fading it in while the air pose fades out would swing
+        // the blade forward for a moment on touchdown.
+        float tiltW = (1f - AngleMath.ease((t - 0.60f) / 0.40f)) * gate;
+        plantBlade(m, f, s, e, tiltW, main, off, side, stab * (1f - rise), lean, 0.05f * slam, headUp, two);
     }
 
     private static void blast(PlayerRig rig, MotionState m, PoseFrame f, Signs s, float gate, float arms,
@@ -227,7 +231,7 @@ final class ReactionModule implements AnimModule {
             float stab = AngleMath.ease((T - 0.14f) / 0.14f);
             float rise = AngleMath.ease((t - 0.58f) / 0.32f);
             float shove = Mth.sin(Mth.PI * AngleMath.clamp((T - 0.15f) / 0.5f, 0f, 1f));
-            plantBlade(m, f, s, e, main, off, side, stab * (1f - rise), 0.38f + 0.10f * shove, 0.03f * shove, 0.3f, two);
+            plantBlade(m, f, s, e, e, main, off, side, stab * (1f - rise), 0.38f + 0.10f * shove, 0.03f * shove, 0.3f, two);
         }
         // Shoved back by the blast, sliding to a stop.
         f.body().pz += 0.28f * AngleMath.ease(T / 0.5f) * Math.max(rock, e);
@@ -237,12 +241,13 @@ final class ReactionModule implements AnimModule {
      * Down on one knee with the sword driven point-first into the ground in front: both hands on
      * the hilt, raised high first and then thrust down.
      *
-     * @param stab   0 = raised high (blade up), 1 = driven into the ground
+     * @param tiltW  weight of the blade's turn in the fists (usually {@code e})
+     * @param stab   0 = raised in front of the face (point down), 1 = driven into the ground
      * @param lean   forward lean of the chest (radians); the arms compensate so the blade stays upright
      * @param drop   extra drop of the hips below the kneel (blocks)
      * @param headUp 0 = looking down at the blade, 1 = looking ahead
      */
-    private static void plantBlade(MotionState m, PoseFrame f, Signs s, float e, PartPose main, PartPose off, float side,
+    private static void plantBlade(MotionState m, PoseFrame f, Signs s, float e, float tiltW, PartPose main, PartPose off, float side,
                                    float stab, float lean, float drop, float headUp, boolean two) {
         // Kneel: free-side foot planted forward, sword-side knee on the ground.
         PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();
@@ -271,7 +276,7 @@ final class ReactionModule implements AnimModule {
             off.override(-0.75f - lean, side * 0.10f, -side * 0.15f, e);
             off.overrideBend(s.elbow() * 0.55f, e);
         }
-        m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.lerp(stab, RAISED_TILT, Mth.PI - 1.10f) * e);
+        m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.lerp(stab, RAISED_TILT, Mth.PI - 1.10f) * tiltW);
         m.armsHeld = Math.max(m.armsHeld, e);
         f.body().py += 0.05f * (1f - stab) * e;
     }
