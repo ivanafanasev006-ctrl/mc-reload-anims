@@ -83,7 +83,7 @@ final class CombatModule implements AnimModule {
         }
         // Swords and axes: BladeModule. Fists: FistModule.
         boolean keyed = MotionState.isLooping(kind) || kind == MotionState.THROW || kind == MotionState.PLACE
-                || kind == MotionState.STAB;
+                || kind == MotionState.STAB || kind == MotionState.SWAT;
         if (!keyed) return;
         float t = m.slashProgress();
         if (t >= 1.3f) return;
@@ -101,8 +101,9 @@ final class CombatModule implements AnimModule {
 
         PartPose arm = side > 0 ? f.rightArm() : f.leftArm();
         PartPose off = side > 0 ? f.leftArm() : f.rightArm();
-        // Tools aim at the block you look at: lower strikes when looking down.
-        boolean aims = MotionState.isLooping(kind) || kind == MotionState.PLACE;
+        // Tools aim at the block you look at, a swat at whatever you look at: lower strikes when
+        // looking down.
+        boolean aims = MotionState.isLooping(kind) || kind == MotionState.PLACE || kind == MotionState.SWAT;
         float aim = aims ? rig.player.getXRot() * Mth.DEG_TO_RAD * 0.5f : 0f;
         arm.override(k.armX() + aim, side * k.armY(), side * k.armZ(), w);
         arm.overrideBend(s.elbow() * k.elbow(), w);

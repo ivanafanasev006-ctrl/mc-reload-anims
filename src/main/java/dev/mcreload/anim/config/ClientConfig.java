@@ -40,6 +40,7 @@ public final class ClientConfig {
     public static final ForgeConfigSpec.BooleanValue PLAYER_OVER_EMF;
     public static final ForgeConfigSpec.BooleanValue OWN_MOVES_FIRST;
     public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> PRIORITY_OVER;
+    public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> WIDE_MOUNTS;
     public static final ForgeConfigSpec.BooleanValue BEND_SKIN_LAYERS;
     public static final ForgeConfigSpec.BooleanValue SYNC;
 
@@ -126,6 +127,10 @@ public final class ClientConfig {
                         "Combat and magic mods (Better Combat, Iron's Spells...) are not listed and keep playing on top.")
                 .defineListAllowEmpty(java.util.List.of("priorityOverMods"),
                         () -> java.util.List.of("vintage_animations", "vintageanimations"), o -> o instanceof String);
+        WIDE_MOUNTS = b.comment("Mounts with a big, wide body (mod ids or entity ids, e.g. \"dragnlivestock\" or \"dragnlivestock:o_horse\"):",
+                        "the rider sits lower, the legs spread round the barrel with the shins along its flanks, and the",
+                        "hands reach further forward for the reins. DragN's Livestock Overhaul horses, donkeys and mules by default.")
+                .defineListAllowEmpty(java.util.List.of("wideMounts"), () -> java.util.List.of("dragnlivestock"), o -> o instanceof String);
         PLAYER_OVER_EMF = b.comment("Entity Model Features (Fresh Animations / Fresh Moves): keep the player on the vanilla model so",
                         "Kinetrix animates it with joints. Resource packs like Fresh Moves otherwise replace the player model and",
                         "animate it on top of Kinetrix. Mobs keep their Fresh Animations models. Takes effect after F3+T.")

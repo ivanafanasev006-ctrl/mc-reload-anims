@@ -17,8 +17,8 @@ import net.minecraft.world.entity.HumanoidArm;
  * <ul>
  *   <li>Hit from the front: knocked back, arms flung forward. Hit from behind: shoved forward,
  *       arms thrown back.</li>
- *   <li>High fall: forward roll. High fall holding only a blade: plants it in the ground and drops
- *       into a crouch.</li>
+ *   <li>High fall holding W: forward roll (blade in hand or not). High fall with a blade in hand and
+ *       no W (no keys, or A / S / D): plants it in the ground on one knee.</li>
  *   <li>Explosion: flinches and shields the face with both arms, as if flash-banged; holding a
  *       blade instead drives it into the ground and braces against the blast.</li>
  *   <li>Totem of Undying: stares at their own hands, looking from one to the other.</li>

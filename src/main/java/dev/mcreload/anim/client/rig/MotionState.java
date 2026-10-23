@@ -68,6 +68,8 @@ public final class MotionState {
     public float brakeStart = -100f;
     /** A melee weapon in the main hand. */
     public boolean holdingBlade;
+    /** Falling with a blade in hand and W not held: the sword goes up, to be planted on landing. */
+    public final Smooth bladeReadyW = new Smooth(8f);
     /** Held item tipped forward in the hand (radians), smoothed; modules raise the target. */
     public final Smooth itemTilt = new Smooth(24f);
     public float itemTiltTarget;
@@ -209,6 +211,8 @@ public final class MotionState {
     public static final int SLASH_H = 0, SLASH_V = 1, SLASH_BACK = 2, SPIN = 3, PUNCH = 4, TOOL = 5,
             PICK = 6, SHOVEL = 7, HOE = 8, CHOP = 9, AXE_OVER = 10, AXE_SWEEP = 11, THROW = 12, FIST_BLOCK = 13, PLACE = 14,
             FISH = 15, STAB = 16,
+            /** Anything else in the hand (a block, armour, a part from a mod...) swung at the air or a mob. */
+            SWAT = 17,
             /** An attack animated by another mod (Better Combat): nothing of ours plays. */
             FOREIGN_ATTACK = 99;
     /** Sword combo order: forehand, backhand, overhead, spinning finisher. */
@@ -363,11 +367,10 @@ public final class MotionState {
                     sendLand();
                 }
             }
-            // About to hit the ground hard while running on: start the roll at the moment of
-            // touchdown instead of a tick or two after it.
+            // About to hit the ground hard while running on (W held, with or without a blade in
+            // hand): start the roll at the moment of touchdown instead of a tick or two after it.
             if (!special && !rollEarly && Cfg.landing && -minAirVy > 0.62f && movingForward() && chillW.v < 0.45f
-                    && player.tickCount - lastRideTick >= 10
-                    && !Weapons.isMeleeWeapon(player.getMainHandItem()) && !remoteDriven()) {
+                    && player.tickCount - lastRideTick >= 10 && !remoteDriven()) {
                 double gap = groundGap();
                 if (gap >= 0 && gap < -vy * 1.1) {
                     landKind = LAND_ROLL;
@@ -415,14 +418,16 @@ public final class MotionState {
                     backRollFrom = backLie;
                     chillW.v = 0f;
                     sendLand();
-                } else if (impact > 0.62f && swordOnly) {
-                    // High drop with only a blade in hand: plant it in the ground.
-                    landKind = LAND_SWORD;
+                } else if (impact > 0.62f && movingForward()) {
+                    // High drop while running on (W held): break the fall with a forward roll,
+                    // blade in hand or not.
+                    landKind = LAND_ROLL;
                     landStart = time;
                     sendLand();
-                } else if (impact > 0.62f && movingForward()) {
-                    // High drop while running on: break the fall with a forward roll.
-                    landKind = LAND_ROLL;
+                } else if (impact > 0.62f && swordOnly) {
+                    // High drop with a blade in hand and no W (no keys, or A / S / D): plant it in
+                    // the ground.
+                    landKind = LAND_SWORD;
                     landStart = time;
                     sendLand();
                 } else if (impact > 0.62f) {
@@ -599,14 +604,17 @@ public final class MotionState {
         // air with the hands behind the head; landing, roll out backwards (or float, in water).
         boolean backwards = isLocalPressingBack()
                 || (!isLocal() && !remoteDriven() && forward.v < -0.05f);
-        // Only a real drop (well below where we took off), never an ordinary jump on flat ground.
-        chillW.to(air && backwards && airTicks >= 3 && fallHeight >= 1.2f ? 1f : 0f, dt);
-        if (ground) chillW.v = Math.max(0f, chillW.v - dt * 5f);   // short hop: straight back up
         // Heading for water from dry land with enough drop: the dolphin dive starts from the top
         // of the jump (or as soon as we go over the edge) and lasts until we hit the water.
         float gap = air && diveEligible && vertical < 0.12f ? waterGap() : -1f;
         boolean overWater = gap >= 0f && fallHeight + gap >= 1.4f;
+        // Only a real drop (well below where we took off), never an ordinary jump on flat ground.
+        // With a blade in hand over dry land, S means the sword landing instead (see bladeReadyW).
+        chillW.to(air && backwards && airTicks >= 3 && fallHeight >= 1.2f && (!holdingBlade || overWater) ? 1f : 0f, dt);
+        if (ground) chillW.v = Math.max(0f, chillW.v - dt * 5f);   // short hop: straight back up
         diveAirW.to(overWater && chillW.v < 0.5f ? 1f : 0f, dt);
+        // Falling with a blade: sword raised to plant it, unless W is held (that lands in a roll).
+        bladeReadyW.to(holdingBlade && !movingForward() ? 1f : 0f, dt);
         surfaceDepth = treading ? surfaceDepth() : 0f;
 
         // Climbing: the cycle follows the height actually gained, so hands match the speed.
@@ -1049,6 +1057,8 @@ public final class MotionState {
         if (isLooping(kind) && kind == slashKind && progress < 0.92f) return;
         // Weapons: allow chaining once the hit has landed.
         if (isWeapon(kind) && isWeapon(slashKind) && progress < 0.55f) return;
+        // Clicking away with an item: each swing gets through its strike before the next one.
+        if (kind == SWAT && slashKind == SWAT && progress < 0.45f) return;
 
         // Better Combat owns the attacks of its weapons: its animation plays, ours stays out of it.
         if ((isSlash(kind) || kind == AXE_OVER || kind == STAB) && dev.mcreload.anim.compat.BetterCombatCompat.handles(held)) {
@@ -1058,7 +1068,8 @@ public final class MotionState {
             slashChained = false;
             return;
         }
-        slashChained = progress < 1.3f && ((isWeapon(kind) && isWeapon(slashKind)) || (isLooping(kind) && kind == slashKind));
+        slashChained = progress < 1.3f && ((isWeapon(kind) && isWeapon(slashKind)) || (isLooping(kind) && kind == slashKind)
+                || (kind == SWAT && slashKind == SWAT));
         slashSide = arm == HumanoidArm.RIGHT ? 1f : -1f;
         float cooldown = player.getCurrentItemAttackStrengthDelay() / 20f;
         if (isSlash(kind)) {
@@ -1099,6 +1110,9 @@ public final class MotionState {
             slashKind = kind;
             slashDuration = Mth.clamp(cooldown * 0.9f, 0.5f, 0.9f);
             slashChained = false;
+        } else if (kind == SWAT) {
+            slashKind = kind;
+            slashDuration = 0.42f;
         } else if (kind == FISH) {
             // Casting out, or reeling in if the bobber is already out.
             if (player.fishing == null) fishCastStart = time; else fishReelStart = time;
@@ -1131,7 +1145,9 @@ public final class MotionState {
         if (item instanceof HoeItem) return HOE;
         if (item instanceof AxeItem) return targetingBlock() ? CHOP : AXE_OVER;
         if (Weapons.isMeleeWeapon(held)) return SLASH_H;
-        return TOOL;
+        // Anything else (a block, armour, food, a part from a mod...) swung at the air or a mob:
+        // our own one-handed swat, never vanilla's arm swing.
+        return SWAT;
     }
 
     private boolean isLocalUsing() {

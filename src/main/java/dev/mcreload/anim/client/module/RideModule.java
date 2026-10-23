@@ -257,14 +257,32 @@ final class RideModule implements AnimModule {
         float turn = Mth.clamp(m.mountTurn.v / 12f, -1f, 1f) * moving;
         float arms = w * m.armsFree.v;
 
+        // A heavy, wide-bodied mount (DragN's Livestock Overhaul...): see compat.wideMounts.
+        float wide = isWideMount(mount) ? 1f : 0f;
+
         // ---- legs: astride, the knees folding up into the stirrups at speed
-        float fold = 0.15f * trot + 0.45f * gallop + 0.40f * jump;
+        float fold = (0.15f * trot + 0.45f * gallop + 0.40f * jump) * (1f - 0.5f * wide);
         float grip = 0.05f * Math.abs(Mth.sin(phase)) * moving;
-        float thigh = -1.00f + 0.20f * gallop + 0.15f * jump;
-        f.rightLeg().override(thigh, 0.25f, 0.42f - grip, w);
-        f.leftLeg().override(thigh, -0.25f, -0.42f + grip, w);
-        f.rightLeg().overrideBend(s.knee() * (1.00f + fold), w);
-        f.leftLeg().overrideBend(s.knee() * (1.00f + fold), w);
+        float thigh = Mth.lerp(wide, -1.00f, -0.40f) + 0.20f * gallop + 0.15f * jump;
+        float splay = Mth.lerp(wide, 0.42f, 0.99f), turnOut = Mth.lerp(wide, 0.25f, 0.17f);
+        float knee = Mth.lerp(wide, 1.00f, 0.71f) + fold;
+        f.rightLeg().override(thigh, turnOut, splay - grip, w);
+        f.leftLeg().override(thigh, -turnOut, -splay + grip, w);
+        f.rightLeg().overrideBend(s.knee() * knee, w);
+        f.leftLeg().overrideBend(s.knee() * knee, w);
+        if (wide > 0f) {
+            // Round a wide barrel: the hips spread, the thighs go out over the horse's back and
+            // the knees fold down sideways, so the shins hang along its flanks instead of through
+            // them. The seat comes down onto the saddle (the thighs rise into the hips, so they
+            // stay on top of it). Fitted to the Livestock Overhaul horses' models.
+            f.rightLeg().overrideBendAxis(1.11f, w * wide);
+            f.leftLeg().overrideBendAxis(-1.11f, w * wide);
+            f.rightLeg().px -= 2.0f * wide * w;
+            f.leftLeg().px += 2.0f * wide * w;
+            f.rightLeg().py -= 2.4f * wide * w;
+            f.leftLeg().py -= 2.4f * wide * w;
+            f.body().py -= 0.09f * wide * w;
+        }
 
         // ---- body
         float post = Math.max(0f, Mth.sin(phase));                 // trot: up every other beat
@@ -294,14 +312,16 @@ final class RideModule implements AnimModule {
         // ---- hands on the reins, following the horse's mouth
         float give = 0.10f * Mth.sin(phase * 2f + 0.6f) * (walk + trot) + 0.12f * gallop * Mth.sin(phase * 2f);
         float reach = 0.30f * gallop + 0.55f * rise + 0.35f * drop + 0.50f * rear + 0.40f * graze;
-        float armX = -0.70f - reach + give;
-        float elbow = Mth.clamp(0.95f - 0.45f * gallop - 0.6f * Math.max(rise, rear) - 0.4f * graze, 0.15f, 1.2f);
+        // A big horse's neck and reins are further ahead: the arms reach out more, elbows straighter.
+        float armX = Mth.lerp(wide, -0.70f, -0.94f) - reach + give;
+        float elbow = Mth.clamp(Mth.lerp(wide, 0.95f, 0.61f) - 0.45f * gallop - 0.6f * Math.max(rise, rear) - 0.4f * graze,
+                0.15f, 1.2f);
         // Every eight seconds or so, standing, the free hand pats the neck.
         float patT = (m.time + m.seed * 3f) % 8f;
         float pat = still * (1f - graze) * AngleMath.ease((patT - 5.6f) / 0.3f) * (1f - AngleMath.ease((patT - 7.2f) / 0.3f));
         float tap = pat * Math.abs(Mth.sin(patT * 9f));
         f.rightArm().override(armX, -0.30f, 0.02f, arms);
-        f.leftArm().override(Mth.lerp(pat, armX, -1.05f + 0.15f * tap), Mth.lerp(pat, 0.30f, 0.15f), -0.02f, arms);
+        f.leftArm().override(Mth.lerp(pat, armX, Mth.lerp(wide, -1.05f, -1.25f) + 0.15f * tap), Mth.lerp(pat, 0.30f, 0.15f), -0.02f, arms);
         f.rightArm().overrideBend(s.elbow() * elbow, arms);
         f.leftArm().overrideBend(s.elbow() * Mth.lerp(pat, elbow, 0.35f), arms);
         Rigging.leanTorso(f, s, 0.10f * pat * w);
@@ -318,6 +338,14 @@ final class RideModule implements AnimModule {
             other.override(-0.35f, 0f, -out * 0.25f, arms);
             other.overrideBend(s.elbow() * 0.60f, arms);
         }
+    }
+
+    /** A mount listed in compat.wideMounts, by its entity id or its mod id. */
+    private static boolean isWideMount(Entity mount) {
+        java.util.Set<String> list = Cfg.wideMounts;
+        if (list.isEmpty()) return false;
+        net.minecraft.resources.ResourceLocation id = net.minecraft.world.entity.EntityType.getKey(mount.getType());
+        return list.contains(id.getNamespace()) || list.contains(id.toString());
     }
 
     private static boolean isBaitStick(MotionState m, boolean right) {

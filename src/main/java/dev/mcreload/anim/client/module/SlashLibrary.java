@@ -138,6 +138,18 @@ final class SlashLibrary {
             new Key(1.00f, -0.50f, 0.00f, 0.10f, 0.40f, -0.05f, -0.03f, -0.40f, 0.10f, 0.40f, -0.15f, 0.30f, 0.10f, 0.25f),
     };
 
+    /**
+     * Anything else in the hand (a block, armour, a part from a mod...) swung at the air or a mob:
+     * a short wind-up beside the head with the shoulder back, a quick swat forward and down with
+     * the chest following it, then back to rest. The other arm swings back a little for balance.
+     */
+    static final Key[] SWAT = {
+            new Key(0f, -0.55f, 0.00f, 0.10f, 0.50f, 0f, 0f, -0.35f, 0.15f, 0.45f, -0.15f, 0.25f, 0.10f, 0.25f),
+            new Key(0.30f, -2.15f, 0.60f, 0.15f, 0.90f, 0.35f, 0.04f, -0.15f, 0.20f, 0.50f, -0.15f, 0.30f, 0.15f, 0.30f),
+            new Key(0.55f, -1.25f, -0.30f, 0.00f, 0.10f, -0.30f, -0.12f, 0.15f, 0.25f, 0.40f, -0.35f, 0.55f, 0.20f, 0.35f),
+            new Key(1.00f, -0.65f, -0.05f, 0.08f, 0.50f, -0.05f, -0.02f, -0.30f, 0.15f, 0.45f, -0.15f, 0.25f, 0.10f, 0.25f),
+    };
+
     /** Trident / spear: drawn back low at the hip, then a straight lunging thrust. */
     static final Key[] STAB = {
             new Key(0f, -0.60f, 0.15f, 0.12f, 1.30f, 0.25f, 0.02f, -0.80f, 0.15f, 0.90f, -0.20f, 0.35f, 0.15f, 0.30f),
@@ -162,6 +174,7 @@ final class SlashLibrary {
             case MotionState.THROW -> THROW;
             case MotionState.PLACE -> PLACE;
             case MotionState.STAB -> STAB;
+            case MotionState.SWAT -> SWAT;
             default -> HORIZONTAL;
         };
     }

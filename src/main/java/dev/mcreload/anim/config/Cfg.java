@@ -26,6 +26,8 @@ public final class Cfg {
     public static volatile boolean playerOverEmf = true, ownMovesFirst = true, bendSkinLayers = true, sync = true;
     public static volatile java.util.Set<String> priorityOver = java.util.Set.of("vintage_animations", "vintageanimations");
     private static java.util.List<? extends String> priorityList;
+    public static volatile java.util.Set<String> wideMounts = java.util.Set.of("dragnlivestock");
+    private static java.util.List<? extends String> wideList;
 
     public static volatile Signs signs = Signs.DEFAULT;
 
@@ -72,6 +74,13 @@ public final class Cfg {
             java.util.Set<String> set = new java.util.HashSet<>();
             for (String id : pl) if (id != null && !id.isBlank()) set.add(id.trim().toLowerCase(java.util.Locale.ROOT));
             priorityOver = java.util.Set.copyOf(set);
+        }
+        java.util.List<? extends String> wl = ClientConfig.WIDE_MOUNTS.get();
+        if (wl != wideList) {
+            wideList = wl;
+            java.util.Set<String> set = new java.util.HashSet<>();
+            for (String id : wl) if (id != null && !id.isBlank()) set.add(id.trim().toLowerCase(java.util.Locale.ROOT));
+            wideMounts = java.util.Set.copyOf(set);
         }
 
         signs = Signs.of(ClientConfig.INVERT_KNEE.get(), ClientConfig.INVERT_ELBOW.get(), ClientConfig.INVERT_TORSO.get());

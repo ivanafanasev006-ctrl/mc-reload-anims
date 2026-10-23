@@ -39,9 +39,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${{ steps.ver.outputs.version }}-build${{ github.run_number }}"
-          gh release create "$TAG" build/libs/*.jar \
+          FROM=""
+          if [ "$GITHUB_REF_NAME" != "main" ]; then FROM=" from branch $GITHUB_REF_NAME"; fi
+          gh release create "$TAG" build/libs/*.jar --target "$GITHUB_SHA" \
             --title "MC Reload Animations ${{ steps.ver.outputs.version }} (build ${{ github.run_number }})" \
-            --notes "Automatic build of ${GITHUB_SHA::7}. Forge 1.20.1, requires playerAnimator." \
+            --notes "Automatic build of ${GITHUB_SHA::7}${FROM}. Forge 1.20.1, requires playerAnimator." \
             --prerelease
 
       # Also keep the latest jar (or the failure log) on the 'dist' branch.
@@ -52,9 +54,12 @@ jobs:
           cp build/libs/*.jar /tmp/dist/ 2>/dev/null || true
           cp build.log /tmp/dist/ 2>/dev/null || true
           cd /tmp/dist
-          git init -q -b dist
+          # main keeps 'dist'; a build of another branch goes to 'dist-<branch>'.
+          OUT=dist
+          if [ "$GITHUB_REF_NAME" != "main" ]; then OUT="dist-${GITHUB_REF_NAME//\//-}"; fi
+          git init -q -b "$OUT"
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add -A
           git commit -qm "Build ${{ github.run_number }} of ${GITHUB_SHA::7} (${{ job.status }})"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" dist
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "$OUT"

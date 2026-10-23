@@ -42,10 +42,11 @@ final class AirModule implements AnimModule {
                 float fallW = air * fall * (1f - dive);
                 float diveW = air * fall * dive;
                 if (jumpW > 0.001f) jump(m, f, s, jumpW, arms, pt);
-                // A real drop (faster than any ordinary jump comes down) with only a blade in
-                // hand: both hands take the sword up overhead, ready to plant it on landing.
-                boolean bladeOnly = m.holdingBlade;
-                float bladeW = bladeOnly ? air * AngleMath.clamp((-m.vertical - 0.50f) / 0.25f, 0f, 1f) : 0f;
+                // A real drop (faster than any ordinary jump comes down) with a blade in hand and
+                // W not held: both hands take the sword up overhead, ready to plant it on landing.
+                // Holding W, it is the ordinary fall and a forward roll on landing.
+                float bladeW = m.holdingBlade
+                        ? air * m.bladeReadyW.v * AngleMath.clamp((-m.vertical - 0.50f) / 0.25f, 0f, 1f) : 0f;
                 float plainFall = fallW * (1f - bladeW);
                 if (plainFall > 0.001f) fall(m, f, s, plainFall, arms);
                 if (bladeW > 0.001f) bladeFall(m, f, s, bladeW, arms, m.mainRight ? 1f : -1f,

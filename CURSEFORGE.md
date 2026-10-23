@@ -14,7 +14,7 @@ Kinetrix replaces Minecraft's stiff six-block puppet movement with procedural, p
 - **Crawl (C)**: get down and crawl through one-block gaps. Its own animation, not a swim stroke: a low cave-diver crawl, forearm reaching ahead and dragging the body up to it while the opposite knee, drawn up to the side, pushes; resting on the forearms when still.
 - **Sit (X)**: sit down on the ground; now and then you shift between leaning back on your hands, hugging your knees and resting an arm on a raised knee. The hitbox and the camera go down too.
 - **Idle life**: a few clean, polished fidgets (stretching, looking around, cracking the neck, kicking a pebble) — and when you hold something, you play with it: twirl and inspect a sword, practice swings, rest an axe or pickaxe on your shoulder, lean on a shovel, raise a lantern, peek into a bucket, look a block over.
-- **Riding**: horse gaits from walk to a jockey gallop and jumps, pigs and striders with the bait on a stick, rowing a boat, rattling along in a minecart (arms up at full speed), and several things to do while sitting still.
+- **Riding**: horse gaits from walk to a jockey gallop and jumps, pigs and striders with the bait on a stick, rowing a boat, rattling along in a minecart (arms up at full speed), and several things to do while sitting still. Big horses (DragN's Livestock Overhaul) get their own seat: lower, legs round the barrel, hands forward on the reins.
 - **Reactions**: knock-back from hits, shielding your face from explosions (or bracing on a planted sword), the Totem of Undying.
 - **20 emotes** (default key **B**): Default Dance, Floss, Running Man, Robot, Air Guitar, Flex, Meditate, Wave, Clap, Facepalm, Salute, Bow, Sit, Thumbs Up, Victory, Point, Laugh, Cry, Push-ups and more.
 
@@ -26,6 +26,7 @@ Kinetrix replaces Minecraft's stiff six-block puppet movement with procedural, p
 - **Skin Layers 3D:** the 3D outer skin layer bends at the elbows, knees and waist too.
 - **Oculus shaders, Embeddium, Xenon, Shoulder Surfing Reloaded:** fine — body, joints and armour stay visible with shaders on.
 - **Personality:** its crawl and sit get Kinetrix animations; Kinetrix's own C / X keys start unbound so nothing is bound twice.
+- **DragN's Livestock Overhaul:** riding its wide horses, donkeys and mules the rider sits lower with the legs spread round the barrel and the hands reaching for the reins (other horse mods can be added in the config).
 - **Not needed:** bendy-lib — Kinetrix draws the bends itself (if bendy-lib is installed, Kinetrix steps aside and lets it).
 - **Client side mod, optional on servers.** Put it on the server (or have it on the host of a LAN world) and players who have Kinetrix see each other's emotes, rolls, landings, idle fidgets and sitting exactly as chosen, and can crawl (crawling needs the server's agreement). Players without it can still join.
 
@@ -46,7 +47,7 @@ This is a beta: please report anything that looks wrong (a short video helps a l
 - Ходьба, бег, присед, прыжки, падения, кувырки, плавание, нырки, бой (меч, топор, кулаки, лук, арбалет, щит, трезубец), инструменты, рыбалка, еда.
 - Ползание на **C** (пролезает в проём в 1 блок, по-пластунски, не как плавание) и сидение на **X** (несколько поз, хитбокс и камера опускаются).
 - Игра с предметом в руке, пока стоишь: крутит и осматривает меч, кладёт топор на плечо, опирается на лопату, поднимает фонарь.
-- Езда на лошади, свинье, лавомерке, в лодке и вагонетке, несколько вариантов безделья в сиденье.
+- Езда на лошади, свинье, лавомерке, в лодке и вагонетке, несколько вариантов безделья в сиденье. Большие лошади DragN's Livestock Overhaul: посадка ниже, ноги шире, руки к поводьям.
 - 20 эмоций (клавиша **B**).
 
-**Нужен:** Player Animator. **Совместим:** Better Combat (и Malfu Combat Animation), Iron's Spells 'n Spellbooks, Emotecraft, Fresh Animations / Fresh Moves (игроку остаётся ванильная модель, без смеси анимаций), Skin Layers 3D (3D-слой гнётся), шейдеры Oculus, Embeddium, Xenon, Shoulder Surfing, Personality. Клиентский мод; если поставить его ещё и на сервер (или он есть у хоста LAN-мира), игроки видят эмоции и кувырки друг друга.
+**Нужен:** Player Animator. **Совместим:** Better Combat (и Malfu Combat Animation), Iron's Spells 'n Spellbooks, Emotecraft, Fresh Animations / Fresh Moves (игроку остаётся ванильная модель, без смеси анимаций), Skin Layers 3D (3D-слой гнётся), шейдеры Oculus, Embeddium, Xenon, Shoulder Surfing, Personality, DragN's Livestock Overhaul. Клиентский мод; если поставить его ещё и на сервер (или он есть у хоста LAN-мира), игроки видят эмоции и кувырки друг друга.

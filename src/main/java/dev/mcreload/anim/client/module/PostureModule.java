@@ -198,40 +198,57 @@ final class PostureModule implements AnimModule {
     }
 
     /**
-     * One way of sitting. Limb poses are pulled toward with {@code w} (arms {@code aw}); lean and
-     * head are added scaled by {@code add}. Returns how far the hips go down (blocks, scaled by add).
+     * One way of sitting. Limb poses are pulled toward with {@code w} (arms {@code aw}); body tilt,
+     * hips and head are added scaled by {@code add}. Returns how far the hips go down (blocks, scaled by add).
+     *
+     * <p>The hip joints sit in the middle of the torso's depth, at its bottom edge, so a thigh
+     * pointing forward or up comes out of the belly and a level thigh hangs two pixels below the
+     * seat. Sitting, the legs are therefore drawn up into the hips and a little forward, and the
+     * hips go all the way down onto the ground; leaning back tips the whole body from the hips
+     * instead of folding the back at the waist. Every pose was checked against a box model of the
+     * player (wide and slim arms): no part through another, and hips, feet and planted hands on
+     * the ground. The arm angles are relative to the tipped, leaning chest they hang from.</p>
      */
     private static float style(int v, PoseFrame f, Signs s, float w, float aw, float add, float t) {
+        float recline = 0f, waist = 0f, forward = 0f, up = 0f, drop = 0f;
         switch (v) {
             case 0 -> {
-                // Leaning back on both hands, right leg out, left knee up.
-                leg(f.rightLeg(), s, -1.50f, 0f, 0.10f, 0.12f, 0f, w);
-                leg(f.leftLeg(), s, -2.35f, 0f, -0.12f, 1.55f, 0f, w);
-                arm(f.rightArm(), s, 0.70f, 0f, 0.28f, 0.05f, aw);
-                arm(f.leftArm(), s, 0.70f, 0f, -0.28f, 0.05f, aw);
-                Rigging.leanTorso(f, s, -0.45f * add);
-                f.head().rx += 0.30f * add;
+                // Leaning back on both hands planted behind the hips, right leg out along the
+                // ground, left knee up and turned out a little.
+                recline = 0.22f; waist = -0.08f; forward = 1.25f; up = 1.7f; drop = 0.68f;
+                leg(f.rightLeg(), s, -1.60f + recline, 0.13f, 0.06f, 0.11f, 0f, w);
+                leg(f.leftLeg(), s, -2.19f + recline, -0.22f, -0.25f, 1.65f, 0f, w);
+                arm(f.rightArm(), s, 0.40f, 0f, 0.31f, 0f, 0f, aw);
+                arm(f.leftArm(), s, 0.40f, 0f, -0.31f, 0f, 0f, aw);
+                f.head().rx += 0.27f * add;
             }
             case 1 -> {
-                // Knees up, arms around them.
-                leg(f.rightLeg(), s, -2.62f, 0f, 0.10f, 2.09f, 0f, w);
-                leg(f.leftLeg(), s, -2.62f, 0f, -0.10f, 2.09f, 0f, w);
-                arm(f.rightArm(), s, -0.30f, -0.50f, -0.10f, 1.05f, aw);
-                arm(f.leftArm(), s, -0.30f, 0.50f, 0.10f, 1.05f, aw);
-                Rigging.leanTorso(f, s, 0.30f * add);
-                f.head().rx -= 0.15f * add;
+                // Knees drawn up, arms wrapped round the shins: the elbows fold sideways so the
+                // forearms cross in front of the shins and the hands meet.
+                recline = -0.05f; waist = 0.22f; forward = 1.9f; up = 1.35f; drop = 0.69f;
+                leg(f.rightLeg(), s, -2.15f, 0f, -0.05f, 2.18f, 0f, w);
+                leg(f.leftLeg(), s, -2.15f, 0f, 0.05f, 2.18f, 0f, w);
+                arm(f.rightArm(), s, -1.50f, -0.20f, -0.06f, 0.60f, -Mth.HALF_PI, aw);
+                arm(f.leftArm(), s, -1.50f, 0.20f, 0.06f, 0.60f, Mth.HALF_PI, aw);
             }
             default -> {
-                // Right knee up with the arm resting on it, left leg folded in front, left hand on the ground.
-                leg(f.rightLeg(), s, -2.30f, 0f, 0.12f, 1.55f, 0f, w);
-                leg(f.leftLeg(), s, -1.50f, -0.75f, 0f, 2.30f, -Mth.HALF_PI, w);
-                arm(f.rightArm(), s, -0.90f, -0.30f, -0.30f, 0.15f + 0.05f * Mth.sin(t * 0.8f), aw);
-                arm(f.leftArm(), s, 0.10f, 0f, -0.20f, 0.10f, aw);
-                Rigging.leanTorso(f, s, 0.12f * add);
+                // Right knee up with the arm resting over it, left leg folded flat in front, left
+                // hand on the ground.
+                recline = 0.16f; waist = 0.27f; forward = 1.9f; up = 1.45f; drop = 0.68f;
+                leg(f.rightLeg(), s, -2.17f, 0.45f, -0.09f, 1.56f, 0f, w);
+                leg(f.leftLeg(), s, -1.41f, -0.30f, -0.08f, 1.60f, -Mth.HALF_PI, w);
+                arm(f.rightArm(), s, -1.64f, -0.40f, -0.04f, 0.25f + 0.05f * Mth.sin(t * 0.8f), 0f, aw);
+                arm(f.leftArm(), s, -0.14f, 0f, -0.38f, 0.06f, 0f, aw);
                 f.head().ry -= 0.15f * add;
             }
         }
-        return 0.60f * add;
+        f.body().rx += recline * add;
+        Rigging.leanTorso(f, s, waist * add);
+        f.rightLeg().py -= up * add;
+        f.leftLeg().py -= up * add;
+        f.rightLeg().pz -= forward * add;
+        f.leftLeg().pz -= forward * add;
+        return drop * add;
     }
 
     private static void leg(PartPose leg, Signs s, float x, float y, float z, float knee, float axis, float w) {
@@ -240,10 +257,10 @@ final class PostureModule implements AnimModule {
         leg.overrideBend(s.knee() * knee, w);
     }
 
-    private static void arm(PartPose arm, Signs s, float x, float y, float z, float elbow, float w) {
+    private static void arm(PartPose arm, Signs s, float x, float y, float z, float elbow, float axis, float w) {
         if (w <= 0.001f) return;
         arm.override(x, y, z, w);
-        arm.overrideBendAxis(0f, w);
+        arm.overrideBendAxis(axis, w);
         arm.overrideBend(s.elbow() * elbow, w);
     }
 }

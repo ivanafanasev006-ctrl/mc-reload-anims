@@ -285,6 +285,12 @@ public final class SelfTest {
                 (mc, t) -> move(mc, false, false, false, false), new Window(8, 18, 5, 0.0f), new Window(19, 45, 5, 0.06f)));
         SCENARIOS.add(new Scenario("07d_sword_landing_totem", 50, sp -> { place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TOTEM_OF_UNDYING)); },
                 (mc, t) -> move(mc, false, false, false, false), new Window(10, 40, 6, 0.06f)));
+        // The same drop holding W: an ordinary fall and a forward roll, sword in hand or not.
+        SCENARIOS.add(new Scenario("07e_sword_fall_forward", 55, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> move(mc, t < 45, false, false, false), new Window(8, 18, 3, 0.0f), new Window(19, 42, 6, 0.04f)));
+        // Holding S (or A / D, or nothing): the sword goes up and is planted on landing.
+        SCENARIOS.add(new Scenario("07f_sword_fall_back", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> moveBack(mc, t < 50), new Window(8, 18, 3, 0.0f), new Window(19, 45, 5, 0.06f)));
         SCENARIOS.add(new Scenario("26_explosion", 45, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> { if (t == 10) { explode(mc, 4.0, 0.5); blastCue(mc); } }, new Window(11, 34, 4, 0.08f)));
         SCENARIOS.add(new Scenario("26b_explosion_sword", 45, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
@@ -298,6 +304,17 @@ public final class SelfTest {
                     move(mc, t > 8 && t < 66, t > 28 && t < 66, t >= 72 && t < 75, t >= 44 && t < 52);
                 }, new Window(18, 27, 2, 0.15f), new Window(34, 44, 2, 0.1f), new Window(52, 66, 5, 0.02f),
                 new Window(73, 90, 3, 0.05f)));
+        // A big, wide horse (compat.wideMounts, as for DragN's Livestock Overhaul): the legs spread
+        // round the barrel, the seat lower, the hands forward on the reins. Shown on a vanilla horse.
+        SCENARIOS.add(new Scenario("19b_horse_wide", 70, SelfTest::mountHorse,
+                (mc, t) -> {
+                    if (t == 4) {
+                        savedWideMounts = dev.mcreload.anim.config.Cfg.wideMounts;
+                        dev.mcreload.anim.config.Cfg.wideMounts = java.util.Set.of("minecraft:horse");
+                    }
+                    move(mc, t > 30 && t < 62, t > 44 && t < 62, false, false);
+                    if (t == 68 && savedWideMounts != null) dev.mcreload.anim.config.Cfg.wideMounts = savedWideMounts;
+                }, new Window(14, 28, 2, 0.3f), new Window(34, 44, 2, 0.1f), new Window(50, 62, 3, 0.05f)));
         SCENARIOS.add(new Scenario("11b_tread", 50, sp -> place(sp, POOL_X + 10, Y - 2, 0, -90, none),
                 (mc, t) -> move(mc, false, false, false, t % 10 < 3), new Window(20, 50, 3, 0.3f)));
         SCENARIOS.add(new Scenario("11d_surface_swim", 60, sp -> place(sp, POOL_X + 3, Y - 2, 0, -90, none),
@@ -380,6 +397,16 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("62_attack_key", 44, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
                 (mc, t) -> { if (t == 10 || t == 30) net.minecraft.client.KeyMapping.click(mc.options.keyAttack.getKey()); },
                 new Window(10, 50, 10, 0.2f)));
+        // Swinging a stack of planks, then a chestplate, at the air: our own swat, never vanilla's swing.
+        SCENARIOS.add(new Scenario("62b_item_swat", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.OAK_PLANKS, 16)),
+                (mc, t) -> {
+                    if (t == 8 || t == 34) net.minecraft.client.KeyMapping.click(mc.options.keyAttack.getKey());
+                    if (t == 24) {
+                        IntegratedServer srv = mc.getSingleplayerServer();
+                        srv.execute(() -> srv.getPlayerList().getPlayers().get(0)
+                                .setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_CHESTPLATE)));
+                    }
+                }, new Window(8, 20, 5, 0.03f), new Window(34, 46, 5, 0.03f)));
         // Mining an obsidian block (survival, so it does not break) with the attack key held.
         SCENARIOS.add(new Scenario("63_pick_mining", 50, sp -> {
                     place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_PICKAXE));
@@ -452,6 +479,7 @@ public final class SelfTest {
     }
 
     private static net.minecraftforge.common.util.FakePlayer friend;
+    private static java.util.Set<String> savedWideMounts;
 
     /** A second player, driven from the server, with Kinetrix sync messages sent for it. */
     private static void friend(Minecraft mc, int t) {
