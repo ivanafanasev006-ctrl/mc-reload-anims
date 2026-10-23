@@ -731,9 +731,9 @@ public final class SelfTest {
             dev.mcreload.anim.client.rig.PlayerRig rig = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player);
             if (rig != null) {
                 var m = rig.motion;
-                McReloadAnim.LOG.info("[kinetrix] self-test {} t={} air vy={} airW={} fallW={} bladeReadyW={} blade={} armsFree={} toolSwingW={} gate={} tilt={}",
+                McReloadAnim.LOG.info("[kinetrix] self-test {} t={} air vy={} airW={} fallW={} bladeReadyW={} hardDropW={} blade={} armsFree={} toolSwingW={} gate={} tilt={}",
                         currentLabel, scenarioTick, String.format("%.3f", m.vertical), String.format("%.2f", m.airW.v),
-                        String.format("%.2f", m.fallW.v), String.format("%.2f", m.bladeReadyW.v), m.holdingBlade,
+                        String.format("%.2f", m.fallW.v), String.format("%.2f", m.bladeReadyW.v), String.format("%.2f", m.hardDropW.v), m.holdingBlade,
                         String.format("%.2f", m.armsFree.v), String.format("%.2f", m.toolSwingW.v),
                         String.format("%.2f", m.gate.v), String.format("%.2f", m.itemTilt.v));
             }

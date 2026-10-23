@@ -70,6 +70,13 @@ public final class MotionState {
     public boolean holdingBlade;
     /** Falling with a blade in hand and W not held: the sword goes up, to be planted on landing. */
     public final Smooth bladeReadyW = new Smooth(8f);
+    /**
+     * This drop ends in a hard landing (the speed we will hit the ground at, see #predictedImpact,
+     * is past the sword-plant / roll threshold): known from the top of the drop, not only once
+     * we are already falling fast, so the sword can be held point down for the whole fall.
+     */
+    public final Smooth hardDropW = new Smooth(12f);
+    private boolean hardDropAhead;
     /** ParCool is animating one of its parkour moves on this player: our whole layer steps aside. */
     public boolean parkour;
     public final Smooth parkourW = new Smooth(12f);
@@ -124,6 +131,8 @@ public final class MotionState {
     public final Spring hitFront = new Spring(120f, 12f);
     public final Spring hitBack = new Spring(120f, 12f);
     public static final int LAND_NONE = 0, LAND_ROLL = 1, LAND_SWORD = 2, LAND_BACKROLL = 3;
+    /** Landing faster than this (blocks per tick) is a hard landing: a roll with W, a sword plant without. */
+    static final float HARD_LANDING = 0.62f;
     public int landKind = LAND_NONE;
     /** Riding: when the vehicle last moved / was paddled (seat idles start after that). */
     public float rideIdleStart;
@@ -356,6 +365,7 @@ public final class MotionState {
             }
             airTicks++;
             minAirVy = Math.min(minAirVy, (float) vy);
+            hardDropAhead = !special && holdingBlade && predictedImpact() > HARD_LANDING;
             // Falling backwards lying back: start the back roll the moment we touch down, like
             // the forward roll.
             if (!special && !rollEarly && Cfg.landing && chillW.v > 0.45f && -vy > 0.2
@@ -372,7 +382,7 @@ public final class MotionState {
             }
             // About to hit the ground hard while running on (W held, with or without a blade in
             // hand): start the roll at the moment of touchdown instead of a tick or two after it.
-            if (!special && !rollEarly && Cfg.landing && -minAirVy > 0.62f && movingForward() && chillW.v < 0.45f
+            if (!special && !rollEarly && Cfg.landing && -minAirVy > HARD_LANDING && movingForward() && chillW.v < 0.45f
                     && player.tickCount - lastRideTick >= 10 && !remoteDriven()) {
                 double gap = groundGap();
                 if (gap >= 0 && gap < -vy * 1.1) {
@@ -411,7 +421,7 @@ public final class MotionState {
                 if (remoteDriven()) {
                     // Rolls and sword plants: whatever their own client chose (it knows the keys).
                     if (!takePendingLand()) {
-                        if (impact > 0.62f) land.impulse(1.25f);
+                        if (impact > HARD_LANDING) land.impulse(1.25f);
                         else if (impact > 0.18f) land.impulse(Mth.clamp((impact - 0.12f) / 0.85f, 0.15f, 1.25f));
                     }
                 } else if (impact > 0.25f && chillW.v > 0.45f) {
@@ -421,19 +431,19 @@ public final class MotionState {
                     backRollFrom = backLie;
                     chillW.v = 0f;
                     sendLand();
-                } else if (impact > 0.62f && movingForward()) {
+                } else if (impact > HARD_LANDING && movingForward()) {
                     // High drop while running on (W held): break the fall with a forward roll,
                     // blade in hand or not.
                     landKind = LAND_ROLL;
                     landStart = time;
                     sendLand();
-                } else if (impact > 0.62f && swordOnly) {
+                } else if (impact > HARD_LANDING && swordOnly) {
                     // High drop with a blade in hand and no W (no keys, or A / S / D): plant it in
                     // the ground.
                     landKind = LAND_SWORD;
                     landStart = time;
                     sendLand();
-                } else if (impact > 0.62f) {
+                } else if (impact > HARD_LANDING) {
                     // High drop standing still: just a deeper crouch.
                     land.impulse(1.25f);
                 } else if (impact > 0.18f) {
@@ -443,6 +453,7 @@ public final class MotionState {
             airTicks = 0;
             minAirVy = 0f;
             rollEarly = false;
+            hardDropAhead = false;
         }
         wasOnGround = ground;
 
@@ -620,6 +631,7 @@ public final class MotionState {
         diveAirW.to(overWater && chillW.v < 0.5f ? 1f : 0f, dt);
         // Falling with a blade: sword raised to plant it, unless W is held (that lands in a roll).
         bladeReadyW.to(holdingBlade && !movingForward() ? 1f : 0f, dt);
+        hardDropW.to(air ? Math.max(hardDropAhead ? 1f : 0f, Mth.clamp((-vertical - 0.50f) / 0.12f, 0f, 1f)) : 0f, dt);
         surfaceDepth = treading ? surfaceDepth() : 0f;
 
         // Climbing: the cycle follows the height actually gained, so hands match the speed.
@@ -948,10 +960,19 @@ public final class MotionState {
 
     /** Height of the feet above the first solid surface below (up to 3 blocks), or -1. */
     private double groundGap() {
+        return groundGap(4, false);
+    }
+
+    /**
+     * Height of the feet above the first solid block top below, within {@code depth} blocks; -1 if
+     * none, or (with {@code fluidStops}) if water or lava comes first.
+     */
+    private double groundGap(int depth, boolean fluidStops) {
         net.minecraft.world.level.Level level = player.level();
         double y = player.getY();
         net.minecraft.core.BlockPos.MutableBlockPos pos = player.blockPosition().mutable();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < depth; i++) {
+            if (fluidStops && !level.getFluidState(pos).isEmpty()) return -1;
             var shape = level.getBlockState(pos).getCollisionShape(level, pos);
             if (!shape.isEmpty()) {
                 double top = pos.getY() + shape.max(net.minecraft.core.Direction.Axis.Y);
@@ -960,6 +981,26 @@ public final class MotionState {
             pos.move(net.minecraft.core.Direction.DOWN);
         }
         return -1;
+    }
+
+    /**
+     * The speed (blocks per tick, downwards) this fall will hit the ground at, as the landing
+     * measures it (the fastest tick of the fall), dropping straight down from here with vanilla
+     * gravity and drag onto the ground below. With no ground within 32 blocks (or water first: no
+     * hard landing there), the speed so far.
+     */
+    private float predictedImpact() {
+        double v = -vy, hit = Math.max(0.0, -minAirVy);
+        double gap = groundGap(32, true);
+        if (gap < 0) return (float) Math.max(hit, v);
+        double d = 0;
+        for (int i = 0; i < 200; i++) {
+            v = (v + 0.08) * 0.98;
+            if (d + v >= gap) return (float) Math.max(hit, gap - d);
+            d += v;
+            hit = Math.max(hit, v);
+        }
+        return (float) hit;
     }
 
     private boolean isLocalPressingBack() {

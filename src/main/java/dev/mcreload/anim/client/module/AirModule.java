@@ -38,16 +38,15 @@ final class AirModule implements AnimModule {
             if (air > 0.001f) {
                 float fall = m.fallW.v;
                 float dive = m.skydiveW.v;
-                float jumpW = air * (1f - fall);
+                // A drop that will end in a hard landing (known from the top of it: see
+                // MotionState#hardDropW) with a blade in hand and W not held: both hands hold the
+                // sword up in front of the face, point down, for the whole fall, ready to plant it
+                // on landing. Holding W, it is the ordinary fall and a forward roll on landing.
+                float bladeW = m.holdingBlade ? air * m.bladeReadyW.v * m.hardDropW.v : 0f;
+                float jumpW = air * (1f - fall) * (1f - bladeW);
                 float fallW = air * fall * (1f - dive);
-                float diveW = air * fall * dive;
+                float diveW = air * fall * dive * (1f - bladeW);
                 if (jumpW > 0.001f) jump(m, f, s, jumpW, arms, pt);
-                // A real drop (faster than any ordinary jump comes down) with a blade in hand and
-                // W not held: both hands raise the sword in front of the face, point down, ready to
-                // plant it on landing.
-                // Holding W, it is the ordinary fall and a forward roll on landing.
-                float bladeW = m.holdingBlade
-                        ? air * m.bladeReadyW.v * AngleMath.clamp((-m.vertical - 0.50f) / 0.12f, 0f, 1f) : 0f;
                 float plainFall = fallW * (1f - bladeW);
                 if (plainFall > 0.001f) fall(m, f, s, plainFall, arms);
                 if (bladeW > 0.001f) bladeFall(m, f, s, bladeW, arms, m.mainRight ? 1f : -1f,
