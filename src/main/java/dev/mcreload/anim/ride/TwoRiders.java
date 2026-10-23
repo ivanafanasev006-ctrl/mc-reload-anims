@@ -10,6 +10,9 @@ import net.minecraft.world.entity.animal.camel.Camel;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionResult;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import java.util.List;
 
@@ -19,7 +22,9 @@ import java.util.List;
  * horses, donkeys, mules, and other mods' horses built on them, such as DragN's Livestock
  * Overhaul's), whatever way the mount seats its rider: the one behind is moved back from wherever
  * the mount put them. Llamas (not ridden) and camels (two seats of their own) are left alone.
- * Runs on both sides (server: who may get on; both: where they sit).
+ * Runs on both sides (server: who may get on; both: where they sit). Getting on goes through
+ * Forge's entity-interact event, before the horse's own click handling, so it works the same for
+ * every mod's horses whatever they do with a click on a horse that already has a rider.
  */
 public final class TwoRiders {
     /** How far behind the rider the second one sits, as a share of the mount's width. */
@@ -40,6 +45,23 @@ public final class TwoRiders {
         if (horse.isBaby() || !horse.isTamed() || !horse.isSaddled()) return false;
         List<Entity> riders = horse.getPassengers();
         return riders.size() == 1 && riders.get(0) instanceof LivingEntity && riders.get(0) != player;
+    }
+
+    /** Right-clicking a horse someone is riding: climb on behind them. */
+    @SubscribeEvent
+    public static void onInteract(PlayerInteractEvent.EntityInteract event) {
+        if (!(event.getTarget() instanceof AbstractHorse horse)) return;
+        Player player = event.getEntity();
+        if (!canClimbOnBehind(horse, player)) return;
+        if (!player.level().isClientSide) {
+            player.setYRot(horse.getYRot());
+            player.setXRot(horse.getXRot());
+            // Forced: the checks that matter were made above, and a mod's horse may keep its own
+            // idea of how many may ride it.
+            player.startRiding(horse, true);
+        }
+        event.setCancellationResult(InteractionResult.sidedSuccess(player.level().isClientSide));
+        event.setCanceled(true);
     }
 
     /** The second rider of a two-seat mount (the one behind), else false. */

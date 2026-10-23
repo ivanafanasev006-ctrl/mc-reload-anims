@@ -33,6 +33,7 @@ public final class McReloadAnim {
         // Multiplayer sync channel (both sides; optional on both ends).
         dev.mcreload.anim.net.KinetrixNet.init();
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, dev.mcreload.anim.config.CommonConfig.SPEC, MODID + "-common.toml");
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(dev.mcreload.anim.ride.TwoRiders.class);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC, MODID + "-client.toml");
             // Only touched on the client, so the class (and playerAnimator) is never loaded on a server.

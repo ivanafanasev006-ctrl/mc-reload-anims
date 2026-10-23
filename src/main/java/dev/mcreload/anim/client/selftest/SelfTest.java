@@ -729,6 +729,8 @@ public final class SelfTest {
         net.minecraft.world.entity.npc.Villager rider = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
         if (horse == null || rider == null) return;
         horse.moveTo(2.5, Y, 0.5, -90, 0);
+        horse.setYBodyRot(-90);
+        horse.setYHeadRot(-90);
         horse.setTamed(true);
         horse.equipSaddle(null);
         level.addFreshEntity(horse);
@@ -736,7 +738,8 @@ public final class SelfTest {
         rider.setNoAi(true);
         level.addFreshEntity(rider);
         rider.startRiding(horse, true);
-        net.minecraft.world.InteractionResult r = horse.interact(sp, InteractionHand.MAIN_HAND);
+        // As a right-click does it (Forge's entity-interact event first, then the horse).
+        net.minecraft.world.InteractionResult r = sp.interactOn(horse, InteractionHand.MAIN_HAND);
         // A player always takes the front seat from a mob (vanilla Entity#addPassenger); between
         // two players the one who climbs on second sits behind. Put the villager in front here so
         // the player is the one behind, as with a friend in the saddle.

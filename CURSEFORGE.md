@@ -7,14 +7,15 @@ Kinetrix replaces Minecraft's stiff six-block puppet movement with procedural, p
 ## Players
 
 - **Walking, sprinting, sneaking** with bending knees and elbows, counter-swinging shoulders, a lean into the run, and loose arms that lag and spring with momentum.
-- **Jumps, falls and landings**: a tuck on the jump, flailing fall, skydiver pose on long drops, legs that absorb the landing; a forward roll on hard landings while holding W, a back roll when falling backwards off a ledge, and a superhero landing that drives your sword into the ground.
+- **Jumps, falls and landings**: a tuck on the jump, flailing fall, skydiver pose on long drops, legs that absorb the landing; a forward roll on hard landings while holding W, a back roll when falling backwards off a ledge, and a superhero landing: the sword held point down for the whole drop, a short wind-up over the head just before touchdown, then driven into the ground (walk off right away and it lets go at once).
 - **Swimming**: front crawl, treading water upright, a head-first dolphin dive from a height, a smooth climb out of the water.
 - **Combat**: a four-hit sword combo, heavy axe chops, a boxing guard and alternating punches, bow drawn with the string hand close to the bow, crossbow held like a shotgun, shield guard (also while sneaking), trident throw and thrust.
 - **Tools and items**: one-handed mining, hand digging, block placing, fishing (cast, wait, strike), eating with the food at your mouth.
 - **Crawl (hold C)**: get down and crawl through one-block gaps, for as long as you hold the key. Its own animation, not a swim stroke: a low cave-diver crawl, forearm reaching ahead and dragging the body up to it while the opposite knee, drawn up to the side, pushes; resting on the forearms when still.
 - **Sit (X)**: sit down on the ground; now and then you shift between leaning back on your hands and resting an arm on a raised knee. The hitbox and the camera go down too.
 - **Idle life**: a few clean, polished fidgets (stretching, looking around, cracking the neck, kicking a pebble) — and when you hold something, you play with it: twirl and inspect a sword, practice swings, rest an axe or pickaxe on your shoulder, lean on a shovel, raise a lantern, peek into a bucket, look a block over.
-- **Riding**: horse gaits from walk to a jockey gallop and jumps, pigs and striders with the bait on a stick, rowing a boat, rattling along in a minecart (arms up at full speed), and several things to do while sitting still. Big horses (DragN's Livestock Overhaul) get their own seat: lower, legs a little wider, hands low on the reins.
+- **Riding**: horse gaits from walk to a gallop and jumps with the legs down round the horse's sides (never pressed into the belly), pigs and striders with the bait on a stick, rowing a boat, rattling along in a minecart (arms up at full speed), and several things to do while sitting still. Big horses (DragN's Livestock Overhaul) get their own seat: lower, legs wider, hands low on the reins.
+- **Two on one horse**: right-click a tamed, saddled horse (donkey, mule, or a modded horse) someone is riding to climb on behind them, like sharing a boat; the one in front steers. Needs Kinetrix on the server or world host.
 - **Reactions**: knock-back from hits, shielding your face from explosions (or bracing on a planted sword), the Totem of Undying.
 - **20 emotes** (default key **B**): Default Dance, Floss, Running Man, Robot, Air Guitar, Flex, Meditate, Wave, Clap, Facepalm, Salute, Bow, Sit, Thumbs Up, Victory, Point, Laugh, Cry, Push-ups and more.
 
@@ -48,7 +49,8 @@ This is a beta: please report anything that looks wrong (a short video helps a l
 - Ходьба, бег, присед, прыжки, падения, кувырки, плавание, нырки, бой (меч, топор, кулаки, лук, арбалет, щит, трезубец), инструменты, рыбалка, еда.
 - Ползание на **C** (пролезает в проём в 1 блок, по-пластунски, не как плавание) и сидение на **X** (несколько поз, хитбокс и камера опускаются).
 - Игра с предметом в руке, пока стоишь: крутит и осматривает меч, кладёт топор на плечо, опирается на лопату, поднимает фонарь.
-- Езда на лошади, свинье, лавомерке, в лодке и вагонетке, несколько вариантов безделья в сиденье. Большие лошади DragN's Livestock Overhaul: посадка ниже, ноги чуть шире, руки низко на поводьях.
+- Езда на лошади, свинье, лавомерке, в лодке и вагонетке, несколько вариантов безделья в сиденье. Большие лошади DragN's Livestock Overhaul: посадка ниже, ноги шире, руки низко на поводьях.
+- Вдвоём на одной лошади, как в лодке: ПКМ по лошади с всадником — садишься сзади (нужен Kinetrix на сервере или у хоста мира).
 - 20 эмоций (клавиша **B**).
 
 **Нужен:** Player Animator. **Совместим:** Better Combat (и Malfu Combat Animation), Iron's Spells 'n Spellbooks, Emotecraft, Fresh Animations / Fresh Moves (игроку остаётся ванильная модель, без смеси анимаций), Skin Layers 3D (3D-слой гнётся), шейдеры Oculus, Embeddium, Xenon, Shoulder Surfing, Personality, DragN's Livestock Overhaul, ParCool (во время его паркур-движений Kinetrix уступает). Клиентский мод; если поставить его ещё и на сервер (или он есть у хоста LAN-мира), игроки видят эмоции и кувырки друг друга.
