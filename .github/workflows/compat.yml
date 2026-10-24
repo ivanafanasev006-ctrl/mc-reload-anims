@@ -80,17 +80,23 @@ jobs:
             echo "$id -> $url"
             curl -sSL --retry 5 --retry-all-errors --retry-delay 3 -o "mc/mods/$(basename "${url//%2B/+}")" "$url"
           done
-          # Iron's Spells 'n Spellbooks: its newest Forge 1.20.1 build, with every required library
-          # (GeckoLib, Curios, Iron's Lib...) at its newest 1.20.1 build too.
+          # Iron's Spells 'n Spellbooks: its newest Forge 1.20.1 build, with its libraries (GeckoLib,
+          # Curios, Iron's Lib: Modrinth does not list them) at their newest 1.20.1 builds too.
           if want irons; then
             api() { curl -sSL --retry 5 --retry-all-errors --retry-delay 3 "https://api.modrinth.com/v2/$1"; }
             Q='loaders=%5B%22forge%22%5D&game_versions=%5B%221.20.1%22%5D'
             DONE=" $(api version/xe2EVE6q | jq -r .project_id) "   # playerAnimator: the one above
-            TODO="irons-spells-n-spellbooks"
+            TODO="irons-spells-n-spellbooks geckolib curios irons-lib"
             while [ -n "$TODO" ]; do
               set -- $TODO; P=$1; shift; TODO="$*"
-              V=$(api "project/$P/version?$Q" | jq '.[0]')
-              PID=$(echo "$V" | jq -r .project_id)
+              V=$(api "project/$P/version?$Q" | jq '.[0]' 2>/dev/null)
+              PID=$(echo "$V" | jq -r '.project_id // empty' 2>/dev/null)
+              if [ -z "$PID" ]; then
+                # Not a slug Modrinth knows: the best search hit for those words instead.
+                S=$(api "search?limit=1&query=${P//-/%20}&facets=%5B%5B%22versions:1.20.1%22%5D,%5B%22categories:forge%22%5D%5D" | jq -r '.hits[0].project_id // empty')
+                [ -n "$S" ] && V=$(api "project/$S/version?$Q" | jq '.[0]' 2>/dev/null) && PID=$(echo "$V" | jq -r '.project_id // empty' 2>/dev/null)
+              fi
+              [ -z "$PID" ] && { echo "irons: no Forge 1.20.1 build of '$P' on Modrinth"; continue; }
               [[ "$DONE" == *" $PID "* ]] && continue
               DONE="$DONE$PID "
               url=$(echo "$V" | jq -r '[.files[] | select(.primary)][0].url // .files[0].url')
