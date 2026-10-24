@@ -271,22 +271,27 @@ public final class DemoStage {
     /**
      * Draw it centred at (x, y = feet), {@code size} pixels tall, seen from {@code viewYaw}
      * degrees round from the front and {@code viewPitch} degrees from above. Lying down (asleep),
-     * it is seen from above so you see the pose, not the soles of the feet.
+     * it is seen from straight above, lying across the stage, centred.
      */
     public void render(GuiGraphics g, int x, int y, int size, float viewYaw, float viewPitch, float pt) {
         if (rig == null) return;
         float bodyYaw = Mth.rotLerp(pt, dummy.yBodyRotO, dummy.yBodyRot);
         boolean lying = dummy.isSleeping();
-        float pitch = lying ? 90f : viewPitch;
-        Quaternionf pose = new Quaternionf().rotateZ(Mth.PI).rotateX(pitch * Mth.DEG_TO_RAD)
-                .rotateY((viewYaw + bodyYaw + 180f) * Mth.DEG_TO_RAD);
+        // Standing, the renderer turns the model by -bodyYaw (we add it back); lying (no bed), by +bodyYaw.
+        Quaternionf pose = lying
+                ? new Quaternionf().rotateZ(Mth.PI).rotateX(-Mth.HALF_PI).rotateY((viewYaw - 35f - bodyYaw) * Mth.DEG_TO_RAD)
+                : new Quaternionf().rotateZ(Mth.PI).rotateX(viewPitch * Mth.DEG_TO_RAD).rotateY((viewYaw + bodyYaw + 180f) * Mth.DEG_TO_RAD);
         float scale = size / 1.9f;
         PoseStack ps = g.pose();
         ps.pushPose();
-        ps.translate(x, lying ? y - size * 0.5f : y, 150);
+        ps.translate(x, lying ? y - size * 0.45f : y, 150);
         ps.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
         ps.mulPose(pose);
-        if (lying) ps.translate(0, -0.2, 0);
+        if (lying) {
+            // It lies from the feet (the origin) along the body's facing turned a quarter: back it up half a body.
+            float a = bodyYaw * Mth.DEG_TO_RAD;
+            ps.translate(Mth.cos(a) * 0.85f, 0f, -Mth.sin(a) * 0.85f);
+        }
         Lighting.setupForEntityInInventory();
         EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
         dispatcher.setRenderShadow(false);

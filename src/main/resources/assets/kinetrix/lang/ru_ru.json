@@ -31,7 +31,7 @@
   "message.kinetrix.crawl_needs_server": "Для ползания Kinetrix должен стоять и на сервере",
   "screen.kinetrix.gallery": "Kinetrix — все анимации",
   "screen.kinetrix.gallery.self": "Показать на себе",
-  "screen.kinetrix.gallery.world": "В тестере не показывается — смотри в мире (см. описание)",
+  "screen.kinetrix.gallery.world": "Только в мире: в превью её нет",
   "screen.kinetrix.gallery.drag": "Потяни мышью, чтобы повернуть",
   "kinetrix.cat.move": "Движение",
   "kinetrix.cat.landing": "Приземления",

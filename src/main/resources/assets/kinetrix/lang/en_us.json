@@ -31,7 +31,7 @@
   "message.kinetrix.crawl_needs_server": "Crawling needs Kinetrix on the server too",
   "screen.kinetrix.gallery": "Kinetrix — all animations",
   "screen.kinetrix.gallery.self": "Play on me",
-  "screen.kinetrix.gallery.world": "Not in the preview — see it in the world (see below)",
+  "screen.kinetrix.gallery.world": "World only: not in the preview",
   "screen.kinetrix.gallery.drag": "Drag to turn",
   "kinetrix.cat.move": "Moving",
   "kinetrix.cat.landing": "Landings",

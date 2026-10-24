@@ -58,9 +58,9 @@ public final class GalleryScreen extends Screen {
         top = 26;
         bottom = height - 8;
         catX = 8;
-        catW = Mth.clamp(width / 6, 70, 110);
+        catW = Mth.clamp(width / 6 + 12, 80, 130);
         listX = catX + catW + 6;
-        listW = Mth.clamp(width / 4, 100, 170);
+        listW = Mth.clamp(width / 4 + 24, 120, 200);
         viewX = listX + listW + 8;
         viewW = width - viewX - 8;
         viewY = top;
@@ -135,7 +135,8 @@ public final class GalleryScreen extends Screen {
             if (stage.napping()) zzz(g, viewX + viewW / 2 + size / 6, viewY + viewH / 4, stage.time());
             g.disableScissor();
             if (!selected.previewable()) {
-                g.drawCenteredString(font, Component.translatable("screen.kinetrix.gallery.world"), viewX + viewW / 2, viewY + 6, 0xFFAA55);
+                List<FormattedCharSequence> note = font.split(Component.translatable("screen.kinetrix.gallery.world"), viewW - 8);
+                for (int i = 0; i < note.size(); i++) g.drawString(font, note.get(i), viewX + 4, viewY + 4 + i * 10, 0xFFAA55);
             } else {
                 g.drawString(font, Component.translatable("screen.kinetrix.gallery.drag"), viewX + 4, viewY + viewH - 11, 0x909090);
             }

@@ -320,8 +320,8 @@ public final class SelfTest {
         }
         // The animation gallery, opened with the command: a few entries from different categories
         // on the preview dummy.
-        String[][] galleryShots = {{"sword_draw", "8"}, {"sprint", "45"}, {"sleep_face_down", "70"}, {"emote_dance", "95"},
-                {"menu_think", "120"}, {"doze", "145"}, {"land_sword", "175"}, {"swim", "210"}};
+        String[][] galleryShots = {{"sword_draw", "8"}, {"sprint", "40"}, {"sleep_face_down", "65"}, {"sleep_hands_behind", "90"},
+                {"sit_back", "115"}, {"doze", "140"}, {"dual_run", "170"}, {"swim", "205"}};
         Window[] galleryWindows = new Window[galleryShots.length];
         for (int i = 0; i < galleryShots.length; i++) {
             int at = Integer.parseInt(galleryShots[i][1]);
