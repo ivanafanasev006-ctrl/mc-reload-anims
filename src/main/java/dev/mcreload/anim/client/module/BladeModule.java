@@ -59,7 +59,8 @@ final class BladeModule implements AnimModule {
             m.attackTime = m.time;
         }
         stance(m, f, s, gate, hd, main, off, shield, foreignMain, foreignOff);
-        draw(m, f, s, gate, hd, main, off, shield, foreignMain, foreignOff);
+        // Switched away from the sword halfway through: the draw stops with it.
+        if (dev.mcreload.anim.client.rig.Weapons.isOneHandedSword(held)) draw(m, f, s, gate, hd, main, off, shield, foreignMain, foreignOff);
         strike(rig, m, f, s, gate, hd, main, off, shield);
     }
 
@@ -115,8 +116,9 @@ final class BladeModule implements AnimModule {
     private void stance(MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off,
                         boolean shield, float foreignMain, float foreignOff) {
         curSlot = 0;
-        // The sword-fall pose in the air (AirModule#bladeFall) has the arms then.
-        float w = m.readyW.v * gate * (1f - m.airW.v * m.hardDropW.v * m.bladeReadyW.v);
+        // The sword-fall pose in the air (AirModule#bladeFall) has the arms then, and drawing the
+        // sword has the whole body (it ends in this guard and hands over as it fades out).
+        float w = m.readyW.v * gate * (1f - m.airW.v * m.hardDropW.v * m.bladeReadyW.v) * (1f - drawWeight(m));
         if (w <= 0.001f) return;
         // Blocking: the shield arm is the game's (raised), the sword arm stays in the guard.
         float block = shield ? m.blockW.v : 0f;
@@ -166,13 +168,20 @@ final class BladeModule implements AnimModule {
         f.body().py -= px(2f) * w;
     }
 
+    /** How much of the body drawing the sword has right now (1 while it plays, fading at its end). */
+    private static float drawWeight(MotionState m) {
+        float T = m.since(m.drawStart);
+        if (T < 0f || T >= MotionState.DRAW_SECONDS) return 0f;
+        return 1f - AngleMath.ease((T / MotionState.DRAW_SECONDS - 0.88f) / 0.12f);
+    }
+
     /**
-     * Drawing the sword (0.8 s): the sword arm swings straight out and up to the side while the
-     * blade twirls a full turn in the fist toward the body, then comes down into the guard as the
+     * Drawing the sword (1.4 s, unhurried): the sword arm rises out to the side while the blade
+     * makes one slow full turn in the fist toward the body, then comes down into the guard as the
      * feet spread into the stance with a little dip; the other arm (or the shield) comes up with
      * it. The arm stays in one plane (out to the side and back), so it never flips round; the
-     * twirl is driven exactly along a smooth curve (no smoothing lag). Ends in the guard, which
-     * the stance then holds.
+     * twirl is driven exactly along a smooth curve (no smoothing lag); the guard itself waits
+     * until the draw is over (nothing is added twice). Ends in the guard, which then holds.
      */
     private void draw(MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off,
                       boolean shield, float foreignMain, float foreignOff) {
@@ -180,22 +189,22 @@ final class BladeModule implements AnimModule {
         float T = m.since(m.drawStart);
         if (T < 0f || T >= MotionState.DRAW_SECONDS) return;
         float t = T / MotionState.DRAW_SECONDS;
-        float w = gate * (1f - AngleMath.ease((t - 0.85f) / 0.15f));
+        float w = gate * drawWeight(m);
         if (w <= 0.001f) return;
         float mw = w * m.armsFree.v * (1f - foreignMain);
         float ow = w * m.armsFree.v * (1f - foreignOff);
-        float up = smoother(t / 0.40f);                 // straight out and up to the side, twirling
-        float down = smoother((t - 0.45f) / 0.45f);     // into the guard
+        float up = smoother(t / 0.38f);                 // out and up to the side, twirling
+        float down = smoother((t - 0.52f) / 0.40f);     // into the guard
         float moving = AngleMath.clamp(m.moveF(), 0f, 1f);
         // The rest of the guard comes in with the settle; the sword arm has its own path.
-        guardPose(m, f, s, hd, main, off, shield, w, 0f, ow * smoother((t - 0.20f) / 0.55f), down, 0f, 1f, moving);
+        guardPose(m, f, s, hd, main, off, shield, w, 0f, ow * smoother((t - 0.20f) / 0.60f), down, 0f, 1f, moving);
         if (mw > 0.001f) {
-            float raise = Mth.lerp(down, Mth.lerp(up, 0.10f, 2.00f), deg(60f));
+            float raise = Mth.lerp(down, Mth.lerp(up, 0.10f, 1.75f), deg(60f));
             main.override(-0.30f * up * (1f - down), 0f, hd * raise, mw);
             main.overrideBend(s.elbow() * Mth.lerp(down, Mth.lerp(up, 0.15f, 0.60f), deg(20f)), mw);
             // A full turn toward the body (the point comes up and back first), then the blade
             // settles tipped forward as in the guard.
-            float spin = smoother((t - 0.08f) / 0.55f);
+            float spin = smoother((t - 0.10f) / 0.58f);
             float lay = deg(65f) * down;
             if (spin > 0f && spin < 1f && mw > 0.5f) m.itemTiltDirect = -Mth.TWO_PI * spin + lay;
             else m.itemTiltTarget = Math.max(m.itemTiltTarget, lay * mw);
@@ -203,7 +212,7 @@ final class BladeModule implements AnimModule {
         // Standing: the feet spread into the stance with a little dip.
         float still = (1f - moving) * m.groundW.v;
         guardLegs(f, s, w * still * down);
-        f.body().py -= 0.06f * Mth.sin(Mth.PI * AngleMath.clamp((t - 0.50f) / 0.50f, 0f, 1f)) * w * still;
+        f.body().py -= 0.05f * Mth.sin(Mth.PI * AngleMath.clamp((t - 0.55f) / 0.45f, 0f, 1f)) * w * still;
     }
 
     // ------------------------------------------------------------------ strikes

@@ -148,7 +148,7 @@ public final class MotionState {
     /** When the sword was drawn (switched to, or swapped into the main hand); see BladeModule#draw. */
     public float drawStart = -100f;
     /** How long drawing the sword into the guard takes, and how long the guard lasts after it / a swing. */
-    public static final float DRAW_SECONDS = 0.8f, GUARD_HOLD = 2.5f;
+    public static final float DRAW_SECONDS = 1.4f, GUARD_HOLD = 2.5f;
     private boolean wasSword, drawArmed;
     /**
      * Last attack with a sword in hand: a swing of ours, one Better Combat plays (BladeModule
