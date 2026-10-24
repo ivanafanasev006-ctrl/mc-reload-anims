@@ -1,0 +1,53 @@
+name: Addon template
+
+# Builds the Better Combat addon template (addon-template/, its own Gradle build) and starts a
+# dedicated server with Better Combat, Cloth Config, playerAnimator and the addon, to check that the
+# mixin applies and the weapon_extras data loads.
+on:
+  push:
+    paths: ['addon-template/**', '.github/workflows/addon-template.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        run: |
+          chmod +x ./gradlew
+          ./gradlew -p addon-template build --no-daemon --stacktrace 2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Dedicated server smoke test
+        run: |
+          mkdir -p addon-template/run
+          echo 'eula=true' > addon-template/run/eula.txt
+          printf 'online-mode=false\nlevel-type=minecraft\\:flat\ngenerate-structures=false\n' > addon-template/run/server.properties
+          ./gradlew -p addon-template runServer --no-daemon > server.log 2>&1 &
+          for i in $(seq 1 160); do
+            grep -qE 'Done \(|Crash report saved|Mixin apply.*failed|InvalidInjectionException' server.log && break
+            sleep 5
+          done
+          sleep 5
+          pkill -f java || true
+          echo "----- addon, Better Combat and error lines"
+          grep -E 'bcaddon|bettercombat|BetterCombat|Mixin|ERROR|Exception|Done \(' server.log | grep -v 'DEBUG' | head -120
+          echo "-----"
+          grep -q 'Done (' server.log || { echo 'server did not start'; tail -80 server.log; exit 1; }
+          grep -q '\[bcaddon\] Hooked into net.bettercombat.logic.PlayerAttackHelper' server.log || { echo 'mixin target not loaded'; exit 1; }
+          grep -q '\[bcaddon\] weapon_extras: 3 files' server.log || { echo 'weapon_extras not loaded'; exit 1; }
+          echo 'OK: server started, mixin applied, data loaded'

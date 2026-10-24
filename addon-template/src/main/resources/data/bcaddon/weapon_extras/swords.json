@@ -1,0 +1,10 @@
+{
+  "categories": ["sword", "katana", "rapier", "cutlass", "claymore"],
+  "guard_ticks": 6,
+  "heavy_attack": {
+    "animation": "bettercombat:two_handed_slash_vertical_right",
+    "damage_multiplier": 1.6,
+    "upswing": 0.6,
+    "hitbox": "VERTICAL_PLANE"
+  }
+}

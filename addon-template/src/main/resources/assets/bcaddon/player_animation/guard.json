@@ -1,0 +1,23 @@
+{
+  "name": "guard",
+  "author": "BC Addon Template",
+  "description": "Weapon guard: the blade comes up across the body for the parry window, then back down.",
+  "emote": {
+    "beginTick": 3,
+    "endTick": 9,
+    "stopTick": 14,
+    "isLoop": false,
+    "returnTick": 0,
+    "degrees": true,
+    "moves": [
+      {"tick": 3, "easing": "EASEOUTQUAD", "turn": 0, "rightArm": {"pitch": -80, "yaw": -32, "roll": 12}},
+      {"tick": 3, "easing": "EASEOUTQUAD", "turn": 0, "leftArm": {"pitch": -50, "yaw": 28}},
+      {"tick": 3, "easing": "EASEOUTQUAD", "turn": 0, "torso": {"yaw": -14}},
+      {"tick": 3, "easing": "EASEOUTQUAD", "turn": 0, "rightItem": {"pitch": -25, "roll": 70}},
+      {"tick": 9, "easing": "LINEAR", "turn": 0, "rightArm": {"pitch": -78, "yaw": -30, "roll": 12}},
+      {"tick": 9, "easing": "LINEAR", "turn": 0, "leftArm": {"pitch": -48, "yaw": 27}},
+      {"tick": 9, "easing": "LINEAR", "turn": 0, "torso": {"yaw": -13}},
+      {"tick": 9, "easing": "LINEAR", "turn": 0, "rightItem": {"pitch": -25, "roll": 70}}
+    ]
+  }
+}

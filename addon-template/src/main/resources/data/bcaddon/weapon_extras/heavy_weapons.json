@@ -1,0 +1,10 @@
+{
+  "categories": ["axe", "heavy_axe", "double_axe", "hammer", "mace", "anchor"],
+  "guard_ticks": 4,
+  "heavy_attack": {
+    "animation": "bettercombat:two_handed_slam_heavy",
+    "damage_multiplier": 2.0,
+    "upswing": 0.7,
+    "angle": 0
+  }
+}

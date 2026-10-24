@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.example.bcaddon.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "bcaddon.refmap.json",
+  "mixins": [
+    "PlayerAttackHelperMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
