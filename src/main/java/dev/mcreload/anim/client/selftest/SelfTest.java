@@ -634,11 +634,12 @@ public final class SelfTest {
         if (dev.mcreload.anim.compat.ModCompat.ironsSpells) {
             String[][] casts = {{"a", "cone_of_cold", "none"}, {"b", "firebolt", "none"}, {"c", "fireball", "none"},
                     {"d", "lightning_lance", "none"}, {"e", "heal", "none"}, {"f", "cone_of_cold", "sword"},
-                    {"g", "cone_of_cold", "staff"}, {"h", "cone_of_cold", "walk"}, {"i", "electrocute", "turn"}};
+                    {"g", "cone_of_cold", "staff"}, {"h", "cone_of_cold", "walk"}, {"i", "cone_of_cold", "turn"}};
             for (String[] c : casts) {
                 String spell = c[1], how = c[2];
                 SCENARIOS.add(new Scenario("98" + c[0] + "_irons_" + spell + (how.equals("none") ? "" : "_" + how), 80,
                         sp -> {
+                            ironsCancelCast(sp);
                             place(sp, 2, Y, 0, -90, how.equals("sword") ? new ItemStack(Items.DIAMOND_SWORD)
                                     : how.equals("staff") ? ironsItem("graybeard_staff") : ItemStack.EMPTY);
                             if (how.equals("staff")) sp.setItemInHand(InteractionHand.OFF_HAND, ironsItem("ice_staff"));
@@ -896,6 +897,15 @@ public final class SelfTest {
 
     private static String f2(float v) {
         return String.format("%.2f", v);
+    }
+
+    /** Stop a cast still running from the scenario before (a new /cast would only cancel it). */
+    private static void ironsCancelCast(ServerPlayer sp) {
+        try {
+            Class.forName("io.redspace.ironsspellbooks.api.util.Utils").getMethod("serverSideCancelCast", ServerPlayer.class, boolean.class).invoke(null, sp, false);
+        } catch (Throwable t) {
+            McReloadAnim.LOG.warn("[kinetrix] self-test: could not cancel the Iron's cast: {}", t.toString());
+        }
     }
 
     /** An item of Iron's Spells by name (a stick if it is not there). */

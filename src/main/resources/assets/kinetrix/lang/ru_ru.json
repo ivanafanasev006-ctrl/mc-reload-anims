@@ -194,5 +194,5 @@
   "kinetrix.demo.swap": "Смена рук",
   "kinetrix.demo.swap.desc": "Клавиша F: руки сходятся к середине и расходятся (меч, попавший в руку, вместо этого делает оборот).",
   "kinetrix.demo.spell": "Заклинания",
-  "kinetrix.demo.spell.desc": "С Iron's Spells 'n Spellbooks: стойка мага по школе магии, отдача в конце каста."
+  "kinetrix.demo.spell.desc": "С Iron's Spells 'n Spellbooks: стойка мага по школе магии, отдача в конце каста. Пока колдуешь, тело поворачивается туда, куда смотришь, и руки идут прямо к цели."
 }

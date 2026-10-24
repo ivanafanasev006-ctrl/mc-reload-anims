@@ -35,7 +35,7 @@ fidgets can be played on yourself straight from there. Client-side: works on any
 ## Compatibility
 
 - **Requires:** [Player Animator](https://www.curseforge.com/minecraft/mc-mods/playeranimator) (by KosmX) for Forge 1.20.1.
-- **Works with:** Better Combat (and its animation packs such as Malfu Combat Animation), Iron's Spells 'n Spellbooks, Emotecraft and any other Player Animator based mod — attacks and casts play on top and blend in smoothly, while the vanilla-replacement animations stay Kinetrix's.
+- **Works with:** Better Combat (and its animation packs such as Malfu Combat Animation), Iron's Spells 'n Spellbooks, Emotecraft and any other Player Animator based mod — attacks and casts play on top and blend in smoothly, while the vanilla-replacement animations stay Kinetrix's. While an Iron's spell is cast, the body turns to where you look, so the arms reach straight at the target instead of swinging out through the chest.
 - **Entity Model Features / Fresh Animations / Fresh Moves:** the player keeps the vanilla model so Kinetrix alone animates it, with joints — no half-and-half mix with Fresh Moves (any EMF 2.x or newer). Mobs are left alone and keep their Fresh Animations. Can be turned off in the config.
 - **Skin Layers 3D:** the 3D outer skin layer bends at the elbows, knees and waist too.
 - **Oculus shaders, Embeddium, Xenon, Shoulder Surfing Reloaded:** fine — body, joints and armour stay visible with shaders on.

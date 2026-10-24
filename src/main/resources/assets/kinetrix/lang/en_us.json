@@ -194,5 +194,5 @@
   "kinetrix.demo.swap": "Swapping hands",
   "kinetrix.demo.swap.desc": "Key F: the hands meet in the middle (a sword spins instead).",
   "kinetrix.demo.spell": "Spells",
-  "kinetrix.demo.spell.desc": "With Iron's Spells 'n Spellbooks: a caster's stance by school, a recoil at the end."
+  "kinetrix.demo.spell.desc": "With Iron's Spells 'n Spellbooks: a caster's stance by school, a recoil at the end. While you cast, the body turns to where you look, so the arms reach straight at the target."
 }
