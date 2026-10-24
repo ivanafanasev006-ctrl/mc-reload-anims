@@ -42,6 +42,8 @@ final class GestureModule implements AnimModule {
     private static void swap(MotionState m, PoseFrame f, Signs s, float gate) {
         float t = m.since(m.swapStart) / SWAP_SECONDS;
         if (t < 0f || t >= 1f) return;
+        // A sword swapped into a hand spins there instead (BladeModule#spin).
+        if (m.since(m.drawStart) < MotionState.DRAW_SECONDS || m.since(m.offDrawStart) < MotionState.DRAW_SECONDS) return;
         float e = Mth.sin(Mth.PI * t) * gate * m.armsFree.v;
         // Hands come together in front of the chest, then go back to where they were.
         f.rightArm().override(-1.05f, -0.55f, 0f, e);

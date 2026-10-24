@@ -30,6 +30,10 @@ public final class SoundCues {
         } else if (id.equals(SoundEvents.TOTEM_USE.getLocation())) {
             PlayerRig rig = nearest(level, x, y, z, 2.5, false);
             if (rig != null) rig.motion.onTotem();
+        } else if (id.getPath().contains("snor")) {
+            // Another mod's snore: whoever stands there is dozing off.
+            PlayerRig rig = nearest(level, x, y, z, 3.0, false);
+            if (rig != null) rig.motion.onSnore();
         } else if (id.equals(SoundEvents.GENERIC_EXPLODE.getLocation())) {
             for (AbstractClientPlayer p : level.players()) {
                 PlayerRig rig = RigRegistry.get(p);

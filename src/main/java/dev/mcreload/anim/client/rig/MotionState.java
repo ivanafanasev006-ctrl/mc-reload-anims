@@ -169,11 +169,31 @@ public final class MotionState {
      * (at a mob or at the air), standing or walking; see BladeModule#stance.
      */
     public final Smooth readyW = new Smooth(6f);
-    /** When the sword was drawn (switched to, or swapped into the main hand); see BladeModule#draw. */
-    public float drawStart = -100f;
-    /** How long drawing the sword into the guard takes, and how long the guard lasts after it / a swing. */
-    public static final float DRAW_SECONDS = 0.8f, GUARD_HOLD = 2.5f;
-    private boolean wasSword, drawArmed;
+    /**
+     * When a sword came into the main hand (switched to, swapped in) and into the other hand:
+     * it spins once in the hand (BladeModule#spin).
+     */
+    public float drawStart = -100f, offDrawStart = -100f;
+    /** How long the spin of a sword taken in hand takes, and how long the guard lasts after a swing. */
+    public static final float DRAW_SECONDS = 0.7f, GUARD_HOLD = 2.5f;
+    private boolean wasSword, wasOffSword, drawArmed;
+    /**
+     * The turn of the item about the forearm (a propeller spin in front of the body, never through
+     * it), main hand and other hand: set by a module for this frame, 0 otherwise.
+     */
+    public float itemRoll, itemRollOff;
+    /**
+     * Running with a sword (or two), held out to the side: kept through jumps and short drops,
+     * dropped when you stop, get hit or really fall (BladeModule#swordRun).
+     */
+    public final Smooth swordRunW = new Smooth(10f);
+    private boolean swordRun;
+    /**
+     * Dozing off standing (another mod's AFK nap): its head hanging, its snore, or an animation
+     * called so. Our fidgets wait, "Z z z" rise over the head (SleepZzz).
+     */
+    public boolean dozing;
+    private float dozeSeen, snoreUntil = -100f, dozeAnimAt = -100f, foreignHead;
     /**
      * Last attack with a sword in hand: a swing of ours, one Better Combat plays (BladeModule
      * sees its animation on the arm), or simply the attack key pressed: the guard runs from it.
@@ -550,6 +570,9 @@ public final class MotionState {
         boolean sword = Weapons.isOneHandedSword(main);
         if (sword && drawArmed && (!wasSword || !ItemStack.isSameItem(main, lastMain))) drawStart = time;
         wasSword = sword;
+        boolean offSword = Weapons.isOneHandedSword(off);
+        if (offSword && drawArmed && (!wasOffSword || !ItemStack.isSameItem(off, lastOff))) offDrawStart = time;
+        wasOffSword = offSword;
         drawArmed = true;
         lastMain = main.copy();
         lastOff = off.copy();
@@ -684,6 +707,8 @@ public final class MotionState {
         itemTiltOffTarget = 0f;
         itemTiltDirect = Float.NaN;
         itemTiltOffDirect = Float.NaN;
+        itemRoll = 0f;
+        itemRollOff = 0f;
         twoHandedWeapon = Weapons.isTwoHanded(player.getMainHandItem());
         oneHandSword = Weapons.isOneHandedSword(player.getMainHandItem());
         dualSwords = oneHandSword && Weapons.isOneHandedSword(player.getOffhandItem());
@@ -752,9 +777,18 @@ public final class MotionState {
             attackTime = time;
         }
         boolean afterSwing = time - attackTime < 0.6f + GUARD_HOLD;
-        boolean afterDraw = time - drawStart < DRAW_SECONDS + GUARD_HOLD;
-        readyW.to(swordInHand && (afterSwing || afterDraw) && !blocked && !swimming && !crawling && !sitting
+        readyW.to(swordInHand && afterSwing && !blocked && !swimming && !crawling && !sitting
                 && sprintW.v < 0.5f && (!player.isUsingItem() || player.isBlocking()) && screenPose == SCREEN_NONE ? 1f : 0f, dt);
+        // Running with the sword: starts sprinting on the ground; a jump or a step down of a block
+        // or two keeps it (the sprint flag stays on in the air); stopping, a hit, a real fall
+        // (over ~3 blocks: falling fast, or the landing ahead is a hard one), water, ladders end it.
+        if (swordInHand && player.isSprinting() && ground && horizontalSpeed > 0.10f) swordRun = true;
+        if (!swordInHand || player.hurtTime > 0 || blocked || swimming || player.isInWater() || climbing || crawling
+                || sitting || (ground && (!player.isSprinting() || horizontalSpeed < 0.06f)) || -vertical > 0.68f
+                || player.fallDistance > 3.0f || hardDropW.v > 0.3f || (player.isUsingItem() && !player.isBlocking())) {
+            swordRun = false;
+        }
+        swordRunW.to(swordRun ? 1f : 0f, dt);
         twoHandW.to(Cfg.twoHanded && weapon && offItem.isEmpty() ? 1f : 0f, dt);
         boolean crossInHand = mainItem.getItem() instanceof CrossbowItem || offItem.getItem() instanceof CrossbowItem;
         boolean charged = CrossbowItem.isCharged(mainItem) || CrossbowItem.isCharged(offItem);
@@ -774,7 +808,8 @@ public final class MotionState {
         updateIdle(ground && !blocked && !swimming && !crawling && !sitting && !player.isInWater() && !climbing && !player.isUsingItem()
                 && !player.isCrouching() && horizontalSpeed < 0.01f && time - slashStart > 2f
                 && time - swapStart > 1f && player.hurtTime == 0 && readyW.v < 0.05f
-                && time - drawStart > DRAW_SECONDS + GUARD_HOLD && screenPose == SCREEN_NONE, dt);
+                && time - drawStart > DRAW_SECONDS + 1f && time - offDrawStart > DRAW_SECONDS + 1f
+                && screenPose == SCREEN_NONE && !dozing && foreignHead < 0.5f, dt);
         updateEmote(dt);
 
         boolean fists = mainItem.isEmpty();
@@ -934,6 +969,28 @@ public final class MotionState {
             }
         }
         wasSleeping = sleeping;
+    }
+
+    /**
+     * Once per frame after the pose was drawn: how much another mod moves the head, and how far
+     * down it hangs. Standing still with the head hung by another mod for over a second, a snore
+     * heard at the player, or an animation of another mod named like a nap: dozing.
+     */
+    public void updateDoze(float foreignHeadW, float headPitch) {
+        foreignHead = foreignHeadW;
+        boolean still = groundW.v > 0.5f && horizontalSpeed < 0.02f && !player.isSleeping() && !player.isPassenger();
+        dozeSeen = still && foreignHeadW > 0.5f && headPitch > 0.45f ? dozeSeen + dt : 0f;
+        dozing = still && (dozeSeen > 1.2f || time < snoreUntil || time - dozeAnimAt < 0.5f);
+    }
+
+    /** A snore was heard where this player stands. */
+    public void onSnore() {
+        snoreUntil = time + 3f;
+    }
+
+    /** Another mod is playing a nap / AFK animation on this player right now. */
+    public void onDozeAnimation() {
+        dozeAnimAt = time;
     }
 
     /** Which menu pose: your own open menu, or another player's as their client reports it. */

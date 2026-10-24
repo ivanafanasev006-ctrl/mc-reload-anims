@@ -156,33 +156,19 @@ final class LocomotionModule implements AnimModule {
         boolean blade = m.holdingBlade;
         float armSwing = 1.1f * amt;
         PartPose main = m.mainRight ? f.rightArm() : f.leftArm();
-        // A one-handed sword (or one in each hand): run like a swordsman, low, the sword arm held
-        // out to the side and back, the blade as in the guard; the other arm pumps (or trails a
-        // second sword the same way).
-        float trail = m.oneHandSword ? 1f : 0f;
-        if (m.oneHandSword) {
-            float hd = m.mainRight ? 1f : -1f;
-            PartPose off = m.mainRight ? f.leftArm() : f.rightArm();
-            trailArm(main, s, hd, aw, ls);
-            m.itemTiltTarget = Math.max(m.itemTiltTarget, SWORD_RUN_TILT * aw);
-            if (m.dualSwords) {
-                trailArm(off, s, -hd, aw, ls + PI);
-                m.itemTiltOffTarget = Math.max(m.itemTiltOffTarget, SWORD_RUN_TILT * aw);
-            } else {
-                float oc = m.mainRight ? c : -c;
-                armPose(off, oc * armSwing, -hd * deg(5f), aw);
-                off.bend += s.elbow() * deg(sn * hd > 0f ? 10f : 45f) * aw;
-            }
-        } else if (blade) {
+        // Running with a sword held out (BladeModule#swordRun): the sword arm(s) are left to it.
+        float trail = m.swordRunW.v;
+        if (blade) {
             // With a sword: the sword arm swings less and keeps the blade pointing forward-down,
             // the free arm pumps as usual.
             float mc = m.mainRight ? -c : c;
-            armPose(main, deg(-10f) + mc * armSwing * 0.45f, (m.mainRight ? 1f : -1f) * deg(10f), aw);
-            main.bend += s.elbow() * deg(25f) * aw;
+            float mw = aw * (1f - trail), ow = m.dualSwords ? mw : aw;
+            armPose(main, deg(-10f) + mc * armSwing * 0.45f, (m.mainRight ? 1f : -1f) * deg(10f), mw);
+            main.bend += s.elbow() * deg(25f) * mw;
             PartPose off = m.mainRight ? f.leftArm() : f.rightArm();
             float oc = m.mainRight ? c : -c;
-            armPose(off, oc * armSwing, (m.mainRight ? -1f : 1f) * deg(5f), aw);
-            off.bend += s.elbow() * deg(sn * (m.mainRight ? 1f : -1f) > 0f ? 10f : 45f) * aw;
+            armPose(off, oc * armSwing, (m.mainRight ? -1f : 1f) * deg(5f), ow);
+            off.bend += s.elbow() * deg(sn * (m.mainRight ? 1f : -1f) > 0f ? 10f : 45f) * ow;
         } else {
             armPose(f.rightArm(), -c * armSwing, deg(5f), aw);
             armPose(f.leftArm(), c * armSwing, deg(-5f), aw);
@@ -203,22 +189,6 @@ final class LocomotionModule implements AnimModule {
         // Into turns with the shoulders.
         float yaw = AngleMath.clamp(m.turn.v * 0.3f, -10f, 10f);
         f.torso().rz -= deg(yaw) * 0.5f * w;
-    }
-
-    /** The blade's turn in the hand while running with it: as in the guard. */
-    private static final float SWORD_RUN_TILT = 65f * Mth.DEG_TO_RAD;
-
-    /**
-     * A sword arm while running: out to the side and back, a little below the shoulder, elbow
-     * nearly straight, bobbing slightly with each stride.
-     *
-     * @param hd 1 = the right arm, -1 = the left
-     */
-    private static void trailArm(PartPose arm, Signs s, float hd, float w, float ls) {
-        if (w <= 0.001f) return;
-        float bob = Mth.cos(ls * 1.6f);
-        arm.override(deg(48f) + deg(4f) * bob, 0f, hd * (deg(60f) + deg(3f) * bob), w);
-        arm.overrideBend(s.elbow() * deg(14f), w);
     }
 
     /**

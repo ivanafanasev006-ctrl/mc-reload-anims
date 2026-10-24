@@ -95,7 +95,7 @@ public final class JointRig {
     }
 
     /** Held item tipped in the main hand and in the other hand (radians), and which hand is main. */
-    private float itemTilt, itemTiltOff;
+    private float itemTilt, itemTiltOff, itemRoll, itemRollOff;
     private boolean mainRight = true;
 
     public boolean isUpper(ModelPart p) {
@@ -162,11 +162,15 @@ public final class JointRig {
         set(torso, anim, "torso");
         itemTilt = 0f;
         itemTiltOff = 0f;
+        itemRoll = 0f;
+        itemRollOff = 0f;
         if (!Joints.firstPerson && entity instanceof net.minecraft.client.player.AbstractClientPlayer p) {
             dev.mcreload.anim.client.rig.PlayerRig r = dev.mcreload.anim.client.rig.RigRegistry.get(p);
             if (r != null) {
                 itemTilt = r.motion.itemTilt.v;
                 itemTiltOff = r.motion.itemTiltOff.v;
+                itemRoll = r.motion.itemRoll;
+                itemRollOff = r.motion.itemRollOff;
                 mainRight = r.motion.mainRight;
             }
         }
@@ -191,6 +195,8 @@ public final class JointRig {
         if (torso != null) torso.set(0f, torsoBend);
         itemTilt = 0f;
         itemTiltOff = 0f;
+        itemRoll = 0f;
+        itemRollOff = 0f;
     }
 
     public void copyFrom(JointRig o) {
@@ -225,11 +231,20 @@ public final class JointRig {
         Joint j = arm == HumanoidArm.RIGHT ? rightArm : leftArm;
         if (j != null) j.apply(ps);
         // Turn the held weapon in the hand (pivot at the fist).
-        float tilt = (arm == HumanoidArm.RIGHT) == mainRight ? itemTilt : itemTiltOff;
+        boolean mainArm = (arm == HumanoidArm.RIGHT) == mainRight;
+        float tilt = mainArm ? itemTilt : itemTiltOff;
         if (Math.abs(tilt) > 1e-3f) {
             ps.translate(0f, 10f / 16f, -1f / 16f);
             ps.mulPose(new Quaternionf().rotationX(tilt));
             ps.translate(0f, -10f / 16f, 1f / 16f);
+        }
+        // Spun about the forearm, round the grip (the item sits a pixel in from the arm's middle).
+        float roll = mainArm ? itemRoll : itemRollOff;
+        if (Math.abs(roll) > 1e-3f) {
+            float gx = (arm == HumanoidArm.RIGHT ? -1f : 1f) / 16f;
+            ps.translate(gx, 10f / 16f, -1.5f / 16f);
+            ps.mulPose(new Quaternionf().rotationY(roll));
+            ps.translate(-gx, -10f / 16f, 1.5f / 16f);
         }
     }
 }

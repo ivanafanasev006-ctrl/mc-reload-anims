@@ -12,7 +12,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 
-/** "Z z z" letters (Minecraft font) drifting up from sleeping players' heads. */
+/** "Z z z" letters (Minecraft font) drifting up from sleeping players' heads (and from players dozing off standing). */
 public final class SleepZzz {
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
@@ -30,9 +30,14 @@ public final class SleepZzz {
         boolean any = false;
 
         for (AbstractClientPlayer player : level.players()) {
-            if (!player.isSleeping() || player.isInvisible()) continue;
+            if (player.isInvisible()) continue;
+            boolean sleeping = player.isSleeping();
+            if (!sleeping) {
+                dev.mcreload.anim.client.rig.PlayerRig rig = dev.mcreload.anim.client.rig.RigRegistry.get(player);
+                if (rig == null || !rig.motion.dozing) continue;
+            }
             if (player == mc.player && mc.options.getCameraType().isFirstPerson()) continue;
-            Vec3 head = player.getPosition(pt).add(0, 0.45, 0);
+            Vec3 head = player.getPosition(pt).add(0, sleeping ? 0.45 : 1.45, 0);
             float time = (player.tickCount + pt) / 20f;
             for (int i = 0; i < 3; i++) {
                 float phase = (time * 0.45f + i / 3f) % 1f;

@@ -66,6 +66,8 @@ public final class PlayerRig {
 
     void computeFrame(float partialTick) {
         motion.frame(partialTick);
+        // Another mod hanging the head (a nap): how far down it was drawn last frame.
+        motion.updateDoze(foreign[PoseFrame.HEAD], finalPose(PoseFrame.HEAD, T_ROT, tmp) ? tmp[0] : 0f);
         frame.reset();
         Signs signs = Cfg.signs;
         for (AnimModule module : Modules.ALL) {

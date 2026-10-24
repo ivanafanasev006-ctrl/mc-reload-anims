@@ -38,13 +38,42 @@ public final class AnimPriority {
         if (rig == null || layer == rig.baseLayer() || layer == rig.harmonizerLayer()) return false;
         if (Cfg.ownMovesFirst && rig.motion.fullBodyMove()) return true;
         Set<String> list = Cfg.priorityOver;
-        if (list.isEmpty()) return false;
-        String owner = owner(layer);
+        String owner = list.isEmpty() ? null : owner(layer);
         if (owner != null && list.contains(owner)) {
             if (LOGGED.add(owner)) McReloadAnim.LOG.info("[kinetrix] Muting player animations from '{}' (compat.priorityOverMods).", owner);
             return true;
         }
+        // Playing, and a nap by its name: the player is dozing off (Z z z, no fidgets of ours).
+        if (napping(layer)) rig.motion.onDozeAnimation();
         return false;
+    }
+
+    /** Words in the name of another mod's animation that mean the player is napping on their feet. */
+    private static final String[] NAP = {"sleep", "snor", "doze", "nap", "afk", "drows", "tired"};
+    private static final Map<Object, Boolean> NAPPING = Collections.synchronizedMap(new WeakHashMap<>());
+
+    /** A keyframe animation of another mod whose name says it is a nap (sleep, snore, doze, AFK...). */
+    static boolean napping(IAnimation layer) {
+        Object inner = layer;
+        for (int i = 0; i < 4 && inner instanceof ModifierLayer<?> ml; i++) inner = ml.getAnimation();
+        if (!(inner instanceof KeyframeAnimationPlayer kap) || kap.getData() == null) return false;
+        KeyframeAnimation data = kap.getData();
+        Boolean known = NAPPING.get(data);
+        if (known != null) return known;
+        boolean nap = false;
+        ResourceLocation id = idOf(data);
+        String name = (id != null ? id.getPath() : "") + " " + String.valueOf(data.extraData.get("name"));
+        name = name.toLowerCase(Locale.ROOT);
+        for (String w : NAP) if (name.contains(w)) { nap = true; break; }
+        NAPPING.put(data, nap);
+        return nap;
+    }
+
+    private static synchronized ResourceLocation idOf(KeyframeAnimation anim) {
+        for (Map.Entry<ResourceLocation, KeyframeAnimation> e : PlayerAnimationRegistry.getAnimations().entrySet()) {
+            if (e.getValue() == anim) return e.getKey();
+        }
+        return null;
     }
 
     /** The mod an animation layer comes from: the animation's namespace, or the class's module. */

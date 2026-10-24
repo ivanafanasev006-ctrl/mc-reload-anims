@@ -232,7 +232,7 @@ public final class SelfTest {
                 (mc, t) -> { if (t == 4) mc.player.swing(InteractionHand.MAIN_HAND); }, new Window(4, 16, 4, 0.03f)));
         SCENARIOS.add(new Scenario("08e_sword_guard", 40, sp -> {},
                 (mc, t) -> {}, new Window(20, 40, 2, 0.4f)));
-        // Drawing a sword: switched to at t=8, a twirl and a step into the guard, which then holds.
+        // A sword taken in hand: switched to at t=8, it spins once round the forearm in front.
         SCENARIOS.add(new Scenario("08f_sword_draw", 50, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> { if (t == 8) giveMain(mc, new ItemStack(Items.DIAMOND_SWORD)); },
                 new Window(9, 24, 6, 0.0f), new Window(30, 50, 2, 0.3f)));
@@ -249,10 +249,17 @@ public final class SelfTest {
                     if (m != null && t >= 20 && i < drawPhases.length)
                         m.drawStart = (mc.player.tickCount + 0.5f) / 20f - drawPhases[i] * dev.mcreload.anim.client.rig.MotionState.DRAW_SECONDS;
                 }, drawHolds));
+        // A sword put into the other hand (at t=8, the main hand already holding one): it spins there.
+        SCENARIOS.add(new Scenario("08k_off_hand_draw", 30, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> { if (t == 8) onServer(mc, sp -> sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.DIAMOND_SWORD))); },
+                new Window(9, 26, 6, 0.0f)));
         // Sprinting with a sword, then with one in each hand: the sword arms held out to the side
-        // and back, the blades as in the guard.
+        // and back, the blades toward the ground.
         SCENARIOS.add(new Scenario("02s_sword_sprint", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
                 (mc, t) -> move(mc, t < 38, t < 38, false, false), new Window(18, 36, 4, 0.08f)));
+        // A jump on the run: the swords stay held out through it.
+        SCENARIOS.add(new Scenario("02u_sword_sprint_jump", 45, sp -> { place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD)); },
+                (mc, t) -> move(mc, t < 43, t < 43, false, t >= 20 && t < 22), new Window(16, 19, 1, 0f), new Window(21, 34, 4, 0.05f)));
         SCENARIOS.add(new Scenario("02t_dual_sword_sprint", 40, sp -> { place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD)); },
                 (mc, t) -> move(mc, t < 38, t < 38, false, false), new Window(18, 36, 4, 0.08f)));
         // Menus: thinking in the inventory and behind the pause menu (the game is paused there:
@@ -285,6 +292,15 @@ public final class SelfTest {
                     if (t == 150) onServer(mc, sp -> sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class,
                             sp.getBoundingBox().inflate(8)).forEach(net.minecraft.world.entity.Entity::discard));
                 }, new Window(11, 30, 4, 0.12f), new Window(34, 146, 8, 0.6f)));
+        // Dozing off standing (another mod's nap, here its snore): Z z z over the head, and the
+        // fidget that was playing stops.
+        SCENARIOS.add(new Scenario("78d_doze", 70, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> {
+                    var m = localMotion(mc);
+                    if (m == null) return;
+                    if (t == 8) m.forceIdle(dev.mcreload.anim.client.rig.MotionState.IDLE_STRETCH);
+                    if (t >= 14 && t % 20 == 14) m.onSnore();
+                }, new Window(12, 13, 1, 0f), new Window(30, 68, 3, 0.4f)));
         // Sleeping: each of the three ways (a new one is picked every time you lie down).
         String[] sleeps = {"starfish", "face_down", "hands_behind"};
         for (int k = 0; k < sleeps.length; k++) {

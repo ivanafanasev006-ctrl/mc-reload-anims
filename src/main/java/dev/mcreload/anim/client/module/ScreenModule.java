@@ -86,17 +86,17 @@ final class ScreenModule implements AnimModule {
     }
 
     /**
-     * Rummaging: leaning in, looking down, both hands in front digging about, each on its own
-     * rhythm so it never looks like a loop.
+     * Rummaging: leaning in, looking down, both hands in front at the middle of the body digging
+     * about, each on its own rhythm so it never looks like a loop.
      */
     private static void rummage(MotionState m, PoseFrame f, Signs s, float w, float t) {
         if (w <= 0.001f) return;
         float ph = t * 4.2f;
-        f.rightArm().override(-1.10f + 0.16f * Mth.sin(ph), -0.18f + 0.15f * Mth.sin(ph * 1.7f + 1.3f), 0.06f, w);
-        f.rightArm().overrideBend(s.elbow() * (0.60f + 0.18f * Mth.sin(ph * 1.3f + 0.5f)), w);
-        f.leftArm().override(-1.10f + 0.16f * Mth.sin(ph + 2.4f), 0.18f - 0.15f * Mth.sin(ph * 1.7f + 3.9f), -0.06f, w);
-        f.leftArm().overrideBend(s.elbow() * (0.60f + 0.18f * Mth.sin(ph * 1.3f + 2.9f)), w);
-        Rigging.leanTorso(f, s, 0.24f * w);
+        f.rightArm().override(-0.50f + 0.14f * Mth.sin(ph), -0.10f + 0.10f * Mth.sin(ph * 1.7f + 1.3f), 0.10f, w);
+        f.rightArm().overrideBend(s.elbow() * (0.85f + 0.15f * Mth.sin(ph * 1.3f + 0.5f)), w);
+        f.leftArm().override(-0.50f + 0.14f * Mth.sin(ph + 2.4f), 0.10f - 0.10f * Mth.sin(ph * 1.7f + 3.9f), -0.10f, w);
+        f.leftArm().overrideBend(s.elbow() * (0.85f + 0.15f * Mth.sin(ph * 1.3f + 2.9f)), w);
+        Rigging.leanTorso(f, s, 0.18f * w);
         f.head().override(0.55f + 0.05f * Mth.sin(t * 1.1f), 0.15f * Mth.sin(t * 0.6f + m.seed), 0f, w);
     }
 
