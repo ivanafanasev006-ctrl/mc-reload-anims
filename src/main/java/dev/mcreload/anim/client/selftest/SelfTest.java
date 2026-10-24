@@ -502,12 +502,13 @@ public final class SelfTest {
         // Two swords: drawn from behind the back into a wary crouch; twirled one after the other.
         for (int action : new int[]{dev.mcreload.anim.client.rig.MotionState.IDLE_DUAL_DRAW, dev.mcreload.anim.client.rig.MotionState.IDLE_DUAL_SPIN}) {
             final int a = action;
-            SCENARIOS.add(new Scenario("64b_idle_dual_" + action, 110,
+            // Started once the guard from getting the swords (a draw) has gone, as idling would.
+            SCENARIOS.add(new Scenario("64b_idle_dual_" + action, 180,
                     sp -> { place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.DIAMOND_SWORD)); },
                     (mc, t) -> {
                         move(mc, false, false, false, false);
-                        if (t == 20) { var m = localMotion(mc); if (m != null) m.forceIdle(a); }
-                    }, new Window(20, 110, 14, 0.25f)));
+                        if (t == 84) { var m = localMotion(mc); if (m != null) m.forceIdle(a); }
+                    }, new Window(84, 180, 16, 0.2f)));
         }
         // The friend crawls past and sits down (as their client would tell us).
         SCENARIOS.add(new Scenario("72_friend_posture", 150, sp -> place(sp, 2, Y, -1, -90, none),
