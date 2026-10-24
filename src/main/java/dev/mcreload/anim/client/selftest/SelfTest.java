@@ -628,6 +628,34 @@ public final class SelfTest {
                     noPanels = true;
                     friendPosture(mc, t);
                 }, new Window(14, 60, 5, 0.25f), new Window(80, 140, 3, 0.5f)));
+        // Iron's Spells casts (through its /cast command), each with a different arm animation of
+        // Iron's: the arms must go where Iron's sends them (forward for a spray), whatever else
+        // Kinetrix is doing (a sword stance, walking, a staff in hand).
+        if (dev.mcreload.anim.compat.ModCompat.ironsSpells) {
+            String[][] casts = {{"a", "cone_of_cold", "none"}, {"b", "firebolt", "none"}, {"c", "fireball", "none"},
+                    {"d", "lightning_lance", "none"}, {"e", "heal", "none"}, {"f", "cone_of_cold", "sword"},
+                    {"g", "cone_of_cold", "staff"}, {"h", "cone_of_cold", "walk"}, {"i", "electrocute", "turn"}};
+            for (String[] c : casts) {
+                String spell = c[1], how = c[2];
+                SCENARIOS.add(new Scenario("98" + c[0] + "_irons_" + spell + (how.equals("none") ? "" : "_" + how), 80,
+                        sp -> {
+                            place(sp, 2, Y, 0, -90, how.equals("sword") ? new ItemStack(Items.DIAMOND_SWORD)
+                                    : how.equals("staff") ? ironsItem("graybeard_staff") : ItemStack.EMPTY);
+                            if (how.equals("staff")) sp.setItemInHand(InteractionHand.OFF_HAND, ironsItem("ice_staff"));
+                        },
+                        (mc, t) -> {
+                            move(mc, how.equals("walk") && t > 6 && t < 70, false, false, false);
+                            // Looking 60 degrees off to the side while casting: the arms follow the look.
+                            if (how.equals("turn") && mc.player != null && t >= 20) {
+                                float yaw = -90f + Math.min(60f, (t - 20) * 4f);
+                                mc.player.setYRot(yaw);
+                                mc.player.setYHeadRot(yaw);
+                            }
+                            if (t == 10) onServer(mc, sp -> sp.getServer().getCommands().performPrefixedCommand(
+                                    sp.createCommandSourceStack().withPermission(4), "cast @s irons_spellbooks:" + spell + " 3"));
+                        }, new Window(11, 22, 4, 0.1f), new Window(24, 78, 5, 0.4f)));
+            }
+        }
         // Last: hand the player model to Entity Model Features (Fresh Moves) to check nothing breaks.
         if (dev.mcreload.anim.compat.EmfCompat.LOADED) SCENARIOS.add(new Scenario("99_emf_player", 140, sp -> { place(sp, 2, Y, 0, -90, none); armor(sp); },
                 (mc, t) -> {
@@ -870,6 +898,13 @@ public final class SelfTest {
         return String.format("%.2f", v);
     }
 
+    /** An item of Iron's Spells by name (a stick if it is not there). */
+    private static ItemStack ironsItem(String name) {
+        net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(
+                new net.minecraft.resources.ResourceLocation("irons_spellbooks", name));
+        return item == null || item == Items.AIR ? new ItemStack(Items.STICK) : new ItemStack(item);
+    }
+
     /** Run something on the server with the test player. */
     private static void onServer(Minecraft mc, java.util.function.Consumer<ServerPlayer> action) {
         IntegratedServer srv = mc.getSingleplayerServer();
@@ -992,6 +1027,38 @@ public final class SelfTest {
                         currentLabel, scenarioTick, f2(r[0]), f2(r[1]), f2(r[2]), f2(rb[0]), f2(rb[1]), f2(rp[0]), f2(rp[1]), f2(rp[2]),
                         f2(l[0]), f2(l[1]), f2(l[2]), f2(lb[0]), f2(lb[1]), f2(h[0]), f2(h[1]), f2(h[2]),
                         f2(rig.motion.thinkW.v), f2(rig.motion.rummageW.v), f2(rig.motion.tradeW.v), f2(rig.motion.sleepW.v));
+            }
+        }
+        // Iron's casts: what we put out for the arms and what was finally drawn, per frame of interest.
+        if (mc.player != null && currentLabel != null && currentLabel.startsWith("98") && scenarioTick % 4 == 0) {
+            dev.mcreload.anim.client.rig.PlayerRig rig = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player);
+            if (rig != null) {
+                int ra = dev.mcreload.anim.client.pose.PoseFrame.RIGHT_ARM, la = dev.mcreload.anim.client.pose.PoseFrame.LEFT_ARM;
+                int to = dev.mcreload.anim.client.pose.PoseFrame.TORSO, bo = dev.mcreload.anim.client.pose.PoseFrame.BODY;
+                float[] r = new float[3], l = new float[3], br = new float[3], bl = new float[3], rb = new float[3], lb = new float[3],
+                        rp = new float[3], brp = new float[3], tr = new float[3], tb = new float[3], bd = new float[3];
+                rig.finalPose(ra, 1, r);
+                rig.finalPose(la, 1, l);
+                rig.basePose(ra, 1, br);
+                rig.basePose(la, 1, bl);
+                rig.finalPose(ra, 2, rb);
+                rig.finalPose(la, 2, lb);
+                rig.finalPose(ra, 0, rp);
+                rig.basePose(ra, 0, brp);
+                rig.finalPose(to, 1, tr);
+                rig.finalPose(to, 2, tb);
+                rig.finalPose(bo, 1, bd);
+                var m = rig.motion;
+                McReloadAnim.LOG.info("[kinetrix] self-test {} t={} irons R=({}, {}, {}) ours({}, {}, {}) bend({}, {}) pos({}, {}, {}) ours({}, {}, {})"
+                                + " L=({}, {}, {}) ours({}, {}, {}) bend({}, {}) torso=({}, {}, {}) bend({}, {}) body=({}, {}, {})"
+                                + " foreign R={} L={} T={} cast={} {} bow={} using={} anim={} free={} yaw head-body={}",
+                        currentLabel, scenarioTick, f2(r[0]), f2(r[1]), f2(r[2]), f2(br[0]), f2(br[1]), f2(br[2]), f2(rb[0]), f2(rb[1]),
+                        f2(rp[0]), f2(rp[1]), f2(rp[2]), f2(brp[0]), f2(brp[1]), f2(brp[2]),
+                        f2(l[0]), f2(l[1]), f2(l[2]), f2(bl[0]), f2(bl[1]), f2(bl[2]), f2(lb[0]), f2(lb[1]),
+                        f2(tr[0]), f2(tr[1]), f2(tr[2]), f2(tb[0]), f2(tb[1]), f2(bd[0]), f2(bd[1]), f2(bd[2]),
+                        f2(rig.foreign[ra]), f2(rig.foreign[la]), f2(rig.foreign[to]), f2(m.castW.v), m.cast.spellId(), f2(m.bowW.v),
+                        mc.player.isUsingItem(), mc.player.getUseItem().getUseAnimation(), f2(m.armsFree.v),
+                        f2(net.minecraft.util.Mth.wrapDegrees(mc.player.yHeadRot - mc.player.yBodyRot)));
             }
         }
         if (++fpsLogTimer % 20 == 0 && mc.player != null) {

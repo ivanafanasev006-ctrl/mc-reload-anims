@@ -199,6 +199,13 @@ public final class PlayerRig {
         return true;
     }
 
+    /** What our own layer output last frame for a part, before the other mods' layers (self-test). */
+    public boolean basePose(int part, int type, float[] out) {
+        if (!baseOutValid[part][type]) return false;
+        System.arraycopy(baseOut[part][type], 0, out, 0, 3);
+        return true;
+    }
+
     static int typeIndex(TransformType type) {
         return switch (type) {
             case POSITION -> T_POS;

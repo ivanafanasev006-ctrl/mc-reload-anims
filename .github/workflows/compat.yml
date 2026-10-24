@@ -2,7 +2,8 @@ name: Compatibility self-test
 
 # A real (production) Forge client, like a player's: the reobfuscated Kinetrix jar next to
 # Entity Model Features + Fresh Moves, Skin Layers 3D, Better Combat, Vintage Animations and
-# Embeddium, plus a second, server-driven player for the multiplayer sync.
+# Embeddium and Iron's Spells 'n Spellbooks, plus a second, server-driven player for the
+# multiplayer sync.
 # A second job runs the renderer stack of the Otherworld pack: Xenon + Oculus with the
 # Complementary shaders, and the pack's (older) EMF / ETF versions with Fresh Moves.
 on:
@@ -11,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       mods:
-        description: 'compat mods (all or comma list: emf,skin,bc,vintage,embeddium)'
+        description: 'compat mods (all or comma list: emf,skin,bc,vintage,embeddium,irons)'
         default: 'all'
       only:
         description: 'scenario regex (no commas)'
@@ -30,7 +31,7 @@ concurrency:
 env:
   FORGE: '1.20.1-47.4.20'
   SHADERS_ONLY: '^(00_stand|60_armor_walk|61_armor_flex|70_crawl|71_sit_1|99_)'
-  DEFAULT_ONLY: '^(00_stand|03b|05_fist|08a|10b|28_sneak|29_back_jump|40_emote_(dance|flex|meditate)|45_fidget_10|6[0-9]_|7[0-9]_|99_)'
+  DEFAULT_ONLY: '^(00_stand|03b|05_fist|08a|10b|28_sneak|29_back_jump|40_emote_(dance|flex|meditate)|45_fidget_10|6[0-9]_|7[0-9]_|98|99_)'
 
 jobs:
   compat:
@@ -79,6 +80,27 @@ jobs:
             echo "$id -> $url"
             curl -sSL --retry 5 --retry-all-errors --retry-delay 3 -o "mc/mods/$(basename "${url//%2B/+}")" "$url"
           done
+          # Iron's Spells 'n Spellbooks: its newest Forge 1.20.1 build, with every required library
+          # (GeckoLib, Curios, Iron's Lib...) at its newest 1.20.1 build too.
+          if want irons; then
+            api() { curl -sSL --retry 5 --retry-all-errors --retry-delay 3 "https://api.modrinth.com/v2/$1"; }
+            Q='loaders=%5B%22forge%22%5D&game_versions=%5B%221.20.1%22%5D'
+            DONE=" $(api version/xe2EVE6q | jq -r .project_id) "   # playerAnimator: the one above
+            TODO="irons-spells-n-spellbooks"
+            while [ -n "$TODO" ]; do
+              set -- $TODO; P=$1; shift; TODO="$*"
+              V=$(api "project/$P/version?$Q" | jq '.[0]')
+              PID=$(echo "$V" | jq -r .project_id)
+              [[ "$DONE" == *" $PID "* ]] && continue
+              DONE="$DONE$PID "
+              url=$(echo "$V" | jq -r '[.files[] | select(.primary)][0].url // .files[0].url')
+              echo "irons: $P $(echo "$V" | jq -r .version_number) -> $url"
+              curl -sSL --retry 5 --retry-all-errors --retry-delay 3 -o "mc/mods/$(basename "${url//%2B/+}")" "$url"
+              for d in $(echo "$V" | jq -r '.dependencies[] | select(.dependency_type == "required" and .project_id != null) | .project_id'); do
+                TODO="$TODO $d"
+              done
+            done
+          fi
           ls -la mc/mods | tee /tmp/out/mods.txt
           for j in mc/mods/*.jar; do echo "$(basename "$j"): $(unzip -p "$j" META-INF/mods.toml 2>/dev/null | grep -E '^\s*modId' | head -1)"; done | tee -a /tmp/out/mods.txt
           curl -sSL --retry 5 --retry-all-errors --retry-delay 3 -o mc/resourcepacks/FreshMoves.zip "https://cdn.modrinth.com/data/slufHzC2/versions/lHNQh6Gv/-1.21.2%20Fresh%20Moves%20v3.1%20%28No%20Animated%20Eyes%29.zip"
