@@ -86,7 +86,7 @@ jobs:
             api() { curl -sSL --retry 5 --retry-all-errors --retry-delay 3 "https://api.modrinth.com/v2/$1"; }
             Q='loaders=%5B%22forge%22%5D&game_versions=%5B%221.20.1%22%5D'
             DONE=" $(api version/xe2EVE6q | jq -r .project_id) "   # playerAnimator: the one above
-            TODO="irons-spells-n-spellbooks geckolib curios irons-lib"
+            TODO="irons-spells-n-spellbooks geckolib curios 9nfaJPtX"   # 9nfaJPtX: Iron's Lib
             while [ -n "$TODO" ]; do
               set -- $TODO; P=$1; shift; TODO="$*"
               V=$(api "project/$P/version?$Q" | jq '.[0]' 2>/dev/null)
