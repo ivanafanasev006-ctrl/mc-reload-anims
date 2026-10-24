@@ -61,6 +61,26 @@ public final class PlayerRig {
     /** The dummy in the animation gallery (always animated, it is there to show them). */
     public boolean preview;
 
+    private dev.kosmx.playerAnim.api.layered.IAnimation ironsLayer;
+    private boolean ironsLooked;
+
+    /** One of Iron's Spells' animations is playing on this player (a cast, its wind-up or its end). */
+    public boolean ironsAnimating() {
+        if (!dev.mcreload.anim.compat.ModCompat.ironsSpells) return false;
+        if (!ironsLooked) {
+            ironsLooked = true;
+            if (player instanceof dev.kosmx.playerAnim.impl.IAnimatedPlayer ap) {
+                ironsLayer = ap.playerAnimator_getAnimation(
+                        new net.minecraft.resources.ResourceLocation(dev.mcreload.anim.compat.IronsSpellsCompat.MODID, "animation"));
+            }
+        }
+        return ironsLayer != null && ironsLayer.isActive();
+    }
+
+    public boolean shouldAnimateNow() {
+        return shouldAnimate();
+    }
+
     boolean shouldAnimate() {
         if (preview) return true;
         if (!Cfg.enabled) return false;

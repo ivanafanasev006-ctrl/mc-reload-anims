@@ -37,6 +37,7 @@ public final class ClientBootstrap {
         modBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent e) ->
                 e.enqueueWork(dev.mcreload.anim.compat.SkinLayersCompat::init));
         MinecraftForge.EVENT_BUS.addListener(ClientBootstrap::onClientTick);
+        MinecraftForge.EVENT_BUS.addListener(ClientBootstrap::onPlayerTick);
         MinecraftForge.EVENT_BUS.addListener(WeaponTrails::onRenderLevel);
         MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.fx.IdleProps::onRenderLevel);
         MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.fx.SleepZzz::onRenderLevel);
@@ -95,6 +96,14 @@ public final class ClientBootstrap {
                         enabled ? "message.kinetrix.enabled" : "message.kinetrix.disabled"), true);
             }
         }
+    }
+
+    /** Every player in the client world, after its tick (the body yaw is settled by then). */
+    private static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || !event.player.level().isClientSide()
+                || !(event.player instanceof net.minecraft.client.player.AbstractClientPlayer p)) return;
+        dev.mcreload.anim.client.rig.PlayerRig rig = dev.mcreload.anim.client.rig.RigRegistry.get(p);
+        if (rig != null && rig.shouldAnimateNow()) rig.motion.faceLookWhileCasting(rig.ironsAnimating());
     }
 
     private ClientBootstrap() {}

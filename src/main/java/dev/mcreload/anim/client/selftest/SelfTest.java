@@ -1051,12 +1051,12 @@ public final class SelfTest {
                 var m = rig.motion;
                 McReloadAnim.LOG.info("[kinetrix] self-test {} t={} irons R=({}, {}, {}) ours({}, {}, {}) bend({}, {}) pos({}, {}, {}) ours({}, {}, {})"
                                 + " L=({}, {}, {}) ours({}, {}, {}) bend({}, {}) torso=({}, {}, {}) bend({}, {}) body=({}, {}, {})"
-                                + " foreign R={} L={} T={} cast={} {} bow={} using={} anim={} free={} yaw head-body={}",
+                                + " foreign R={} L={} T={} cast={} {} ironsAnim={} bow={} using={} anim={} free={} yaw head-body={}",
                         currentLabel, scenarioTick, f2(r[0]), f2(r[1]), f2(r[2]), f2(br[0]), f2(br[1]), f2(br[2]), f2(rb[0]), f2(rb[1]),
                         f2(rp[0]), f2(rp[1]), f2(rp[2]), f2(brp[0]), f2(brp[1]), f2(brp[2]),
                         f2(l[0]), f2(l[1]), f2(l[2]), f2(bl[0]), f2(bl[1]), f2(bl[2]), f2(lb[0]), f2(lb[1]),
                         f2(tr[0]), f2(tr[1]), f2(tr[2]), f2(tb[0]), f2(tb[1]), f2(bd[0]), f2(bd[1]), f2(bd[2]),
-                        f2(rig.foreign[ra]), f2(rig.foreign[la]), f2(rig.foreign[to]), f2(m.castW.v), m.cast.spellId(), f2(m.bowW.v),
+                        f2(rig.foreign[ra]), f2(rig.foreign[la]), f2(rig.foreign[to]), f2(m.castW.v), m.cast.spellId(), rig.ironsAnimating(), f2(m.bowW.v),
                         mc.player.isUsingItem(), mc.player.getUseItem().getUseAnimation(), f2(m.armsFree.v),
                         f2(net.minecraft.util.Mth.wrapDegrees(mc.player.yHeadRot - mc.player.yBodyRot)));
             }

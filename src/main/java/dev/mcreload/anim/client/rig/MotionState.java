@@ -999,6 +999,19 @@ public final class MotionState {
         dozing = ownDoze || still && (dozeSeen > 1.2f || time < snoreUntil || time - dozeAnimAt < 0.5f);
     }
 
+    /**
+     * After the player's tick, while Iron's Spells casts (or plays one of its animations): face the
+     * way you look. Iron's turns the arms by how far the head looks off the body (up to 50 degrees
+     * standing still), so with the chest left where it was they swung out sideways and the far arm
+     * went through the chest; with the body turned to the look they go straight forward, to where
+     * the spell flies. The same thing vanilla does to the body during a swing, eased over a few ticks.
+     */
+    public void faceLookWhileCasting(boolean ironsAnimating) {
+        if (!Cfg.ironsSpells || !(cast.casting() || ironsAnimating)) return;
+        if (player.isPassenger() || player.isSleeping() || player.isFallFlying() || player.isVisuallySwimming()) return;
+        player.yBodyRot += Mth.wrapDegrees(player.getYHeadRot() - player.yBodyRot) * 0.5f;
+    }
+
     /** Fall asleep on the spot (self-test). */
     public void forceDoze() {
         activeAt = time - DOZE_AFTER - 0.1f;
