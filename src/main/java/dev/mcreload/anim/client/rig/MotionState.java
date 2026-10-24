@@ -784,7 +784,7 @@ public final class MotionState {
         }
         boolean afterSwing = time - attackTime < 0.6f + GUARD_HOLD;
         boolean afterDraw = time - Math.max(drawStart, offDrawStart) < DRAW_SECONDS + GUARD_HOLD;
-        readyW.to(swordInHand && (afterSwing || afterDraw) && !blocked && !swimming && !crawling && !sitting
+        readyW.to(swordInHand && (afterSwing || afterDraw) && !ownDoze && !blocked && !swimming && !crawling && !sitting
                 && sprintW.v < 0.5f && (!player.isUsingItem() || player.isBlocking()) && screenPose == SCREEN_NONE ? 1f : 0f, dt);
         // Running with the sword: starts sprinting on the ground; a jump or a step down of a block
         // or two keeps it (the sprint flag stays on in the air); stopping, a hit, a real fall
