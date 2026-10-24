@@ -3,8 +3,11 @@ name: Research (mod lists and jar contents)
 # Reads things this repository's own tooling cannot reach from a development container
 # (CurseForge, Modrinth): the mod list of a CurseForge modpack, and what is inside given mod
 # jars (mods.toml, mixins, data-driven files, class list, chosen classes decompiled). Everything
-# goes to the job log; nothing is committed.
+# goes to the job log; nothing is committed. Runs by hand, or on a push that changes the request
+# file .github/research/request.env (PACK=, JARS=, CLASSES=, FILES= lines; empty = skip).
 on:
+  push:
+    paths: ['.github/research/request.env']
   workflow_dispatch:
     inputs:
       pack:
@@ -30,11 +33,26 @@ jobs:
     env:
       UA: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
     steps:
+      - uses: actions/checkout@v5
+
+      - name: Request
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            cat .github/research/request.env | grep -E '^(PACK|JARS|CLASSES|FILES)=' >> "$GITHUB_ENV"
+          else
+            {
+              echo "PACK=${{ github.event.inputs.pack }}"
+              echo "JARS=${{ github.event.inputs.jars }}"
+              echo "CLASSES=${{ github.event.inputs.classes }}"
+              echo "FILES=${{ github.event.inputs.files }}"
+            } >> "$GITHUB_ENV"
+          fi
+
       - name: Modpack mod list
-        if: ${{ github.event.inputs.pack != '' }}
+        if: ${{ env.PACK != '' }}
         run: |
           set -u
-          SLUG="${{ github.event.inputs.pack }}"
+          SLUG="$PACK"
           ct() { curl -sS --retry 4 --retry-all-errors --retry-delay 3 -A "$UA" "$@"; }
           S=$(ct "https://api.curse.tools/v1/cf/mods/search?gameId=432&classId=4471&slug=$SLUG")
           PID=$(echo "$S" | jq -r '.data[0].id // empty')
@@ -64,12 +82,12 @@ jobs:
           done
 
       - name: Jar contents
-        if: ${{ github.event.inputs.jars != '' }}
+        if: ${{ env.JARS != '' }}
         run: |
           set -u
           ct() { curl -sS --retry 4 --retry-all-errors --retry-delay 3 -A "$UA" "$@"; }
           mkdir -p jars
-          for spec in ${{ github.event.inputs.jars }}; do
+          for spec in $JARS; do
             case "$spec" in
               cf:*) IFS=: read -r _ P F <<< "$spec"
                     url=$(ct -o /dev/null -w '%{redirect_url}' "https://www.curseforge.com/api/v1/mods/$P/files/$F/download" || true)
@@ -83,8 +101,8 @@ jobs:
             ct -L -o "jars/$name" "$url" && echo "$spec -> $name"
           done
           curl -sSL -o cfr.jar https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
-          FILES_RE='${{ github.event.inputs.files }}'
-          CLASSES_RE='${{ github.event.inputs.classes }}'
+          FILES_RE="${FILES:-weapon_attributes/|META-INF/mods.toml|\.mixins\.json$}"
+          CLASSES_RE="${CLASSES:-}"
           for j in jars/*.jar; do
             echo; echo "################ $(basename "$j") ($(stat -c %s "$j") bytes)"
             unzip -Z1 "$j" > list.txt
