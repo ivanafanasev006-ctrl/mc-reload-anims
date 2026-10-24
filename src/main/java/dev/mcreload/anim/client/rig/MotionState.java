@@ -137,6 +137,11 @@ public final class MotionState {
     /** How long drawing the sword into the guard takes, and how long the guard lasts after it / a swing. */
     public static final float DRAW_SECONDS = 0.6f, GUARD_HOLD = 2.5f;
     private boolean wasSword, drawArmed;
+    /**
+     * Last attack with a sword in hand: a swing of ours, one Better Combat plays (BladeModule
+     * sees its animation on the arm), or simply the attack key pressed: the guard runs from it.
+     */
+    public float attackTime = -100f;
     /** Weapon in the main hand and nothing in the other: two-handed (samurai) grip. */
     public final Smooth twoHandW = new Smooth(5f);
     public final Smooth crossCarryW = new Smooth(6f), crossAimW = new Smooth(8f);
@@ -691,7 +696,11 @@ public final class MotionState {
         // (at a mob or at the air), standing or walking (like the fists' guard), and still while
         // blocking with a shield in the other hand. Swords only: an axe or a trident is just held.
         boolean swordInHand = Weapons.isSword(mainItem);
-        boolean afterSwing = isSlash(slashKind) && time - slashStart < slashDuration + GUARD_HOLD;
+        if (swordInHand && isLocal() && net.minecraft.client.Minecraft.getInstance().screen == null
+                && net.minecraft.client.Minecraft.getInstance().options.keyAttack.isDown()) {
+            attackTime = time;
+        }
+        boolean afterSwing = time - attackTime < 0.6f + GUARD_HOLD;
         boolean afterDraw = time - drawStart < DRAW_SECONDS + GUARD_HOLD;
         readyW.to(swordInHand && (afterSwing || afterDraw) && !blocked && !swimming && !crawling && !sitting
                 && sprintW.v < 0.5f && (!player.isUsingItem() || player.isBlocking()) ? 1f : 0f, dt);
@@ -1150,6 +1159,8 @@ public final class MotionState {
     private void startSwing() {
         HumanoidArm arm = player.swingingArm == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite();
         ItemStack held = player.getItemInHand(player.swingingArm);
+        // Any swing of a sword (ours, chained or not, or one Better Combat animates) keeps the guard up.
+        if (Weapons.isSword(held)) attackTime = time;
         int kind = classify(held);
         float progress = slashProgress();
 

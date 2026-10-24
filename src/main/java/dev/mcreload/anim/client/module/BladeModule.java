@@ -16,10 +16,10 @@ import org.joml.Quaternionf;
  * turns into the cut, the blade turns in the hand.
  * <ul>
  *   <li>Drawing a sword (switching to it): a twirl of the blade and a step into the guard.</li>
- *   <li>Sword guard: for a couple of seconds after drawing it or after any swing (even at the
- *       air), standing or walking, like the fists' guard: sword forward at the waist pointing at
- *       the enemy, the other hand (or a shield) up in front, sword shoulder back. A shield can be
- *       raised from it and the sword stays ready. Swords only; an axe or a trident is just held.</li>
+ *   <li>Sword guard: for a couple of seconds after drawing it or after any attack (a click at the
+ *       air counts, and so do Better Combat's attacks), standing or walking, like the fists'
+ *       guard: side-on and low, arms out wide, blade tipped forward (a shield is held up in
+ *       front instead, and can be raised from the guard). Swords only; not axes or tridents.</li>
  *   <li>Sword combo: inward sweep, rising cut, overhead chop, spinning slash.</li>
  *   <li>Axe: heavy overhead chop, heavy sweep.</li>
  * </ul>
@@ -52,6 +52,12 @@ final class BladeModule implements AnimModule {
         boolean shield = holdsShield(rig.player);
         float foreignMain = rig.foreign[m.mainRight ? PoseFrame.RIGHT_ARM : PoseFrame.LEFT_ARM];
         float foreignOff = rig.foreign[m.mainRight ? PoseFrame.LEFT_ARM : PoseFrame.RIGHT_ARM];
+        // Better Combat playing its attack on the sword arm: that is an attack too (keeps the guard).
+        net.minecraft.world.item.ItemStack held = rig.player.getMainHandItem();
+        if (foreignMain > 0.5f && dev.mcreload.anim.client.rig.Weapons.isSword(held)
+                && dev.mcreload.anim.compat.BetterCombatCompat.handles(held)) {
+            m.attackTime = m.time;
+        }
         stance(m, f, s, gate, hd, main, off, shield, foreignMain, foreignOff);
         draw(m, f, s, gate, hd, main, off, shield, foreignMain, foreignOff);
         strike(rig, m, f, s, gate, hd, main, off, shield);
@@ -97,18 +103,15 @@ final class BladeModule implements AnimModule {
 
     // ------------------------------------------------------------------ sword guard and drawing
 
-    /*
-     * The guard (fitted on the model: the blade 2.5 px clear of the chest, 4.7 px of the head):
-     * sword arm forward and a little out, elbow bent, the fist at the waist and the blade pointing
-     * forward and up at the enemy; the other hand up in front of the chest, or the shield held
-     * across in front of it; the sword shoulder back, the chest leaning in; standing, the feet
-     * staggered (the free side forward), knees bent.
-     */
-    private static final float G_MAIN_X = -0.55f, G_MAIN_Y = -0.10f, G_MAIN_Z = 0.15f, G_MAIN_ELBOW = 1.00f, G_TILT = 0.95f;
-    private static final float G_OFF_X = -0.55f, G_OFF_Y = -0.25f, G_OFF_Z = 0.15f, G_OFF_ELBOW = 1.00f;
+    /** The shield held across in front of the chest (fitted on the model and in CI). */
     private static final float G_SHIELD_X = -0.70f, G_SHIELD_Y = -0.45f, G_SHIELD_Z = 0.05f, G_SHIELD_ELBOW = 0.90f;
-    private static final float G_LEAN = 0.15f, G_TWIST = 0.25f;
 
+    /**
+     * The guard, after Mo'Bends: side-on and low, leaning in, the sword arm out to the side with
+     * the blade tipped forward, the free hand out the other way (or the shield up in front).
+     * Standing, the feet wide apart and knees bent; walking, the arms stay out and the body turns
+     * less, so the feet still go forward.
+     */
     private void stance(MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off,
                         boolean shield, float foreignMain, float foreignOff) {
         curSlot = 0;
@@ -119,48 +122,54 @@ final class BladeModule implements AnimModule {
         float block = shield ? m.blockW.v : 0f;
         float mw = w * Math.max(m.armsFree.v, block) * (1f - foreignMain);
         float ow = w * m.armsFree.v * (1f - block) * (1f - foreignOff);
-        float b0 = Mth.sin(m.time * 3.2f + m.seed), b1 = Mth.cos(m.time * 2.7f + m.seed);
-        guardArms(m, s, hd, main, off, shield, mw, ow, 0.03f * b0, 0.03f * b1);
-        Rigging.leanTorso(f, s, (G_LEAN + 0.02f * b0) * w);
-        Rigging.twistUpper(f, hd * G_TWIST * w);
-        // Standing (and not behind a raised shield, which has its own stance): feet staggered.
-        float still = (1f - m.moveF()) * m.groundW.v * (1f - block);
-        guardLegs(f, s, hd, w * still);
+        float b0 = Mth.sin(m.time * 4f), b1 = Mth.cos(m.time * 3.5f);
+        float moving = AngleMath.clamp(m.moveF(), 0f, 1f);
+        guardPose(m, f, s, hd, main, off, shield, w, mw, ow, 1f, b0, b1, moving);
+        // Standing (and not behind a raised shield, which has its own stance): feet wide apart.
+        float still = (1f - moving) * m.groundW.v * (1f - block);
+        guardLegs(f, s, w * still);
     }
 
-    private static void guardArms(MotionState m, Signs s, float hd, PartPose main, PartPose off, boolean shield,
-                                  float mw, float ow, float bobMain, float bobOff) {
+    /**
+     * The guard at {@code k} (0 = arms down by the sides, 1 = the guard): body turned side-on,
+     * leaning in, sword arm out to the side with the blade tipped forward, the other arm out the
+     * other way or the shield across in front.
+     */
+    private void guardPose(MotionState m, PoseFrame f, Signs s, float hd, PartPose main, PartPose off, boolean shield,
+                           float w, float mw, float ow, float k, float b0, float b1, float moving) {
+        float turn = deg(shield ? 10f : 30f) * (1f - 0.6f * moving) * k;
+        f.body().ry += hd * turn * w;
+        f.head().ry += hd * turn * w;
+        Rigging.leanTorso(f, s, deg(20f + 2f * b0) * k * w);
         if (mw > 0.001f) {
-            main.override(G_MAIN_X + bobMain, hd * G_MAIN_Y, hd * G_MAIN_Z, mw);
-            main.overrideBend(s.elbow() * G_MAIN_ELBOW, mw);
-            m.itemTiltTarget = Math.max(m.itemTiltTarget, G_TILT * mw);
+            arm(main, hd * (60f + 5f * b0) * k, hd * 5f * b1 * k, 0f, mw);
+            main.overrideBend(s.elbow() * deg(20f) * k, mw);
+            m.itemTiltTarget = Math.max(m.itemTiltTarget, deg(65f) * k * mw);
         }
         if (ow > 0.001f) {
             if (shield) {
-                off.override(G_SHIELD_X + bobOff, -hd * G_SHIELD_Y, -hd * G_SHIELD_Z, ow);
-                off.overrideBend(s.elbow() * G_SHIELD_ELBOW, ow);
+                off.override(G_SHIELD_X * k, -hd * G_SHIELD_Y * k, -hd * G_SHIELD_Z * k, ow);
+                off.overrideBend(s.elbow() * G_SHIELD_ELBOW * k, ow);
             } else {
-                off.override(G_OFF_X + bobOff, -hd * G_OFF_Y, -hd * G_OFF_Z, ow);
-                off.overrideBend(s.elbow() * G_OFF_ELBOW, ow);
+                arm(off, -hd * (60f - 5f * b1) * k, 0f, 0f, ow);
+                off.overrideBend(s.elbow() * deg(60f) * k, ow);
             }
         }
     }
 
-    private static void guardLegs(PoseFrame f, Signs s, float hd, float w) {
+    private static void guardLegs(PoseFrame f, Signs s, float w) {
         if (w <= 0.001f) return;
-        PartPose lead = hd > 0 ? f.leftLeg() : f.rightLeg();
-        PartPose rear = hd > 0 ? f.rightLeg() : f.leftLeg();
-        lead.override(-0.35f, 0f, -hd * 0.10f, w);
-        lead.overrideBend(s.knee() * 0.45f, w);
-        rear.override(0.25f, 0f, hd * 0.10f, w);
-        rear.overrideBend(s.knee() * 0.40f, w);
-        f.body().py -= 0.05f * w;
+        f.rightLeg().override(deg(-30f), deg(25f), deg(10f), w);
+        f.leftLeg().override(deg(-30f), deg(-25f), deg(-10f), w);
+        f.rightLeg().overrideBend(s.knee() * deg(30f), w);
+        f.leftLeg().overrideBend(s.knee() * deg(30f), w);
+        f.body().py -= px(2f) * w;
     }
 
     /**
-     * Drawing the sword (0.6 s): the sword arm swings up and out to the side while the blade
-     * twirls a full turn in the fist, then comes down into the guard as the feet step into the
-     * stance with a little dip; the other hand (or the shield) comes up in front. Ends exactly in
+     * Drawing the sword (0.6 s): the sword arm swings up and out high to the side while the blade
+     * twirls a full turn in the fist, then comes down into the guard as the feet spread into the
+     * stance with a little dip; the other arm (or the shield) comes up with it. Ends exactly in
      * the guard, which the stance then holds.
      */
     private void draw(MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off,
@@ -173,27 +182,20 @@ final class BladeModule implements AnimModule {
         if (w <= 0.001f) return;
         float mw = w * m.armsFree.v * (1f - foreignMain);
         float ow = w * m.armsFree.v * (1f - foreignOff);
-        float up = smoother(t / 0.35f);                 // out and up, twirling
+        float up = smoother(t / 0.35f);                 // up and out high, twirling
         float down = smoother((t - 0.40f) / 0.45f);     // into the guard
+        float moving = AngleMath.clamp(m.moveF(), 0f, 1f);
+        // The rest of the guard comes in with the settle; the sword arm has its own path.
+        guardPose(m, f, s, hd, main, off, shield, w, 0f, ow * smoother((t - 0.20f) / 0.55f), down, 0f, 1f, moving);
         if (mw > 0.001f) {
-            main.override(Mth.lerp(down, Mth.lerp(up, 0f, -1.25f), G_MAIN_X), hd * Mth.lerp(down, 0f, G_MAIN_Y),
-                    hd * Mth.lerp(down, Mth.lerp(up, 0.05f, 0.55f), G_MAIN_Z), mw);
-            main.overrideBend(s.elbow() * Mth.lerp(down, Mth.lerp(up, 0.10f, 0.35f), G_MAIN_ELBOW), mw);
+            arm(main, hd * Mth.lerp(down, Mth.lerp(up, 5f, 115f), 60f), hd * Mth.lerp(down, 15f * up, 5f), 0f, mw);
+            main.overrideBend(s.elbow() * deg(Mth.lerp(down, Mth.lerp(up, 10f, 35f), 20f)), mw);
             float twirl = Mth.TWO_PI * smoother((t - 0.05f) / 0.45f);
-            m.itemTiltTarget = Math.max(m.itemTiltTarget, (twirl + G_TILT * down) * mw);
+            m.itemTiltTarget = Math.max(m.itemTiltTarget, (twirl + deg(65f) * down) * mw);
         }
-        if (ow > 0.001f) {
-            float ox = shield ? G_SHIELD_X : G_OFF_X, oy = shield ? G_SHIELD_Y : G_OFF_Y;
-            float oz = shield ? G_SHIELD_Z : G_OFF_Z, oe = shield ? G_SHIELD_ELBOW : G_OFF_ELBOW;
-            float o = smoother((t - 0.25f) / 0.50f);
-            off.override(ox * o, -hd * oy * o, -hd * oz * o, ow);
-            off.overrideBend(s.elbow() * oe * o, ow);
-        }
-        Rigging.leanTorso(f, s, G_LEAN * down * w);
-        Rigging.twistUpper(f, hd * G_TWIST * down * w);
-        // Standing: step into the stance with a little dip.
-        float still = (1f - m.moveF()) * m.groundW.v;
-        guardLegs(f, s, hd, w * still * down);
+        // Standing: the feet spread into the stance with a little dip.
+        float still = (1f - moving) * m.groundW.v;
+        guardLegs(f, s, w * still * down);
         f.body().py -= 0.06f * Mth.sin(Mth.PI * AngleMath.clamp((t - 0.45f) / 0.50f, 0f, 1f)) * w * still;
     }
 
