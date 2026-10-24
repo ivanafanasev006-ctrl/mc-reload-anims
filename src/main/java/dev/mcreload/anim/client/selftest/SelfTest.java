@@ -814,6 +814,10 @@ public final class SelfTest {
         sp.startRiding(boat, true);
     }
 
+    private static String f2(float v) {
+        return String.format("%.2f", v);
+    }
+
     /** Run something on the server with the test player. */
     private static void onServer(Minecraft mc, java.util.function.Consumer<ServerPlayer> action) {
         IntegratedServer srv = mc.getSingleplayerServer();
@@ -919,6 +923,23 @@ public final class SelfTest {
                         String.format("%.2f", m.fallW.v), String.format("%.2f", m.bladeReadyW.v), String.format("%.2f", m.hardDropW.v), String.format("%.2f", m.impactIn), m.holdingBlade,
                         String.format("%.2f", m.armsFree.v), String.format("%.2f", m.toolSwingW.v),
                         String.format("%.2f", m.gate.v), String.format("%.2f", m.itemTilt.v));
+            }
+        }
+        // Menus and beds: the arm and head angles as finally drawn (to compare with the box model).
+        if (mc.player != null && currentLabel != null && (currentLabel.startsWith("77") || currentLabel.startsWith("78")) && scenarioTick % 10 == 5) {
+            dev.mcreload.anim.client.rig.PlayerRig rig = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player);
+            if (rig != null) {
+                float[] r = new float[3], l = new float[3], rb = new float[3], lb = new float[3], h = new float[3], rp = new float[3];
+                rig.finalPose(dev.mcreload.anim.client.pose.PoseFrame.RIGHT_ARM, 1, r);
+                rig.finalPose(dev.mcreload.anim.client.pose.PoseFrame.LEFT_ARM, 1, l);
+                rig.finalPose(dev.mcreload.anim.client.pose.PoseFrame.RIGHT_ARM, 2, rb);
+                rig.finalPose(dev.mcreload.anim.client.pose.PoseFrame.LEFT_ARM, 2, lb);
+                rig.finalPose(dev.mcreload.anim.client.pose.PoseFrame.HEAD, 1, h);
+                rig.finalPose(dev.mcreload.anim.client.pose.PoseFrame.RIGHT_ARM, 0, rp);
+                McReloadAnim.LOG.info("[kinetrix] self-test {} t={} pose R=({}, {}, {}) bend({}, {}) pos({}, {}, {}) L=({}, {}, {}) bend({}, {}) head=({}, {}, {}) w think={} rummage={} trade={} sleep={}",
+                        currentLabel, scenarioTick, f2(r[0]), f2(r[1]), f2(r[2]), f2(rb[0]), f2(rb[1]), f2(rp[0]), f2(rp[1]), f2(rp[2]),
+                        f2(l[0]), f2(l[1]), f2(l[2]), f2(lb[0]), f2(lb[1]), f2(h[0]), f2(h[1]), f2(h[2]),
+                        f2(rig.motion.thinkW.v), f2(rig.motion.rummageW.v), f2(rig.motion.tradeW.v), f2(rig.motion.sleepW.v));
             }
         }
         if (++fpsLogTimer % 20 == 0 && mc.player != null) {
