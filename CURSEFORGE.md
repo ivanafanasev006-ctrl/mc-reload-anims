@@ -11,10 +11,11 @@ Kinetrix replaces Minecraft's stiff six-block puppet movement with procedural, p
 - **Swimming**: front crawl, treading water upright, a head-first dolphin dive from a height, a smooth climb out of the water.
 - **Two swords**: plant both on a hero landing; when idle, draw them from behind your back into a wary crouch, or twirl them one after the other. Two-handed weapons (Better Combat) stay in both hands: no guard or fidgets that would take a hand off.
 - **Swordsman sprint**: run with a sword and the sword arm trails out to the side and back, blade toward the ground; with two swords both arms do. Jumps and short drops on the run keep it.
-- **Taking a sword in hand** (either hand): it spins once round your forearm in front of you, smoothly.
+- **Taking a sword in hand** (either hand): it spins once in your hand, upright and toward you, and you step into a fighting guard that fades if you don't attack.
+- **Dozing off**: stand doing nothing for a minute (whatever you hold) and you nod off on your feet, "Z z z" floating up one at a time.
 - **In menus**: in your inventory, at the crafting table or behind the pause menu you stand thinking, hand on chin; at a chest, barrel, furnace or any modded container you rummage about with both hands; trading with a villager you tap their sleeve, then talk with your hands. Other players see it too.
 - **Sleeping**: a different way each time you lie down: sprawled like a starfish, face down in the pillow, or on your back with your hands behind your head and a knee up.
-- **Sword guard**: after any swing (even at the air) you keep a fighting guard for a couple of seconds, standing or walking, with the free hand or the shield up in front (raise the shield from it, the sword stays ready).
+- **Sword guard**: after drawing a sword or any swing (even at the air) you keep a fighting guard for a couple of seconds, standing or walking, with the free hand or the shield up in front (raise the shield from it, the sword stays ready).
 - **Combat**: a four-hit sword combo, heavy axe chops, a boxing guard and alternating punches, bow drawn with the string hand close to the bow, crossbow held like a shotgun, shield guard (also while sneaking), trident throw and thrust.
 - **Tools and items**: one-handed mining, hand digging, block placing, fishing (cast, wait, strike), eating with the food at your mouth.
 - **Crawl (hold C)**: get down and crawl through one-block gaps, for as long as you hold the key. Its own animation, not a swim stroke: a low cave-diver crawl, forearm reaching ahead and dragging the body up to it while the opposite knee, drawn up to the side, pushes; resting on the forearms when still.

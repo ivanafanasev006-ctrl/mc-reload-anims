@@ -15,10 +15,11 @@ import org.joml.Quaternionf;
  * Swords and axes, after Mo'Bends: the arm swings out from the shoulder and the whole upper body
  * turns into the cut, the blade turns in the hand.
  * <ul>
- *   <li>A sword taken in hand (either hand): it spins once round the forearm in front of you.</li>
+ *   <li>A sword taken in hand (either hand): it spins once in the hand, upright and toward you,
+ *       then the guard comes up.</li>
  *   <li>Running with a sword (or two): the sword arm out to the side and back, blade to the ground.</li>
- *   <li>Sword guard: for a couple of seconds after any attack (a click at the air counts, and so
- *       do Better Combat's attacks), standing or walking, like the fists' guard: side-on and low,
+ *   <li>Sword guard: for a couple of seconds after taking a sword in hand or after any attack (a
+ *       click at the air counts, and so do Better Combat's attacks), standing or walking, like the fists' guard: side-on and low,
  *       arms out wide, blade tipped forward (a shield is held up in front instead, and can be
  *       raised from the guard). Swords only; not axes or tridents.</li>
  *   <li>Sword combo: inward sweep, rising cut, overhead chop, spinning slash.</li>
@@ -119,8 +120,10 @@ final class BladeModule implements AnimModule {
     private void stance(MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off,
                         boolean shield, float foreignMain, float foreignOff) {
         curSlot = 0;
-        // The sword-fall pose in the air (AirModule#bladeFall) has the arms then.
-        float w = m.readyW.v * gate * (1f - m.airW.v * m.hardDropW.v * m.bladeReadyW.v);
+        // The sword-fall pose in the air (AirModule#bladeFall) has the arms then, and the spin of a
+        // sword just taken in hand comes first (the guard comes up as it ends).
+        float w = m.readyW.v * gate * (1f - m.airW.v * m.hardDropW.v * m.bladeReadyW.v)
+                * (1f - Math.max(spinWeight(m, m.drawStart), spinWeight(m, m.offDrawStart)));
         if (w <= 0.001f) return;
         // Blocking: the shield arm is the game's (raised), the sword arm stays in the guard.
         float block = shield ? m.blockW.v : 0f;
@@ -171,31 +174,33 @@ final class BladeModule implements AnimModule {
     }
 
     /**
-     * A sword taken in hand (switched to, swapped into either hand): the arm brings it up in
-     * front at shoulder height and it spins once round the forearm, like a propeller, smoothly
-     * speeding up and slowing down; then the arm goes back. Spinning in front of the body, the
-     * blade never passes through the arm, the body or the head. The turn is set in the very frame
-     * it is drawn; held as usual otherwise (no tilt meanwhile).
+     * A sword taken in hand (switched to, swapped into either hand): the arm comes a little out to
+     * the side with the forearm forward and the sword makes one full turn in the hand, upright and
+     * toward you (the point going up and back over), smoothly speeding up and slowing down; then
+     * the guard comes up (the stance waits for the spin). The blade turns beside the body, never
+     * across it; the turn is set in the very frame it is drawn.
      */
     private static void spin(MotionState m, PoseFrame f, Signs s, float gate, float side, PartPose arm, float start,
                              boolean mainHand, float foreign) {
-        float T = m.since(start);
-        if (T < 0f || T >= MotionState.DRAW_SECONDS) return;
-        float t = T / MotionState.DRAW_SECONDS;
-        float w = gate * m.armsFree.v * (1f - foreign) * smoother(t / 0.18f) * (1f - smoother((t - 0.80f) / 0.20f));
+        float w = spinWeight(m, start) * gate * m.armsFree.v * (1f - foreign);
         if (w <= 0.001f) return;
-        arm.override(-1.10f, side * 0.20f, side * 0.15f, w);
-        arm.overrideBend(s.elbow() * 0.60f, w);
-        float roll = Mth.TWO_PI * smoother((t - 0.10f) / 0.70f) * side;
-        if (mainHand) {
-            m.itemRoll = roll;
-            m.itemTiltTarget *= 1f - w;
-        } else {
-            m.itemRollOff = roll;
-            m.itemTiltOffTarget *= 1f - w;
-        }
-        f.head().ry -= side * 0.12f * w;
-        f.head().rx += 0.10f * w;
+        float t = m.since(start) / MotionState.DRAW_SECONDS;
+        arm.override(-0.45f, 0f, side * 0.45f, w);
+        arm.overrideBend(s.elbow() * 1.20f, w);
+        // Eased in from (and out to) however the item was held, exact while the spin has the arm.
+        float tilt = -Mth.TWO_PI * smoother((t - 0.12f) / 0.70f);
+        if (mainHand) m.tiltNow(Mth.lerp(w, m.itemTilt.v, tilt));
+        else m.offTiltNow(Mth.lerp(w, m.itemTiltOff.v, tilt));
+        f.head().ry -= side * 0.15f * w;
+        f.head().rx += 0.12f * w;
+    }
+
+    /** How much of the arm the spin of a sword taken in hand has (0 outside it). */
+    private static float spinWeight(MotionState m, float start) {
+        float T = m.since(start);
+        if (T < 0f || T >= MotionState.DRAW_SECONDS) return 0f;
+        float t = T / MotionState.DRAW_SECONDS;
+        return smoother(t / 0.15f) * (1f - smoother((t - 0.85f) / 0.15f));
     }
 
     /** The blade's turn in the hand while running with it: as in the guard (pointing at the ground). */

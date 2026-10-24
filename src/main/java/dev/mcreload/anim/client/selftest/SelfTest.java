@@ -292,15 +292,15 @@ public final class SelfTest {
                     if (t == 150) onServer(mc, sp -> sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class,
                             sp.getBoundingBox().inflate(8)).forEach(net.minecraft.world.entity.Entity::discard));
                 }, new Window(11, 30, 4, 0.12f), new Window(34, 146, 8, 0.6f)));
-        // Dozing off standing (another mod's nap, here its snore): Z z z over the head, and the
-        // fidget that was playing stops.
-        SCENARIOS.add(new Scenario("78d_doze", 70, sp -> place(sp, 2, Y, 0, -90, none),
+        // Dozing off standing after a minute of nothing (here forced, with a sword in hand): the
+        // fidget that was playing stops, the head nods, Z z z fly up one at a time.
+        SCENARIOS.add(new Scenario("78d_doze", 80, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
                 (mc, t) -> {
                     var m = localMotion(mc);
                     if (m == null) return;
-                    if (t == 8) m.forceIdle(dev.mcreload.anim.client.rig.MotionState.IDLE_STRETCH);
-                    if (t >= 14 && t % 20 == 14) m.onSnore();
-                }, new Window(12, 13, 1, 0f), new Window(30, 68, 3, 0.4f)));
+                    if (t == 8) m.forceIdle(dev.mcreload.anim.client.rig.MotionState.IDLE_ITEM_SPIN);
+                    if (t == 14) m.forceDoze();
+                }, new Window(12, 13, 1, 0f), new Window(30, 78, 6, 0.3f)));
         // Sleeping: each of the three ways (a new one is picked every time you lie down).
         String[] sleeps = {"starfish", "face_down", "hands_behind"};
         for (int k = 0; k < sleeps.length; k++) {

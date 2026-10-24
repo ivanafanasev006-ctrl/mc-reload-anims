@@ -171,17 +171,12 @@ public final class MotionState {
     public final Smooth readyW = new Smooth(6f);
     /**
      * When a sword came into the main hand (switched to, swapped in) and into the other hand:
-     * it spins once in the hand (BladeModule#spin).
+     * it spins once in the hand, then the guard comes up (BladeModule#spin).
      */
     public float drawStart = -100f, offDrawStart = -100f;
-    /** How long the spin of a sword taken in hand takes, and how long the guard lasts after a swing. */
+    /** How long the spin of a sword taken in hand takes, and how long the guard lasts after it / a swing. */
     public static final float DRAW_SECONDS = 0.7f, GUARD_HOLD = 2.5f;
     private boolean wasSword, wasOffSword, drawArmed;
-    /**
-     * The turn of the item about the forearm (a propeller spin in front of the body, never through
-     * it), main hand and other hand: set by a module for this frame, 0 otherwise.
-     */
-    public float itemRoll, itemRollOff;
     /**
      * Running with a sword (or two), held out to the side: kept through jumps and short drops,
      * dropped when you stop, get hit or really fall (BladeModule#swordRun).
@@ -194,6 +189,13 @@ public final class MotionState {
      */
     public boolean dozing;
     private float dozeSeen, snoreUntil = -100f, dozeAnimAt = -100f, foreignHead;
+    /** Our own nap: a minute without moving, looking round or doing anything (IdleModule#doze). */
+    public static final float DOZE_AFTER = 60f;
+    public final Smooth dozeW = new Smooth(4f);
+    public boolean ownDoze;
+    /** When the player last did anything, and when the nap started. */
+    public float activeAt, dozeStart = -100f;
+    private float lastLookYaw = Float.NaN, lastLookPitch;
     /**
      * Last attack with a sword in hand: a swing of ours, one Better Combat plays (BladeModule
      * sees its animation on the arm), or simply the attack key pressed: the guard runs from it.
@@ -364,6 +366,12 @@ public final class MotionState {
             // A teleport is a cut: drop the water poses at once instead of fading them out.
             if (!player.isInWater()) { waterW.v = 0f; swimW.v = 0f; paddleW.v = 0f; treadHold = 0; }
         }
+        float lookYaw = player.getYHeadRot(), lookPitch = player.getXRot();
+        if (Float.isNaN(lastLookYaw) || Math.abs(Mth.wrapDegrees(lookYaw - lastLookYaw)) + Math.abs(lookPitch - lastLookPitch) > 0.5f) {
+            activeAt = time;
+        }
+        lastLookYaw = lookYaw;
+        lastLookPitch = lookPitch;
         prevYawRate = yawRate;
         yawRate = Mth.wrapDegrees(player.yBodyRot - player.yBodyRotO);
 
@@ -707,8 +715,6 @@ public final class MotionState {
         itemTiltOffTarget = 0f;
         itemTiltDirect = Float.NaN;
         itemTiltOffDirect = Float.NaN;
-        itemRoll = 0f;
-        itemRollOff = 0f;
         twoHandedWeapon = Weapons.isTwoHanded(player.getMainHandItem());
         oneHandSword = Weapons.isOneHandedSword(player.getMainHandItem());
         dualSwords = oneHandSword && Weapons.isOneHandedSword(player.getOffhandItem());
@@ -777,7 +783,8 @@ public final class MotionState {
             attackTime = time;
         }
         boolean afterSwing = time - attackTime < 0.6f + GUARD_HOLD;
-        readyW.to(swordInHand && afterSwing && !blocked && !swimming && !crawling && !sitting
+        boolean afterDraw = time - Math.max(drawStart, offDrawStart) < DRAW_SECONDS + GUARD_HOLD;
+        readyW.to(swordInHand && (afterSwing || afterDraw) && !blocked && !swimming && !crawling && !sitting
                 && sprintW.v < 0.5f && (!player.isUsingItem() || player.isBlocking()) && screenPose == SCREEN_NONE ? 1f : 0f, dt);
         // Running with the sword: starts sprinting on the ground; a jump or a step down of a block
         // or two keeps it (the sprint flag stays on in the air); stopping, a hit, a real fall
@@ -805,6 +812,15 @@ public final class MotionState {
         if (drawing && !wasDrawingBow) bowStyle ^= 1;
         wasDrawingBow = drawing;
 
+        // A minute of nothing at all: dozing off on your feet, whatever is in hand.
+        boolean restful = ground && !blocked && !swimming && !crawling && !sitting && !player.isInWater() && !climbing
+                && !player.isUsingItem() && !player.isCrouching() && horizontalSpeed < 0.01f && player.hurtTime == 0
+                && !player.swinging && time - slashStart > 1f && screenPose == SCREEN_NONE && emote < 0;
+        if (!restful) activeAt = time;
+        boolean doze = Cfg.idleActions && time - activeAt > DOZE_AFTER;
+        if (doze && !ownDoze) dozeStart = time;
+        ownDoze = doze;
+        dozeW.to(doze ? 1f : 0f, dt);
         updateIdle(ground && !blocked && !swimming && !crawling && !sitting && !player.isInWater() && !climbing && !player.isUsingItem()
                 && !player.isCrouching() && horizontalSpeed < 0.01f && time - slashStart > 2f
                 && time - swapStart > 1f && player.hurtTime == 0 && readyW.v < 0.05f
@@ -980,7 +996,12 @@ public final class MotionState {
         foreignHead = foreignHeadW;
         boolean still = groundW.v > 0.5f && horizontalSpeed < 0.02f && !player.isSleeping() && !player.isPassenger();
         dozeSeen = still && foreignHeadW > 0.5f && headPitch > 0.45f ? dozeSeen + dt : 0f;
-        dozing = still && (dozeSeen > 1.2f || time < snoreUntil || time - dozeAnimAt < 0.5f);
+        dozing = ownDoze || still && (dozeSeen > 1.2f || time < snoreUntil || time - dozeAnimAt < 0.5f);
+    }
+
+    /** Fall asleep on the spot (self-test). */
+    public void forceDoze() {
+        activeAt = time - DOZE_AFTER - 0.1f;
     }
 
     /** A snore was heard where this player stands. */
