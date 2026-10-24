@@ -217,7 +217,7 @@ final class LocomotionModule implements AnimModule {
     private static void trailArm(PartPose arm, Signs s, float hd, float w, float ls) {
         if (w <= 0.001f) return;
         float bob = Mth.cos(ls * 1.6f);
-        arm.override(deg(38f) + deg(4f) * bob, 0f, hd * (deg(62f) + deg(3f) * bob), w);
+        arm.override(deg(48f) + deg(4f) * bob, 0f, hd * (deg(60f) + deg(3f) * bob), w);
         arm.overrideBend(s.elbow() * deg(14f), w);
     }
 

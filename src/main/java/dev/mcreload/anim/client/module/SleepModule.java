@@ -57,7 +57,7 @@ final class SleepModule implements AnimModule {
         f.body().ry += Mth.PI * w;
         f.rightArm().override(-1.67f, 0.48f, 0.98f, w);
         f.rightArm().overrideBend(s.elbow() * 0.86f, w);
-        f.rightArm().overrideBendAxis(0.09f, w);
+        f.rightArm().overrideBendAxis(0f, w);
         f.leftArm().override(0.08f, 0f, -0.16f - 0.02f * breath, w);
         f.leftArm().overrideBend(s.elbow() * 0.12f, w);
         f.rightLeg().override(0f, 0f, 0.08f, w);
@@ -69,16 +69,16 @@ final class SleepModule implements AnimModule {
     }
 
     /**
-     * On the back, the hands behind the head (elbows out to the sides) and the left knee up, the
+     * On the back, the hands behind the head (arms up by it, forearms under the back of it) and the left knee up, the
      * foot flat on the bed beside the other knee.
      */
     private static void handsBehind(PoseFrame f, Signs s, float w, float breath) {
-        f.rightArm().override(-2.84f, 1.50f, -0.20f, w);
-        f.leftArm().override(-2.84f, -1.50f, 0.20f, w);
-        f.rightArm().overrideBend(s.elbow() * (1.08f + 0.03f * breath), w);
-        f.leftArm().overrideBend(s.elbow() * (1.08f + 0.03f * breath), w);
-        f.rightArm().overrideBendAxis(0.73f, w);
-        f.leftArm().overrideBendAxis(-0.73f, w);
+        f.rightArm().override(-3.30f, 0.23f, 0.02f, w);
+        f.leftArm().override(-3.30f, -0.23f, -0.02f, w);
+        f.rightArm().overrideBend(s.elbow() * (0.73f + 0.03f * breath), w);
+        f.leftArm().overrideBend(s.elbow() * (0.73f + 0.03f * breath), w);
+        f.rightArm().overrideBendAxis(0f, w);
+        f.leftArm().overrideBendAxis(0f, w);
         f.rightLeg().override(0f, 0.10f, 0.10f, w);
         f.rightLeg().overrideBend(s.knee() * 0.06f, w);
         f.leftLeg().override(-1.00f, -0.10f, -0.20f, w);

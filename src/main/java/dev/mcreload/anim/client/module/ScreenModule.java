@@ -56,10 +56,11 @@ final class ScreenModule implements AnimModule {
     }
 
     /**
-     * Thinking: the hand at the chin (elbow in front of the chest, the shoulder a little forward),
-     * the other arm folded across under it, the head tipped down and to the side; now and then
-     * the fingers tap the chin, and the head drifts as the thought goes on. An arm with something
-     * in its hand (a sword would cross the face) just hangs relaxed.
+     * Thinking: the chin resting on the fist, the elbow out to the side (the shoulder a little
+     * forward), the other arm folded across the chest under it, the head tipped down and to the
+     * side; now and then the fingers tap the chin, and the head drifts as the thought goes on. An
+     * arm with something in its hand (a sword would cross the face) just hangs relaxed. Plain
+     * elbow bends only (bend axis 0, the one every other pose uses).
      */
     private static void think(MotionState m, PoseFrame f, Signs s, float w, float hd, float t, boolean chinFree, boolean holdFree) {
         if (w <= 0.001f) return;
@@ -68,15 +69,15 @@ final class ScreenModule implements AnimModule {
         float hmm = (float) Math.pow(Math.max(0f, Mth.sin(t * 0.9f + 1.2f)), 6f);
         float tap = hmm * Mth.sin(t * 14f) * 0.05f;
         if (chinFree) {
-            chin.override(-0.81f, hd * -0.60f, hd * 0.24f, w);
-            chin.overrideBend(s.elbow() * (1.37f + tap), w);
-            chin.overrideBendAxis(hd * -0.50f, w);
+            chin.override(-1.22f, hd * -0.64f, hd * 1.00f, w);
+            chin.overrideBend(s.elbow() * (1.34f + tap), w);
+            chin.overrideBendAxis(0f, w);
             chin.pz -= 1.5f * w;
         }
         if (holdFree && chinFree) {
-            hold.override(-1.21f, hd * 0.74f, hd * -0.36f, w);
-            hold.overrideBend(s.elbow() * 0.52f, w);
-            hold.overrideBendAxis(hd * 1.27f, w);
+            hold.override(-1.25f, hd * 0.94f, hd * -0.44f, w);
+            hold.overrideBend(s.elbow() * 0.32f, w);
+            hold.overrideBendAxis(0f, w);
         } else {
             hold.override(-0.08f, 0f, hd * -0.08f, w);
             hold.overrideBend(s.elbow() * 0.20f, w);
