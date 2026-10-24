@@ -101,19 +101,98 @@ def summarize(z, label, depth=0):
             except Exception as e:
                 print(f"  !! nested {n}: {e}")
 
-    if CLASSES and depth == 0:
-        pat = re.compile(CLASSES)
-        picked = [n for n in classes if pat.search(n) and "$" not in n][:40]
-        os.makedirs("cls", exist_ok=True)
-        for n in picked:
-            out = os.path.join("cls", n)
-            os.makedirs(os.path.dirname(out), exist_ok=True)
-            with open(out, "wb") as f:
-                f.write(z.read(n))
-            src = subprocess.run(["java", "-jar", CFR, out, "--silent", "true"], capture_output=True, text=True).stdout
-            lines = src.splitlines()
-            print(f"===== DECOMPILED {n} ({len(lines)} lines)")
-            print("\n".join(lines[:350]))
 
 
-summarize(zipfile.ZipFile(path), os.path.basename(path))
+def compact(z, label):
+    """One screen per jar: who it is, what it hooks, what data it ships."""
+    names = [n for n in z.namelist() if not n.endswith("/")]
+    print(f"######## {label}: {len(names)} entries")
+    for n in names:
+        if n.endswith("META-INF/mods.toml"):
+            t = z.read(n).decode("utf-8", "replace")
+            keep = [l.strip() for l in t.splitlines()
+                    if re.match(r"\s*(modId|displayName|version|authors|mandatory|license)\b", l)]
+            print("  mods.toml:", " | ".join(keep))
+            desc = re.search(r"description\s*=\s*(?:'''|\"\"\"|\"|')(.*?)(?:'''|\"\"\"|\"|')", t, re.S)
+            if desc:
+                print("  description:", " ".join(desc.group(1).split())[:400])
+    classes = [n for n in names if n.endswith(".class")]
+    top = collections.Counter("/".join(n.split("/")[:4]) for n in classes)
+    print("  packages:", ", ".join(f"{p}({c})" for p, c in top.most_common(25)))
+    for n in names:
+        if n.endswith("mixins.json"):
+            try:
+                j = json.loads(z.read(n))
+                mx = (j.get("mixins") or []) + (j.get("client") or []) + (j.get("server") or [])
+                print(f"  {n}: {j.get('package')}: {', '.join(mx)}")
+            except Exception as e:
+                print(f"  {n}: {e}")
+    folders = collections.Counter()
+    for n in names:
+        if n.endswith(".class"):
+            continue
+        parts = n.split("/")
+        key = "/".join(parts[:3]) if parts[0] in ("data", "assets") else parts[0]
+        folders[key] += 1
+    print("  resources:", ", ".join(f"{f}({c})" for f, c in sorted(folders.items())))
+    for kind in ("attack_animations", "player_animation", "player_animations"):
+        an = [n.rsplit("/", 1)[-1] for n in names if f"/{kind}/" in n and n.endswith(".json")]
+        if an:
+            print(f"  {kind} ({len(an)}): {', '.join(sorted(an))[:1500]}")
+    wa = [n for n in names if "/weapon_attributes/" in n and n.endswith(".json")]
+    if wa:
+        parents, anims, cats, extra = collections.Counter(), collections.Counter(), collections.Counter(), set()
+        for n in wa:
+            try:
+                j = json.loads(z.read(n))
+            except Exception:
+                continue
+            parents[j.get("parent")] += 1
+            a = j.get("attributes") or {}
+            cats[a.get("category")] += 1
+            extra |= set(a) - {"attack_range", "pose", "off_hand_pose", "two_handed", "category", "attacks"}
+            for at in a.get("attacks") or []:
+                if isinstance(at, dict):
+                    anims[at.get("animation")] += 1
+                    extra |= {"attack." + k for k in set(at) - {"conditions", "hitbox", "damage_multiplier", "angle",
+                                                               "upswing", "animation", "swing_sound", "impact_sound"}}
+        ns = collections.Counter(n.split("/")[1] for n in wa)
+        print(f"  weapon_attributes: {len(wa)} files, namespaces {dict(ns)}")
+        print(f"    parents: {dict(parents.most_common(15))}")
+        print(f"    categories: {dict(cats.most_common(15))}")
+        print(f"    animations: {len(anims)} distinct, e.g. {[a for a, _ in anims.most_common(12)]}")
+        if extra:
+            print(f"    NON-STANDARD keys: {sorted(extra)}")
+    other = [n for n in names if FILES.search(n) and not n.endswith(("mods.toml", "mixins.json"))][:12]
+    for n in other:
+        show(n, z.read(n), 1500)
+    for n in names:
+        if n.endswith(".jar") and "mixinextras" not in n.lower() and "mixinsquared" not in n.lower():
+            try:
+                compact(zipfile.ZipFile(io.BytesIO(z.read(n))), f"{label} >> {n}")
+            except Exception as e:
+                print(f"  !! nested {n}: {e}")
+
+
+def decompile(z):
+    pat = re.compile(CLASSES)
+    picked = [n for n in z.namelist() if n.endswith(".class") and pat.search(n) and "$" not in n][:25]
+    os.makedirs("cls", exist_ok=True)
+    for n in picked:
+        out = os.path.join("cls", n)
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, "wb") as f:
+            f.write(z.read(n))
+        src = subprocess.run(["java", "-jar", CFR, out, "--silent", "true"], capture_output=True, text=True).stdout
+        lines = [l for l in src.splitlines() if l.strip() and not l.startswith("import ")]
+        print(f"===== DECOMPILED {n} ({len(lines)} lines)")
+        print("\n".join(lines[:300]))
+
+
+jar = zipfile.ZipFile(path)
+if os.environ.get("VERBOSE"):
+    summarize(jar, os.path.basename(path))
+else:
+    compact(jar, os.path.basename(path))
+if CLASSES:
+    decompile(jar)
