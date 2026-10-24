@@ -176,12 +176,15 @@ final class BladeModule implements AnimModule {
     }
 
     /**
-     * Drawing the sword (1.4 s, unhurried): the sword arm rises out to the side while the blade
-     * makes one slow full turn in the fist toward the body, then comes down into the guard as the
-     * feet spread into the stance with a little dip; the other arm (or the shield) comes up with
-     * it. The arm stays in one plane (out to the side and back), so it never flips round; the
-     * twirl is driven exactly along a smooth curve (no smoothing lag); the guard itself waits
-     * until the draw is over (nothing is added twice). Ends in the guard, which then holds.
+     * Drawing the sword (0.8 s). The body goes into the guard as before: the sword arm rises out
+     * and up to the side and comes down into the guard as the feet spread into the stance with a
+     * little dip, the other arm (or the shield) coming up with it; the arm stays in one plane, so
+     * it never flips round. The sword, in step with it: it comes into the hand turned round, point
+     * back (as if from a scabbard behind); makes a half turn to the ordinary grip as the arm rises,
+     * the point going outward along the arm (away from the body, never through it); then tips
+     * forward to the guard's angle in a tenth of a second. The turn is set exactly in the frame it
+     * is drawn (no smoothing, no lag, so the sword never jumps in the hand). The guard itself waits
+     * until the draw is over (nothing is added twice).
      */
     private void draw(MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off,
                       boolean shield, float foreignMain, float foreignOff) {
@@ -193,26 +196,26 @@ final class BladeModule implements AnimModule {
         if (w <= 0.001f) return;
         float mw = w * m.armsFree.v * (1f - foreignMain);
         float ow = w * m.armsFree.v * (1f - foreignOff);
-        float up = smoother(t / 0.38f);                 // out and up to the side, twirling
-        float down = smoother((t - 0.52f) / 0.40f);     // into the guard
+        float up = smoother(t / 0.40f);                 // out and up to the side
+        float down = smoother((t - 0.45f) / 0.45f);     // into the guard
         float moving = AngleMath.clamp(m.moveF(), 0f, 1f);
         // The rest of the guard comes in with the settle; the sword arm has its own path.
-        guardPose(m, f, s, hd, main, off, shield, w, 0f, ow * smoother((t - 0.20f) / 0.60f), down, 0f, 1f, moving);
+        guardPose(m, f, s, hd, main, off, shield, w, 0f, ow * smoother((t - 0.20f) / 0.55f), down, 0f, 1f, moving);
         if (mw > 0.001f) {
-            float raise = Mth.lerp(down, Mth.lerp(up, 0.10f, 1.75f), deg(60f));
+            float raise = Mth.lerp(down, Mth.lerp(up, 0.10f, 2.00f), deg(60f));
             main.override(-0.30f * up * (1f - down), 0f, hd * raise, mw);
             main.overrideBend(s.elbow() * Mth.lerp(down, Mth.lerp(up, 0.15f, 0.60f), deg(20f)), mw);
-            // A full turn toward the body (the point comes up and back first), then the blade
-            // settles tipped forward as in the guard.
-            float spin = smoother((t - 0.10f) / 0.58f);
-            float lay = deg(65f) * down;
-            if (spin > 0f && spin < 1f && mw > 0.5f) m.itemTiltDirect = -Mth.TWO_PI * spin + lay;
-            else m.itemTiltTarget = Math.max(m.itemTiltTarget, lay * mw);
+            // Point back -> (half turn, out along the arm) -> ordinary grip -> tipped forward.
+            float half = smoother((t - 0.08f) / 0.50f);
+            float tip = smoother((t - 0.58f) / 0.14f);
+            float tilt = Mth.PI * (1f - half) + deg(65f) * tip;
+            if (t < 0.72f && mw > 0.5f) m.tiltNow(tilt);
+            else m.itemTiltTarget = Math.max(m.itemTiltTarget, tilt * mw);
         }
         // Standing: the feet spread into the stance with a little dip.
         float still = (1f - moving) * m.groundW.v;
         guardLegs(f, s, w * still * down);
-        f.body().py -= 0.05f * Mth.sin(Mth.PI * AngleMath.clamp((t - 0.55f) / 0.45f, 0f, 1f)) * w * still;
+        f.body().py -= 0.06f * Mth.sin(Mth.PI * AngleMath.clamp((t - 0.45f) / 0.50f, 0f, 1f)) * w * still;
     }
 
     // ------------------------------------------------------------------ strikes

@@ -148,7 +148,7 @@ public final class MotionState {
     /** When the sword was drawn (switched to, or swapped into the main hand); see BladeModule#draw. */
     public float drawStart = -100f;
     /** How long drawing the sword into the guard takes, and how long the guard lasts after it / a swing. */
-    public static final float DRAW_SECONDS = 1.4f, GUARD_HOLD = 2.5f;
+    public static final float DRAW_SECONDS = 0.8f, GUARD_HOLD = 2.5f;
     private boolean wasSword, drawArmed;
     /**
      * Last attack with a sword in hand: a swing of ours, one Better Combat plays (BladeModule
@@ -1176,6 +1176,21 @@ public final class MotionState {
 
     public void onTotem() {
         totemStart = time;
+    }
+
+    /**
+     * Turn the main-hand item to exactly {@code v} right now: this frame is drawn with it (the
+     * model reads the turn after the modules run) and the next frame keeps it unless set again.
+     */
+    public void tiltNow(float v) {
+        itemTiltDirect = v;
+        itemTilt.v = v;
+    }
+
+    /** The same for the item in the other hand. */
+    public void offTiltNow(float v) {
+        itemTiltOffDirect = v;
+        itemTiltOff.v = v;
     }
 
     /** The turn of an item in the hand: exactly as set (twirls), or smoothed toward the target. */

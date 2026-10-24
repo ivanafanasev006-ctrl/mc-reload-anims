@@ -158,8 +158,8 @@ final class GestureModule implements AnimModule {
         // each as they come over the shoulders (driven exactly), then tipped forward in the crouch.
         float spin = seg(t, 0.55f, 1.15f);
         if (spin > 0f && spin < 1f && aw > 0.5f) {
-            m.itemTiltDirect = 1.0f + Mth.TWO_PI * spin;
-            m.itemTiltOffDirect = 1.0f + Mth.TWO_PI * spin;
+            m.tiltNow(1.0f + Mth.TWO_PI * spin);
+            m.offTiltNow(1.0f + Mth.TWO_PI * spin);
         } else {
             m.itemTiltTarget = Math.max(m.itemTiltTarget, 1.0f * aw);
             m.itemTiltOffTarget = Math.max(m.itemTiltOffTarget, 1.0f * aw);
