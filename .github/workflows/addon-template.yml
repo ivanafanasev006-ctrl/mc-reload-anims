@@ -2,8 +2,8 @@ name: Addon template
 
 # Builds the Better Combat addon template (addon-template/, its own Gradle build), starts a
 # dedicated server with Better Combat, Cloth Config, playerAnimator and the addon (the mixin applies,
-# the weapon_extras data loads), then the client up to the main menu (keys, Better Combat client
-# hooks, the animation layer and its JSON).
+# the weapon_extras data loads), its GameTests (guard, heavy attack, swing detection), then the
+# client up to the main menu (keys, Better Combat client hooks, the animation layer and its JSON).
 on:
   push:
     paths: ['addon-template/**', '.github/workflows/addon-template.yml']
@@ -33,11 +33,23 @@ jobs:
           ./gradlew -p addon-template build --no-daemon --stacktrace 2>&1 | tee build.log
           exit ${PIPESTATUS[0]}
 
+      - name: GameTests (guard, heavy attack, swing detection)
+        run: |
+          timeout 15m ./gradlew -p addon-template runGameTestServer --no-daemon 2>&1 | tee gametest.log
+          code=${PIPESTATUS[0]}
+          grep -E 'GameTest|tests? (passed|failed)|bcaddon|Exception' gametest.log | grep -v DEBUG | head -60
+          exit $code
+
       - name: Dedicated server smoke test
         run: |
           mkdir -p addon-template/run
           echo 'eula=true' > addon-template/run/eula.txt
-          printf 'online-mode=false\n' > addon-template/run/server.properties
+          cat > addon-template/run/server.properties <<'PROPS'
+          online-mode=false
+          level-type=minecraft:flat
+          generator-settings={"layers":[{"block":"minecraft:bedrock","height":1},{"block":"minecraft:grass_block","height":1}],"biome":"minecraft:plains"}
+          generate-structures=false
+          PROPS
           ./gradlew -p addon-template runServer --no-daemon > server.log 2>&1 &
           for i in $(seq 1 160); do
             grep -qE 'Done \(|Crash report saved|Mixin apply.*failed|InvalidInjectionException' server.log && break

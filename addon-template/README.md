@@ -16,6 +16,7 @@
 | `client/ClientHooks` | Клиентский API Better Combat: события `ATTACK_START`/`ATTACK_HIT`, `AttackRangeExtensions`, `cancelUpswing`. |
 | `client/MoveLayer` | Свой слой playerAnimator (приоритет 2500, выше атак Better Combat) и проигрывание анимации из `assets/<ns>/player_animation`. С Kinetrix смешивается сам. |
 | `net/*` | Свой сетевой канал: запросы клиента, рассылка анимации, синхронизация данных. |
+| `test/AddonGameTests` | Автотесты GameTest на сервере с Better Combat: парирование спереди срабатывает один раз, сзади нет; тяжёлый удар подменяет атаку и замедляет; у только что вошедшего игрока нет «удара в процессе». |
 
 ## Сборка
 
@@ -25,12 +26,16 @@
 ./gradlew -p addon-template build
 ```
 
+Автотесты: `./gradlew -p addon-template runGameTestServer` (сервер прогоняет их и выходит; ненулевой
+код выхода = есть упавшие).
+
 Готовый jar: `addon-template/build/libs/bcaddon-1.20.1-0.1.0.jar`. Запуск в разработке:
 `./gradlew -p addon-template runClient` (Better Combat, playerAnimator и Cloth Config подтягиваются
 сами; чтобы проверить вместе с Kinetrix, положите jar Kinetrix в `addon-template/run/mods`).
 
-CI (`.github/workflows/addon-template.yml`) собирает шаблон и запускает выделенный сервер с Better
-Combat: проверяет, что миксин встал и данные загрузились.
+CI (`.github/workflows/addon-template.yml`) собирает шаблон, прогоняет GameTests, запускает выделенный
+сервер с Better Combat (миксин встал, данные загрузились) и клиент до главного меню (клавиши, хуки Better Combat,
+слой анимаций, `guard.json` прочитан).
 
 ## Как сделать из шаблона свой мод
 

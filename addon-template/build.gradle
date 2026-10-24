@@ -34,6 +34,10 @@ minecraft {
         server {
             args '--nogui'
         }
+        // ./gradlew runGameTestServer: runs test/AddonGameTests on a server with Better Combat, then exits.
+        gameTestServer {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
     }
 }
 
