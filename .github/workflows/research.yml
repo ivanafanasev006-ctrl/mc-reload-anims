@@ -3,8 +3,9 @@ name: Research (mod lists and jar contents)
 # Reads things this repository's own tooling cannot reach from a development container
 # (CurseForge, Modrinth): the mod list of a CurseForge modpack, and what is inside given mod
 # jars (mods.toml, mixins, data-driven files, class list, chosen classes decompiled). Everything
-# goes to the job log; nothing is committed. Runs by hand, or on a push that changes the request
-# file .github/research/request.env (PACK=, JARS=, CLASSES=, FILES= lines; empty = skip).
+# goes to the job logs (one job per jar, so no log gets too long); nothing is committed.
+# Runs by hand, or on a push that changes the request file .github/research/request.env
+# (PACK=, JARS=, CLASSES=, FILES= lines; empty = skip).
 on:
   push:
     paths: ['.github/research/request.env']
@@ -17,78 +18,78 @@ on:
         description: 'jars to dump, space separated: cf:<projectId>:<fileId> or mr:<slug> (newest Forge 1.20.1)'
         default: ''
       classes:
-        description: 'regex of class names to decompile (empty: none)'
+        description: 'regex of class file paths to decompile (empty: none)'
         default: ''
       files:
         description: 'regex of resource paths to print in full'
-        default: 'weapon_attributes/|META-INF/mods.toml|\.mixins\.json$|config'
+        default: 'META-INF/mods\.toml$|mixins\.json$'
 
 permissions:
   contents: read
 
+env:
+  UA: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+
 jobs:
-  research:
+  plan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
-    env:
-      UA: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+    outputs:
+      pack: ${{ steps.r.outputs.pack }}
+      jars: ${{ steps.r.outputs.jars }}
+      classes: ${{ steps.r.outputs.classes }}
+      files: ${{ steps.r.outputs.files }}
     steps:
       - uses: actions/checkout@v5
-
-      - name: Request
+      - id: r
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            cat .github/research/request.env | grep -E '^(PACK|JARS|CLASSES|FILES)=' >> "$GITHUB_ENV"
+            set -a; . <(grep -E '^(PACK|JARS|CLASSES|FILES)=' .github/research/request.env | sed -E "s/=(.*)/='\1'/"); set +a
           else
-            {
-              echo "PACK=${{ github.event.inputs.pack }}"
-              echo "JARS=${{ github.event.inputs.jars }}"
-              echo "CLASSES=${{ github.event.inputs.classes }}"
-              echo "FILES=${{ github.event.inputs.files }}"
-            } >> "$GITHUB_ENV"
+            PACK='${{ github.event.inputs.pack }}'; JARS='${{ github.event.inputs.jars }}'
+            CLASSES='${{ github.event.inputs.classes }}'; FILES='${{ github.event.inputs.files }}'
           fi
+          echo "pack=$PACK" >> "$GITHUB_OUTPUT"
+          echo "jars=$(printf '%s\n' $JARS | jq -R . | jq -cs 'map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+          echo "classes=$CLASSES" >> "$GITHUB_OUTPUT"
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
 
-      - name: Modpack mod list
-        if: ${{ env.PACK != '' }}
-        run: python3 .github/research/modpack.py
+  modpack:
+    needs: plan
+    if: ${{ needs.plan.outputs.pack != '' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 .github/research/modpack.py
+        env:
+          PACK: ${{ needs.plan.outputs.pack }}
 
-      - name: Jar contents
-        if: ${{ env.JARS != '' }}
+  jar:
+    needs: plan
+    if: ${{ needs.plan.outputs.jars != '[]' }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        spec: ${{ fromJson(needs.plan.outputs.jars) }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Dump
+        env:
+          SPEC: ${{ matrix.spec }}
+          CLASSES: ${{ needs.plan.outputs.classes }}
+          FILES: ${{ needs.plan.outputs.files }}
         run: |
-          set -u
           ct() { curl -sS --retry 4 --retry-all-errors --retry-delay 3 -A "$UA" "$@"; }
-          mkdir -p jars
-          for spec in $JARS; do
-            case "$spec" in
-              cf:*) IFS=: read -r _ P F <<< "$spec"
-                    url=$(ct -o /dev/null -w '%{redirect_url}' "https://www.curseforge.com/api/v1/mods/$P/files/$F/download" || true)
-                    [ -z "$url" ] && url=$(ct "https://api.curse.tools/v1/cf/mods/$P/files/$F" | jq -r '.data.downloadUrl // empty')
-                    ;;
-              mr:*) url=$(ct "https://api.modrinth.com/v2/project/${spec#mr:}/version?loaders=%5B%22forge%22%5D&game_versions=%5B%221.20.1%22%5D" \
-                      | jq -r '.[0] | ([.files[] | select(.primary)][0].url // .files[0].url) // empty') ;;
-            esac
-            if [ -z "${url:-}" ]; then echo "!! $spec: no download"; continue; fi
-            name=$(basename "${url%%\?*}"); name=${name//%2B/+}; name=${name//%20/_}
-            ct -L -o "jars/$name" "$url" && echo "$spec -> $name"
-          done
+          case "$SPEC" in
+            cf:*) IFS=: read -r _ P F <<< "$SPEC"
+                  url=$(ct -o /dev/null -w '%{redirect_url}' "https://www.curseforge.com/api/v1/mods/$P/files/$F/download" || true) ;;
+            mr:*) url=$(ct "https://api.modrinth.com/v2/project/${SPEC#mr:}/version?loaders=%5B%22forge%22%5D&game_versions=%5B%221.20.1%22%5D" \
+                    | jq -r '.[0] | ([.files[] | select(.primary)][0].url // .files[0].url) // empty') ;;
+            gh:*) url="https://github.com/${SPEC#gh:}" ;;
+          esac
+          [ -z "${url:-}" ] && { echo "no download for $SPEC"; exit 1; }
+          echo "$SPEC -> $url"
+          ct -L -o mod.jar "$url"
           curl -sSL -o cfr.jar https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
-          FILES_RE="${FILES:-weapon_attributes/|META-INF/mods.toml|\.mixins\.json$}"
-          CLASSES_RE="${CLASSES:-}"
-          for j in jars/*.jar jars/*.zip; do
-            [ -f "$j" ] || continue
-            echo; echo "################ $(basename "$j") ($(stat -c %s "$j") bytes)"
-            unzip -Z1 "$j" > list.txt
-            echo "=== packages"; grep '\.class$' list.txt | sed 's#/[^/]*$##' | sort | uniq -c | sort -k2 | head -150
-            echo "=== resources (not classes, not textures/sounds)"; grep -vE '\.class$|/$|\.png$|\.ogg$' list.txt | head -400
-            echo "=== nested jars"; grep -E '\.jar$' list.txt || true
-            for f in $(grep -E "$FILES_RE" list.txt | grep -v '/$' | head -300); do
-              echo "----- $f"; unzip -p "$j" "$f" | head -c 4000; echo
-            done
-            if [ -n "$CLASSES_RE" ]; then
-              for c in $(grep '\.class$' list.txt | grep -E "$CLASSES_RE" | grep -v '\$' | head -40); do
-                echo "===== DECOMPILED $c"
-                unzip -o -q "$j" "$c" -d cls
-                java -jar cfr.jar "cls/$c" --silent true 2>/dev/null | head -400
-              done
-            fi
-          done
+          python3 .github/research/dumpjar.py mod.jar
