@@ -236,6 +236,18 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("08f_sword_draw", 50, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> { if (t == 8) giveMain(mc, new ItemStack(Items.DIAMOND_SWORD)); },
                 new Window(9, 24, 6, 0.0f), new Window(30, 50, 2, 0.3f)));
+        // The draw held still at points along it (CI renders too few frames to catch the turn):
+        // point back, the half turn out along the raised arm, the ordinary grip, tipped into the guard.
+        float[] drawPhases = {0.06f, 0.22f, 0.30f, 0.36f, 0.44f, 0.56f, 0.66f, 0.80f};
+        Window[] drawHolds = new Window[drawPhases.length];
+        for (int i = 0; i < drawPhases.length; i++) drawHolds[i] = new Window(20 + 10 * i + 4, 20 + 10 * i + 9, 1, 0f);
+        SCENARIOS.add(new Scenario("08j_sword_draw_phases", 20 + 10 * drawPhases.length, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
+                (mc, t) -> {
+                    int i = (t - 20) / 10;
+                    var m = localMotion(mc);
+                    if (m != null && t >= 20 && i < drawPhases.length)
+                        m.drawStart = m.time - drawPhases[i] * dev.mcreload.anim.client.rig.MotionState.DRAW_SECONDS;
+                }, drawHolds));
         // One swing at the air in a jump, then walking: the guard is held on the move, then fades.
         SCENARIOS.add(new Scenario("08g_sword_guard_walk", 110, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
                 (mc, t) -> {
