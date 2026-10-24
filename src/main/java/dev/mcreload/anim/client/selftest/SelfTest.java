@@ -251,9 +251,9 @@ public final class SelfTest {
                 }, drawHolds));
         // Sprinting with a sword, then with one in each hand: the sword arms held out to the side
         // and back, the blades as in the guard.
-        SCENARIOS.add(new Scenario("02s_sword_sprint", 40, sp -> place(sp, -6, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
+        SCENARIOS.add(new Scenario("02s_sword_sprint", 40, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
                 (mc, t) -> move(mc, t < 38, t < 38, false, false), new Window(18, 36, 4, 0.08f)));
-        SCENARIOS.add(new Scenario("02t_dual_sword_sprint", 40, sp -> { place(sp, -6, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD)); },
+        SCENARIOS.add(new Scenario("02t_dual_sword_sprint", 40, sp -> { place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD)); },
                 (mc, t) -> move(mc, t < 38, t < 38, false, false), new Window(18, 36, 4, 0.08f)));
         // Menus: thinking in the inventory and behind the pause menu (the game is paused there:
         // the animation clock runs on), rummaging in a chest, a tap and a talk with a villager.

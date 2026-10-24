@@ -33,7 +33,8 @@ final class ScreenModule implements AnimModule {
         if (gate <= 0.001f) return;
         float hd = freeSide(rig.player, m);
         float t = m.since(m.screenStart);
-        think(m, f, s, m.thinkW.v * gate, hd, t);
+        boolean chinFree = handItem(rig.player, m, hd).isEmpty(), holdFree = handItem(rig.player, m, -hd).isEmpty();
+        think(m, f, s, m.thinkW.v * gate, hd, t, chinFree, holdFree);
         rummage(m, f, s, m.rummageW.v * gate, t);
         trade(f, s, m.tradeW.v * gate, hd, t);
     }
@@ -44,6 +45,11 @@ final class ScreenModule implements AnimModule {
         return main == m.mainRight ? 1f : -1f;
     }
 
+    /** What the hand on that side holds (1 = right). */
+    private static net.minecraft.world.item.ItemStack handItem(Player p, MotionState m, float side) {
+        return (side > 0) == m.mainRight ? p.getMainHandItem() : p.getOffhandItem();
+    }
+
     private static float smoother(float x) {
         x = AngleMath.clamp(x, 0f, 1f);
         return x * x * x * (x * (x * 6f - 15f) + 10f);
@@ -52,21 +58,29 @@ final class ScreenModule implements AnimModule {
     /**
      * Thinking: the hand at the chin (elbow in front of the chest, the shoulder a little forward),
      * the other arm folded across under it, the head tipped down and to the side; now and then
-     * the fingers tap the chin, and the head drifts as the thought goes on.
+     * the fingers tap the chin, and the head drifts as the thought goes on. An arm with something
+     * in its hand (a sword would cross the face) just hangs relaxed.
      */
-    private static void think(MotionState m, PoseFrame f, Signs s, float w, float hd, float t) {
+    private static void think(MotionState m, PoseFrame f, Signs s, float w, float hd, float t, boolean chinFree, boolean holdFree) {
         if (w <= 0.001f) return;
         PartPose chin = hd > 0 ? f.rightArm() : f.leftArm();
         PartPose hold = hd > 0 ? f.leftArm() : f.rightArm();
         float hmm = (float) Math.pow(Math.max(0f, Mth.sin(t * 0.9f + 1.2f)), 6f);
         float tap = hmm * Mth.sin(t * 14f) * 0.05f;
-        chin.override(-0.81f, hd * -0.60f, hd * 0.24f, w);
-        chin.overrideBend(s.elbow() * (1.37f + tap), w);
-        chin.overrideBendAxis(hd * -0.50f, w);
-        chin.pz -= 1.5f * w;
-        hold.override(-1.21f, hd * 0.74f, hd * -0.36f, w);
-        hold.overrideBend(s.elbow() * 0.52f, w);
-        hold.overrideBendAxis(hd * 1.27f, w);
+        if (chinFree) {
+            chin.override(-0.81f, hd * -0.60f, hd * 0.24f, w);
+            chin.overrideBend(s.elbow() * (1.37f + tap), w);
+            chin.overrideBendAxis(hd * -0.50f, w);
+            chin.pz -= 1.5f * w;
+        }
+        if (holdFree && chinFree) {
+            hold.override(-1.21f, hd * 0.74f, hd * -0.36f, w);
+            hold.overrideBend(s.elbow() * 0.52f, w);
+            hold.overrideBendAxis(hd * 1.27f, w);
+        } else {
+            hold.override(-0.08f, 0f, hd * -0.08f, w);
+            hold.overrideBend(s.elbow() * 0.20f, w);
+        }
         f.head().override(0.38f + 0.04f * Mth.sin(t * 0.7f + m.seed), hd * (-0.12f + 0.08f * Mth.sin(t * 0.37f)), hd * 0.14f, w);
     }
 
