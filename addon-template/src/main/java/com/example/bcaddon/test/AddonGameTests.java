@@ -2,8 +2,10 @@ package com.example.bcaddon.test;
 
 import com.example.bcaddon.BcAddon;
 import com.example.bcaddon.combat.BcAttacks;
+import com.example.bcaddon.combat.CommonEvents;
 import com.example.bcaddon.combat.Guard;
 import com.example.bcaddon.combat.Heavy;
+import com.mojang.authlib.GameProfile;
 import net.bettercombat.api.AttackHand;
 import net.bettercombat.logic.PlayerAttackHelper;
 import net.bettercombat.logic.PlayerAttackProperties;
@@ -19,14 +21,21 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+
+import java.util.UUID;
 
 /**
  * Server-side tests of the addon with Better Combat loaded: {@code ./gradlew runGameTestServer}.
  * Forge runs them only when {@code forge.enabledGameTestNamespaces} lists the mod (the
  * gameTestServer run in build.gradle does); in a normal game they do nothing.
+ *
+ * <p>The players are Forge fake players: the mock player of {@code GameTestHelper} has no network
+ * channel, and the login handlers of Forge and Better Combat write to it.</p>
  */
 @GameTestHolder(BcAddon.MODID)
 @PrefixGameTestTemplate(false)
@@ -38,6 +47,7 @@ public final class AddonGameTests {
     @GameTest(template = FLOOR)
     public static void noSwingRightAfterJoining(GameTestHelper helper) {
         ServerPlayer player = swordsman(helper, 0f);
+        CommonEvents.onJoin(new EntityJoinLevelEvent(player, helper.getLevel()));
         helper.assertTrue(BcAttacks.current(player) == null, "a fresh player reads as swinging");
         // What Better Combat does on the server while it applies the second swing of a combo.
         ((PlayerAttackProperties) player).setComboCount(1);
@@ -92,7 +102,7 @@ public final class AddonGameTests {
     }
 
     private static ServerPlayer swordsman(GameTestHelper helper, float yaw) {
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "bcaddon-test"));
         Vec3 at = helper.absoluteVec(new Vec3(1.5, 1, 0.5));
         player.moveTo(at.x, at.y, at.z, yaw, 0f);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
