@@ -151,19 +151,28 @@ final class AirModule implements AnimModule {
         PartPose main = side > 0 ? f.rightArm() : f.leftArm();
         PartPose off = side > 0 ? f.leftArm() : f.rightArm();
         // Arm angles are relative to the chest, so its lean is taken off (see ReactionModule#RAISED_ARM).
-        main.override(armW - lean + bob, -side * 0.30f, side * 0.10f, aw);
-        if (two) {
-            off.override(armW - lean + 0.10f + bob, side * 0.62f, -side * 0.10f, aw);
+        float elbow = Mth.lerp(wind, ReactionModule.RAISED_ELBOW, ReactionModule.WINDUP_ELBOW);
+        if (m.dualSwords) {
+            // A sword in each hand: both do the same, side by side, each point down.
+            main.override(armW - lean + bob, -side * ReactionModule.DUAL_IN, side * ReactionModule.DUAL_OUT, aw);
+            off.override(armW - lean + bob, side * ReactionModule.DUAL_IN, -side * ReactionModule.DUAL_OUT, aw);
+            off.overrideBend(s.elbow() * elbow, aw);
         } else {
-            off.override(-1.30f + 0.10f * a, 0f, -side * (0.95f + 0.10f * a), aw);
+            main.override(armW - lean + bob, -side * 0.30f, side * 0.10f, aw);
+            if (two) {
+                off.override(armW - lean + 0.10f + bob, side * 0.62f, -side * 0.10f, aw);
+            } else {
+                off.override(-1.30f + 0.10f * a, 0f, -side * (0.95f + 0.10f * a), aw);
+            }
+            off.overrideBend(s.elbow() * (two ? Mth.lerp(wind, 0.25f, 0.10f) : 0.45f), aw);
         }
-        main.overrideBend(s.elbow() * Mth.lerp(wind, ReactionModule.RAISED_ELBOW, ReactionModule.WINDUP_ELBOW), aw);
-        off.overrideBend(s.elbow() * (two ? Mth.lerp(wind, 0.25f, 0.10f) : 0.45f), aw);
+        main.overrideBend(s.elbow() * elbow, aw);
         // Blade pointing down in front of the body (turned in the fist, see ReactionModule#plantBlade).
         // It turns ahead of the arms (full turn at 60 % of the blend), so it points down from the
         // start of the raise; it stays in front of the body all the way, never swinging back.
         float tilt = Mth.lerp(wind, ReactionModule.RAISED_TILT, ReactionModule.WINDUP_TILT);
         m.itemTiltTarget = Math.max(m.itemTiltTarget, tilt * Math.min(1f, 1.6f * aw));
+        if (m.dualSwords) m.itemTiltOffTarget = Math.max(m.itemTiltOffTarget, tilt * Math.min(1f, 1.6f * aw));
         m.armsHeld = Math.max(m.armsHeld, aw);
         // Knees drawn up, one ahead of the other, ready to take the landing on one knee.
         PartPose lead = side > 0 ? f.leftLeg() : f.rightLeg();

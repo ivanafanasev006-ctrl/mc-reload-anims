@@ -233,9 +233,10 @@ public final class WeaponTrails {
             dev.mcreload.anim.client.joint.Joint.hinge(mat, 4f, cx, 0f, slim ? 1.5f : 2f, 2f, false, A_BEND[0], A_BEND[1]);
         }
         // Weapon turned in the fist.
-        if (joints && left != rig.motion.mainRight && Math.abs(rig.motion.itemTilt.v) > 1e-3f) {
+        float tilt = left != rig.motion.mainRight ? rig.motion.itemTilt.v : rig.motion.itemTiltOff.v;
+        if (joints && Math.abs(tilt) > 1e-3f) {
             mat.translate(0f, 10f / 16f, -1f / 16f);
-            mat.rotate(new Quaternionf().rotationX(rig.motion.itemTilt.v));
+            mat.rotate(new Quaternionf().rotationX(tilt));
             mat.translate(0f, -10f / 16f, 1f / 16f);
         }
 

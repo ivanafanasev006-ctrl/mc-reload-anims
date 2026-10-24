@@ -45,6 +45,8 @@ final class ReactionModule implements AnimModule {
     static final float WINDUP_ARM = -2.50f, WINDUP_ELBOW = 0f, WINDUP_TILT = 3.37f;
     /** The arched back and raised head of the wind-up (chest lean, head pitch). */
     static final float WINDUP_LEAN = -0.25f, WINDUP_HEAD = -0.35f;
+    /** Two swords: each arm a little in (yaw) and out (roll) from the two-handed grip's line, side by side. */
+    static final float DUAL_IN = 0.06f, DUAL_OUT = 0.20f;
     /** How long before touchdown the wind-up starts (seconds); it builds up all the way down. */
     static final float WINDUP_SECONDS = 0.65f;
 
@@ -282,17 +284,25 @@ final class ReactionModule implements AnimModule {
         // rotation about the fist's own axis) follows the forearm, so the blade keeps pointing
         // down all the way and its point goes well into the ground.
         float x = Mth.lerp(stab, WINDUP_ARM - lean, -0.70f - lean);
-        main.override(x, -side * 0.28f, side * 0.05f, e);
+        float tilt = Mth.lerp(stab, WINDUP_TILT, Mth.PI - 1.10f);
         main.overrideBend(s.elbow() * Mth.lerp(stab, WINDUP_ELBOW, 0.10f), e);
-        if (two) {
+        if (m.dualSwords) {
+            // A sword in each hand: both driven into the ground side by side.
+            main.override(x, -side * DUAL_IN, side * DUAL_OUT, e);
+            off.override(x, side * DUAL_IN, -side * DUAL_OUT, e);
+            off.overrideBend(s.elbow() * Mth.lerp(stab, WINDUP_ELBOW, 0.10f), e);
+            m.itemTiltOffTarget = Math.max(m.itemTiltOffTarget, tilt * tiltW);
+        } else if (two) {
+            main.override(x, -side * 0.28f, side * 0.05f, e);
             off.override(x + 0.10f, side * 0.62f, -side * 0.05f, e);
             off.overrideBend(s.elbow() * Mth.lerp(stab, 0.10f, 0.30f), e);
         } else {
+            main.override(x, -side * 0.28f, side * 0.05f, e);
             // Something in the other hand: it rests on the front knee instead.
             off.override(-0.75f - lean, side * 0.10f, -side * 0.15f, e);
             off.overrideBend(s.elbow() * 0.55f, e);
         }
-        m.itemTiltTarget = Math.max(m.itemTiltTarget, Mth.lerp(stab, WINDUP_TILT, Mth.PI - 1.10f) * tiltW);
+        m.itemTiltTarget = Math.max(m.itemTiltTarget, tilt * tiltW);
         m.armsHeld = Math.max(m.armsHeld, e);
         f.body().py += 0.05f * (1f - stab) * e;
     }

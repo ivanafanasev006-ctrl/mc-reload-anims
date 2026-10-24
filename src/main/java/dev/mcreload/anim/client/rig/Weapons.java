@@ -34,5 +34,15 @@ public final class Weapons {
         return isMeleeWeapon(stack);
     }
 
+    /** A weapon that takes both hands (Better Combat's two-handed weapons). */
+    public static boolean isTwoHanded(ItemStack stack) {
+        return !stack.isEmpty() && dev.mcreload.anim.compat.BetterCombatCompat.twoHanded(stack);
+    }
+
+    /** A sword held in one hand (so the other hand is free for a shield, a second sword...). */
+    public static boolean isOneHandedSword(ItemStack stack) {
+        return isSword(stack) && !isTwoHanded(stack);
+    }
+
     private Weapons() {}
 }

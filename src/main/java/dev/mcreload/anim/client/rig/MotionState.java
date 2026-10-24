@@ -90,6 +90,19 @@ public final class MotionState {
     /** Held item tipped forward in the hand (radians), smoothed; modules raise the target. */
     public final Smooth itemTilt = new Smooth(24f);
     public float itemTiltTarget;
+    /** The same for the item in the other hand (a second sword). */
+    public final Smooth itemTiltOff = new Smooth(24f);
+    public float itemTiltOffTarget;
+    /**
+     * Set by a module to drive the turn exactly this frame, any sign, no smoothing (a twirl
+     * computed along a smooth curve: smoothing it only lags and, with the half-turn wrap, can
+     * jump); NaN when unused. Main hand and other hand.
+     */
+    public float itemTiltDirect = Float.NaN, itemTiltOffDirect = Float.NaN;
+    /** The main-hand weapon takes both hands (Better Combat two-handed): see Weapons#isTwoHanded. */
+    public boolean twoHandedWeapon;
+    /** A one-handed sword in each hand. */
+    public boolean dualSwords;
     /** 0..1 this frame: both hands are fixed on something (set by modules, cleared every frame). */
     public float armsHeld;
     /** Loose-limb inertia: forward, sideways and vertical (from body accelerations), and turning. */
@@ -135,7 +148,7 @@ public final class MotionState {
     /** When the sword was drawn (switched to, or swapped into the main hand); see BladeModule#draw. */
     public float drawStart = -100f;
     /** How long drawing the sword into the guard takes, and how long the guard lasts after it / a swing. */
-    public static final float DRAW_SECONDS = 0.6f, GUARD_HOLD = 2.5f;
+    public static final float DRAW_SECONDS = 0.8f, GUARD_HOLD = 2.5f;
     private boolean wasSword, drawArmed;
     /**
      * Last attack with a sword in hand: a swing of ours, one Better Combat plays (BladeModule
@@ -509,7 +522,8 @@ public final class MotionState {
         }
         // Drawing a sword: switching to one (or swapping one into the main hand) brings it up into
         // a fighting guard. Not on the very first tick (joining with a sword already in hand).
-        boolean sword = Weapons.isSword(main);
+        // One-handed swords only: a two-handed weapon stays in both hands.
+        boolean sword = Weapons.isOneHandedSword(main);
         if (sword && drawArmed && (!wasSword || !ItemStack.isSameItem(main, lastMain))) drawStart = time;
         wasSword = sword;
         drawArmed = true;
@@ -633,10 +647,14 @@ public final class MotionState {
         fishingW.to((rodInMain || rodInOff) && player.fishing != null && !blocked ? 1f : 0f, dt);
         // The item's turn in the hand only matters modulo a full turn: after a spin, take the
         // shortest way back instead of unwinding every turn.
-        float tiltErr = itemTilt.v - itemTiltTarget;
-        if (Math.abs(tiltErr) > Mth.PI) itemTilt.v -= Mth.TWO_PI * Math.round(tiltErr / Mth.TWO_PI);
-        itemTilt.to(itemTiltTarget, dt);
+        stepTilt(itemTilt, itemTiltTarget, itemTiltDirect, dt);
+        stepTilt(itemTiltOff, itemTiltOffTarget, itemTiltOffDirect, dt);
         itemTiltTarget = 0f;
+        itemTiltOffTarget = 0f;
+        itemTiltDirect = Float.NaN;
+        itemTiltOffDirect = Float.NaN;
+        twoHandedWeapon = Weapons.isTwoHanded(player.getMainHandItem());
+        dualSwords = Weapons.isOneHandedSword(player.getMainHandItem()) && Weapons.isOneHandedSword(player.getOffhandItem());
         armsHeld = 0f;
         holdingBlade = Weapons.isMeleeWeapon(player.getMainHandItem());
         speed.to(horizontalSpeed, dt);
@@ -695,7 +713,8 @@ public final class MotionState {
         // The sword guard: for a couple of seconds after drawing the sword or after any swing of it
         // (at a mob or at the air), standing or walking (like the fists' guard), and still while
         // blocking with a shield in the other hand. Swords only: an axe or a trident is just held.
-        boolean swordInHand = Weapons.isSword(mainItem);
+        // One-handed swords only: a two-handed weapon stays in both hands (Better Combat's hold).
+        boolean swordInHand = Weapons.isOneHandedSword(mainItem);
         if (swordInHand && isLocal() && net.minecraft.client.Minecraft.getInstance().screen == null
                 && net.minecraft.client.Minecraft.getInstance().options.keyAttack.isDown()) {
             attackTime = time;
@@ -749,7 +768,11 @@ public final class MotionState {
             // Fidgets with whatever is in the main hand.
             IDLE_ITEM_SPIN = 10, IDLE_ITEM_INSPECT = 11, IDLE_ITEM_TOSS = 12, IDLE_ITEM_PRACTICE = 13,
             IDLE_ITEM_SHOULDER = 14, IDLE_ITEM_LEAN = 15, IDLE_FLINT = 16, IDLE_BUCKET = 17, IDLE_ROD = 18,
-            IDLE_LANTERN = 19, IDLE_BLOCK = 20;
+            IDLE_LANTERN = 19, IDLE_BLOCK = 20,
+            // Two swords: drawn from behind the back into a wary stance; twirled one after the other.
+            IDLE_DUAL_DRAW = 21, IDLE_DUAL_SPIN = 22;
+    /** With a one-handed sword in each hand (sorted ascending). */
+    private static final int[] DUAL_SWORD_IDLES = {IDLE_DUAL_DRAW, IDLE_DUAL_SPIN};
     /**
      * The empty-hand fidgets that are played: only the polished ones that keep the hands off the
      * body (no hand through the head or chest, nothing silly).
@@ -945,7 +968,9 @@ public final class MotionState {
             ItemStack held = player.getMainHandItem();
             if (!held.isEmpty()) {
                 // Something in hand: mostly play with it, now and then a fidget that leaves it be.
-                int[] own = itemIdles(held);
+                // Two swords: their own pair of fidgets. A two-handed weapon: only fidgets that
+                // leave the arms alone (GestureModule keeps both hands on it).
+                int[] own = dualSwords ? DUAL_SWORD_IDLES : twoHandedWeapon ? HANDS_BUSY_IDLES : itemIdles(held);
                 int[] pool = rng.nextFloat() < 0.75f ? own : HANDS_BUSY_IDLES;
                 pick = pool[rng.nextInt(pool.length)];
                 if (pick == lastIdleAction && pool.length > 1) pick = pool[(java.util.Arrays.binarySearch(pool, pick) + 1 + pool.length) % pool.length];
@@ -994,6 +1019,8 @@ public final class MotionState {
     public static float idleDuration(int action) {
         return switch (action) {
             case IDLE_ITEM_SPIN, IDLE_ITEM_PRACTICE, IDLE_ROD -> 3.0f;
+            case IDLE_DUAL_DRAW -> 4.6f;
+            case IDLE_DUAL_SPIN -> 3.6f;
             case IDLE_ITEM_INSPECT -> 3.6f;
             case IDLE_ITEM_TOSS -> 2.4f;
             case IDLE_ITEM_SHOULDER -> 4.0f;
@@ -1149,6 +1176,17 @@ public final class MotionState {
 
     public void onTotem() {
         totemStart = time;
+    }
+
+    /** The turn of an item in the hand: exactly as set (twirls), or smoothed toward the target. */
+    private static void stepTilt(Smooth tilt, float target, float direct, float dt) {
+        if (!Float.isNaN(direct)) {
+            tilt.v = direct;
+            return;
+        }
+        float err = tilt.v - target;
+        if (Math.abs(err) > Mth.PI) tilt.v -= Mth.TWO_PI * Math.round(err / Mth.TWO_PI);
+        tilt.to(target, dt);
     }
 
     /** Seconds since an event started (large if it never did). */

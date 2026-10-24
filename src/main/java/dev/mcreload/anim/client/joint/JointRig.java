@@ -94,8 +94,8 @@ public final class JointRig {
         return rig;
     }
 
-    /** Held item tipped in the main hand (radians), and which hand that is. */
-    private float itemTilt;
+    /** Held item tipped in the main hand and in the other hand (radians), and which hand is main. */
+    private float itemTilt, itemTiltOff;
     private boolean mainRight = true;
 
     public boolean isUpper(ModelPart p) {
@@ -161,10 +161,12 @@ public final class JointRig {
         set(leftLeg, anim, "leftLeg");
         set(torso, anim, "torso");
         itemTilt = 0f;
+        itemTiltOff = 0f;
         if (!Joints.firstPerson && entity instanceof net.minecraft.client.player.AbstractClientPlayer p) {
             dev.mcreload.anim.client.rig.PlayerRig r = dev.mcreload.anim.client.rig.RigRegistry.get(p);
             if (r != null) {
                 itemTilt = r.motion.itemTilt.v;
+                itemTiltOff = r.motion.itemTiltOff.v;
                 mainRight = r.motion.mainRight;
             }
         }
@@ -188,6 +190,7 @@ public final class JointRig {
         if (leftLeg != null) leftLeg.set(0f, leftLegBend);
         if (torso != null) torso.set(0f, torsoBend);
         itemTilt = 0f;
+        itemTiltOff = 0f;
     }
 
     public void copyFrom(JointRig o) {
@@ -222,9 +225,10 @@ public final class JointRig {
         Joint j = arm == HumanoidArm.RIGHT ? rightArm : leftArm;
         if (j != null) j.apply(ps);
         // Turn the held weapon in the hand (pivot at the fist).
-        if (Math.abs(itemTilt) > 1e-3f && (arm == HumanoidArm.RIGHT) == mainRight) {
+        float tilt = (arm == HumanoidArm.RIGHT) == mainRight ? itemTilt : itemTiltOff;
+        if (Math.abs(tilt) > 1e-3f) {
             ps.translate(0f, 10f / 16f, -1f / 16f);
-            ps.mulPose(new Quaternionf().rotationX(itemTilt));
+            ps.mulPose(new Quaternionf().rotationX(tilt));
             ps.translate(0f, -10f / 16f, 1f / 16f);
         }
     }

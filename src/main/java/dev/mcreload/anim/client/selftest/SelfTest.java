@@ -321,6 +321,9 @@ public final class SelfTest {
         SCENARIOS.add(new Scenario("07g_sword_land_walk_off", 50, sp -> { place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)); groundTicks = 0; },
                 (mc, t) -> { groundTicks = mc.player.onGround() ? groundTicks + 1 : 0; move(mc, groundTicks >= 5 && t < 45, false, false, false); },
                 new Window(8, 18, 3, 0.0f), new Window(19, 40, 7, 0.03f)));
+        // A sword in each hand: both raised point down, wound up and driven into the ground.
+        SCENARIOS.add(new Scenario("07h_dual_sword_landing", 50, sp -> { place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.DIAMOND_SWORD)); },
+                (mc, t) -> move(mc, false, false, false, false), new Window(6, 18, 4, 0.0f), new Window(19, 40, 5, 0.04f)));
         SCENARIOS.add(new Scenario("07f_sword_fall_back", 60, sp -> place(sp, 2, Y + 7, 0, -90, new ItemStack(Items.IRON_SWORD)),
                 (mc, t) -> moveBack(mc, t < 50), new Window(8, 18, 3, 0.0f), new Window(19, 45, 5, 0.06f)));
         SCENARIOS.add(new Scenario("26_explosion", 45, sp -> place(sp, 2, Y, 0, -90, none),
@@ -495,6 +498,16 @@ public final class SelfTest {
                         if (t == 6) dev.mcreload.anim.client.PostureControl.testPressSit();
                         if (t >= 8 && t <= 20) { var m = localMotion(mc); if (m != null && m.sitting) m.sitStyle = st; }
                     }, new Window(6, 18, 3, 0.1f), new Window(24, 60, 2, 0.6f), new Window(62, 70, 2, 0.15f)));
+        }
+        // Two swords: drawn from behind the back into a wary crouch; twirled one after the other.
+        for (int action : new int[]{dev.mcreload.anim.client.rig.MotionState.IDLE_DUAL_DRAW, dev.mcreload.anim.client.rig.MotionState.IDLE_DUAL_SPIN}) {
+            final int a = action;
+            SCENARIOS.add(new Scenario("64b_idle_dual_" + action, 110,
+                    sp -> { place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.DIAMOND_SWORD)); },
+                    (mc, t) -> {
+                        move(mc, false, false, false, false);
+                        if (t == 20) { var m = localMotion(mc); if (m != null) m.forceIdle(a); }
+                    }, new Window(20, 110, 14, 0.25f)));
         }
         // The friend crawls past and sits down (as their client would tell us).
         SCENARIOS.add(new Scenario("72_friend_posture", 150, sp -> place(sp, 2, Y, -1, -90, none),

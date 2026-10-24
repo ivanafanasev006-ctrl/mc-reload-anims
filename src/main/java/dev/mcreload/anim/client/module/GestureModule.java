@@ -61,7 +61,8 @@ final class GestureModule implements AnimModule {
         float side = m.mainRight ? 1f : -1f;
         PartPose main = side > 0 ? f.rightArm() : f.leftArm();
         PartPose off = side > 0 ? f.leftArm() : f.rightArm();
-        float aw = env * m.armsFree.v;
+        // A two-handed weapon stays in both hands: the fidget moves everything but the arms.
+        float aw = m.twoHandedWeapon ? 0f : env * m.armsFree.v;
         switch (m.idleAction) {
             case MotionState.IDLE_STRETCH -> stretch(f, s, env, aw, t);
             case MotionState.IDLE_SCRATCH -> scratch(f, s, env, aw, t, main, off, side);
@@ -83,6 +84,8 @@ final class GestureModule implements AnimModule {
             case MotionState.IDLE_ROD -> rod(m, f, s, env, aw, t, main, off, side);
             case MotionState.IDLE_LANTERN -> lantern(m, f, s, env, aw, t, main, off, side);
             case MotionState.IDLE_BLOCK -> blockInspect(m, f, s, env, aw, t, main, off, side);
+            case MotionState.IDLE_DUAL_DRAW -> dualDraw(m, f, s, env, aw, t, side);
+            case MotionState.IDLE_DUAL_SPIN -> dualSpin(m, f, s, env, aw, t, main, off, side);
             default -> lookAround(f, s, env, aw, t, m);
         }
     }
@@ -106,6 +109,69 @@ final class GestureModule implements AnimModule {
         Rigging.twistUpper(f, side * 0.15f * out * e);
         f.head().ry -= side * 0.35f * out * e;
         f.head().rx += 0.10f * out * e;
+    }
+
+    /**
+     * Two swords, one after the other: the sword arm comes out to the side and that sword twirls
+     * twice, the eyes on it; then it goes back and the other one does the same on its side.
+     */
+    private static void dualSpin(MotionState m, PoseFrame f, Signs s, float e, float aw, float t,
+                                 PartPose main, PartPose off, float side) {
+        float outM = seg(t, 0.15f, 0.55f) * (1f - seg(t, 1.60f, 2.00f));
+        float spinM = seg(t, 0.45f, 1.55f);
+        float outO = seg(t, 1.65f, 2.05f) * (1f - seg(t, 3.05f, 3.45f));
+        float spinO = seg(t, 1.95f, 3.00f);
+        float cM = Mth.sin(t * 10f) * spinM * (1f - spinM) * 4f, cO = Mth.sin(t * 10f) * spinO * (1f - spinO) * 4f;
+        main.override(-1.15f + 0.15f * cM, side * (0.55f + 0.10f * Mth.cos(t * 10f) * spinM * (1f - spinM) * 4f),
+                side * 0.30f, aw * outM);
+        main.overrideBend(s.elbow() * 0.45f, aw * outM);
+        off.override(-1.15f + 0.15f * cO, -side * (0.55f + 0.10f * Mth.cos(t * 10f) * spinO * (1f - spinO) * 4f),
+                -side * 0.30f, aw * outO);
+        off.overrideBend(s.elbow() * 0.45f, aw * outO);
+        m.itemTiltTarget = 2f * Mth.TWO_PI * spinM * e;
+        m.itemTiltOffTarget = 2f * Mth.TWO_PI * spinO * e;
+        Rigging.twistUpper(f, side * 0.15f * (outM - outO) * e);
+        f.head().ry -= side * 0.35f * (outM - outO) * e;
+        f.head().rx += 0.10f * (outM + outO) * e;
+    }
+
+    /**
+     * Two swords: the hands reach back over the shoulders (the blades hanging down the back, as
+     * if they were in sheaths there), pull both swords forward over the shoulders twirling them
+     * away from the body, and drop into a wary crouch with both blades held out in front; a look
+     * left and right, then back to rest. Poses fitted on the model (blades clear of the head and
+     * body: reaching back 1 px from the ears, in the crouch 4+ px).
+     */
+    private static void dualDraw(MotionState m, PoseFrame f, Signs s, float e, float aw, float t, float side) {
+        float back = seg(t, 0.00f, 0.45f);
+        float pull = seg(t, 0.45f, 1.20f);
+        float wary = seg(t, 0.90f, 1.40f);
+        float x = Mth.lerp(pull, Mth.lerp(back, 0f, -2.90f), -0.55f);
+        float z = Mth.lerp(pull, Mth.lerp(back, 0.05f, 0.30f), 0.45f);
+        float el = Mth.lerp(pull, Mth.lerp(back, 0.10f, 1.90f), 0.60f);
+        float breathe = 0.03f * Mth.sin(t * 3f) * wary;
+        f.rightArm().override(x + breathe, 0f, z, aw);
+        f.leftArm().override(x + breathe, 0f, -z, aw);
+        f.rightArm().overrideBend(s.elbow() * el, aw);
+        f.leftArm().overrideBend(s.elbow() * el, aw);
+        // Blades: hanging down the back as the hands reach for them, a full turn away from the body
+        // each as they come over the shoulders (driven exactly), then tipped forward in the crouch.
+        float spin = seg(t, 0.55f, 1.15f);
+        if (spin > 0f && spin < 1f && aw > 0.5f) {
+            m.itemTiltDirect = 1.0f + Mth.TWO_PI * spin;
+            m.itemTiltOffDirect = 1.0f + Mth.TWO_PI * spin;
+        } else {
+            m.itemTiltTarget = Math.max(m.itemTiltTarget, 1.0f * aw);
+            m.itemTiltOffTarget = Math.max(m.itemTiltOffTarget, 1.0f * aw);
+        }
+        // The wary crouch, looking left and right.
+        Rigging.crouch(f, s, 0.30f * wary * e);
+        Rigging.legsOut(f, 0.10f * wary * e);
+        Rigging.leanTorso(f, s, 0.15f * wary * e);
+        f.head().rx -= 0.05f * wary * e;
+        float look = Mth.sin((t - 1.4f) * 1.7f) * seg(t, 1.45f, 1.90f) * (1f - seg(t, 3.60f, 4.00f));
+        f.head().ry += 0.75f * look * e;
+        Rigging.twistUpper(f, -0.18f * look * e);
     }
 
     /**

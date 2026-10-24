@@ -167,10 +167,12 @@ final class BladeModule implements AnimModule {
     }
 
     /**
-     * Drawing the sword (0.6 s): the sword arm swings up and out high to the side while the blade
-     * twirls a full turn in the fist, then comes down into the guard as the feet spread into the
-     * stance with a little dip; the other arm (or the shield) comes up with it. Ends exactly in
-     * the guard, which the stance then holds.
+     * Drawing the sword (0.8 s): the sword arm swings straight out and up to the side while the
+     * blade twirls a full turn in the fist toward the body, then comes down into the guard as the
+     * feet spread into the stance with a little dip; the other arm (or the shield) comes up with
+     * it. The arm stays in one plane (out to the side and back), so it never flips round; the
+     * twirl is driven exactly along a smooth curve (no smoothing lag). Ends in the guard, which
+     * the stance then holds.
      */
     private void draw(MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off,
                       boolean shield, float foreignMain, float foreignOff) {
@@ -182,21 +184,26 @@ final class BladeModule implements AnimModule {
         if (w <= 0.001f) return;
         float mw = w * m.armsFree.v * (1f - foreignMain);
         float ow = w * m.armsFree.v * (1f - foreignOff);
-        float up = smoother(t / 0.35f);                 // up and out high, twirling
-        float down = smoother((t - 0.40f) / 0.45f);     // into the guard
+        float up = smoother(t / 0.40f);                 // straight out and up to the side, twirling
+        float down = smoother((t - 0.45f) / 0.45f);     // into the guard
         float moving = AngleMath.clamp(m.moveF(), 0f, 1f);
         // The rest of the guard comes in with the settle; the sword arm has its own path.
         guardPose(m, f, s, hd, main, off, shield, w, 0f, ow * smoother((t - 0.20f) / 0.55f), down, 0f, 1f, moving);
         if (mw > 0.001f) {
-            arm(main, hd * Mth.lerp(down, Mth.lerp(up, 5f, 115f), 60f), hd * Mth.lerp(down, 15f * up, 5f), 0f, mw);
-            main.overrideBend(s.elbow() * deg(Mth.lerp(down, Mth.lerp(up, 10f, 35f), 20f)), mw);
-            float twirl = Mth.TWO_PI * smoother((t - 0.05f) / 0.45f);
-            m.itemTiltTarget = Math.max(m.itemTiltTarget, (twirl + deg(65f) * down) * mw);
+            float raise = Mth.lerp(down, Mth.lerp(up, 0.10f, 2.00f), deg(60f));
+            main.override(-0.30f * up * (1f - down), 0f, hd * raise, mw);
+            main.overrideBend(s.elbow() * Mth.lerp(down, Mth.lerp(up, 0.15f, 0.60f), deg(20f)), mw);
+            // A full turn toward the body (the point comes up and back first), then the blade
+            // settles tipped forward as in the guard.
+            float spin = smoother((t - 0.08f) / 0.55f);
+            float lay = deg(65f) * down;
+            if (spin > 0f && spin < 1f && mw > 0.5f) m.itemTiltDirect = -Mth.TWO_PI * spin + lay;
+            else m.itemTiltTarget = Math.max(m.itemTiltTarget, lay * mw);
         }
         // Standing: the feet spread into the stance with a little dip.
         float still = (1f - moving) * m.groundW.v;
         guardLegs(f, s, w * still * down);
-        f.body().py -= 0.06f * Mth.sin(Mth.PI * AngleMath.clamp((t - 0.45f) / 0.50f, 0f, 1f)) * w * still;
+        f.body().py -= 0.06f * Mth.sin(Mth.PI * AngleMath.clamp((t - 0.50f) / 0.50f, 0f, 1f)) * w * still;
     }
 
     // ------------------------------------------------------------------ strikes
