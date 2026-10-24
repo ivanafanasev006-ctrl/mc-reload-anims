@@ -1,0 +1,104 @@
+name: Research (mod lists and jar contents)
+
+# Reads things this repository's own tooling cannot reach from a development container
+# (CurseForge, Modrinth): the mod list of a CurseForge modpack, and what is inside given mod
+# jars (mods.toml, mixins, data-driven files, class list, chosen classes decompiled). Everything
+# goes to the job log; nothing is committed.
+on:
+  workflow_dispatch:
+    inputs:
+      pack:
+        description: 'CurseForge modpack slug (empty: skip)'
+        default: 'otherworld-dnd'
+      jars:
+        description: 'jars to dump, space separated: cf:<projectId>:<fileId> or mr:<slug> (newest Forge 1.20.1)'
+        default: ''
+      classes:
+        description: 'regex of class names to decompile (empty: none)'
+        default: ''
+      files:
+        description: 'regex of resource paths to print in full'
+        default: 'weapon_attributes/|META-INF/mods.toml|\.mixins\.json$|config'
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      UA: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+    steps:
+      - name: Modpack mod list
+        if: ${{ github.event.inputs.pack != '' }}
+        run: |
+          set -u
+          SLUG="${{ github.event.inputs.pack }}"
+          ct() { curl -sS --retry 4 --retry-all-errors --retry-delay 3 -A "$UA" "$@"; }
+          S=$(ct "https://api.curse.tools/v1/cf/mods/search?gameId=432&classId=4471&slug=$SLUG")
+          PID=$(echo "$S" | jq -r '.data[0].id // empty')
+          echo "pack $SLUG -> project $PID"
+          echo "$S" | jq -r '.data[0].latestFilesIndexes[]? | "\(.fileId) \(.gameVersion) \(.filename)"' | head -20
+          FILES=$(ct "https://api.curse.tools/v1/cf/mods/$PID/files?pageSize=50")
+          echo "$FILES" | jq -r '.data[] | "\(.id) \(.fileDate) \(.displayName) server=\(.isServerPack) parent=\(.parentProjectFileId // "")"' | head -30
+          FID=$(echo "$FILES" | jq -r '[.data[] | select(.isServerPack != true)] | sort_by(.fileDate) | last | .id')
+          echo "newest client file: $FID"
+          ct -L -o pack.zip "https://www.curseforge.com/api/v1/mods/$PID/files/$FID/download" || ct -L -o pack.zip "$(echo "$FILES" | jq -r --argjson f "$FID" '.data[] | select(.id == $f) | .downloadUrl')"
+          unzip -q -o pack.zip -d pack
+          jq '{name, version, minecraft}' pack/manifest.json
+          jq -c '[.files[].projectID]' pack/manifest.json > ids.json
+          jq -c '[.files[].fileID]' pack/manifest.json > fids.json
+          ct -X POST -H 'Content-Type: application/json' -d "{\"modIds\": $(cat ids.json)}" "https://api.curse.tools/v1/cf/mods" > mods.json
+          ct -X POST -H 'Content-Type: application/json' -d "{\"fileIds\": $(cat fids.json)}" "https://api.curse.tools/v1/cf/mods/files" > files.json
+          echo "=== MODS ($(jq '.files | length' pack/manifest.json)) ==="
+          jq -r --slurpfile f files.json '
+            .data | sort_by(.name) | .[] as $m
+            | ($f[0].data | map(select(.modId == $m.id)) | .[0]) as $file
+            | "\($m.id)\t\($file.id // "")\t\($m.slug)\t\($m.name)\t\($file.fileName // "")\t\($m.summary | gsub("[\n\t]"; " "))"' mods.json
+          echo "=== OVERRIDES ==="
+          find pack/overrides -maxdepth 3 | sort | head -400
+          echo "=== combat-related configs ==="
+          for f in $(find pack/overrides -type f | grep -iE 'bettercombat|better_combat|combat|parry|dodge|stamina|epicfight|roll|weapon' | head -60); do
+            echo "----- $f"; head -c 6000 "$f"; echo
+          done
+
+      - name: Jar contents
+        if: ${{ github.event.inputs.jars != '' }}
+        run: |
+          set -u
+          ct() { curl -sS --retry 4 --retry-all-errors --retry-delay 3 -A "$UA" "$@"; }
+          mkdir -p jars
+          for spec in ${{ github.event.inputs.jars }}; do
+            case "$spec" in
+              cf:*) IFS=: read -r _ P F <<< "$spec"
+                    url=$(ct -o /dev/null -w '%{redirect_url}' "https://www.curseforge.com/api/v1/mods/$P/files/$F/download" || true)
+                    [ -z "$url" ] && url=$(ct "https://api.curse.tools/v1/cf/mods/$P/files/$F" | jq -r '.data.downloadUrl // empty')
+                    ;;
+              mr:*) url=$(ct "https://api.modrinth.com/v2/project/${spec#mr:}/version?loaders=%5B%22forge%22%5D&game_versions=%5B%221.20.1%22%5D" \
+                      | jq -r '.[0] | ([.files[] | select(.primary)][0].url // .files[0].url) // empty') ;;
+            esac
+            if [ -z "${url:-}" ]; then echo "!! $spec: no download"; continue; fi
+            name=$(basename "${url%%\?*}"); name=${name//%2B/+}; name=${name//%20/_}
+            ct -L -o "jars/$name" "$url" && echo "$spec -> $name"
+          done
+          curl -sSL -o cfr.jar https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
+          FILES_RE='${{ github.event.inputs.files }}'
+          CLASSES_RE='${{ github.event.inputs.classes }}'
+          for j in jars/*.jar; do
+            echo; echo "################ $(basename "$j") ($(stat -c %s "$j") bytes)"
+            unzip -Z1 "$j" > list.txt
+            echo "=== packages"; grep '\.class$' list.txt | sed 's#/[^/]*$##' | sort | uniq -c | sort -k2 | head -150
+            echo "=== resources (not classes, not textures/sounds)"; grep -vE '\.class$|/$|\.png$|\.ogg$' list.txt | head -400
+            echo "=== nested jars"; grep -E '\.jar$' list.txt || true
+            for f in $(grep -E "$FILES_RE" list.txt | grep -v '/$' | head -300); do
+              echo "----- $f"; unzip -p "$j" "$f" | head -c 4000; echo
+            done
+            if [ -n "$CLASSES_RE" ]; then
+              for c in $(grep '\.class$' list.txt | grep -E "$CLASSES_RE" | grep -v '\$' | head -40); do
+                echo "===== DECOMPILED $c"
+                unzip -o -q "$j" "$c" -d cls
+                java -jar cfr.jar "cls/$c" --silent true 2>/dev/null | head -400
+              done
+            fi
+          done
