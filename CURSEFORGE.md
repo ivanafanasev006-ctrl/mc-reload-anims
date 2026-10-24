@@ -26,6 +26,12 @@ Kinetrix replaces Minecraft's stiff six-block puppet movement with procedural, p
 - **Reactions**: knock-back from hits, shielding your face from explosions (or bracing on a planted sword), the Totem of Undying.
 - **20 emotes** (default key **B**): Default Dance, Floss, Running Man, Robot, Air Guitar, Flex, Meditate, Wave, Clap, Facepalm, Salute, Bow, Sit, Thumbs Up, Victory, Point, Laugh, Cry, Push-ups and more.
 
+## Animation gallery
+
+Type **`/kinetrix`** (or `/kinetrix menu`) for a menu of every animation and emote, by category, each with a note on
+when it plays and a live preview: a copy of you in the menu doing it over and over (drag to turn it). Emotes and idle
+fidgets can be played on yourself straight from there. Client-side: works on any server.
+
 ## Compatibility
 
 - **Requires:** [Player Animator](https://www.curseforge.com/minecraft/mc-mods/playeranimator) (by KosmX) for Forge 1.20.1.

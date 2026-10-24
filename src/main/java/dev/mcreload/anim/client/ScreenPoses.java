@@ -28,6 +28,7 @@ public final class ScreenPoses {
         }
         if (screen instanceof AbstractContainerScreen<?>) return MotionState.SCREEN_RUMMAGE;
         if (screen instanceof ChatScreen || screen instanceof EmoteScreen || screen instanceof DeathScreen
+                || screen instanceof dev.mcreload.anim.client.gallery.GalleryScreen
                 || screen instanceof BookEditScreen
                 || screen instanceof net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen
                 || screen instanceof net.minecraft.client.gui.screens.ReceivingLevelScreen

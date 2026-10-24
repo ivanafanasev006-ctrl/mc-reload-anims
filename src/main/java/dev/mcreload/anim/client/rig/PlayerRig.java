@@ -58,7 +58,11 @@ public final class PlayerRig {
         return harmonizer;
     }
 
+    /** The dummy in the animation gallery (always animated, it is there to show them). */
+    public boolean preview;
+
     boolean shouldAnimate() {
+        if (preview) return true;
         if (!Cfg.enabled) return false;
         if (player.isSpectator() || player.isRemoved()) return false;
         return player.isLocalPlayer() || Cfg.otherPlayers;

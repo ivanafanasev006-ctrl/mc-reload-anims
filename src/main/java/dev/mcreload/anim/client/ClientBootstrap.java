@@ -41,6 +41,7 @@ public final class ClientBootstrap {
         MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.fx.IdleProps::onRenderLevel);
         MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.fx.SleepZzz::onRenderLevel);
         MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.fx.SoundCues::onPlaySound);
+        MinecraftForge.EVENT_BUS.addListener(dev.mcreload.anim.client.gallery.KinetrixCommand::register);
 
         ModCompat.init();
         if (SelfTest.enabled()) SelfTest.init();

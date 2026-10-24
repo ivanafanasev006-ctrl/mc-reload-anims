@@ -18,6 +18,7 @@ final class SelfTestOverlay {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || SelfTest.currentLabel.isEmpty()) return;
+        if (SelfTest.captureFromScreen && Minecraft.getInstance().screen != null) return;
         GuiGraphics g = event.getGuiGraphics();
         float pt = event.getPartialTick();
         int w = g.guiWidth(), h = g.guiHeight();

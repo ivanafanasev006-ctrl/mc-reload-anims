@@ -15,6 +15,7 @@
     "HumanoidModelMixin",
     "LivingEntityRendererAccessor",
     "ModelPartAccessor",
+    "PlayerAccessor",
     "PlayerModelMixin",
     "PlayerRendererMixin",
     "compat.AnimationStackMixin"

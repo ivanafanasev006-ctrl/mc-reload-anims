@@ -209,6 +209,13 @@ public final class SelfTest {
     private static final ScriptedInput INPUT = new ScriptedInput();
     /** Full-screen world view (no side/front/top panels) for the current scenario. */
     static volatile boolean noPanels;
+    /** Shots are taken by an open screen once it has drawn itself (the gallery), not by the HUD. */
+    static volatile boolean captureFromScreen;
+
+    /** Called by our screens at the end of drawing. */
+    public static void screenRendered(Minecraft mc) {
+        if (captureFromScreen) onFrameRendered(mc);
+    }
     private static volatile boolean worldReady;
     private static int framesInWindow;
     private static int currentWindow = -1;
@@ -311,6 +318,35 @@ public final class SelfTest {
                         if (m != null && t >= 6) m.sleepStyle = style;
                     }, new Window(30, 58, 2, 0.4f)));
         }
+        // The animation gallery, opened with the command: a few entries from different categories
+        // on the preview dummy.
+        String[][] galleryShots = {{"sword_draw", "8"}, {"sprint", "45"}, {"sleep_face_down", "70"}, {"emote_dance", "95"},
+                {"menu_think", "120"}, {"doze", "145"}, {"land_sword", "175"}, {"swim", "210"}};
+        Window[] galleryWindows = new Window[galleryShots.length];
+        for (int i = 0; i < galleryShots.length; i++) {
+            int at = Integer.parseInt(galleryShots[i][1]);
+            galleryWindows[i] = new Window(at + 8, at + 22, 2, 0.25f);
+        }
+        SCENARIOS.add(new Scenario("79_gallery", 236, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> {
+                    if (t == 4) {
+                        captureFromScreen = true;
+                        net.minecraftforge.client.ClientCommandHandler.runCommand("kinetrix menu");
+                    }
+                    if (t == 7 && !(mc.screen instanceof dev.mcreload.anim.client.gallery.GalleryScreen)) {
+                        McReloadAnim.LOG.warn("[kinetrix] self-test: /kinetrix menu did not open the gallery");
+                        mc.setScreen(new dev.mcreload.anim.client.gallery.GalleryScreen(null));
+                    }
+                    for (String[] shot : galleryShots) {
+                        if (t == Integer.parseInt(shot[1]) && mc.screen instanceof dev.mcreload.anim.client.gallery.GalleryScreen gs) {
+                            gs.select(dev.mcreload.anim.client.gallery.Demos.byId(shot[0]));
+                        }
+                    }
+                    if (t == 236) {
+                        captureFromScreen = false;
+                        mc.setScreen(null);
+                    }
+                }, galleryWindows));
         // One swing at the air in a jump, then walking: the guard is held on the move, then fades.
         SCENARIOS.add(new Scenario("08g_sword_guard_walk", 110, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
                 (mc, t) -> {
