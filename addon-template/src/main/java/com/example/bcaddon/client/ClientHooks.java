@@ -1,6 +1,7 @@
 package com.example.bcaddon.client;
 
 import com.example.bcaddon.AddonConfig;
+import com.example.bcaddon.BcAddon;
 import com.example.bcaddon.combat.Heavy;
 import net.bettercombat.api.client.AttackRangeExtensions;
 import net.bettercombat.api.client.BetterCombatClientEvents;
@@ -35,6 +36,8 @@ final class ClientHooks {
         AttackRangeExtensions.register(context -> new AttackRangeExtensions.Modifier(
                 Heavy.isHeld(context.player()) ? AddonConfig.HEAVY_RANGE_BONUS.get() : 0.0,
                 AttackRangeExtensions.Operation.ADD));
+
+        BcAddon.LOG.info("[bcaddon] Better Combat client hooks registered");
     }
 
     private ClientHooks() {}

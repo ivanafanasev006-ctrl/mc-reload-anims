@@ -16,11 +16,16 @@ import net.minecraftforge.fml.common.Mod;
 /** Forge-bus client events: our keys each tick. */
 @Mod.EventBusSubscriber(modid = BcAddon.MODID, value = Dist.CLIENT)
 public final class ClientEvents {
+    private static boolean resourcesChecked;
 
     @SubscribeEvent
     public static void onTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
+        if (!resourcesChecked && mc.getOverlay() == null) {
+            resourcesChecked = true;
+            MoveLayer.logLoaded();
+        }
         if (mc.player == null || mc.getConnection() == null) return;
 
         boolean heavy = ClientSetup.HEAVY.isDown() && mc.screen == null;

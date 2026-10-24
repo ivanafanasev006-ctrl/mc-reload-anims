@@ -14,6 +14,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -31,6 +32,12 @@ public final class MoveLayer {
 
     static void register() {
         PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(LAYER, PRIORITY, player -> new ModifierLayer<>());
+    }
+
+    /** Once the game has loaded its resources: which of our animations loaded (a bad JSON is skipped with an error). */
+    static void logLoaded() {
+        Map<String, KeyframeAnimation> ours = PlayerAnimationRegistry.getModAnimations(BcAddon.MODID);
+        BcAddon.LOG.info("[bcaddon] player animations: {}", ours.isEmpty() ? "none" : String.join(", ", ours.keySet()));
     }
 
     /** Plays an animation from assets/<namespace>/player_animation (id = namespace:name in the file). */

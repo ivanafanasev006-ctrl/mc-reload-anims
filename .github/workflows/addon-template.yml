@@ -1,8 +1,9 @@
 name: Addon template
 
-# Builds the Better Combat addon template (addon-template/, its own Gradle build) and starts a
-# dedicated server with Better Combat, Cloth Config, playerAnimator and the addon, to check that the
-# mixin applies and the weapon_extras data loads.
+# Builds the Better Combat addon template (addon-template/, its own Gradle build), starts a
+# dedicated server with Better Combat, Cloth Config, playerAnimator and the addon (the mixin applies,
+# the weapon_extras data loads), then the client up to the main menu (keys, Better Combat client
+# hooks, the animation layer and its JSON).
 on:
   push:
     paths: ['addon-template/**', '.github/workflows/addon-template.yml']
@@ -36,7 +37,7 @@ jobs:
         run: |
           mkdir -p addon-template/run
           echo 'eula=true' > addon-template/run/eula.txt
-          printf 'online-mode=false\nlevel-type=minecraft\\:flat\ngenerate-structures=false\n' > addon-template/run/server.properties
+          printf 'online-mode=false\n' > addon-template/run/server.properties
           ./gradlew -p addon-template runServer --no-daemon > server.log 2>&1 &
           for i in $(seq 1 160); do
             grep -qE 'Done \(|Crash report saved|Mixin apply.*failed|InvalidInjectionException' server.log && break
@@ -51,3 +52,23 @@ jobs:
           grep -q '\[bcaddon\] Hooked into net.bettercombat.logic.PlayerAttackHelper' server.log || { echo 'mixin target not loaded'; exit 1; }
           grep -q '\[bcaddon\] weapon_extras: 3 files' server.log || { echo 'weapon_extras not loaded'; exit 1; }
           echo 'OK: server started, mixin applied, data loaded'
+
+      - name: Client smoke test (main menu)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 > /dev/null
+          xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew -p addon-template runClient --no-daemon > client.log 2>&1 &
+          for i in $(seq 1 160); do
+            grep -qE '\[bcaddon\] player animations|Crash report saved|Mixin apply.*failed' client.log && break
+            sleep 5
+          done
+          sleep 3
+          pkill -f java || true
+          echo "----- addon and error lines"
+          grep -E 'bcaddon|payer animation|ERROR|Exception' client.log | grep -v 'DEBUG' | head -80
+          echo "-----"
+          grep -q '\[bcaddon\] Better Combat client hooks registered' client.log || { echo 'client hooks not registered'; tail -80 client.log; exit 1; }
+          grep -q '\[bcaddon\] player animations: guard' client.log || { echo 'guard animation not loaded'; exit 1; }
+          echo 'OK: client reached the menu with the hooks and the animation'
