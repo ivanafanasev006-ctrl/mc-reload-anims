@@ -50,36 +50,7 @@ jobs:
 
       - name: Modpack mod list
         if: ${{ env.PACK != '' }}
-        run: |
-          set -u
-          SLUG="$PACK"
-          ct() { curl -sS --retry 4 --retry-all-errors --retry-delay 3 -A "$UA" "$@"; }
-          S=$(ct "https://api.curse.tools/v1/cf/mods/search?gameId=432&classId=4471&slug=$SLUG")
-          PID=$(echo "$S" | jq -r '.data[0].id // empty')
-          echo "pack $SLUG -> project $PID"
-          echo "$S" | jq -r '.data[0].latestFilesIndexes[]? | "\(.fileId) \(.gameVersion) \(.filename)"' | head -20
-          FILES=$(ct "https://api.curse.tools/v1/cf/mods/$PID/files?pageSize=50")
-          echo "$FILES" | jq -r '.data[] | "\(.id) \(.fileDate) \(.displayName) server=\(.isServerPack) parent=\(.parentProjectFileId // "")"' | head -30
-          FID=$(echo "$FILES" | jq -r '[.data[] | select(.isServerPack != true)] | sort_by(.fileDate) | last | .id')
-          echo "newest client file: $FID"
-          ct -L -o pack.zip "https://www.curseforge.com/api/v1/mods/$PID/files/$FID/download" || ct -L -o pack.zip "$(echo "$FILES" | jq -r --argjson f "$FID" '.data[] | select(.id == $f) | .downloadUrl')"
-          unzip -q -o pack.zip -d pack
-          jq '{name, version, minecraft}' pack/manifest.json
-          jq -c '[.files[].projectID]' pack/manifest.json > ids.json
-          jq -c '[.files[].fileID]' pack/manifest.json > fids.json
-          ct -X POST -H 'Content-Type: application/json' -d "{\"modIds\": $(cat ids.json)}" "https://api.curse.tools/v1/cf/mods" > mods.json
-          ct -X POST -H 'Content-Type: application/json' -d "{\"fileIds\": $(cat fids.json)}" "https://api.curse.tools/v1/cf/mods/files" > files.json
-          echo "=== MODS ($(jq '.files | length' pack/manifest.json)) ==="
-          jq -r --slurpfile f files.json '
-            .data | sort_by(.name) | .[] as $m
-            | ($f[0].data | map(select(.modId == $m.id)) | .[0]) as $file
-            | "\($m.id)\t\($file.id // "")\t\($m.slug)\t\($m.name)\t\($file.fileName // "")\t\($m.summary | gsub("[\n\t]"; " "))"' mods.json
-          echo "=== OVERRIDES ==="
-          find pack/overrides -maxdepth 3 | sort | head -400
-          echo "=== combat-related configs ==="
-          for f in $(find pack/overrides -type f | grep -iE 'bettercombat|better_combat|combat|parry|dodge|stamina|epicfight|roll|weapon' | head -60); do
-            echo "----- $f"; head -c 6000 "$f"; echo
-          done
+        run: python3 .github/research/modpack.py
 
       - name: Jar contents
         if: ${{ env.JARS != '' }}
