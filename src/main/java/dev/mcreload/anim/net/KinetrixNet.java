@@ -56,12 +56,12 @@ public final class KinetrixNet {
         }
     }
 
-    /** Tells everyone who can see {@code sender} (and has Kinetrix) about them; remembers STATE, EMOTE and SIT for late viewers. */
+    /** Tells everyone who can see {@code sender} (and has Kinetrix) about them; remembers STATE, EMOTE, SIT and SLEEP for late viewers. */
     static void relay(ServerPlayer sender, byte type, int value) {
         AnimPacket out = new AnimPacket(sender.getId(), type, value);
-        if (type == AnimPacket.STATE || type == AnimPacket.EMOTE || type == AnimPacket.SIT) {
-            int[] last = LAST.computeIfAbsent(sender.getUUID(), u -> new int[]{0, -1, 0});
-            last[type == AnimPacket.STATE ? 0 : type == AnimPacket.EMOTE ? 1 : 2] = value;
+        if (type == AnimPacket.STATE || type == AnimPacket.EMOTE || type == AnimPacket.SIT || type == AnimPacket.SLEEP) {
+            int[] last = LAST.computeIfAbsent(sender.getUUID(), u -> new int[]{0, -1, 0, -1});
+            last[type == AnimPacket.STATE ? 0 : type == AnimPacket.EMOTE ? 1 : type == AnimPacket.SIT ? 2 : 3] = value;
         }
         // Everyone near enough to see this player, who has Kinetrix (others never get our packets).
         double range = Math.max(64.0, sender.server.getPlayerList().getViewDistance() * 16.0);
@@ -108,6 +108,9 @@ public final class KinetrixNet {
         }
         if (last[2] > 0) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> viewer), new AnimPacket(tracked.getId(), AnimPacket.SIT, last[2]));
+        }
+        if (last[3] >= 0 && tracked.isSleeping()) {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> viewer), new AnimPacket(tracked.getId(), AnimPacket.SLEEP, last[3]));
         }
     }
 

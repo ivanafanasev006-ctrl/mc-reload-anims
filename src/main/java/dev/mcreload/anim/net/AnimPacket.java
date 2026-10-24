@@ -27,10 +27,18 @@ public record AnimPacket(int entityId, byte type, int value) {
     public static final byte CRAWL = 4;
     /** Sitting (key X): 0 = standing, 1..3 = sitting in that style. Applied by the server and relayed. */
     public static final byte SIT = 5;
-    public static final byte TYPES = 6;
+    /** Lay down in a bed: how (value = sleep style). */
+    public static final byte SLEEP = 6;
+    public static final byte TYPES = 7;
 
     public static final int BIT_FORWARD = 1, BIT_BACK = 2, BIT_LEFT = 4, BIT_RIGHT = 8, BIT_JUMP = 16,
             BIT_SNEAK = 32, BIT_USE = 64, BIT_TARGET_BLOCK = 128, BIT_ATTACK = 256;
+    /** Two bits of STATE: the kind of menu the player has open (MotionState.SCREEN_*). */
+    public static final int SCREEN_SHIFT = 9, SCREEN_MASK = 3;
+
+    public static int screenPose(int stateBits) {
+        return (stateBits >> SCREEN_SHIFT) & SCREEN_MASK;
+    }
 
     public static void encode(AnimPacket p, FriendlyByteBuf buf) {
         buf.writeVarInt(p.entityId);
@@ -55,6 +63,7 @@ public record AnimPacket(int entityId, byte type, int value) {
             case LAND -> value >= 0 && value < 8;
             case CRAWL -> value == 0 || value == 1;
             case SIT -> value >= 0 && value <= Posture.SIT_STYLES;
+            case SLEEP -> value >= 0 && value < 8;
             default -> false;
         };
     }

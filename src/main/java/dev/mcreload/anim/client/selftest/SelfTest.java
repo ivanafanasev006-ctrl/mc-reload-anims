@@ -249,6 +249,52 @@ public final class SelfTest {
                     if (m != null && t >= 20 && i < drawPhases.length)
                         m.drawStart = (mc.player.tickCount + 0.5f) / 20f - drawPhases[i] * dev.mcreload.anim.client.rig.MotionState.DRAW_SECONDS;
                 }, drawHolds));
+        // Sprinting with a sword, then with one in each hand: the sword arms held out to the side
+        // and back, the blades as in the guard.
+        SCENARIOS.add(new Scenario("02s_sword_sprint", 40, sp -> place(sp, -6, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)),
+                (mc, t) -> move(mc, t < 38, t < 38, false, false), new Window(18, 36, 4, 0.08f)));
+        SCENARIOS.add(new Scenario("02t_dual_sword_sprint", 40, sp -> { place(sp, -6, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD)); sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD)); },
+                (mc, t) -> move(mc, t < 38, t < 38, false, false), new Window(18, 36, 4, 0.08f)));
+        // Menus: thinking in the inventory and behind the pause menu (the game is paused there:
+        // the animation clock runs on), rummaging in a chest, a tap and a talk with a villager.
+        SCENARIOS.add(new Scenario("77a_screen_inventory", 50, sp -> place(sp, 2, Y, 0, -90, none),
+                (mc, t) -> {
+                    if (t == 10) mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
+                    if (t == 50) mc.setScreen(null);
+                }, new Window(18, 48, 3, 0.3f)));
+        SCENARIOS.add(new Scenario("77b_screen_pause", 50, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
+                (mc, t) -> {
+                    if (t == 10) mc.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true));
+                    if (t == 50) mc.setScreen(null);
+                }, new Window(18, 48, 3, 0.3f)));
+        SCENARIOS.add(new Scenario("77c_screen_chest", 60, sp -> { place(sp, 2, Y, 0, -90, none); sp.serverLevel().setBlock(new BlockPos(4, Y, 0), Blocks.CHEST.defaultBlockState(), 3); },
+                (mc, t) -> {
+                    BlockPos chest = new BlockPos(4, Y, 0);
+                    if (t == 10) mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND,
+                            new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(chest), Direction.WEST, chest, false));
+                    if (t == 58) mc.player.closeContainer();
+                    if (t == 60) onServer(mc, sp -> sp.serverLevel().setBlock(chest, Blocks.AIR.defaultBlockState(), 3));
+                }, new Window(18, 56, 4, 0.25f)));
+        SCENARIOS.add(new Scenario("77d_screen_trade", 150, SelfTest::villagerToTrade,
+                (mc, t) -> {
+                    if (t == 10) {
+                        var v = mc.level.getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class, mc.player.getBoundingBox().inflate(6));
+                        if (!v.isEmpty()) mc.gameMode.interact(mc.player, v.get(0), InteractionHand.MAIN_HAND);
+                    }
+                    if (t == 148) mc.player.closeContainer();
+                    if (t == 150) onServer(mc, sp -> sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class,
+                            sp.getBoundingBox().inflate(8)).forEach(net.minecraft.world.entity.Entity::discard));
+                }, new Window(11, 30, 4, 0.12f), new Window(34, 146, 8, 0.6f)));
+        // Sleeping: each of the three ways (a new one is picked every time you lie down).
+        String[] sleeps = {"starfish", "face_down", "hands_behind"};
+        for (int k = 0; k < sleeps.length; k++) {
+            final int style = k;
+            SCENARIOS.add(new Scenario("78" + (char) ('a' + k) + "_sleep_" + sleeps[k], 60, SelfTest::goToBed,
+                    (mc, t) -> {
+                        var m = localMotion(mc);
+                        if (m != null && t >= 6) m.sleepStyle = style;
+                    }, new Window(30, 58, 2, 0.4f)));
+        }
         // One swing at the air in a jump, then walking: the guard is held on the move, then fades.
         SCENARIOS.add(new Scenario("08g_sword_guard_walk", 110, sp -> place(sp, 2, Y, 0, -90, new ItemStack(Items.IRON_SWORD)),
                 (mc, t) -> {
@@ -766,6 +812,29 @@ public final class SelfTest {
         boat.setYRot(-90);
         sp.serverLevel().addFreshEntity(boat);
         sp.startRiding(boat, true);
+    }
+
+    /** Run something on the server with the test player. */
+    private static void onServer(Minecraft mc, java.util.function.Consumer<ServerPlayer> action) {
+        IntegratedServer srv = mc.getSingleplayerServer();
+        if (srv == null) return;
+        srv.execute(() -> action.accept(srv.getPlayerList().getPlayers().get(0)));
+    }
+
+    /** A farmer (so it has trades) standing still two blocks in front of the player. */
+    private static void villagerToTrade(ServerPlayer sp) {
+        place(sp, 2, Y, 0, -90, ItemStack.EMPTY);
+        ServerLevel level = sp.serverLevel();
+        level.getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class, sp.getBoundingBox().inflate(8))
+                .forEach(net.minecraft.world.entity.Entity::discard);
+        net.minecraft.world.entity.npc.Villager v = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+        if (v == null) return;
+        v.setVillagerData(v.getVillagerData().setProfession(net.minecraft.world.entity.npc.VillagerProfession.FARMER).setLevel(1));
+        v.moveTo(4.5, Y, 0.5, 90, 0);
+        v.setYHeadRot(90);
+        v.setYBodyRot(90);
+        v.setNoAi(true);
+        level.addFreshEntity(v);
     }
 
     /** Put an item in the player's main hand on the server (as picking it in the hotbar would). */

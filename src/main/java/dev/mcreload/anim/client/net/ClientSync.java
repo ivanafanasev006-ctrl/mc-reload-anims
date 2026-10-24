@@ -62,6 +62,7 @@ public final class ClientSync {
             if (mc.options.keyUse.isDown()) bits |= AnimPacket.BIT_USE;
             if (mc.options.keyAttack.isDown()) bits |= AnimPacket.BIT_ATTACK;
         }
+        bits |= dev.mcreload.anim.client.ScreenPoses.of(mc.screen) << AnimPacket.SCREEN_SHIFT;
         if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK) bits |= AnimPacket.BIT_TARGET_BLOCK;
         // On change, and now and then anyway (cheap) so nothing stays stale.
         if (bits != lastBits || p.tickCount - lastSendTick > 100) {

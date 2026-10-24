@@ -156,7 +156,24 @@ final class LocomotionModule implements AnimModule {
         boolean blade = m.holdingBlade;
         float armSwing = 1.1f * amt;
         PartPose main = m.mainRight ? f.rightArm() : f.leftArm();
-        if (blade) {
+        // A one-handed sword (or one in each hand): run like a swordsman, low, the sword arm held
+        // out to the side and back, the blade as in the guard; the other arm pumps (or trails a
+        // second sword the same way).
+        float trail = m.oneHandSword ? 1f : 0f;
+        if (m.oneHandSword) {
+            float hd = m.mainRight ? 1f : -1f;
+            PartPose off = m.mainRight ? f.leftArm() : f.rightArm();
+            trailArm(main, s, hd, aw, ls);
+            m.itemTiltTarget = Math.max(m.itemTiltTarget, SWORD_RUN_TILT * aw);
+            if (m.dualSwords) {
+                trailArm(off, s, -hd, aw, ls + PI);
+                m.itemTiltOffTarget = Math.max(m.itemTiltOffTarget, SWORD_RUN_TILT * aw);
+            } else {
+                float oc = m.mainRight ? c : -c;
+                armPose(off, oc * armSwing, -hd * deg(5f), aw);
+                off.bend += s.elbow() * deg(sn * hd > 0f ? 10f : 45f) * aw;
+            }
+        } else if (blade) {
             // With a sword: the sword arm swings less and keeps the blade pointing forward-down,
             // the free arm pumps as usual.
             float mc = m.mainRight ? -c : c;
@@ -175,15 +192,33 @@ final class LocomotionModule implements AnimModule {
             f.leftArm().bend += s.elbow() * deg(10f + 35f * (1f - rEl)) * aw;
         }
 
-        Rigging.twistUpper(f, deg(-40f) * c * w * arms);
+        // With swords held out the shoulders hardly twist; the swordsman runs lower.
+        Rigging.twistUpper(f, deg(-40f) * c * w * arms * (1f - 0.75f * trail));
         // Leaning into the run: the whole body a little, the chest more.
         f.body().rx -= deg(12f) * amt * w;
         f.head().rx -= deg(12f) * amt * w;
-        Rigging.leanTorso(f, s, deg(12f + 8f * Mth.cos(ls * 2f)) * w);
+        Rigging.leanTorso(f, s, deg(12f + 14f * trail + 8f * Mth.cos(ls * 2f)) * w);
+        f.head().rx -= deg(10f) * trail * w;
         f.body().py += px(1.5f) * Mth.cos(ls * 2f + 0.6f) * w;
         // Into turns with the shoulders.
         float yaw = AngleMath.clamp(m.turn.v * 0.3f, -10f, 10f);
         f.torso().rz -= deg(yaw) * 0.5f * w;
+    }
+
+    /** The blade's turn in the hand while running with it: as in the guard. */
+    private static final float SWORD_RUN_TILT = 65f * Mth.DEG_TO_RAD;
+
+    /**
+     * A sword arm while running: out to the side and back, a little below the shoulder, elbow
+     * nearly straight, bobbing slightly with each stride.
+     *
+     * @param hd 1 = the right arm, -1 = the left
+     */
+    private static void trailArm(PartPose arm, Signs s, float hd, float w, float ls) {
+        if (w <= 0.001f) return;
+        float bob = Mth.cos(ls * 1.6f);
+        arm.override(deg(38f) + deg(4f) * bob, 0f, hd * (deg(62f) + deg(3f) * bob), w);
+        arm.overrideBend(s.elbow() * deg(14f), w);
     }
 
     /**

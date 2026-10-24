@@ -101,6 +101,8 @@ public final class MotionState {
     public float itemTiltDirect = Float.NaN, itemTiltOffDirect = Float.NaN;
     /** The main-hand weapon takes both hands (Better Combat two-handed): see Weapons#isTwoHanded. */
     public boolean twoHandedWeapon;
+    /** A one-handed sword in the main hand. */
+    public boolean oneHandSword;
     /** A one-handed sword in each hand. */
     public boolean dualSwords;
     /** 0..1 this frame: both hands are fixed on something (set by modules, cleared every frame). */
@@ -139,6 +141,28 @@ public final class MotionState {
     public final Smooth rideW = new Smooth(6f), flyW = new Smooth(5f), elytraW = new Smooth(6f);
     public final Smooth guardW = new Smooth(6f);
     public final Smooth sleepW = new Smooth(4f);
+    /** How this player sleeps this time (SLEEP_*), chosen anew every time they lie down. */
+    public int sleepStyle = -1;
+    private boolean wasSleeping;
+    /** The sleep style their own client chose, or -1 (then everyone works out the same one). */
+    private int remoteSleep = -1;
+    public static final int SLEEP_STARFISH = 0, SLEEP_FACE_DOWN = 1, SLEEP_HANDS_BEHIND = 2, SLEEP_STYLES = 3;
+
+    /**
+     * In a menu: thinking it over (inventory, crafting table, pause menu and other menus),
+     * rummaging (chests, barrels, furnaces, any other container), talking (trading with a villager).
+     */
+    public static final int SCREEN_NONE = 0, SCREEN_THINK = 1, SCREEN_RUMMAGE = 2, SCREEN_TRADE = 3;
+    public int screenPose;
+    /** When the current menu pose started. */
+    public float screenStart = -100f;
+    public final Smooth thinkW = new Smooth(5f), rummageW = new Smooth(5f), tradeW = new Smooth(5f);
+    /**
+     * Seconds the game spent paused (single player menus): the animation clock keeps running
+     * through it, so you can see yourself think behind the pause menu.
+     */
+    private float pausedFor;
+    private long pauseNanos;
     /** Holding a melee weapon and ready to fight (standing / walking, recently attacked). */
     /**
      * Sword guard: a sword in hand, for a couple of seconds after drawing it or after any swing
@@ -537,7 +561,14 @@ public final class MotionState {
 
     /** Called every rendered frame before the modules run. */
     public void frame(float pt) {
-        float now = (player.tickCount + pt) / 20f;
+        if (isLocal() && net.minecraft.client.Minecraft.getInstance().isPaused()) {
+            long n = System.nanoTime();
+            if (pauseNanos != 0L) pausedFor += Math.min((n - pauseNanos) / 1e9f, 0.1f);
+            pauseNanos = n;
+        } else {
+            pauseNanos = 0L;
+        }
+        float now = (player.tickCount + pt) / 20f + pausedFor;
         if (Float.isNaN(lastTime) || now < lastTime - 1f) {
             dt = 0f;
             lastTime = now;
@@ -654,7 +685,8 @@ public final class MotionState {
         itemTiltDirect = Float.NaN;
         itemTiltOffDirect = Float.NaN;
         twoHandedWeapon = Weapons.isTwoHanded(player.getMainHandItem());
-        dualSwords = Weapons.isOneHandedSword(player.getMainHandItem()) && Weapons.isOneHandedSword(player.getOffhandItem());
+        oneHandSword = Weapons.isOneHandedSword(player.getMainHandItem());
+        dualSwords = oneHandSword && Weapons.isOneHandedSword(player.getOffhandItem());
         armsHeld = 0f;
         holdingBlade = Weapons.isMeleeWeapon(player.getMainHandItem());
         speed.to(horizontalSpeed, dt);
@@ -722,13 +754,15 @@ public final class MotionState {
         boolean afterSwing = time - attackTime < 0.6f + GUARD_HOLD;
         boolean afterDraw = time - drawStart < DRAW_SECONDS + GUARD_HOLD;
         readyW.to(swordInHand && (afterSwing || afterDraw) && !blocked && !swimming && !crawling && !sitting
-                && sprintW.v < 0.5f && (!player.isUsingItem() || player.isBlocking()) ? 1f : 0f, dt);
+                && sprintW.v < 0.5f && (!player.isUsingItem() || player.isBlocking()) && screenPose == SCREEN_NONE ? 1f : 0f, dt);
         twoHandW.to(Cfg.twoHanded && weapon && offItem.isEmpty() ? 1f : 0f, dt);
         boolean crossInHand = mainItem.getItem() instanceof CrossbowItem || offItem.getItem() instanceof CrossbowItem;
         boolean charged = CrossbowItem.isCharged(mainItem) || CrossbowItem.isCharged(offItem);
         crossCarryW.to(crossInHand && !charged && !player.isUsingItem() && !blocked ? 1f : 0f, dt);
         crossAimW.to(charged && !blocked ? 1f : 0f, dt);
         sleepW.to(player.isSleeping() ? 1f : 0f, dt);
+        updateSleepStyle();
+        updateScreenPose(blocked || swimming || crawling || sitting || climbing || !ground, dt);
 
         boolean spearUse = use == UseAnim.SPEAR;
         if (wasSpearUse && !spearUse && usePull >= 0.45f) spearThrowStart = time;
@@ -740,7 +774,7 @@ public final class MotionState {
         updateIdle(ground && !blocked && !swimming && !crawling && !sitting && !player.isInWater() && !climbing && !player.isUsingItem()
                 && !player.isCrouching() && horizontalSpeed < 0.01f && time - slashStart > 2f
                 && time - swapStart > 1f && player.hurtTime == 0 && readyW.v < 0.05f
-                && time - drawStart > DRAW_SECONDS + GUARD_HOLD, dt);
+                && time - drawStart > DRAW_SECONDS + GUARD_HOLD && screenPose == SCREEN_NONE, dt);
         updateEmote(dt);
 
         boolean fists = mainItem.isEmpty();
@@ -844,6 +878,11 @@ public final class MotionState {
                 remoteSynced = true;
                 remoteSit = value;
             }
+            case dev.mcreload.anim.net.AnimPacket.SLEEP -> {
+                remoteSynced = true;
+                remoteSleep = value;
+                if (player.isSleeping()) sleepStyle = Math.floorMod(value, SLEEP_STYLES);
+            }
             case dev.mcreload.anim.net.AnimPacket.LAND -> {
                 remoteSynced = true;
                 pendingLand = value;
@@ -868,6 +907,48 @@ public final class MotionState {
         }
         pendingLand = -1;
         return true;
+    }
+
+    /**
+     * A new way of sleeping every time you lie down: your own client picks one (never the same
+     * twice running) and tells the others; a player whose client does not say gets one worked
+     * out from who they are and where the bed is, the same on every screen.
+     */
+    private void updateSleepStyle() {
+        boolean sleeping = player.isSleeping();
+        if (sleeping && !wasSleeping) {
+            if (isLocal()) {
+                if (sleepStyle < 0) {
+                    sleepStyle = rng.nextInt(SLEEP_STYLES);
+                } else {
+                    int pick = rng.nextInt(SLEEP_STYLES - 1);
+                    sleepStyle = pick >= sleepStyle ? pick + 1 : pick;
+                }
+                dev.mcreload.anim.client.net.ClientSync.event(player, dev.mcreload.anim.net.AnimPacket.SLEEP, sleepStyle);
+            } else if (remoteSleep >= 0) {
+                sleepStyle = Math.floorMod(remoteSleep, SLEEP_STYLES);
+            } else {
+                long h = player.getUUID().getLeastSignificantBits()
+                        ^ player.getSleepingPos().map(net.minecraft.core.BlockPos::asLong).orElse(0L) * 0x9E3779B97F4A7C15L;
+                sleepStyle = (int) Math.floorMod(h ^ (h >>> 29), (long) SLEEP_STYLES);
+            }
+        }
+        wasSleeping = sleeping;
+    }
+
+    /** Which menu pose: your own open menu, or another player's as their client reports it. */
+    private void updateScreenPose(boolean busy, float dt) {
+        int pose;
+        if (isLocal()) pose = dev.mcreload.anim.client.ScreenPoses.of(net.minecraft.client.Minecraft.getInstance().screen);
+        else pose = remoteDriven() ? dev.mcreload.anim.net.AnimPacket.screenPose(remoteBits) : SCREEN_NONE;
+        if (busy || !Cfg.idle) pose = SCREEN_NONE;
+        if (pose != screenPose) {
+            screenPose = pose;
+            screenStart = time;
+        }
+        thinkW.to(pose == SCREEN_THINK ? 1f : 0f, dt);
+        rummageW.to(pose == SCREEN_RUMMAGE ? 1f : 0f, dt);
+        tradeW.to(pose == SCREEN_TRADE ? 1f : 0f, dt);
     }
 
     /** Your own landing choice, for the others to see. */
