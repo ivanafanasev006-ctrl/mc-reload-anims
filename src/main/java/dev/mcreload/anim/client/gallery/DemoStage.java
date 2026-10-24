@@ -51,7 +51,9 @@ public final class DemoStage {
     public DemoStage() {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer me = mc.player;
+        Object irons = dev.mcreload.anim.compat.IronsSpellsCompat.adjustment();
         dummy = new RemotePlayer(mc.level, me.getGameProfile());
+        dev.mcreload.anim.compat.IronsSpellsCompat.restoreAdjustment(irons);
         dummy.setMainArm(me.getMainArm());
         dummy.getEntityData().set(PlayerAccessor.kinetrix$modelParts(), me.getEntityData().get(PlayerAccessor.kinetrix$modelParts()));
         for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {

@@ -107,6 +107,37 @@ public final class IronsSpellsCompat {
         return info;
     }
 
+    private static java.lang.reflect.Field adjustment;
+    private static boolean adjustmentLooked;
+
+    /**
+     * Iron's keeps the arm-aiming modifier of the last player built in a static field and fades
+     * the caster's arms out through it. Building the gallery's dummy player would take it over:
+     * read it before, put it back after (see {@link #restoreAdjustment}).
+     */
+    public static Object adjustment() {
+        if (!ModCompat.ironsSpells) return null;
+        try {
+            if (!adjustmentLooked) {
+                adjustmentLooked = true;
+                adjustment = Class.forName("io.redspace.ironsspellbooks.render.animation.IronsAdjustmentModifier").getField("INSTANCE");
+            }
+            return adjustment == null ? null : adjustment.get(null);
+        } catch (Throwable t) {
+            adjustment = null;
+            return null;
+        }
+    }
+
+    public static void restoreAdjustment(Object saved) {
+        if (adjustment == null || saved == null) return;
+        try {
+            adjustment.set(null, saved);
+        } catch (Throwable ignored) {
+            // older Iron's: nothing to put back
+        }
+    }
+
     private static String schoolName(Object school) {
         if (school == null) return "";
         try {
