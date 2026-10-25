@@ -105,6 +105,7 @@ public final class AddonGameTests {
         ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "bcaddon-test"));
         Vec3 at = helper.absoluteVec(new Vec3(1.5, 1, 0.5));
         player.moveTo(at.x, at.y, at.z, yaw, 0f);
+        player.setYHeadRot(yaw); // the look is the head's: a real player's head follows the camera
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
         return player;
     }
