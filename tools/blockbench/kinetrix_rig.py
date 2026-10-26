@@ -626,6 +626,7 @@ class Model:
                 g.update({k: v for k, v in it.items() if k != "children"})
                 self.groups[g["uuid"]] = dict(name=g.get("name"), origin=np.array(g.get("origin", [0, 0, 0]), float),
                                               rotation=np.array(g.get("rotation", [0, 0, 0]), float), parent=parent,
+                                              visible=g.get("visibility", True),
                                               children=[c if isinstance(c, str) else c.get("uuid") for c in it.get("children", [])])
                 walk(it.get("children", []), g["uuid"])
 
@@ -903,6 +904,17 @@ def item_choice(model, touched):
     return out
 
 
+def held_items(model, items):
+    """What the animation is meant to be held with, per hand: the animated item, else the one shown in Blockbench."""
+    out = {}
+    for side in ("right", "left"):
+        name = items.get(side) or next((n for n in ITEMS if ITEMS[n]["side"] == side and n in model.by_name
+                                        and model.groups[model.by_name[n]]["visible"]), None)
+        if name:
+            out[side] = ITEMS[name]["shape"]
+    return out
+
+
 def emote_json(name, frames, length_ticks, loop, author):
     moves = []
     for tick, values in frames:
@@ -952,6 +964,7 @@ def convert(path, out_dir, namespace=None, quiet=False):
             if err > worst:
                 worst, worst_at = err, f"{where} at tick {tick}"
         data = emote_json(name, frames, ticks, anim.get("loop", "once"), "Blockbench")
+        data["kinetrix_items"] = held_items(model, items)  # not read by playerAnimator; the self-test hands these out
         fn = os.path.join(out_dir, name + ".json")
         with open(fn, "w") as f:
             json.dump(data, f, indent=1)

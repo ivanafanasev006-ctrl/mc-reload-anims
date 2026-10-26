@@ -45,6 +45,13 @@ jobs:
           python3 tools/blockbench/kinetrix_rig.py make build/bbanims/kinetrix_rig.bbmodel
           python3 tools/blockbench/kinetrix_rig.py convert build/bbanims/kinetrix_rig.bbmodel build/bbanims/json
           python3 tools/blockbench/kinetrix_rig.py preview build/bbanims/kinetrix_rig.bbmodel build/bbanims/preview --frames 4
+          # Animations uploaded to tools/blockbench/animations play too (a broken file only skips itself).
+          for f in tools/blockbench/animations/*.bbmodel; do
+            [ -f "$f" ] || continue
+            python3 tools/blockbench/kinetrix_rig.py convert "$f" build/bbanims/json \
+              && python3 tools/blockbench/kinetrix_rig.py preview "$f" build/bbanims/preview --frames 4 \
+              || echo "::warning::$f could not be converted"
+          done
 
       - name: Run Minecraft with the automated test
         env:

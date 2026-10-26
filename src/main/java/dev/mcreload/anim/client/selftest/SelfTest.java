@@ -537,17 +537,22 @@ public final class SelfTest {
         for (java.io.File file : files) {
             String name = file.getName().substring(0, file.getName().length() - 5);
             int length;
+            boolean bow, offSword;
             try (var reader = new java.io.FileReader(file)) {
-                length = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("emote").get("endTick").getAsInt();
+                var json = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
+                length = json.getAsJsonObject("emote").get("endTick").getAsInt();
+                // What the converter says the animation is held with (the item groups used in Blockbench).
+                var items = json.has("kinetrix_items") ? json.getAsJsonObject("kinetrix_items") : new com.google.gson.JsonObject();
+                bow = items.has("right") && "bow".equals(items.get("right").getAsString());
+                offSword = items.has("left") && "sword".equals(items.get("left").getAsString());
             } catch (Exception e) {
                 McReloadAnim.LOG.warn("[kinetrix] self-test: cannot read {}: {}", file, e.toString());
                 continue;
             }
-            boolean twoSwords = name.contains("guard");
             SCENARIOS.add(new Scenario("99_bb_" + name, length + 30,
                     sp -> {
-                        place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD));
-                        if (twoSwords) sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD));
+                        place(sp, 2, Y, 0, -90, new ItemStack(bow ? Items.BOW : Items.DIAMOND_SWORD));
+                        if (offSword) sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD));
                     },
                     (mc, t) -> {
                         move(mc, false, false, false, false);
