@@ -519,7 +519,63 @@ public final class SelfTest {
                         if (t == 16) { var r = dev.mcreload.anim.client.rig.RigRegistry.get(mc.player); if (r != null) r.motion.playEmote(emote); }
                     }, new Window(24, 58, 3, 0.35f)));
         }
+        buildBlockbenchScenarios();
         buildCompatScenarios();
+    }
+
+    /**
+     * Animations made in Blockbench on the Kinetrix rig (tools/blockbench) and converted to
+     * playerAnimator JSON before the run (-Dmcreload.selftest.bbanims=&lt;dir&gt;). Each plays on a
+     * layer of its own above Better Combat's, the way an addon plays its moves, so the shots show
+     * what Kinetrix makes of the bends of such an animation.
+     */
+    private static void buildBlockbenchScenarios() {
+        String dir = System.getProperty("mcreload.selftest.bbanims", "");
+        java.io.File[] files = dir.isBlank() ? null : new java.io.File(dir).listFiles((d, n) -> n.endsWith(".json"));
+        if (files == null) return;
+        java.util.Arrays.sort(files);
+        for (java.io.File file : files) {
+            String name = file.getName().substring(0, file.getName().length() - 5);
+            int length;
+            try (var reader = new java.io.FileReader(file)) {
+                length = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("emote").get("endTick").getAsInt();
+            } catch (Exception e) {
+                McReloadAnim.LOG.warn("[kinetrix] self-test: cannot read {}: {}", file, e.toString());
+                continue;
+            }
+            boolean twoSwords = name.contains("guard");
+            SCENARIOS.add(new Scenario("99_bb_" + name, length + 30,
+                    sp -> {
+                        place(sp, 2, Y, 0, -90, new ItemStack(Items.DIAMOND_SWORD));
+                        if (twoSwords) sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD));
+                    },
+                    (mc, t) -> {
+                        move(mc, false, false, false, false);
+                        if (t == 1) playBlockbench(mc, null);
+                        if (t == 8) playBlockbench(mc, file);
+                    }, new Window(9, length + 12, 6, Math.max(0.1f, length / 20f / 6f))));
+        }
+    }
+
+    private static dev.kosmx.playerAnim.api.layered.ModifierLayer<dev.kosmx.playerAnim.api.layered.IAnimation> bbLayer;
+
+    private static void playBlockbench(Minecraft mc, java.io.File file) {
+        if (mc.player == null) return;
+        if (bbLayer == null) {
+            bbLayer = new dev.kosmx.playerAnim.api.layered.ModifierLayer<>();
+            dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAnimLayer(mc.player).addAnimLayer(2500, bbLayer);
+        }
+        if (file == null) {
+            bbLayer.setAnimation(null);
+            return;
+        }
+        try (var in = new java.io.FileInputStream(file)) {
+            var anims = dev.kosmx.playerAnim.core.data.gson.AnimationSerializing.deserializeAnimation(in);
+            bbLayer.setAnimation(new dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer(anims.get(0)));
+            McReloadAnim.LOG.info("[kinetrix] self-test: playing Blockbench animation {}", file.getName());
+        } catch (Exception e) {
+            McReloadAnim.LOG.warn("[kinetrix] self-test: cannot play {}: {}", file, e.toString());
+        }
     }
 
     private static void armor(ServerPlayer sp) {

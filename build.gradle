@@ -41,6 +41,7 @@ minecraft {
                 property 'mcreload.selftest', 'true'
                 args '--width', '1280', '--height', '720'
                 if (project.hasProperty('selftestOnly')) property 'mcreload.selftest.only', project.property('selftestOnly')
+                if (project.hasProperty('bbanims')) property 'mcreload.selftest.bbanims', project.property('bbanims')
             }
         }
     }

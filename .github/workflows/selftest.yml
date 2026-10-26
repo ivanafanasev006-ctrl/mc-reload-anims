@@ -39,6 +39,13 @@ jobs:
           sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 mesa-utils x11-xserver-utils > /dev/null
           xvfb-run -a -s "-screen 0 1280x720x24" glxinfo -B | head -20 || true
 
+      - name: Animations made on the Blockbench rig, converted for the game
+        run: |
+          python3 -m pip install --quiet --user numpy pillow
+          python3 tools/blockbench/kinetrix_rig.py make build/bbanims/kinetrix_rig.bbmodel
+          python3 tools/blockbench/kinetrix_rig.py convert build/bbanims/kinetrix_rig.bbmodel build/bbanims/json
+          python3 tools/blockbench/kinetrix_rig.py preview build/bbanims/kinetrix_rig.bbmodel build/bbanims/preview --frames 4
+
       - name: Run Minecraft with the automated test
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
@@ -58,13 +65,14 @@ jobs:
           echo "soundCategory_master:0.0" >> run/options.txt
           EXTRA=()
           if [ -n "$ONLY" ]; then EXTRA=("-PselftestOnly=$ONLY"); fi
-          timeout 22m xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient -Pselftest "${EXTRA[@]}" --no-daemon --stacktrace 2>&1 | tee runclient.log || true
+          timeout 22m xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient -Pselftest "-Pbbanims=$PWD/build/bbanims/json" "${EXTRA[@]}" --no-daemon --stacktrace 2>&1 | tee runclient.log || true
 
       - name: Publish screenshots to the 'selftest' branch
         if: always()
         run: |
           mkdir -p /tmp/out
           cp run/screenshots/*.png /tmp/out/ 2>/dev/null || true
+          for f in build/bbanims/preview/*.png; do [ -f "$f" ] && cp "$f" "/tmp/out/bbpreview_$(basename "$f")"; done
           cp run/logs/latest.log /tmp/out/latest.log 2>/dev/null || true
           tail -n 400 runclient.log > /tmp/out/runclient-tail.log 2>/dev/null || true
           ls -la /tmp/out
