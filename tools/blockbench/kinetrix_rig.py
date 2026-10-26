@@ -590,6 +590,7 @@ def make(path):
                      texture_json("props.png", props_texture(), 16, 16, 1)],
         "animations": [animation_json(n, s, bone_uuids) for n, s in EXAMPLES.items()],
     }
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w") as f:
         json.dump(model, f, indent=1)
     print(f"wrote {path}: {len(elements)} cubes, {len(BONES)} bones, {len(EXAMPLES)} example animations")
