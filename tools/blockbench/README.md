@@ -92,6 +92,29 @@ Blockbench, то и будет на игроке (расхождение мен�
 анимацию в Minecraft с Kinetrix и выкладывает скриншоты и картинки-сравнения
 (`bbpreview_<имя>.png`) в ветку `selftest`.
 
+## Claude прямо в Blockbench (Blockbench MCP)
+
+Сторонний плагин [Blockbench MCP](https://github.com/jasonjgardner/blockbench-mcp-plugin) даёт Claude,
+запущенному на том же ПК, видеть открытую модель и менять её: кости, анимации, ключи, шкалу времени,
+снимки экрана. Облачная сессия до вашего ПК не достаёт, поэтому Claude запускается у вас.
+
+1. Blockbench для ПК (не браузерный): <https://www.blockbench.net/downloads>.
+2. File → Plugins → Load Plugin from File → `mcp.js` (или Load Plugin from URL →
+   `https://jasonjgardner.github.io/blockbench-mcp-plugin/mcp.js`).
+3. File → Settings → General: снять галочку **Enable risky_eval** (иначе любой подключившийся может
+   выполнить в Blockbench любой код). **MCP Server Host** оставить `localhost`: тогда подключиться
+   можно только с этого ПК. Порт 3000, адрес `/bb-mcp` по умолчанию.
+4. Claude Code: в PowerShell `irm https://claude.ai/install.ps1 | iex`, потом новое окно и
+   `claude --version` ([подробнее](https://code.claude.com/docs/en/setup)). Желательно поставить
+   [Git для Windows](https://git-scm.com/downloads/win).
+5. `git clone https://github.com/ivanafanasev006-ctrl/mc-reload-anims` и `cd mc-reload-anims`.
+6. `claude mcp add blockbench --transport http http://localhost:3000/bb-mcp`
+7. Открыть в Blockbench `tools/blockbench/kinetrix_rig.bbmodel`, в папке проекта запустить `claude`
+   (или `claude remote-control` — тогда сессия видна и в приложении Claude на телефоне) и попросить,
+   например: «прочитай tools/blockbench/README.md и сделай на открытой модели анимацию dodge_left».
+
+Плагин при создании анимации называет её `animation.<имя>`; конвертер такую приставку отбрасывает.
+
 ## Конвертер
 
 `kinetrix_rig.py` (Python 3, нужны `numpy` и `pillow`):

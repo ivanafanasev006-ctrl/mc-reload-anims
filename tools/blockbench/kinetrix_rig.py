@@ -904,6 +904,11 @@ def item_choice(model, touched):
     return out
 
 
+def anim_name(anim):
+    """File name of an animation: "animation.slide" (Bedrock style, as Blockbench MCP names them) -> "slide"."""
+    return anim.get("name", "animation").split(".")[-1].lower().replace(" ", "_")
+
+
 def held_items(model, items):
     """What the animation is meant to be held with, per hand: the animated item, else the one shown in Blockbench."""
     out = {}
@@ -934,7 +939,7 @@ def convert(path, out_dir, namespace=None, quiet=False):
     results = []
     for anim in model.animations:
         chans = model.channels(anim)
-        name = anim.get("name", "animation").split(".")[-1].lower().replace(" ", "_")
+        name = anim_name(anim)
         length = float(anim.get("length", 0) or 0)
         if length <= 0:
             length = max([k[0] for c in chans.values() for lst in c.values() for k in lst] + [0.05])
@@ -1097,7 +1102,7 @@ def preview(path, out_dir, frames=5):
     written = []
     for anim in model.animations:
         chans = model.channels(anim)
-        name = anim.get("name", "animation").lower().replace(" ", "_")
+        name = anim_name(anim)
         length = float(anim.get("length", 0) or 0) or 1.0
         times = [length * i / (frames - 1) for i in range(frames)]
         rows = []
