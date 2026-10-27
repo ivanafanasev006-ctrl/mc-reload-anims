@@ -87,6 +87,7 @@ public final class MovesSelfTest {
     public static void init() {
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onTick);
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onGui);
+        MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onScreen);
         build();
         String only = System.getProperty("kinetrix_moves.selftest.only", "");
         if (!only.isBlank()) SCENARIOS.removeIf(s -> !s.name.matches(".*(" + only + ").*"));
@@ -142,6 +143,21 @@ public final class MovesSelfTest {
         slide("30_slide_tap", false, false);
         slide("31_slide_held", true, false);
         slide("32_slide_tunnel", false, true);
+
+        // ---- the settings screen, at the usual GUI scale and at the largest (a small window's worth of room)
+        SCENARIOS.add(new Scenario("50_settings", 22, sp -> place(sp, 0, new ItemStack(Items.BOW)), (mc, t) -> {
+            camera(mc, CameraType.FIRST_PERSON);
+            if (t == 2) mc.setScreen(new MovesSettingsScreen(null));
+            if (t == 10) {
+                mc.options.guiScale().set(4);
+                mc.resizeDisplay();
+            }
+            if (t == 20) {
+                mc.options.guiScale().set(0);
+                mc.resizeDisplay();
+                mc.setScreen(null);
+            }
+        }, new int[]{8, 16}, false));
     }
 
     private static void hud(String name, HudConfig.Style style, HudConfig.Shape shape, boolean swap, float energy, float shields, boolean apple) {
@@ -403,10 +419,19 @@ public final class MovesSelfTest {
         if (panel) sideView(g, mc.player, event.getPartialTick());
         g.drawString(mc.font, label + "  t=" + tick, 6, 6, 0xFFFF55);
         g.flush();
-        if (pendingShot != null) {
+        // With a screen open the picture is taken after the screen is drawn (onScreen).
+        if (pendingShot != null && mc.screen == null) {
             Screenshot.grab(mc.gameDirectory, pendingShot, mc.getMainRenderTarget(), msg -> {});
             pendingShot = null;
         }
+    }
+
+    private static void onScreen(net.minecraftforge.client.event.ScreenEvent.Render.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (phase != Phase.RUNNING || pendingShot == null) return;
+        event.getGuiGraphics().flush();
+        Screenshot.grab(mc.gameDirectory, pendingShot, mc.getMainRenderTarget(), msg -> {});
+        pendingShot = null;
     }
 
     /** The player seen from their left side, in a panel on the right. */

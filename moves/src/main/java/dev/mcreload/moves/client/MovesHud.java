@@ -72,7 +72,9 @@ public final class MovesHud {
     /** The bars as they will look (the settings screen): shields 6.5 of 10, energy 60 %, around {@code cx}. */
     static void preview(GuiGraphics g, int cx, int top) {
         int left = cx - 91, right = cx + 91 - ROW_W;
-        g.fill(cx - 94, top - 3, cx + 94, top + 12, 0x80000000);
+        // A framed panel, so the preview does not mix with the real bars under the screen.
+        g.fill(cx - 96, top - 5, cx + 96, top + 14, 0xFF6F6F6F);
+        g.fill(cx - 95, top - 4, cx + 95, top + 13, 0xF0141414);
         float time = Minecraft.getInstance().level == null ? 0f : Minecraft.getInstance().level.getGameTime();
         if (HudConfig.swapSides()) {
             energy(g, left, top, 0.6f, null, time);
