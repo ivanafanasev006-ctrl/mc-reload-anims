@@ -1,0 +1,3600 @@
+{
+ "meta": {
+  "format_version": "4.10",
+  "model_format": "free",
+  "box_uv": false
+ },
+ "name": "kinetrix_opponent",
+ "model_identifier": "",
+ "visible_box": [
+  1,
+  2,
+  0
+ ],
+ "variable_placeholders": "",
+ "variable_placeholder_buttons": [],
+ "timeline_setups": [],
+ "unhandled_root_fields": {},
+ "resolution": {
+  "width": 64,
+  "height": 64
+ },
+ "elements": [
+  {
+   "name": "enemy_head",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -4,
+    24,
+    -36.0
+   ],
+   "to": [
+    4,
+    32,
+    -28.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    0.0,
+    24.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      0,
+      8,
+      8,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      16,
+      8,
+      24,
+      16
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      8,
+      8,
+      16,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      24,
+      8,
+      32,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      16,
+      8,
+      8,
+      0
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      24,
+      0,
+      16,
+      8
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "269568af-1907-4b13-8238-22679d370eca"
+  },
+  {
+   "name": "enemy_head_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -4,
+    24,
+    -36.0
+   ],
+   "to": [
+    4,
+    32,
+    -28.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    0.0,
+    24.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      32,
+      8,
+      40,
+      16
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      48,
+      8,
+      56,
+      16
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      40,
+      8,
+      48,
+      16
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      56,
+      8,
+      64,
+      16
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      48,
+      8,
+      40,
+      0
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      56,
+      0,
+      48,
+      8
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "904eb2e0-c19b-46e0-af73-d185a24d4dfb",
+   "inflate": 0.5
+  },
+  {
+   "name": "enemy_torso_lower",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -4,
+    12,
+    -34.0
+   ],
+   "to": [
+    4,
+    18,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    0.0,
+    24.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      16,
+      26,
+      20,
+      32
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      28,
+      26,
+      32,
+      32
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      20,
+      26,
+      28,
+      32
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      26,
+      40,
+      32
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      20,
+      26,
+      28,
+      27
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      36,
+      16,
+      28,
+      20
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "c2888254-5a86-430b-a091-67fbbc389430"
+  },
+  {
+   "name": "enemy_torso_lower_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -4,
+    12,
+    -34.0
+   ],
+   "to": [
+    4,
+    18,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    0.0,
+    24.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      16,
+      42,
+      20,
+      48
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      28,
+      42,
+      32,
+      48
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      20,
+      42,
+      28,
+      48
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      42,
+      40,
+      48
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      20,
+      42,
+      28,
+      43
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      36,
+      32,
+      28,
+      36
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "2c5732fe-6f99-48fb-97a3-4288a7651048",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_torso_upper",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -4,
+    18,
+    -34.0
+   ],
+   "to": [
+    4,
+    24,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    0.0,
+    18.0,
+    -30.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      16,
+      20,
+      20,
+      26
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      28,
+      20,
+      32,
+      26
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      20,
+      20,
+      28,
+      26
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      20,
+      40,
+      26
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      28,
+      20,
+      20,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      20,
+      25,
+      28,
+      26
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "01ff58e9-30f6-4f02-b795-52c40410ad41"
+  },
+  {
+   "name": "enemy_torso_upper_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -4,
+    18,
+    -34.0
+   ],
+   "to": [
+    4,
+    24,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    0.0,
+    18.0,
+    -30.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      16,
+      36,
+      20,
+      42
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      28,
+      36,
+      32,
+      42
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      20,
+      36,
+      28,
+      42
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      32,
+      36,
+      40,
+      42
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      28,
+      36,
+      20,
+      32
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      20,
+      41,
+      28,
+      42
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "44516c57-f701-4e00-aa6a-828398450dc2",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_right_upper_arm",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    4,
+    18,
+    -34.0
+   ],
+   "to": [
+    8,
+    24,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    22.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      40,
+      20,
+      44,
+      26
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      48,
+      20,
+      52,
+      26
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      44,
+      20,
+      48,
+      26
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      52,
+      20,
+      56,
+      26
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      48,
+      20,
+      44,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      44,
+      25,
+      48,
+      26
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "27dd158e-cf97-4315-90c8-601fd7a5280d"
+  },
+  {
+   "name": "enemy_right_upper_arm_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    4,
+    18,
+    -34.0
+   ],
+   "to": [
+    8,
+    24,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    22.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      40,
+      36,
+      44,
+      42
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      48,
+      36,
+      52,
+      42
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      44,
+      36,
+      48,
+      42
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      52,
+      36,
+      56,
+      42
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      48,
+      36,
+      44,
+      32
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      44,
+      41,
+      48,
+      42
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "ce218705-4519-4f07-a709-4f7bdc5f8978",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_right_forearm",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    4,
+    12,
+    -34.0
+   ],
+   "to": [
+    8,
+    18,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    6.0,
+    18.0,
+    -30.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      40,
+      26,
+      44,
+      32
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      48,
+      26,
+      52,
+      32
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      44,
+      26,
+      48,
+      32
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      52,
+      26,
+      56,
+      32
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      44,
+      26,
+      48,
+      27
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      52,
+      16,
+      48,
+      20
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "ae00c9f7-a851-49ec-bea8-80a584d8e37c"
+  },
+  {
+   "name": "enemy_right_forearm_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    4,
+    12,
+    -34.0
+   ],
+   "to": [
+    8,
+    18,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    6.0,
+    18.0,
+    -30.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      40,
+      42,
+      44,
+      48
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      48,
+      42,
+      52,
+      48
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      44,
+      42,
+      48,
+      48
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      52,
+      42,
+      56,
+      48
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      44,
+      42,
+      48,
+      43
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      52,
+      32,
+      48,
+      36
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "a9d84b8e-d64c-4047-a913-84a386c2756f",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_left_upper_arm",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -8,
+    18,
+    -34.0
+   ],
+   "to": [
+    -4,
+    24,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -5.0,
+    22.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      32,
+      52,
+      36,
+      58
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      40,
+      52,
+      44,
+      58
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      36,
+      52,
+      40,
+      58
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      44,
+      52,
+      48,
+      58
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      40,
+      52,
+      36,
+      48
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      36,
+      57,
+      40,
+      58
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "0b807e74-1cd0-4eda-bb4c-e41dfaebaba8"
+  },
+  {
+   "name": "enemy_left_upper_arm_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -8,
+    18,
+    -34.0
+   ],
+   "to": [
+    -4,
+    24,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -5.0,
+    22.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      48,
+      52,
+      52,
+      58
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      56,
+      52,
+      60,
+      58
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      52,
+      52,
+      56,
+      58
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      60,
+      52,
+      64,
+      58
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      56,
+      52,
+      52,
+      48
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      52,
+      57,
+      56,
+      58
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "48a7e4e2-dbf2-464e-881f-3787c8e4a3fa",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_left_forearm",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -8,
+    12,
+    -34.0
+   ],
+   "to": [
+    -4,
+    18,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -6.0,
+    18.0,
+    -30.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      32,
+      58,
+      36,
+      64
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      40,
+      58,
+      44,
+      64
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      36,
+      58,
+      40,
+      64
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      44,
+      58,
+      48,
+      64
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      36,
+      58,
+      40,
+      59
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      44,
+      48,
+      40,
+      52
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "3a227434-109d-441d-99b3-0d2832d3bba4"
+  },
+  {
+   "name": "enemy_left_forearm_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -8,
+    12,
+    -34.0
+   ],
+   "to": [
+    -4,
+    18,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -6.0,
+    18.0,
+    -30.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      48,
+      58,
+      52,
+      64
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      56,
+      58,
+      60,
+      64
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      52,
+      58,
+      56,
+      64
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      60,
+      58,
+      64,
+      64
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      52,
+      58,
+      56,
+      59
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      60,
+      48,
+      56,
+      52
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "2abe9942-b0a3-4cf9-8cc4-55a81de302e2",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_right_thigh",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -0.1,
+    6,
+    -34.0
+   ],
+   "to": [
+    3.9,
+    12,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    1.9,
+    12.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      0,
+      20,
+      4,
+      26
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      8,
+      20,
+      12,
+      26
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      4,
+      20,
+      8,
+      26
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      12,
+      20,
+      16,
+      26
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      8,
+      20,
+      4,
+      16
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      4,
+      25,
+      8,
+      26
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "3f7028c6-c4a6-4fb8-bb66-010bc2df2571"
+  },
+  {
+   "name": "enemy_right_thigh_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -0.1,
+    6,
+    -34.0
+   ],
+   "to": [
+    3.9,
+    12,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    1.9,
+    12.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      0,
+      36,
+      4,
+      42
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      8,
+      36,
+      12,
+      42
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      4,
+      36,
+      8,
+      42
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      12,
+      36,
+      16,
+      42
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      8,
+      36,
+      4,
+      32
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      4,
+      41,
+      8,
+      42
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "2ad52d35-49b7-44ee-a6f7-9aa433c64407",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_right_shin",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -0.1,
+    0,
+    -34.0
+   ],
+   "to": [
+    3.9,
+    6,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    1.9,
+    6.0,
+    -34.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      0,
+      26,
+      4,
+      32
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      8,
+      26,
+      12,
+      32
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      4,
+      26,
+      8,
+      32
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      12,
+      26,
+      16,
+      32
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      4,
+      26,
+      8,
+      27
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      12,
+      16,
+      8,
+      20
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "10bdcc90-9bf0-4f3e-86ae-535b7e2cba41"
+  },
+  {
+   "name": "enemy_right_shin_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -0.1,
+    0,
+    -34.0
+   ],
+   "to": [
+    3.9,
+    6,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    1.9,
+    6.0,
+    -34.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      0,
+      42,
+      4,
+      48
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      8,
+      42,
+      12,
+      48
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      4,
+      42,
+      8,
+      48
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      12,
+      42,
+      16,
+      48
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      4,
+      42,
+      8,
+      43
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      12,
+      32,
+      8,
+      36
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "84f5df00-0eff-4f39-93cd-8f4eecb33508",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_left_thigh",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -3.9,
+    6,
+    -34.0
+   ],
+   "to": [
+    0.1,
+    12,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -1.9,
+    12.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      16,
+      52,
+      20,
+      58
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      24,
+      52,
+      28,
+      58
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      20,
+      52,
+      24,
+      58
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      28,
+      52,
+      32,
+      58
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      24,
+      52,
+      20,
+      48
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      20,
+      57,
+      24,
+      58
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "82429e6a-70cd-4894-b2ac-4815053b379d"
+  },
+  {
+   "name": "enemy_left_thigh_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -3.9,
+    6,
+    -34.0
+   ],
+   "to": [
+    0.1,
+    12,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -1.9,
+    12.0,
+    -32.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      0,
+      52,
+      4,
+      58
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      8,
+      52,
+      12,
+      58
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      4,
+      52,
+      8,
+      58
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      12,
+      52,
+      16,
+      58
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      8,
+      52,
+      4,
+      48
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      4,
+      57,
+      8,
+      58
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "3a3ca630-3e42-4f31-9cf5-d9424eea3322",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_left_shin",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -3.9,
+    0,
+    -34.0
+   ],
+   "to": [
+    0.1,
+    6,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -1.9,
+    6.0,
+    -34.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      16,
+      58,
+      20,
+      64
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      24,
+      58,
+      28,
+      64
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      20,
+      58,
+      24,
+      64
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      28,
+      58,
+      32,
+      64
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      20,
+      58,
+      24,
+      59
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      28,
+      48,
+      24,
+      52
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "89576a01-0d7d-4de9-a40f-ec18c768396a"
+  },
+  {
+   "name": "enemy_left_shin_layer",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -3.9,
+    0,
+    -34.0
+   ],
+   "to": [
+    0.1,
+    6,
+    -30.0
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -1.9,
+    6.0,
+    -34.0
+   ],
+   "faces": {
+    "east": {
+     "uv": [
+      0,
+      58,
+      4,
+      64
+     ],
+     "texture": 0
+    },
+    "west": {
+     "uv": [
+      8,
+      58,
+      12,
+      64
+     ],
+     "texture": 0
+    },
+    "north": {
+     "uv": [
+      4,
+      58,
+      8,
+      64
+     ],
+     "texture": 0
+    },
+    "south": {
+     "uv": [
+      12,
+      58,
+      16,
+      64
+     ],
+     "texture": 0
+    },
+    "up": {
+     "uv": [
+      4,
+      58,
+      8,
+      59
+     ],
+     "texture": 0
+    },
+    "down": {
+     "uv": [
+      12,
+      48,
+      8,
+      52
+     ],
+     "texture": 0
+    }
+   },
+   "type": "cube",
+   "uuid": "fd0ee616-5c72-476a-9bb3-b864d13e207b",
+   "inflate": 0.25
+  },
+  {
+   "name": "enemy_sword_handle",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    5.405,
+    15.56,
+    -38.425
+   ],
+   "to": [
+    6.595,
+    20.66,
+    -37.575
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    6.0,
+    12.5,
+    -38.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "af76e69f-c529-488a-8358-00275532d364"
+  },
+  {
+   "name": "enemy_sword_guard",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    3.45,
+    14.54,
+    -38.425
+   ],
+   "to": [
+    8.55,
+    15.56,
+    -37.575
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    6.0,
+    12.5,
+    -38.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "dc0fb150-f763-4e4c-8233-f365b8c566bc"
+  },
+  {
+   "name": "enemy_sword_blade",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    4.98,
+    4.51,
+    -38.425
+   ],
+   "to": [
+    7.02,
+    14.54,
+    -37.575
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    6.0,
+    12.5,
+    -38.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "2874a3c8-0042-4649-b239-1793130b9df7"
+  },
+  {
+   "name": "enemy_sword_tip",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    5.575,
+    3.66,
+    -38.425
+   ],
+   "to": [
+    6.425,
+    4.51,
+    -37.575
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    6.0,
+    12.5,
+    -38.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "96e2a17b-e8dd-41ca-88cc-a840f2f452b7"
+  },
+  {
+   "name": "enemy_bow_upper_1",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    5.81,
+    6.22,
+    -32.45
+   ],
+   "to": [
+    6.89,
+    9.1,
+    -31.55
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    14.5,
+    -32.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "05d147c4-0f30-41ba-9d3f-4344d9d52129",
+   "visibility": false
+  },
+  {
+   "name": "enemy_bow_upper_2",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    7.16,
+    9.1,
+    -32.45
+   ],
+   "to": [
+    8.24,
+    11.8,
+    -31.55
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    14.5,
+    -32.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "d0f45d93-43a3-4063-9414-54dafb03c785",
+   "visibility": false
+  },
+  {
+   "name": "enemy_bow_upper_3",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    7.88,
+    11.8,
+    -32.45
+   ],
+   "to": [
+    8.96,
+    13.6,
+    -31.55
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    14.5,
+    -32.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "ee36520b-8e7d-47de-94f3-3c8c81074fa0",
+   "visibility": false
+  },
+  {
+   "name": "enemy_bow_grip",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    7.79,
+    13.6,
+    -32.45
+   ],
+   "to": [
+    9.23,
+    16.75,
+    -31.55
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    14.5,
+    -32.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "8b38a7f4-4a4a-4ef7-93bf-8d63399f168a",
+   "visibility": false
+  },
+  {
+   "name": "enemy_bow_lower_1",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    7.52,
+    16.75,
+    -32.45
+   ],
+   "to": [
+    8.6,
+    19.0,
+    -31.55
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    14.5,
+    -32.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "531e0def-1ebd-45ec-aafa-6fdf1c3f1ed7",
+   "visibility": false
+  },
+  {
+   "name": "enemy_bow_lower_2",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    6.26,
+    19.0,
+    -32.45
+   ],
+   "to": [
+    7.34,
+    21.25,
+    -31.55
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    14.5,
+    -32.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "9e8dfbdb-4d34-4a1b-a189-27acc119dee6",
+   "visibility": false
+  },
+  {
+   "name": "enemy_bow_lower_3",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    4.46,
+    21.25,
+    -32.45
+   ],
+   "to": [
+    5.54,
+    22.78,
+    -31.55
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    14.5,
+    -32.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      0,
+      4,
+      4,
+      8
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "5be9808e-0b0d-482a-8445-7308f2e60cbe",
+   "visibility": false
+  },
+  {
+   "name": "enemy_bow_string",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    4.595,
+    7.3,
+    -32.45
+   ],
+   "to": [
+    4.865,
+    21.7,
+    -31.55
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    5.0,
+    14.5,
+    -32.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      4,
+      4,
+      8,
+      8
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      4,
+      4,
+      8,
+      8
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      4,
+      4,
+      8,
+      8
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      4,
+      4,
+      8,
+      8
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      4,
+      4,
+      8,
+      8
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      4,
+      4,
+      8,
+      8
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "009cfcab-516a-4a07-bf25-ad997512c2e1",
+   "visibility": false
+  },
+  {
+   "name": "enemy_sword_handle",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -6.595,
+    15.56,
+    -38.425
+   ],
+   "to": [
+    -5.405,
+    20.66,
+    -37.575
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -6.0,
+    12.5,
+    -38.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      8,
+      0,
+      12,
+      4
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "143a631b-6fbd-4450-be4a-80d2acbf7872",
+   "visibility": false
+  },
+  {
+   "name": "enemy_sword_guard",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -8.55,
+    14.54,
+    -38.425
+   ],
+   "to": [
+    -3.45,
+    15.56,
+    -37.575
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -6.0,
+    12.5,
+    -38.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      12,
+      0,
+      16,
+      4
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "e8c9f478-b262-4fe1-8477-75fef1ebf693",
+   "visibility": false
+  },
+  {
+   "name": "enemy_sword_blade",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -7.02,
+    4.51,
+    -38.425
+   ],
+   "to": [
+    -4.98,
+    14.54,
+    -37.575
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -6.0,
+    12.5,
+    -38.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      4,
+      4
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "0ab59798-3af0-4239-adee-e59fc3c7bce9",
+   "visibility": false
+  },
+  {
+   "name": "enemy_sword_tip",
+   "box_uv": false,
+   "rescale": false,
+   "locked": false,
+   "render_order": "default",
+   "allow_mirror_modeling": true,
+   "from": [
+    -6.425,
+    3.66,
+    -38.425
+   ],
+   "to": [
+    -5.575,
+    4.51,
+    -37.575
+   ],
+   "autouv": 0,
+   "color": 0,
+   "origin": [
+    -6.0,
+    12.5,
+    -38.0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "south": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "east": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "west": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "up": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    },
+    "down": {
+     "uv": [
+      4,
+      0,
+      8,
+      4
+     ],
+     "texture": 1
+    }
+   },
+   "type": "cube",
+   "uuid": "116b0b96-6861-4064-96a1-50e6a8282c22",
+   "visibility": false
+  }
+ ],
+ "outliner": [
+  {
+   "name": "enemy",
+   "origin": [
+    0,
+    0,
+    -32.0
+   ],
+   "rotation": [
+    0,
+    180,
+    0
+   ],
+   "color": 1,
+   "uuid": "9917cf4f-f6b1-45be-addb-309d73fe8882",
+   "export": true,
+   "mirror_uv": false,
+   "isOpen": false,
+   "locked": false,
+   "visibility": true,
+   "autouv": 0,
+   "children": [
+    {
+     "name": "enemy_body",
+     "origin": [
+      0.0,
+      11.946666666666665,
+      -32.0
+     ],
+     "color": 0,
+     "uuid": "e816085f-7e88-48c7-96d3-7715ca217e4b",
+     "export": true,
+     "mirror_uv": false,
+     "isOpen": true,
+     "locked": false,
+     "visibility": true,
+     "autouv": 0,
+     "children": [
+      {
+       "name": "enemy_torso",
+       "origin": [
+        0.0,
+        24.0,
+        -32.0
+       ],
+       "color": 0,
+       "uuid": "bf1ea283-d296-497a-bffd-392fa4164b41",
+       "export": true,
+       "mirror_uv": false,
+       "isOpen": true,
+       "locked": false,
+       "visibility": true,
+       "autouv": 0,
+       "children": [
+        {
+         "name": "enemy_chest",
+         "origin": [
+          0.0,
+          18.0,
+          -30.0
+         ],
+         "color": 0,
+         "uuid": "bb5d0fac-4ec9-484a-a853-a6dadef204c0",
+         "export": true,
+         "mirror_uv": false,
+         "isOpen": true,
+         "locked": false,
+         "visibility": true,
+         "autouv": 0,
+         "children": [
+          {
+           "name": "enemy_head",
+           "origin": [
+            0.0,
+            24.0,
+            -32.0
+           ],
+           "color": 0,
+           "uuid": "23867441-6e6a-4e43-9b27-1441b824eeda",
+           "export": true,
+           "mirror_uv": false,
+           "isOpen": true,
+           "locked": false,
+           "visibility": true,
+           "autouv": 0,
+           "children": [
+            "269568af-1907-4b13-8238-22679d370eca",
+            "904eb2e0-c19b-46e0-af73-d185a24d4dfb"
+           ]
+          },
+          {
+           "name": "enemy_right_arm",
+           "origin": [
+            5.0,
+            22.0,
+            -32.0
+           ],
+           "color": 0,
+           "uuid": "1e6dad45-66fd-4004-9e32-6ebca8c73c35",
+           "export": true,
+           "mirror_uv": false,
+           "isOpen": true,
+           "locked": false,
+           "visibility": true,
+           "autouv": 0,
+           "children": [
+            {
+             "name": "enemy_right_forearm",
+             "origin": [
+              6.0,
+              18.0,
+              -30.0
+             ],
+             "color": 0,
+             "uuid": "3da350e1-78a3-479d-b2d7-1a297fb8ee98",
+             "export": true,
+             "mirror_uv": false,
+             "isOpen": true,
+             "locked": false,
+             "visibility": true,
+             "autouv": 0,
+             "children": [
+              "ae00c9f7-a851-49ec-bea8-80a584d8e37c",
+              "a9d84b8e-d64c-4047-a913-84a386c2756f",
+              {
+               "name": "enemy_right_item_sword",
+               "origin": [
+                6.0,
+                12.5,
+                -38.0
+               ],
+               "rotation": [
+                90.0,
+                -10.0,
+                -90.0
+               ],
+               "color": 3,
+               "uuid": "349a23e7-d7b8-44b1-82f1-072104d3a567",
+               "export": false,
+               "mirror_uv": false,
+               "isOpen": false,
+               "locked": false,
+               "visibility": true,
+               "autouv": 0,
+               "children": [
+                "af76e69f-c529-488a-8358-00275532d364",
+                "dc0fb150-f763-4e4c-8233-f365b8c566bc",
+                "2874a3c8-0042-4649-b239-1793130b9df7",
+                "96e2a17b-e8dd-41ca-88cc-a840f2f452b7"
+               ]
+              },
+              {
+               "name": "enemy_right_item_bow",
+               "origin": [
+                5.0,
+                14.5,
+                -32.0
+               ],
+               "rotation": [
+                80.114,
+                5.075,
+                -89.129
+               ],
+               "color": 3,
+               "uuid": "eede00f4-a13f-4b0e-b2dc-162b771dee6e",
+               "export": false,
+               "mirror_uv": false,
+               "isOpen": false,
+               "locked": false,
+               "visibility": false,
+               "autouv": 0,
+               "children": [
+                "05d147c4-0f30-41ba-9d3f-4344d9d52129",
+                "d0f45d93-43a3-4063-9414-54dafb03c785",
+                "ee36520b-8e7d-47de-94f3-3c8c81074fa0",
+                "8b38a7f4-4a4a-4ef7-93bf-8d63399f168a",
+                "531e0def-1ebd-45ec-aafa-6fdf1c3f1ed7",
+                "9e8dfbdb-4d34-4a1b-a189-27acc119dee6",
+                "5be9808e-0b0d-482a-8445-7308f2e60cbe",
+                "009cfcab-516a-4a07-bf25-ad997512c2e1"
+               ]
+              }
+             ]
+            },
+            "27dd158e-cf97-4315-90c8-601fd7a5280d",
+            "ce218705-4519-4f07-a709-4f7bdc5f8978"
+           ]
+          },
+          {
+           "name": "enemy_left_arm",
+           "origin": [
+            -5.0,
+            22.0,
+            -32.0
+           ],
+           "color": 0,
+           "uuid": "582e5539-46db-4be1-9a88-9875e7b3f838",
+           "export": true,
+           "mirror_uv": false,
+           "isOpen": true,
+           "locked": false,
+           "visibility": true,
+           "autouv": 0,
+           "children": [
+            {
+             "name": "enemy_left_forearm",
+             "origin": [
+              -6.0,
+              18.0,
+              -30.0
+             ],
+             "color": 0,
+             "uuid": "b9406492-fa16-4f58-88e2-b7b3c8e08bc8",
+             "export": true,
+             "mirror_uv": false,
+             "isOpen": true,
+             "locked": false,
+             "visibility": true,
+             "autouv": 0,
+             "children": [
+              "3a227434-109d-441d-99b3-0d2832d3bba4",
+              "2abe9942-b0a3-4cf9-8cc4-55a81de302e2",
+              {
+               "name": "enemy_left_item_sword",
+               "origin": [
+                -6.0,
+                12.5,
+                -38.0
+               ],
+               "rotation": [
+                90.0,
+                -10.0,
+                -90.0
+               ],
+               "color": 3,
+               "uuid": "ea49b057-b009-4499-8fd9-a8d84c40a34d",
+               "export": false,
+               "mirror_uv": false,
+               "isOpen": false,
+               "locked": false,
+               "visibility": false,
+               "autouv": 0,
+               "children": [
+                "143a631b-6fbd-4450-be4a-80d2acbf7872",
+                "e8c9f478-b262-4fe1-8477-75fef1ebf693",
+                "0ab59798-3af0-4239-adee-e59fc3c7bce9",
+                "116b0b96-6861-4064-96a1-50e6a8282c22"
+               ]
+              }
+             ]
+            },
+            "0b807e74-1cd0-4eda-bb4c-e41dfaebaba8",
+            "48a7e4e2-dbf2-464e-881f-3787c8e4a3fa"
+           ]
+          },
+          "01ff58e9-30f6-4f02-b795-52c40410ad41",
+          "44516c57-f701-4e00-aa6a-828398450dc2"
+         ]
+        },
+        "c2888254-5a86-430b-a091-67fbbc389430",
+        "2c5732fe-6f99-48fb-97a3-4288a7651048"
+       ]
+      },
+      {
+       "name": "enemy_right_leg",
+       "origin": [
+        1.9,
+        12.0,
+        -32.0
+       ],
+       "color": 0,
+       "uuid": "2f088486-a2c3-4f85-8172-37171a7476ca",
+       "export": true,
+       "mirror_uv": false,
+       "isOpen": true,
+       "locked": false,
+       "visibility": true,
+       "autouv": 0,
+       "children": [
+        {
+         "name": "enemy_right_shin",
+         "origin": [
+          1.9,
+          6.0,
+          -34.0
+         ],
+         "color": 0,
+         "uuid": "94987b8b-2758-4802-a5fd-33cdddcef233",
+         "export": true,
+         "mirror_uv": false,
+         "isOpen": true,
+         "locked": false,
+         "visibility": true,
+         "autouv": 0,
+         "children": [
+          "10bdcc90-9bf0-4f3e-86ae-535b7e2cba41",
+          "84f5df00-0eff-4f39-93cd-8f4eecb33508"
+         ]
+        },
+        "3f7028c6-c4a6-4fb8-bb66-010bc2df2571",
+        "2ad52d35-49b7-44ee-a6f7-9aa433c64407"
+       ]
+      },
+      {
+       "name": "enemy_left_leg",
+       "origin": [
+        -1.9,
+        12.0,
+        -32.0
+       ],
+       "color": 0,
+       "uuid": "6e1304a9-69b3-4285-a4bc-fed4b88f76de",
+       "export": true,
+       "mirror_uv": false,
+       "isOpen": true,
+       "locked": false,
+       "visibility": true,
+       "autouv": 0,
+       "children": [
+        {
+         "name": "enemy_left_shin",
+         "origin": [
+          -1.9,
+          6.0,
+          -34.0
+         ],
+         "color": 0,
+         "uuid": "7bd5f2f8-6899-4ff1-a699-b3a07c41513c",
+         "export": true,
+         "mirror_uv": false,
+         "isOpen": true,
+         "locked": false,
+         "visibility": true,
+         "autouv": 0,
+         "children": [
+          "89576a01-0d7d-4de9-a40f-ec18c768396a",
+          "fd0ee616-5c72-476a-9bb3-b864d13e207b"
+         ]
+        },
+        "82429e6a-70cd-4894-b2ac-4815053b379d",
+        "3a3ca630-3e42-4f31-9cf5-d9424eea3322"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "textures": [
+  {
+   "path": "",
+   "name": "kinetrix_enemy_skin.png",
+   "folder": "",
+   "namespace": "",
+   "id": "0",
+   "particle": true,
+   "render_mode": "default",
+   "render_sides": "auto",
+   "frame_time": 1,
+   "frame_order_type": "loop",
+   "frame_order": "",
+   "frame_interpolate": false,
+   "visible": true,
+   "internal": true,
+   "saved": false,
+   "uuid": "b141a014-a48e-40e8-8d99-71c48cece350",
+   "width": 64,
+   "height": 64,
+   "uv_width": 64,
+   "uv_height": 64,
+   "mode": "bitmap",
+   "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACZElEQVR4nO2aT0sbQRTAZ2UDGknIoVjxEHMwfyDV5hBSaKQggl4Ejz17672fo3dPevYjWNhDwVLIpUEIKEGlvUksmKzJrolNeyjYvKnO5DFunzLvd9rHvDfz9vHezO7MOEJDtpL9pdNR0aw1HRP7qJmgdoAa17SD5bfLyvZmrWk6RKRYnwEcAGoHqOEAUDtAjWO6zptC/Z1gfQa4unXclIO9g0j7N8X6DBgrAIVqQXg73q3s7XiiUC1E5tT/xNn6sBXpJKgrAepJEPUvcOgdCiGEWFpdGtvmsf8roAKAefGnwj/pl3+dByXhxmCMGp8aypQtrZWMSqr+sa7sv7xRBv0vriyC9t33u6iS4lWA2gFqrA+AI9e8jl67B+SZzAyQ44n47fP6u3UhhBD72/t/7X1oH/iBcrx4Mq5sl/F/+EA+/nKsnBOszwAOALUD1FgfAONtcRWjk99jxQ39EGXQD/pAPj85B3JsMqa0H4QDKF8P7tH8w8Q8Lkll/3S4c7k5lEG71QbyVGIKyKPL4F1gl8FsJYvwTojW9xaQz+pnSn3r5wDrA+B2Ljoog6ADU1YugYcm9TyF0g+u1CUlY30GMAzDMAzDMAzDMAxjHw9+PSXzMgPOGqdT06Bdd7+gslkB9sU3RdCOPf/XYf2OEAeA2gFqjOtJrnkd4RU8iUq/SKPGk3exjz4fGb2D9RnAAaB2gBoOALUD1BhfkBjeDHH6P6G+7nhcpt/Dnf/rMA7A7MIsSt+/gNfYcq9yKPvWN3j+f/r1FGUvY30JWB8A4xLoXnZR+mEXfgkmnyVx47Vx4+mwPgN+A0Rom7269LviAAAAAElFTkSuQmCC"
+  },
+  {
+   "path": "",
+   "name": "props.png",
+   "folder": "",
+   "namespace": "",
+   "id": "1",
+   "particle": false,
+   "render_mode": "default",
+   "render_sides": "auto",
+   "frame_time": 1,
+   "frame_order_type": "loop",
+   "frame_order": "",
+   "frame_interpolate": false,
+   "visible": true,
+   "internal": true,
+   "saved": false,
+   "uuid": "f9cf7a8b-9fbb-492b-b3d5-5df0bdc29a6f",
+   "width": 16,
+   "height": 16,
+   "uv_width": 16,
+   "uv_height": 16,
+   "mode": "bitmap",
+   "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQ0lEQVR4nGPcd+L6fwYkYKSrjMxlqAvUQ+Hn5XGh8JkYKAQDbwBjU5AGShhkzjyMokBUVJSRpi4YeANGwShgYGBgAAAz0wnQJ0hljgAAAABJRU5ErkJggg=="
+  }
+ ],
+ "animations": []
+}

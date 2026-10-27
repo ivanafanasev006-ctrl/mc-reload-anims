@@ -5,6 +5,11 @@
         pivots where Kinetrix puts them, the standard skin layout (any 64x64 skin can be dropped
         on it), a sword and a bow in the right hand, and a few example animations.
 
+    python3 tools/blockbench/kinetrix_rig.py make-opponent OUT.bbmodel [--distance PX]
+        A second figure (bones enemy_*, grey skin, no animations) standing in front of the player and
+        facing them, to import into a rig model (File > Import > Import Project) and pose against.
+        The converter ignores it.
+
     python3 tools/blockbench/kinetrix_rig.py convert IN.bbmodel OUT_DIR [--namespace NS]
         Every animation of a .bbmodel made from the rig becomes an emotecraft-format
         player_animation JSON (pitch/yaw/roll, positions, bend + bend axis per part), sampled per
@@ -596,6 +601,61 @@ def make(path):
     print(f"wrote {path}: {len(elements)} cubes, {len(BONES)} bones, {len(EXAMPLES)} example animations")
 
 
+def enemy_texture():
+    """The guide skin turned grey-green, so the opponent never passes for the player."""
+    from PIL import Image
+    img = Image.open(io.BytesIO(guide_texture())).convert("RGBA")
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if a:
+                lum = 0.3 * r + 0.59 * g + 0.11 * b
+                px[x, y] = (int(lum * 0.55), int(lum * 0.8), int(lum * 0.55), a)
+    out = io.BytesIO()
+    img.save(out, "PNG")
+    return out.getvalue()
+
+
+def make_opponent(path, distance=32.0):
+    """A second figure to pose against (an attacker to slide under, a blade to block): the rig with its
+    bones named enemy_*, `distance` px (16 = one block) in front of the player and facing them, a grey
+    skin and no animations. Meant for File > Import > Import Project into a model made from the rig;
+    the converter reads only the player's bones, so the opponent never ends up in the game files."""
+    elements, outliner, _ = build_rig()
+    for e in elements:
+        e["name"] = "enemy_" + e["name"]
+        for key in ("from", "to", "origin"):
+            e[key][2] = round(e[key][2] - distance, 4)
+
+    def place(g):
+        g["name"] = "enemy_" + g["name"]
+        g["origin"][2] = round(g["origin"][2] - distance, 4)
+        for c in g["children"]:
+            if isinstance(c, dict):
+                place(c)
+
+    place(outliner[0])
+    # Turned half a turn about its own feet, it faces the player.
+    root = {"name": "enemy", "origin": [0, 0, -distance], "rotation": [0, 180, 0], "color": 1, "uuid": uid(),
+            "export": True, "mirror_uv": False, "isOpen": False, "locked": False, "visibility": True,
+            "autouv": 0, "children": [outliner[0]]}
+    model = {
+        "meta": {"format_version": WRITE_FORMAT, "model_format": "free", "box_uv": False},
+        "name": "kinetrix_opponent", "model_identifier": "", "visible_box": [1, 2, 0],
+        "variable_placeholders": "", "variable_placeholder_buttons": [], "timeline_setups": [],
+        "unhandled_root_fields": {}, "resolution": {"width": 64, "height": 64},
+        "elements": elements, "outliner": [root],
+        "textures": [texture_json("kinetrix_enemy_skin.png", enemy_texture(), 64, 64, 0),
+                     texture_json("props.png", props_texture(), 16, 16, 1)],
+        "animations": [],
+    }
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(model, f, indent=1)
+    print(f"wrote {path}: opponent {distance / 16:g} blocks in front, bones enemy_*")
+
+
 # ----------------------------------------------------------------------------------------------
 # Reading a .bbmodel (Blockbench 4 or 5)
 # ----------------------------------------------------------------------------------------------
@@ -1037,8 +1097,8 @@ def render(model, worlds, size=300, views=("front", "side", "three_quarter"), sh
         bone = owner.get(e["uuid"])
         if e.get("visibility") is False and bone not in show:
             continue
-        if bone is None or bone not in worlds:
-            continue
+        if bone is None or bone not in worlds or not (bone in BONE or bone in ITEMS):
+            continue  # an imported opponent (enemy_*) is not part of the player's pose
         o = model.groups[model.by_name[bone]]["origin"]
         infl = e.get("inflate", 0.0)
         lo = np.array(e["from"], float) - infl
@@ -1134,6 +1194,9 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     m = sub.add_parser("make")
     m.add_argument("out")
+    o = sub.add_parser("make-opponent")
+    o.add_argument("out")
+    o.add_argument("--distance", type=float, default=32.0, help="pixels in front of the player (16 = one block)")
     c = sub.add_parser("convert")
     c.add_argument("bbmodel")
     c.add_argument("out_dir")
@@ -1145,6 +1208,8 @@ def main(argv=None):
     a = ap.parse_args(argv)
     if a.cmd == "make":
         make(a.out)
+    elif a.cmd == "make-opponent":
+        make_opponent(a.out, a.distance)
     elif a.cmd == "convert":
         convert(a.bbmodel, a.out_dir, a.namespace)
     else:
