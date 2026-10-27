@@ -113,6 +113,10 @@ Blockbench переименует в `body2`, `right_arm2`, и анимации 
 анимацию в Minecraft с Kinetrix и выкладывает скриншоты и картинки-сравнения
 (`bbpreview_<имя>.png`) в ветку `selftest`.
 
+Присланные анимации — каркас: по ним делается доработанная версия (симметрия, тайминг, замах и
+доводка, механика под движение). Она лежит отдельно, в `tools/blockbench/refined/`, с теми же
+именами анимаций, а ваш файл не меняется. Правила доработки — в `CLAUDE.md` в корне репозитория.
+
 ## Claude прямо в Blockbench (Blockbench MCP)
 
 Сторонний плагин [Blockbench MCP](https://github.com/jasonjgardner/blockbench-mcp-plugin) даёт Claude,
