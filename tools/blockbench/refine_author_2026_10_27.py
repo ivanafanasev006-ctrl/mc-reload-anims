@@ -224,20 +224,31 @@ def hop(data):
     no_twist(a)
     # Every key was linear, so each limb moved like a robot from pose to pose: limbs now ease in
     # and out (smooth). The body's own spin stays linear while it is in the air (a body turns at
-    # a steady speed there), from the take-off at 0.75 s to the landing at 1.75 s.
+    # a steady speed there).
     a.interp("catmullrom")
     a.interp("linear", bones=["body"], channels=("rotation",), t0=0.75, t1=1.5)
-    # The landing straightened up from the deepest crouch in 0.25 s: 0.1 s more to absorb it.
-    a.retime(lambda t: t if t <= 2.0 else 2.0 + (t - 2.0) * 1.4)
-    a.length = 2.35
+    # The hop is a point-blank parry (docs/combat-spec.md, 5): the enemy's blow lands right after
+    # the key press, so the wind-up (turn and crouch) is 0.35 s instead of 0.75 - still 7 game
+    # ticks, seen - and it is the parry window. The flip keeps 0.9 s of the author's 1 s in the
+    # air, the landing keeps its 0.1 s longer absorb: 1.85 s in all.
+    def timeline(t):
+        if t <= 0.75:
+            return t * 0.35 / 0.75
+        if t <= 1.75:
+            return 0.35 + (t - 0.75) * 0.9
+        if t <= 2.0:
+            return 1.25 + (t - 1.75)
+        return 1.5 + (t - 2.0) * 1.4
+    a.retime(timeline)
+    a.length = 1.85
     # It ended 2.4 deg tilted (roll 357.6), 1 px sunk, with arms and legs a few degrees off: the
     # last frame is now exactly the plain stance (roll 360 = upright), so it hands over cleanly.
-    at_rest(a, 2.35, body_turn=(0.0, 0.0, 360.0))
+    at_rest(a, 1.85, body_turn=(0.0, 0.0, 360.0))
     # Feet on the floor before take-off and after landing (the crouch had them 1.8 px under it);
     # in the air nothing may go under the floor either.
-    a.ground(data, 0.0, 0.75)
-    a.ground(data, 0.75, 1.8, mode="above")
-    a.ground(data, 1.8, 2.35)
+    a.ground(data, 0.0, 0.35)
+    a.ground(data, 0.35, 1.3, mode="above")
+    a.ground(data, 1.3, 1.85)
     a.loop = "once"
     return a
 
@@ -343,6 +354,7 @@ def bow_walk_around(data):
 # --------------------------------------------------------------------------------------------
 
 def celebrate(data):
+    """An emote (the author: just an emotion, no mechanic)."""
     a = ak.Anim.load(data, "celebrate")
     no_twist(a)
     # The crouch put the feet 2.5 px under the floor: it now stands on it.
@@ -350,7 +362,26 @@ def celebrate(data):
     # The leap went from the deepest crouch to full stretch in 0.08 s (under two game ticks, so in
     # the game it would just appear): 0.1 s more, still explosive.
     a.retime(lambda t: t if t <= 2.42 else 2.42 + (t - 2.42) * (0.18 / 0.08))
-    a.length = 2.6
+    # It froze in the air at the top of the leap: now it rises a little more, comes down, lands on
+    # bent knees and stands up, ending in the plain stance.
+    apex = {"body": dict(position=(0, 9, 0), rotation=(38, 0, 0)),
+            "head": dict(rotation=(16, 0, 0))}
+    land = {"body": dict(rotation=(6, 0, 0)), "chest": dict(rotation=(-14, 0, 0)), "head": dict(rotation=(-6, 0, 0)),
+            "right_leg": dict(rotation=(34, 0, 4)), "right_shin": dict(rotation=(-58, 0, 0)),
+            "left_leg": dict(rotation=(34, 0, -4)), "left_shin": dict(rotation=(-58, 0, 0)),
+            "right_arm": dict(rotation=(18, 0, 16)), "right_forearm": dict(rotation=(28, 0, 0)),
+            "left_arm": dict(rotation=(18, 0, -16)), "left_forearm": dict(rotation=(28, 0, 0))}
+    for bone, chans in apex.items():
+        for ch, v in chans.items():
+            a.key(bone, ch, 2.75, v)
+    for bone, chans in land.items():
+        for ch, v in chans.items():
+            a.key(bone, ch, 2.95, v)
+    a.length = 3.3
+    at_rest(a, 3.3)
+    a.ground(data, 2.6, 2.9, mode="above")
+    a.ground(data, 2.95, 3.3)
+    a.loop = "once"
     return a
 
 
