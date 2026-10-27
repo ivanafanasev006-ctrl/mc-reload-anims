@@ -3,6 +3,14 @@ name: Build
 on:
   push:
     branches: [main]
+    # Only when the mod itself changes: docs and Blockbench files do not need a new run.
+    paths:
+      - 'src/**'
+      - 'build.gradle'
+      - 'gradle.properties'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 permissions:

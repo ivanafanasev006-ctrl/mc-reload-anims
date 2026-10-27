@@ -3,6 +3,15 @@ name: Visual self-test
 on:
   push:
     branches: [main]
+    # The mod, or animations made on the Blockbench rig (those alone run only their own scenarios).
+    paths:
+      - 'src/**'
+      - 'build.gradle'
+      - 'gradle.properties'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'tools/blockbench/**'
+      - '.github/workflows/selftest.yml'
   workflow_dispatch:
     inputs:
       only:
@@ -53,12 +62,24 @@ jobs:
               || echo "::warning::$f could not be converted"
           done
 
+      - name: What to run
+        id: scope
+        if: github.event_name == 'push'
+        run: |
+          # A push that only touches tools/blockbench plays just the Blockbench animations (99_bb_*).
+          git fetch -q --depth=1 origin "${{ github.event.before }}" 2>/dev/null || exit 0
+          changed=$(git diff --name-only "${{ github.event.before }}" HEAD)
+          if [ -n "$changed" ] && ! echo "$changed" | grep -qv '^tools/blockbench/'; then
+            echo "only=^99" >> "$GITHUB_OUTPUT"
+            echo "Only Blockbench files changed: running the 99_bb scenarios"
+          fi
+
       - name: Run Minecraft with the automated test
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
           MESA_GL_VERSION_OVERRIDE: '4.5'
           GALLIUM_DRIVER: llvmpipe
-          ONLY: ${{ github.event.inputs.only }}
+          ONLY: ${{ github.event.inputs.only || steps.scope.outputs.only }}
         run: |
           chmod +x ./gradlew
           mkdir -p run
