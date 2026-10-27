@@ -109,8 +109,10 @@ class Anim:
         return self.keys.setdefault(bone, {}).setdefault(ch, [])
 
     def key(self, bone, ch, t, v, interp="catmullrom"):
+        """Adds or replaces a key; one closer than 0.02 s is replaced too (two keys a few
+        milliseconds apart would make the bone jerk between them)."""
         lst = self.channel(bone, ch)
-        lst[:] = [kf for kf in lst if abs(kf[0] - t) > 1e-4]
+        lst[:] = [kf for kf in lst if abs(kf[0] - t) > 0.02]
         lst.append([float(t), [float(x) for x in v], interp])
         lst.sort(key=lambda kf: kf[0])
 
@@ -213,6 +215,47 @@ class Anim:
         lst.sort(key=lambda kf: kf[0])
 
 
+def hinge_euler(bend, axis):
+    """Blockbench angles (degrees) of a pure fold: `bend` degrees about the horizontal axis
+    (cos axis, 0, sin axis) of the bone. No turn about the bone's own length, which the game drops."""
+    th, ph = math.radians(bend), math.radians(axis)
+    u = np.array([math.cos(ph), 0.0, math.sin(ph)])
+    K = np.array([[0, -u[2], u[1]], [u[2], 0, -u[0]], [-u[1], u[0], 0]])
+    R = np.eye(3) + math.sin(th) * K + (1 - math.cos(th)) * (K @ K)
+    return [math.degrees(x) for x in k.euler_zyx(R)]
+
+
+def hinge_only(v):
+    """The same rotation of a forearm or shin without its turn about its own length (y)."""
+    R = k.rot_zyx(*np.radians(v))
+    w = math.sqrt(max(0.0, 1 + R[0, 0] + R[1, 1] + R[2, 2])) / 2
+    if w < 1e-6:
+        return list(v)
+    q = np.array([w, (R[2, 1] - R[1, 2]) / (4 * w), (R[0, 2] - R[2, 0]) / (4 * w), (R[1, 0] - R[0, 1]) / (4 * w)])
+    tw = np.array([q[0], 0.0, q[2], 0.0])
+    tw /= np.linalg.norm(tw)
+    # swing = q * conj(twist)
+    a, b = q, np.array([tw[0], -tw[1], -tw[2], -tw[3]])
+    sw = np.array([a[0]*b[0] - a[1]*b[1] - a[2]*b[2] - a[3]*b[3],
+                   a[0]*b[1] + a[1]*b[0] + a[2]*b[3] - a[3]*b[2],
+                   a[0]*b[2] - a[1]*b[3] + a[2]*b[0] + a[3]*b[1],
+                   a[0]*b[3] + a[1]*b[2] - a[2]*b[1] + a[3]*b[0]])
+    bend = 2 * math.degrees(math.atan2(math.hypot(sw[1], sw[3]), sw[0]))
+    axis = math.degrees(math.atan2(sw[3], sw[1])) if bend > 1e-6 else 0.0
+    return hinge_euler(bend, axis)
+
+
+def hinge_of(v):
+    """(bend, axis) degrees of a fold given as Blockbench angles."""
+    h = hinge_only(v)
+    R = k.rot_zyx(*np.radians(h))
+    bend = math.degrees(math.acos(max(-1.0, min(1.0, R[1, 1]))))
+    # the axis is perpendicular to where the bone's tip (0, -1, 0) went
+    tip = R @ np.array([0.0, -1.0, 0.0])
+    axis = math.degrees(math.atan2(tip[0], -tip[2])) if bend > 1e-6 else 0.0
+    return bend, axis
+
+
 HAND = {"right": ("right_arm", "right_forearm", (6.0, 12.0, 0.0)),
         "left": ("left_arm", "left_forearm", (-6.0, 12.0, 0.0))}
 FOOT = {"right": ("right_leg", "right_shin", (1.9, 0.0, 0.0)),
@@ -236,10 +279,14 @@ def reach(anim, data, t, side, target, limb=HAND, stiffness=0.02, interp="catmul
     base = copy.deepcopy(data)
     target = np.array(target, float)
 
+    # The lower bone is a pure fold: x[3] degrees about the horizontal axis at x[4] degrees from x.
+    # Elbows fold forward (axis near +x, bend >= 0), knees backward (axis near +x, bend <= 0).
+    knee = limb is not HAND
+
     def place(x):
         a = copy.deepcopy(anim)
         a.key(upper, "rotation", t, x[:3], interp)
-        a.key(lower, "rotation", t, (x[3], 0.0, x[4]), interp)
+        a.key(lower, "rotation", t, hinge_euler(-x[3] if knee else x[3], x[4]), interp)
         return a
 
     def cost(x):
@@ -247,11 +294,15 @@ def reach(anim, data, t, side, target, limb=HAND, stiffness=0.02, interp="catmul
         p = point(m, anim.name, t, lower, end)
         return float(np.sum((p - target) ** 2)) + stiffness * float(np.sum((x - x0) ** 2) / 100.0)
 
-    x0 = np.array([*u0, l0[0], l0[2]], float)
-    # Elbows fold forward (x >= 0), knees backward (x <= 0); never the other way.
-    fold = (0.0, 160.0) if limb is HAND else (-160.0, 0.0)
-    x0[3] = min(max(x0[3], fold[0]), fold[1])
-    bounds = [(-360, 360)] * 3 + [fold, (-90, 90)]
+    bend, axis = hinge_of(l0)  # bend >= 0 about `axis`; +bend about axis a = -bend about a + 180
+    if knee:  # a knee is written as a negative fold about an axis near +x
+        axis = (axis + 360) % 360 - 180
+    if abs(axis) > 80:  # folded the wrong way (or sideways past the limit): start straight
+        bend, axis = 0.0, 0.0
+    x0 = np.array([*u0, bend, axis], float)
+    # The upper bone stays within 70 degrees of where it was, so the arm cannot flip to another
+    # set of angles for the same pose (Blockbench would swing it the long way between keys).
+    bounds = [(v - 70, v + 70) for v in u0] + [(0.0, 160.0), (-80.0, 80.0)]
     res = minimize(cost, x0, method="Powell", bounds=bounds, options={"xtol": 0.05, "ftol": 1e-4, "maxiter": 4000})
     a = place(res.x)
     anim.keys = a.keys
@@ -275,7 +326,7 @@ def bone_low(model, anim_name, t, bone):
     return low
 
 
-def fold_to(anim, data, t, bone, end, target_y, lo, hi, axis=0, interp="catmullrom"):
+def fold_to(anim, data, t, bone, end, target_y, lo, hi, axis=0, interp="catmullrom", measure=None):
     """Folds one lower bone (a shin, a forearm) about one axis at time t until its lowest corner
     (end=None) or its end point is at height target_y; the upper bone stays as it is."""
     from scipy.optimize import minimize_scalar
@@ -291,7 +342,8 @@ def fold_to(anim, data, t, bone, end, target_y, lo, hi, axis=0, interp="catmullr
 
     def cost(x):
         m = place(x).model(base)
-        y = bone_low(m, anim.name, t, bone) if end is None else point(m, anim.name, t, bone, end)[1]
+        mb = measure or bone  # the bone whose height counts (a thigh turned to set the foot's)
+        y = bone_low(m, anim.name, t, mb) if end is None else point(m, anim.name, t, mb, end)[1]
         return (y - target_y) ** 2
 
     res = minimize_scalar(cost, bounds=(lo, hi), method="bounded", options={"xatol": 0.1})

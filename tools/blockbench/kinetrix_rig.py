@@ -1129,7 +1129,9 @@ FACE_CORNERS = {
 
 def render(model, worlds, size=300, views=("front", "side", "three_quarter"), show=()):
     """Pictures of a posed rig; worlds: bone name -> matrix (pivot-relative rest coords -> world).
-    show: hidden groups to draw anyway (items an animation uses)."""
+    show: the items an animation uses; they are drawn even if hidden, and the other items of the
+    same hand are not (a bow move shows the bow, not the sword the model holds by default)."""
+    busy = {ITEMS[i]["side"] for i in show if i in ITEMS}
     from PIL import Image, ImageDraw
     texs = {i: texture_image(model, i) for i in range(len(model.data.get("textures", [])))}
     polys = []
@@ -1140,6 +1142,8 @@ def render(model, worlds, size=300, views=("front", "side", "three_quarter"), sh
     for e in model.data["elements"]:
         bone = owner.get(e["uuid"])
         if e.get("visibility") is False and bone not in show:
+            continue
+        if bone in ITEMS and bone not in show and ITEMS[bone]["side"] in busy:
             continue
         if bone is None or bone not in worlds or not (bone in BONE or bone in ITEMS):
             continue  # an imported opponent (enemy_*) is not part of the player's pose
