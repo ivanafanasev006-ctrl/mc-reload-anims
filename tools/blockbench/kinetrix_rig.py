@@ -143,6 +143,21 @@ def rot_zyx(x, y, z):
     return rz(z) @ ry(y) @ rx(x)
 
 
+def continue_angles(prev, ang):
+    """The Z-Y-X angles of the same rotation closest to the previous tick's. The game blends ticks
+    angle by angle, so a full roll written as +179 then -179 degrees would whip back the long way:
+    pick the Euler solution (x, y, z) or (x + pi, pi - y, z + pi), shifted by whole turns."""
+    if prev is None:
+        return tuple(ang)
+    best = None
+    for cand in (ang, (ang[0] + math.pi, math.pi - ang[1], ang[2] + math.pi)):
+        c = tuple(a + 2 * math.pi * round((q - a) / (2 * math.pi)) for a, q in zip(cand, prev))
+        d = sum((a - q) ** 2 for a, q in zip(c, prev))
+        if best is None or d < best[0]:
+            best = (d, c)
+    return best[1]
+
+
 def euler_zyx(m):
     """Inverse of rot_zyx: (x, y, z) radians."""
     sy = -m[2, 0]
@@ -671,9 +686,11 @@ def version_tuple(v):
 
 
 class Model:
-    def __init__(self, path):
-        with open(path) as f:
-            self.data = json.load(f)
+    def __init__(self, path, data=None):
+        if data is None:
+            with open(path) as f:
+                data = json.load(f)
+        self.data = data
         self.version = version_tuple(self.data.get("meta", {}).get("format_version", "4.0"))
         self.groups = {}  # uuid -> dict(name, origin, rotation, parent uuid)
         known = {g["uuid"]: g for g in self.data.get("groups", [])}
@@ -1009,7 +1026,9 @@ def held_items(model, items):
     return out
 
 
-def emote_json(name, frames, length_ticks, loop, author):
+def emote_json(name, frames, length_ticks, loop, author, loop_from=None):
+    """loop_from: seconds; a held or looped animation with a timeline marker plays to the end once,
+    then repeats from the marker (a stance that breathes, a volley that keeps firing)."""
     moves = []
     for tick, values in frames:
         for part, v in values.items():
@@ -1019,6 +1038,9 @@ def emote_json(name, frames, length_ticks, loop, author):
              "isLoop": loop == "loop", "returnTick": 0, "degrees": False, "moves": moves}
     if loop == "hold":
         emote["stopTick"] = 2 ** 31 - 1
+    if loop_from is not None and loop in ("hold", "loop"):
+        emote["isLoop"] = True
+        emote["returnTick"] = min(max(0, int(round(loop_from * 20))), max(1, length_ticks) - 1)
     return {"name": name, "author": author, "description": "Made in Blockbench on the Kinetrix rig", "emote": emote}
 
 
@@ -1035,17 +1057,22 @@ def convert(path, out_dir, namespace=None, quiet=False):
         ticks = int(round(length * 20))
         parts_used, items = parts_in_use(model, chans)
         frames, worst, worst_at, warns = [], 0.0, "", set()
-        prev_axes = {}
+        prev_axes, prev_rot = {}, {}
         for tick in range(ticks + 1):
             t = tick / 20.0
             vals, w = convert_frame(model, chans, t, prev_axes, items)
+            for part, v in vals.items():
+                if "pitch" in v:
+                    v["pitch"], v["yaw"], v["roll"] = prev_rot[part] = continue_angles(
+                        prev_rot.get(part), (v["pitch"], v["yaw"], v["roll"]))
             warns.update(w)
             keep = {p: v for p, v in vals.items() if p in parts_used}
             frames.append((tick, keep))
             err, where = pose_error(model, bb_pose(model, chans, t), kinetrix_pose(vals, items))
             if err > worst:
                 worst, worst_at = err, f"{where} at tick {tick}"
-        data = emote_json(name, frames, ticks, anim.get("loop", "once"), "Blockbench")
+        markers = sorted(float(mk.get("time", 0)) for mk in anim.get("markers") or [])
+        data = emote_json(name, frames, ticks, anim.get("loop", "once"), "Blockbench", markers[0] if markers else None)
         data["kinetrix_items"] = held_items(model, items)  # not read by playerAnimator; the self-test hands these out
         fn = os.path.join(out_dir, name + ".json")
         with open(fn, "w") as f:
