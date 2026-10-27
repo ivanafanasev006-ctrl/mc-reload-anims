@@ -1,0 +1,23 @@
+{
+  "key.categories.kinetrix_moves": "Kinetrix: боевые движения",
+  "key.kinetrix_moves.dodge": "Уворот (с A / D — вбок, с S / W — кувырок)",
+  "key.kinetrix_moves.slide": "Подкат (нажать на бегу)",
+  "kinetrix_moves.settings.title": "Kinetrix: боевые движения — полоски",
+  "kinetrix_moves.settings.style": "Стиль",
+  "kinetrix_moves.settings.style.clock": "Часы",
+  "kinetrix_moves.settings.style.clock.tip": "Золото и сталь, как у ванильных часов.",
+  "kinetrix_moves.settings.style.medieval": "Средневековье",
+  "kinetrix_moves.settings.style.medieval.tip": "Тёмно-оранжевый, как в средневековой RPG.",
+  "kinetrix_moves.settings.style.steel": "Сталь",
+  "kinetrix_moves.settings.style.steel.tip": "Серая сталь.",
+  "kinetrix_moves.settings.shape": "Значок щита",
+  "kinetrix_moves.settings.shape.heater": "Геральдический",
+  "kinetrix_moves.settings.shape.round": "Круглый",
+  "kinetrix_moves.settings.sides": "Щиты",
+  "kinetrix_moves.settings.sides.normal": "слева",
+  "kinetrix_moves.settings.sides.swapped": "справа",
+  "kinetrix_moves.settings.sides.tip": "Щиты слева над бронёй и энергия справа над голодом — или наоборот.",
+  "kinetrix_moves.settings.arrows": "Счётчик стрел",
+  "kinetrix_moves.settings.arrows.tip": "Слева от хотбара, когда в руке лук: стрела и сколько их у тебя.",
+  "kinetrix_moves.settings.preview": "Как выглядят полоски"
+}

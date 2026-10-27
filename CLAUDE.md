@@ -1,7 +1,8 @@
 # Правила проекта
 
 Kinetrix — мод на анимации игрока с суставами (Forge 1.20.1). Следующий мод — боевые движения на
-этих анимациях (план: `docs/combat-moves.md`). Анимации делаются в Blockbench на модели с суставами
+этих анимациях (план: `docs/combat-moves.md`), он лежит в `moves/` (Kinetrix Moves, сборка и тесты —
+`moves/README.md`). Анимации делаются в Blockbench на модели с суставами
 (`tools/blockbench/`, правила модели и конвертер — в `tools/blockbench/README.md`). Конспект всего
 проекта — `docs/SUMMARY.md`.
 

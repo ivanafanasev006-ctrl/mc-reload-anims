@@ -90,6 +90,8 @@ public final class HarmonizerLayer implements IAnimation {
             float keep = 0f;
             if (PoseFrame.isLeg(i)) keep = Cfg.keepLegs * rig.motion.moveF() * rig.motion.gate.v;
             else if (i == PoseFrame.HEAD && t == PlayerRig.T_ROT) keep = Cfg.keepHead;
+            // A whole-body move of another mod (Kinetrix Moves' dodges): it moves the player itself.
+            if (keep > 0f && dev.mcreload.anim.api.KinetrixApi.wholeBody(rig.player.getUUID())) keep = 0f;
             if (keep > 0f) {
                 x = mix(x, base[0], keep, t, 0);
                 y = mix(y, base[1], keep, t, 1);

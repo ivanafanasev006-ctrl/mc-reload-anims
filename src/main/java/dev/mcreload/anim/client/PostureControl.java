@@ -91,6 +91,8 @@ public final class PostureControl {
             wantCrawl = false;
         }
         if (wantCrawl && !Posture.canCrawl(p)) wantCrawl = false;
+        // Another mod's move on the same key goes first (Kinetrix Moves: sprint + C slides).
+        if (wantCrawl && !crawling && dev.mcreload.anim.api.KinetrixApi.crawlBlocked()) wantCrawl = false;
         if (wantCrawl && sit > 0) setSit(p, 0, server);
         if (wantCrawl != crawling) {
             crawling = wantCrawl;

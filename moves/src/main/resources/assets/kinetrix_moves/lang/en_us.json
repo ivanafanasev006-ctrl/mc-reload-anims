@@ -1,0 +1,23 @@
+{
+  "key.categories.kinetrix_moves": "Kinetrix Moves",
+  "key.kinetrix_moves.dodge": "Dodge (with A / D: aside, S / W: roll)",
+  "key.kinetrix_moves.slide": "Slide (press while sprinting)",
+  "kinetrix_moves.settings.title": "Kinetrix Moves: the bars",
+  "kinetrix_moves.settings.style": "Style",
+  "kinetrix_moves.settings.style.clock": "Clock",
+  "kinetrix_moves.settings.style.clock.tip": "Gold and steel, like the vanilla clock.",
+  "kinetrix_moves.settings.style.medieval": "Medieval",
+  "kinetrix_moves.settings.style.medieval.tip": "Dark orange, like a medieval RPG.",
+  "kinetrix_moves.settings.style.steel": "Steel",
+  "kinetrix_moves.settings.style.steel.tip": "Grey steel.",
+  "kinetrix_moves.settings.shape": "Shield icon",
+  "kinetrix_moves.settings.shape.heater": "Heraldic",
+  "kinetrix_moves.settings.shape.round": "Round",
+  "kinetrix_moves.settings.sides": "Shields",
+  "kinetrix_moves.settings.sides.normal": "left",
+  "kinetrix_moves.settings.sides.swapped": "right",
+  "kinetrix_moves.settings.sides.tip": "Shields above armour on the left and energy above hunger on the right, or the other way round.",
+  "kinetrix_moves.settings.arrows": "Arrow counter",
+  "kinetrix_moves.settings.arrows.tip": "Left of the hotbar while a bow is in hand: an arrow and how many you carry.",
+  "kinetrix_moves.settings.preview": "How the bars look"
+}

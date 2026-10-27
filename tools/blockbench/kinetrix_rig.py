@@ -1041,7 +1041,10 @@ def emote_json(name, frames, length_ticks, loop, author, loop_from=None):
     if loop_from is not None and loop in ("hold", "loop"):
         emote["isLoop"] = True
         emote["returnTick"] = min(max(0, int(round(loop_from * 20))), max(1, length_ticks) - 1)
-    return {"name": name, "author": author, "description": "Made in Blockbench on the Kinetrix rig", "emote": emote}
+    # Version 3: "torso" is the body cube and "body" the whole player. Without it playerAnimator reads
+    # the file as an old one and renames "torso" to "body", mixing the waist into the whole-body turn.
+    return {"version": 3, "name": name, "author": author, "description": "Made in Blockbench on the Kinetrix rig",
+            "emote": emote}
 
 
 def convert(path, out_dir, namespace=None, quiet=False):

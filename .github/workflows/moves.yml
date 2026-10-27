@@ -1,0 +1,102 @@
+name: Kinetrix Moves
+
+on:
+  push:
+    branches: [main]
+    # The combat moves mod, what it is built from (refined animations, HUD textures) and the
+    # Kinetrix API it calls.
+    paths:
+      - 'moves/**'
+      - 'src/main/java/dev/mcreload/anim/api/**'
+      - 'tools/blockbench/refined/**'
+      - 'tools/blockbench/kinetrix_rig.py'
+      - 'art/refined/hud/**'
+      - '.github/workflows/moves.yml'
+  workflow_dispatch:
+    inputs:
+      selftest:
+        description: 'Also play the moves in a real game and take screenshots'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: moves
+  cancel-in-progress: true
+
+jobs:
+  moves:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The animations in the mod are converted from the refined Blockbench file; they must not
+      # drift from it (convert again and commit when the file changes).
+      - name: Animations match tools/blockbench/refined
+        run: |
+          python3 -m pip install --quiet --user numpy pillow
+          for f in tools/blockbench/refined/*.bbmodel; do
+            python3 tools/blockbench/kinetrix_rig.py convert "$f" build/moves-anims --namespace kinetrix_moves > /dev/null
+          done
+          diff -r build/moves-anims moves/src/main/resources/assets/kinetrix_moves/player_animation
+
+      - name: Kinetrix into a local repository (the moves run on it in the development game)
+        run: |
+          chmod +x ./gradlew
+          ./gradlew publish --no-daemon
+
+      - name: Build and server tests (GameTests)
+        run: |
+          ./gradlew -p moves build runGameTestServer --no-daemon --stacktrace 2>&1 | tee moves-build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Install virtual display and software OpenGL
+        if: inputs.selftest
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 mesa-utils > /dev/null
+
+      - name: Moves in a real game
+        if: inputs.selftest
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          timeout 25m xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew -p moves runClient -Pselftest --no-daemon 2>&1 | tee moves-client.log || true
+          cat moves/run/moves-selftest.txt || true
+
+      - name: Read mod version
+        id: ver
+        run: echo "version=$(grep '^mod_version=' moves/gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish dev release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="moves-v${{ steps.ver.outputs.version }}-build${{ github.run_number }}"
+          gh release create "$TAG" moves/build/libs/*.jar --target "$GITHUB_SHA" \
+            --title "Kinetrix Moves ${{ steps.ver.outputs.version }} (build ${{ github.run_number }})" \
+            --notes "Automatic build of ${GITHUB_SHA::7}. Forge 1.20.1; needs Player Animator, best with Kinetrix 1.0.7-beta or later. Install on the client and the server." \
+            --prerelease
+
+      - name: Self-test pictures and report
+        if: inputs.selftest
+        uses: actions/upload-artifact@v4
+        with:
+          name: moves-selftest
+          retention-days: 7
+          path: |
+            moves/run/screenshots/
+            moves/run/moves-selftest.txt
+            moves-client.log

@@ -3,6 +3,7 @@ plugins {
     id 'idea'
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
     id 'org.spongepowered.mixin' version '0.7.+'
+    id 'maven-publish'
 }
 
 version = mod_version
@@ -116,4 +117,18 @@ tasks.named('jar', Jar).configure {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+// The (reobfuscated) jar in a local repository, build/repo: Kinetrix Moves (moves/) runs on top of it
+// in its development client (./gradlew publish, then ./gradlew -p moves runClient).
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifactId = mod_id
+            artifact jar
+        }
+    }
+    repositories {
+        maven { url = layout.buildDirectory.dir('repo') }
+    }
 }
