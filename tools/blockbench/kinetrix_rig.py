@@ -964,6 +964,35 @@ def item_choice(model, touched):
     return out
 
 
+def parts_in_use(model, chans):
+    """The playerAnimator parts an animation drives, and the item group per hand. Only what the
+    animation touches (directly or through a parent) is animated: the rest stays with Kinetrix and
+    vanilla (the head keeps following the look unless the head is keyed)."""
+    touched = set(chans)
+    upper_body = bool(touched & {"torso", "chest"})
+    used = {"body"} if "body" in touched else set()
+    for part, (upper, lower, _p) in PARTS.items():
+        if touched & {upper, lower} or (part in ("torso", "rightArm", "leftArm") and upper_body):
+            used.add(part)
+    items = item_choice(model, touched)
+    for side, item in items.items():
+        if item:
+            used.add(side + "Item")
+    return used, items
+
+
+def as_in_game(values, used):
+    """The values the game ends up with: parts the animation leaves alone stand as in vanilla
+    (straight, the head looking ahead), the waist still carries head and arms."""
+    out = dict(values)
+    for part, (_upper, _lower, pivot) in PARTS.items():
+        if part not in used:
+            out[part] = dict(x=pivot[0], y=pivot[1], z=pivot[2], pitch=0.0, yaw=0.0, roll=0.0, bend=0.0, axis=0.0)
+    if "body" not in used:
+        out["body"] = dict(x=0.0, y=0.0, z=0.0, pitch=0.0, yaw=0.0, roll=0.0)
+    return out
+
+
 def anim_name(anim):
     """File name of an animation: "animation.slide" (Bedrock style, as Blockbench MCP names them) -> "slide"."""
     return anim.get("name", "animation").split(".")[-1].lower().replace(" ", "_")
@@ -1004,26 +1033,14 @@ def convert(path, out_dir, namespace=None, quiet=False):
         if length <= 0:
             length = max([k[0] for c in chans.values() for lst in c.values() for k in lst] + [0.05])
         ticks = int(round(length * 20))
-        # Animate only what the animation touches (directly or through a parent): the rest stays
-        # with Kinetrix and vanilla (the head keeps following the look unless the head is keyed).
-        touched = set(chans)
-        upper_body = bool(touched & {"torso", "chest"})
-        parts_used = set()
-        for part, (upper, lower, _p) in PARTS.items():
-            own = bool(touched & {upper, lower})
-            if own or (part in ("torso", "rightArm", "leftArm") and upper_body):
-                parts_used.add(part)
-        items = item_choice(model, touched)
-        for side, item in items.items():
-            if item:
-                parts_used.add(side + "Item")
+        parts_used, items = parts_in_use(model, chans)
         frames, worst, worst_at, warns = [], 0.0, "", set()
         prev_axes = {}
         for tick in range(ticks + 1):
             t = tick / 20.0
             vals, w = convert_frame(model, chans, t, prev_axes, items)
             warns.update(w)
-            keep = {p: v for p, v in vals.items() if p in parts_used or (p == "body" and "body" in touched)}
+            keep = {p: v for p, v in vals.items() if p in parts_used}
             frames.append((tick, keep))
             err, where = pose_error(model, bb_pose(model, chans, t), kinetrix_pose(vals, items))
             if err > worst:
@@ -1033,7 +1050,7 @@ def convert(path, out_dir, namespace=None, quiet=False):
         fn = os.path.join(out_dir, name + ".json")
         with open(fn, "w") as f:
             json.dump(data, f, indent=1)
-        results.append((name, fn, ticks, sorted(parts_used | ({"body"} if "body" in touched else set())), worst, worst_at, sorted(warns)))
+        results.append((name, fn, ticks, sorted(parts_used), worst, worst_at, sorted(warns)))
         if not quiet:
             print(f"{name}: {ticks} ticks, parts {', '.join(results[-1][3])} -> {fn}")
             print(f"   largest difference from the Blockbench pose: {worst:.2f} px ({worst_at})")
@@ -1167,12 +1184,12 @@ def preview(path, out_dir, frames=5):
         times = [length * i / (frames - 1) for i in range(frames)]
         rows = []
         prev = {}
-        items = item_choice(model, set(chans))
+        used, items = parts_in_use(model, chans)
         for t in times:
             vals, _ = convert_frame(model, chans, t, prev, items)
             shown = [i for i in items.values() if i]
             a = render(model, bb_pose(model, chans, t), size=220, views=("front", "side", "three_quarter"), show=shown)
-            b = render(model, kinetrix_pose(vals, items), size=220, views=("three_quarter",), show=shown)
+            b = render(model, kinetrix_pose(as_in_game(vals, used), items), size=220, views=("three_quarter",), show=shown)
             rows.append((t, a + b))
         w, h = 220 * 4, 220 * len(rows) + 30
         sheet = Image.new("RGB", (w, h), (255, 255, 255))
