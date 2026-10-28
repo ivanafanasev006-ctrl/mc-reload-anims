@@ -58,7 +58,7 @@ public final class MovesClient {
     private static boolean slideWasDown, jumpWasDown, attackWasDown;
     /** Facing at the start of the local move: the push keeps this direction. */
     private static float moveYaw;
-    /** The local move's push direction when it is not the move's own side (a bow dodge on the slant), else null. */
+    /** The local move's push direction when it is not the move's own side (a bow dodge: the way the keys point), else null. */
     private static Vec3 pushDir;
     /** Ticks the slide has been off the ground. */
     private static int airTicks;
@@ -140,7 +140,7 @@ public final class MovesClient {
             if (slidePressed) start(p, s, Move.SLIDE, true, -1);
         }
 
-        // ---- the bow: the flow and the Legolas stance (their arrows, turns and dodges), then the
+        // ---- the bow: the flow and the Legolas stance (their arrows, poses and dodges), then the
         // volley: a fully drawn bow and the left button (which in the flow is the flow's next step)
         BowStance.tickLocal(p, s);
         if (attackPressed && !BowStance.attackKey(p, s) && s.move == null && dev.mcreload.moves.Bow.volleyReady(p)) {

@@ -46,31 +46,38 @@ public enum Move {
             0.15f, 0.15f, 0.13f, 0.12f, 0.10f, 0.08f, 0.07f, 0.05f),
 
     // ---- the bow's combat flow (docs/combat-spec.md, 6.3): after the volley, the right button
-    // held, each left click is one of these, by the keys held then. The bow stays drawn through
-    // them; the arrow leaves on the animation's release (0.75 s), with the draw it has by then.
-    /** No keys, the poses in turn: crouched side-on, a shot. */
-    FLOW_CROUCH("bow_flow_crouch_shot", Bow.shot(0, -1, 15, 20), 30, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    /** Standing side-on, a shot. */
-    FLOW_STAND("bow_flow_stand_shot", Bow.shot(0, -1, 15, 20), 30, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    /** Down onto one knee with a spin (the volley's), a shot at 0.54 s; then held on the knee. */
-    FLOW_KNEEL("bow_barrage", Bow.shot(0, -1, 11, 13), 14, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    /** S: a hop back (about 1.3 blocks, in the air 0.1-0.44 s), a shot. */
-    FLOW_BACKSTEP("bow_flow_backstep_shot", Bow.shot(0, -1, 15, 20), 30, 2, 6, -1, -1, Side.BACK, MovesConfig::costBowDodge,
-            0.30f, 0.26f, 0.22f, 0.17f, 0.12f, 0.07f),
-    /** A: a roll to the left (0.08-0.5 s, as far as a back roll), up onto one knee, a shot. */
-    FLOW_ROLL_LEFT("bow_flow_roll_left_shot", Bow.shot(0, -1, 15, 20), 35, 2, 9, 2, 10, Side.LEFT, MovesConfig::costBowDodge,
+    // held, each left click is a dodge by the keys held then (a spin almost in place with none),
+    // and straight after it the next pose of the round: crouched, standing, on one knee. The bow
+    // stays drawn through both; the arrow leaves on the pose's release, with the draw it has.
+    // Dodges: 10 energy; another move may follow 4 ticks before their end (the pose, on the
+    // server a little late).
+    /** No keys (or W: forward): a full spin to the left, almost in place; untouchable like a side dodge. */
+    FLOW_SPIN_LEFT("bow_flow_turn_left", Bow.shot(0, 13, -1, 9), 13, 2, 6, -1, -1, Side.FRONT, MovesConfig::costBowDodge,
+            0.62f, 0.52f, 0.40f, 0.26f),
+    /** The same to the right, every other click. */
+    FLOW_SPIN_RIGHT("bow_flow_turn_right", Bow.shot(0, 13, -1, 9), 13, 2, 6, -1, -1, Side.FRONT, MovesConfig::costBowDodge,
+            0.62f, 0.52f, 0.40f, 0.26f),
+    /** A: a roll to the left (0.08-0.5 s, as far as a back roll), low and untouchable like one. */
+    FLOW_ROLL_LEFT("bow_flow_roll_left_shot", Bow.shot(0, 11, -1, 7), 11, 2, 9, 2, 10, Side.LEFT, MovesConfig::costBowDodge,
             0.45f, 0.43f, 0.40f, 0.36f, 0.31f, 0.27f, 0.22f, 0.18f),
     /** D: the same to the right. */
-    FLOW_ROLL_RIGHT("bow_flow_roll_right_shot", Bow.shot(0, -1, 15, 20), 35, 2, 9, 2, 10, Side.RIGHT, MovesConfig::costBowDodge,
+    FLOW_ROLL_RIGHT("bow_flow_roll_right_shot", Bow.shot(0, 11, -1, 7), 11, 2, 9, 2, 10, Side.RIGHT, MovesConfig::costBowDodge,
             0.45f, 0.43f, 0.40f, 0.36f, 0.31f, 0.27f, 0.22f, 0.18f),
-    /** Between two poses in place, a full turn to the left (the next click cuts it short). */
-    FLOW_TURN_LEFT("bow_flow_turn_left", Bow.shot(0, -1, -1, 0), 18, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    FLOW_TURN_RIGHT("bow_flow_turn_right", Bow.shot(0, -1, -1, 0), 18, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** S: a hop back (about 1.3 blocks, landing at 0.44 s), untouchable like a side dodge. */
+    FLOW_BACKSTEP("bow_flow_backstep_shot", Bow.shot(0, 10, -1, 6), 10, 2, 6, -1, -1, Side.BACK, MovesConfig::costBowDodge,
+            0.30f, 0.26f, 0.22f, 0.17f, 0.12f, 0.07f),
+    /** The round's poses, from where their animations are already in the pose: crouched side-on, the arrow at 0.6 s. */
+    FLOW_CROUCH("bow_flow_crouch_shot", Bow.shot(3, -1, 12, 17), 27, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** Standing side-on, the arrow at 0.6 s. */
+    FLOW_STAND("bow_flow_stand_shot", Bow.shot(3, -1, 12, 17), 27, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** Down onto one knee (the end of the volley's spin), the arrow at 0.15 s; then held on the knee. */
+    FLOW_KNEEL("bow_barrage", Bow.shot(8, -1, 3, 6), 6, -1, -1, -1, -1, Side.FRONT, () -> 0),
 
     // ---- the Legolas stance (docs/combat-spec.md, 6.4): the bow fully drawn, R once. Each time the
-    // draw is full again the arrow leaves by itself; then, with A or D held, a dodge to that side
-    // spinning round (with S or W too, on the slant). The halves of bow_walk_around, 1 s each.
-    /** A: the spin to the left (the animation's first half), pushed like a side dodge, untouchable as one. */
+    // draw is full again the arrow leaves by itself, then a dodge spinning round: to the side of A or
+    // D, the way the keys point (S + A: back and to the left), almost in place with none. The halves
+    // of bow_walk_around, 1 s each.
+    /** A (or every other dodge without it): the spin to the left (the first half), pushed like a side dodge, untouchable as one. */
     LEGOLAS_LEFT("bow_walk_around", Bow.shot(0, 20, -1, 17), 20, 2, 6, -1, -1, Side.LEFT, MovesConfig::costBowDodge,
             0.62f, 0.52f, 0.40f, 0.26f),
     /** D: the spin back to the right (the second half). */

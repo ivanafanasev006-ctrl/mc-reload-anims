@@ -132,10 +132,17 @@ public final class Bow {
 
     // ------------------------------------------------------------------ the volley
 
+    /**
+     * Ticks of drawing the server lets the volley go short of the full draw: the server hears of the
+     * draw that much after the client (ping, a busy tick), and the volley's arrows have their own power.
+     */
+    private static final int SERVER_DRAW_SLACK = 8;
+
     /** Can the volley start: a bow fully drawn, with something to shoot. */
     public static boolean volleyReady(Player p) {
         ItemStack bow = p.getUseItem();
-        return p.isUsingItem() && isBow(bow) && p.getTicksUsingItem() >= 20
+        int full = p.level().isClientSide ? 20 : 20 - SERVER_DRAW_SLACK;
+        return p.isUsingItem() && isBow(bow) && p.getTicksUsingItem() >= full
                 && (!p.getProjectile(bow).isEmpty() || p.getAbilities().instabuild);
     }
 

@@ -476,9 +476,10 @@ public final class MovesGameTests {
     }
 
     /**
-     * The flow's steps are made with the bow drawn, not without it. A pose in place costs nothing, a
-     * roll its energy; a step cannot be cut short before its arrow has left and the hand followed
-     * through (1 s), a turn between two poses can.
+     * The flow's moves are made with the bow drawn, not without it. A dodge costs its energy, the
+     * pose after it nothing; the pose may follow a little before the dodge has played out (the
+     * client's request comes that much early); a pose cannot be cut short before its arrow has left
+     * and the hand followed through.
      */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void bowFlowNeedsADrawnBow(GameTestHelper h) {
@@ -491,24 +492,26 @@ public final class MovesGameTests {
         });
         t.at(3, () -> {
             s.energy = 100f;
-            t.check(!MoveServer.request(p, Move.FLOW_CROUCH, false), "a flow step without a drawn bow");
+            t.check(!MoveServer.request(p, Move.FLOW_SPIN_LEFT, false), "a flow dodge without a drawn bow");
             t.check(!MoveServer.request(p, Move.LEGOLAS_LEFT, false), "a Legolas dodge without a drawn bow");
             p.startUsingItem(InteractionHand.MAIN_HAND);
         });
         t.at(5, () -> {
-            t.check(MoveServer.request(p, Move.FLOW_CROUCH, false), "a flow step refused with the bow drawn");
-            t.close(s.energy, 100f, "energy after a pose in place");
-            t.check(!MoveServer.request(p, Move.FLOW_STAND, false), "a flow step cut into the last before its arrow left");
+            t.check(MoveServer.request(p, Move.FLOW_SPIN_LEFT, false), "a flow dodge refused with the bow drawn");
+            t.close(s.energy, 100f - MovesConfig.costBowDodge(), "energy after a flow dodge");
+            t.check(!MoveServer.request(p, Move.FLOW_CROUCH, false), "a pose at the start of the dodge");
         });
-        t.at(26, () -> {
+        t.at(5 + Move.FLOW_SPIN_LEFT.freeFrom(), () -> {
+            float before = s.energy;
+            t.check(MoveServer.request(p, Move.FLOW_CROUCH, false), "the pose refused at the end of the dodge");
+            t.close(s.energy, before, "energy after a pose");
+            t.check(!MoveServer.request(p, Move.FLOW_ROLL_LEFT, false), "a dodge cut into a pose before its arrow left");
+        });
+        t.at(5 + Move.FLOW_SPIN_LEFT.freeFrom() + Move.FLOW_CROUCH.freeFrom(), () -> {
             s.energy = 100f;
-            t.check(MoveServer.request(p, Move.FLOW_ROLL_LEFT, false), "a roll refused once the last step's arrow had left");
+            t.check(MoveServer.request(p, Move.FLOW_ROLL_LEFT, false), "a roll refused once the pose's arrow had left");
             t.close(s.energy, 100f - MovesConfig.costBowDodge(), "energy after a roll in the flow");
-        });
-        t.at(70, () -> {
-            t.check(MoveServer.request(p, Move.FLOW_TURN_LEFT, false), "a turn between two poses refused");
-            t.check(MoveServer.request(p, Move.FLOW_STAND, false), "a click during a turn did not cut it short");
-        }).run(71);
+        }).run(5 + Move.FLOW_SPIN_LEFT.freeFrom() + Move.FLOW_CROUCH.freeFrom() + 1);
     }
 
     /** A Legolas dodge: the bow drawn, its energy, untouchable like a side dodge. */

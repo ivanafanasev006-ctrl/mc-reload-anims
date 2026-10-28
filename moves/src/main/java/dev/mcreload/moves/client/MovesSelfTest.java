@@ -232,9 +232,10 @@ public final class MovesSelfTest {
         }, new int[]{26, 29, 33, 37, 41, 46, 52, 60}, true));
 
         // ---- after the volley, the right button still held: on one knee, creeping and aiming; then
-        // the flow: left clicks with no keys (crouch, a turn, standing, back on the knee), with A (a
-        // roll to the left) and with S (a hop back); letting go shoots the last arrow and stands up
-        SCENARIOS.add(new Scenario("81_bow_flow", 290, sp -> {
+        // the flow: each left click a dodge (none: a spin in place; A: a roll to the left; S: a hop
+        // back) and the round's next pose (crouched, standing, on the knee, crouched, standing);
+        // letting go shoots the last arrow and stands up
+        SCENARIOS.add(new Scenario("81_bow_flow", 300, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
             sp.getInventory().add(new ItemStack(Items.ARROW, 16));
         }, (mc, t) -> {
@@ -243,8 +244,8 @@ public final class MovesSelfTest {
                 mc.options.keyUse.setDown(true);
                 KeyMapping.click(mc.options.keyUse.getKey());
             }
-            if (t == 26 || t == 80 || t == 131 || t == 182 || t == 201 || t == 241) mc.options.keyAttack.setDown(true);
-            if (t == 27 || t == 81 || t == 132 || t == 183 || t == 202 || t == 242) mc.options.keyAttack.setDown(false);
+            if (t == 26 || t == 80 || t == 125 || t == 170 || t == 201 || t == 246) mc.options.keyAttack.setDown(true);
+            if (t == 27 || t == 81 || t == 126 || t == 171 || t == 202 || t == 247) mc.options.keyAttack.setDown(false);
             if (t == 56) {
                 note("flow: kneeling " + BowStance.kneeling(mc.player) + ", drawing " + mc.player.isUsingItem() + ", in the flow " + BowStance.inFlow());
                 startPos = mc.player.position();
@@ -253,29 +254,34 @@ public final class MovesSelfTest {
             if (t == 76) {
                 note(String.format(Locale.ROOT, "flow: crept %.2f blocks in 1 s on the knee (walking with a drawn bow: about 0.9)",
                         mc.player.position().subtract(startPos).horizontalDistance()));
+                startPos = mc.player.position();
             }
-            if (t == 79 || t == 100 || t == 120 || t == 150 || t == 197 || t == 236 || t == 276 || t == 286) {
+            if (t == 79 || t == 86 || t == 100 || t == 122 || t == 131 || t == 150 || t == 167 || t == 178 || t == 197
+                    || t == 206 || t == 222 || t == 242 || t == 250 || t == 268 || t == 288 || t == 298) {
                 Move m = Stamina.of(mc.player).move;
                 note(String.format(Locale.ROOT, "flow t=%d: arrows %d, move %s, kneeling %s, energy %.0f", t,
                         mc.player.getInventory().countItem(Items.ARROW), m, BowStance.kneeling(mc.player), Stamina.of(mc.player).energy));
             }
+            if (t == 197) note(String.format(Locale.ROOT, "flow: three spins in place moved the player %.2f blocks",
+                    mc.player.position().subtract(startPos).horizontalDistance()));
             if (t == 200) {
                 startPos = mc.player.position();
                 mc.options.keyLeft.setDown(true);
             }
-            if (t == 205) mc.options.keyLeft.setDown(false);
-            if (t == 236) note(String.format(Locale.ROOT, "flow: rolled %.2f blocks to the left", mc.player.position().subtract(startPos).horizontalDistance()));
-            if (t == 240) {
+            if (t == 206) mc.options.keyLeft.setDown(false);
+            if (t == 242) note(String.format(Locale.ROOT, "flow: rolled %.2f blocks to the left", mc.player.position().subtract(startPos).horizontalDistance()));
+            if (t == 245) {
                 startPos = mc.player.position();
                 mc.options.keyDown.setDown(true);
             }
-            if (t == 245) mc.options.keyDown.setDown(false);
-            if (t == 272) note(String.format(Locale.ROOT, "flow: hopped back %.2f blocks", mc.player.position().subtract(startPos).horizontalDistance()));
-            if (t == 278) mc.options.keyUse.setDown(false);
-        }, new int[]{60, 88, 97, 118, 140, 148, 186, 192, 208, 218, 248, 258, 284}, true));
+            if (t == 251) mc.options.keyDown.setDown(false);
+            if (t == 288) note(String.format(Locale.ROOT, "flow: hopped back %.2f blocks", mc.player.position().subtract(startPos).horizontalDistance()));
+            if (t == 292) mc.options.keyUse.setDown(false);
+        }, new int[]{60, 86, 100, 108, 131, 150, 178, 187, 206, 222, 250, 268, 296}, true));
 
         // ---- the Legolas stance: the bow fully drawn, R once; the arrow leaves by itself at every full
         // draw, then a dodge by the keys: A, then S + A (back and to the left), then D, then none
+        // (almost in place, the other way from the last one)
         SCENARIOS.add(new Scenario("83_bow_legolas", 150, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
             sp.getInventory().add(new ItemStack(Items.ARROW, 16));
