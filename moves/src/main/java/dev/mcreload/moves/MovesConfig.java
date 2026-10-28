@@ -19,7 +19,7 @@ public final class MovesConfig {
             SHIELD_REGEN_SECONDS, COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
     private static final ForgeConfigSpec.IntValue PARRY_REARM;
-    private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE;
+    private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE, KNEEL_MOVE;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -94,6 +94,12 @@ public final class MovesConfig {
                         "and blocking with a sword in 1.7.10). [default]")
                 .defineInRange("moveFactor", 0.2, 0.0, 1.0);
         b.pop();
+
+        b.comment("The bow.").push("bow");
+        KNEEL_MOVE = b.comment("After the volley, with the right button still held, the player stays on one knee and aims:",
+                        "walking speed as a share of the drawn bow's, as when sneaking (author: \"at a snail's pace\"). [default]")
+                .defineInRange("kneelMoveFactor", 0.3, 0.0, 1.0);
+        b.pop();
         SPEC = b.build();
     }
 
@@ -125,6 +131,7 @@ public final class MovesConfig {
     public static int hopSpeedTicks() { return get(HOP_SPEED_TICKS, 20); }
     public static float deflectShields() { return f(DEFLECT_SHIELDS, 1.5); }
     public static float guardMoveFactor() { return f(GUARD_MOVE, 0.2); }
+    public static float kneelMoveFactor() { return f(KNEEL_MOVE, 0.3); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

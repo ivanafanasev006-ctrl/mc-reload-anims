@@ -72,6 +72,45 @@ public final class MoveAnimator {
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), player);
     }
 
+    /** The tick of {@code bow_barrage} held after the volley: down on one knee, the bow at full draw. */
+    private static final int KNEEL_TICK = 10;
+
+    /**
+     * Holds the volley's kneel (the right button still down after it, BowStance): the legs and body
+     * stay as in {@code bow_barrage}, the head and arms are left to the drawn bow, so they follow
+     * where the player aims.
+     */
+    public static void playKneel(AbstractClientPlayer p) {
+        MoveLayer layer = layer(p);
+        KeyframeAnimation anim = PlayerAnimationRegistry.getAnimation(Move.BARRAGE.animation);
+        if (layer == null || anim == null) return;
+        layer.speed.speed = 1f;
+        layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(3, Ease.INOUTSINE),
+                new Kneel(new KeyframeAnimationPlayer(anim, KNEEL_TICK)));
+        KinetrixBridge.wholeBody(p.getUUID(), 200);
+    }
+
+    /** A frame held, its head and arms left to the layers below (vanilla's aiming bow). */
+    private record Kneel(IAnimation pose) implements IAnimation {
+        private static final java.util.Set<String> AIMING = java.util.Set.of("head", "rightArm", "leftArm", "rightItem", "leftItem");
+
+        @Override
+        public boolean isActive() {
+            return true;
+        }
+
+        @Override
+        public void setupAnim(float tickDelta) {
+            pose.setupAnim(0f);
+        }
+
+        @Override
+        public dev.kosmx.playerAnim.core.util.Vec3f get3DTransform(String part, dev.kosmx.playerAnim.api.TransformType type,
+                                                                   float tickDelta, dev.kosmx.playerAnim.core.util.Vec3f value0) {
+            return AIMING.contains(part) ? value0 : pose.get3DTransform(part, type, 0f, value0);
+        }
+    }
+
     /** Ends the animation early, blended out over {@code ticks}. */
     public static void stop(AbstractClientPlayer p, int ticks) {
         MoveLayer layer = layer(p);
