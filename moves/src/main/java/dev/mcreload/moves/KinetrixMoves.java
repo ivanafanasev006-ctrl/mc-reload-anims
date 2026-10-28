@@ -31,10 +31,12 @@ public final class KinetrixMoves {
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, MovesConfig.SPEC, MODID + "-server.toml");
         MovesNet.init();
         modBus.addListener(Stamina::registerCapability);
+        modBus.addListener(Bow::setup);
         MinecraftForge.EVENT_BUS.register(Stamina.Events.class);
         MinecraftForge.EVENT_BUS.register(MoveServer.class);
         MinecraftForge.EVENT_BUS.register(Guard.class);
         MinecraftForge.EVENT_BUS.register(Hop.class);
+        MinecraftForge.EVENT_BUS.register(Bow.class);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, HudConfig.SPEC, MODID + "-client.toml");
             // Only touched on the client, so these classes (and playerAnimator) never load on a server.

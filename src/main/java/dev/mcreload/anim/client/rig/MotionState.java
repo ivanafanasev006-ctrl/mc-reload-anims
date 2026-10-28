@@ -457,7 +457,7 @@ public final class MotionState {
             minAirVy = Math.min(minAirVy, (float) vy);
             // The item itself, not holdingBlade: that is only refreshed per frame, and a sword can
             // come into the hand on the very tick the drop starts.
-            hardDropAhead = !special && Weapons.isMeleeWeapon(player.getMainHandItem()) && predictedImpact() > HARD_LANDING;
+            hardDropAhead = !special && Weapons.canPlant(player.getMainHandItem()) && predictedImpact() > HARD_LANDING;
             // Falling backwards lying back: start the back roll the moment we touch down, like
             // the forward roll.
             if (!special && !rollEarly && Cfg.landing && chillW.v > 0.45f && -vy > 0.2
@@ -509,7 +509,7 @@ public final class MotionState {
             } else if (!wasOnGround && airTicks > 2 && !special && Cfg.landing) {
                 float impact = -minAirVy;
                 ItemStack main = player.getMainHandItem();
-                boolean swordOnly = Weapons.isMeleeWeapon(main);
+                boolean swordOnly = Weapons.canPlant(main);
                 if (remoteDriven()) {
                     // Rolls and sword plants: whatever their own client chose (it knows the keys).
                     if (!takePendingLand()) {

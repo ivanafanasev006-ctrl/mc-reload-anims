@@ -26,6 +26,14 @@ public final class Weapons {
         }
     }
 
+    /**
+     * A weapon that can be planted in the ground on a hard landing: a melee weapon, but not a bow
+     * (Kinetrix Moves makes bows hit like swords; a bow is not stuck into the ground).
+     */
+    public static boolean canPlant(ItemStack stack) {
+        return isMeleeWeapon(stack) && !(stack.getItem() instanceof net.minecraft.world.item.ProjectileWeaponItem);
+    }
+
     /** A sword (or a modded blade like one): a melee weapon that is not an axe or a trident. */
     public static boolean isSword(ItemStack stack) {
         if (stack.isEmpty()) return false;

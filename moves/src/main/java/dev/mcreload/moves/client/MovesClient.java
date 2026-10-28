@@ -74,6 +74,7 @@ public final class MovesClient {
         MinecraftForge.EVENT_BUS.addListener(MovesClient::clientTick);
         MinecraftForge.EVENT_BUS.addListener(MovesClient::playerTick);
         MinecraftForge.EVENT_BUS.addListener(MovesClient::movementInput);
+        MinecraftForge.EVENT_BUS.addListener(MovesClient::interaction);
         MinecraftForge.EVENT_BUS.addListener(MovesSettingsScreen::registerCommand);
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> new MovesSettingsScreen(parent)));
@@ -135,6 +136,12 @@ public final class MovesClient {
         } else if (p.isSprinting() && p.onGround() && MoveServer.allowed(p, s, Move.SLIDE)) {
             KinetrixBridge.blockCrawl(250);
             if (slidePressed) start(p, s, Move.SLIDE, true, -1);
+        }
+
+        // ---- the bow volley: a fully drawn bow, then the left button
+        if (attackPressed && s.move == null && dev.mcreload.moves.Bow.volleyReady(p)) {
+            start(p, s, Move.BARRAGE, false, -1);
+            if (s.move == Move.BARRAGE) p.stopUsingItem();    // the volley takes over the drawn bow
         }
 
         // ---- dodges and rolls: R and a direction
@@ -279,6 +286,15 @@ public final class MovesClient {
         return m.direction(moveYaw);
     }
 
+    /** During the volley the bow is not drawn again nor swung: the volley plays out first. */
+    private static void interaction(net.minecraftforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
+        LocalPlayer p = Minecraft.getInstance().player;
+        if (p != null && Stamina.of(p).move == Move.BARRAGE) {
+            event.setCanceled(true);
+            event.setSwingHand(false);
+        }
+    }
+
     /** During a move the keys do not walk (the move does); a jump still breaks off a slide. */
     private static void movementInput(MovementInputUpdateEvent event) {
         Stamina s = Stamina.of(event.getEntity());
@@ -293,8 +309,13 @@ public final class MovesClient {
 
     // ------------------------------------------------------------------ sounds and dust, every player
 
+    /** The move each player was doing last tick (to stop looping animations when it ends). */
+    private static final java.util.Map<AbstractClientPlayer, Move> LAST = new java.util.WeakHashMap<>();
+
     private static void cues(AbstractClientPlayer p, Stamina s) {
         Move move = s.move;
+        // The volley's animation loops (from its marker, for a held stance): stop it when the volley ends.
+        if (LAST.put(p, move) == Move.BARRAGE && move == null) MoveAnimator.stop(p, 4);
         if (move == null) return;
         int t = s.moveTick;    // already counted on for this tick
         BlockPos below = BlockPos.containing(p.getX(), p.getY() - 0.2, p.getZ());

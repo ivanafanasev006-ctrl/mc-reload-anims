@@ -35,6 +35,7 @@ public final class MoveServer {
         Guard.lower(p, s);
         s.start(p, move, held);
         if (move == Move.HOP) Hop.started(p, s, enemy);
+        if (move == Move.BARRAGE) p.stopUsingItem();     // the volley takes over the drawn bow
         MovesNet.play(p, move);
         sync(p, s, true);
         return true;
@@ -50,7 +51,9 @@ public final class MoveServer {
 
     public static boolean allowed(Player p, Stamina s, Move move) {
         if (!p.isAlive() || p.isSpectator() || p.isPassenger() || p.isSleeping() || p.isFallFlying()
-                || p.getAbilities().flying || p.isInWater() || p.isInLava() || p.isUsingItem()) return false;
+                || p.getAbilities().flying || p.isInWater() || p.isInLava()) return false;
+        // Using an item (eating, drawing a bow) rules moves out, except the volley, which needs a full draw.
+        if (move == Move.BARRAGE ? !Bow.volleyReady(p) : p.isUsingItem()) return false;
         // One move at a time; the next may start once this one has played out (its fade aside).
         if (s.move != null && s.moveTick < s.move.length - 3) return false;
         if (!s.canAfford(move, p)) return false;

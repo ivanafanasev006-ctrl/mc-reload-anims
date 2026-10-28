@@ -36,7 +36,14 @@ public enum Move {
      * not land), take-off at 0.35 s, over their head, landing behind them at 1.25 s, standing at
      * 1.85 s. They cannot hurt the player until the landing. See {@link #HOP_TAKEOFF}.
      */
-    HOP("hop", 1f, 40, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop);
+    HOP("hop", 1f, 40, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop),
+    /**
+     * The volley (docs/combat-spec.md, 6.2): a fully drawn bow, then the left button. A sharp step
+     * back (0.85 block in 0.1-0.5 s) down onto a knee, and three arrows at the animation's
+     * releases, 0.54, 0.79 and 1.04 s (Bow.VOLLEY_SHOTS).
+     */
+    BARRAGE("bow_barrage", 1f, 24, -1, -1, -1, -1, Side.BACK, MovesConfig::costBarrage,
+            0.15f, 0.15f, 0.13f, 0.12f, 0.10f, 0.08f, 0.07f, 0.05f);
 
     /** The hop: take-off and landing ticks (0.35 s and 1.25 s of the animation). */
     public static final int HOP_TAKEOFF = 7, HOP_LAND = 26;

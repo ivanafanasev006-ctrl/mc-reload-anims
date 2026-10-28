@@ -204,6 +204,33 @@ public final class MovesSelfTest {
             }
         }, new int[]{8, 10, 12, 16}, true));
 
+        // ---- the bow: a full draw, then the left button (the volley); the right button stays held
+        SCENARIOS.add(new Scenario("80_bow_volley", 70, sp -> {
+            place(sp, 0, new ItemStack(Items.BOW));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 10));
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 2) {
+                mc.options.keyUse.setDown(true);
+                KeyMapping.click(mc.options.keyUse.getKey());
+            }
+            if (t == 26) {
+                startPos = mc.player.position();
+                note("volley: drawn " + mc.player.getTicksUsingItem() + " ticks");
+                mc.options.keyAttack.setDown(true);
+            }
+            if (t == 27) {
+                mc.options.keyAttack.setDown(false);
+                note("volley: move " + Stamina.of(mc.player).move);
+            }
+            if (t == 55) {
+                Vec3 d = mc.player.position().subtract(startPos);
+                note(String.format(Locale.ROOT, "volley: stepped back %.2f blocks, arrows left %d of 10, drawing again %s",
+                        -d.z, mc.player.getInventory().countItem(Items.ARROW), mc.player.isUsingItem()));
+            }
+            if (t == 66) mc.options.keyUse.setDown(false);
+        }, new int[]{26, 29, 33, 37, 41, 46, 52, 60}, true));
+
         // ---- the settings screen, at the usual GUI scale and at the largest (a small window's worth of room)
         SCENARIOS.add(new Scenario("50_settings", 22, sp -> place(sp, 0, new ItemStack(Items.BOW)), (mc, t) -> {
             camera(mc, CameraType.FIRST_PERSON);

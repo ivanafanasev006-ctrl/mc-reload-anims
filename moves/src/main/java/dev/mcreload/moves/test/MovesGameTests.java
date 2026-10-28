@@ -410,6 +410,66 @@ public final class MovesGameTests {
         }).run(11);
     }
 
+    // ------------------------------------------------------------------ the bow
+
+    /** The bow lasts half as long again, and hits like a sword in the hand: 4 damage, 1.6 a second. */
+    @GameTest(template = FLOOR)
+    public static void bowAsWeapon(GameTestHelper h) {
+        Script t = new Script(h);
+        ServerPlayer p = t.player();
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW)));
+        t.at(4, () -> {
+            t.check(Items.BOW.getMaxDamage() == 576, "bow durability " + Items.BOW.getMaxDamage());
+            t.close((float) p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE), 4f, "bow attack damage");
+            t.close((float) p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED), 1.6f, "bow attack speed");
+        }).run(5);
+    }
+
+    /** A full-strength bow blow on the ground sweeps whoever stands by the target. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void bowSweeps(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie target = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        Zombie beside = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 4, 2, 5);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW)));
+        t.at(30, () -> {
+            float before = beside.getHealth();
+            p.attack(target);
+            t.check(target.getHealth() <= target.getMaxHealth() - 3.9f, "the target took " + (target.getMaxHealth() - target.getHealth()));
+            t.check(beside.getHealth() < before, "the zombie beside was not swept");
+        }).run(31);
+    }
+
+    /**
+     * The volley: from a full draw, three arrows at the animation's releases, as many as there are
+     * (two here), each wearing the bow; 20 energy.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void bowVolley(GameTestHelper h) {
+        Script t = new Script(h);
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            p.getInventory().add(new ItemStack(Items.ARROW, 2));
+            p.startUsingItem(InteractionHand.MAIN_HAND);
+        });
+        t.at(8, () -> t.check(!MoveServer.request(p, Move.BARRAGE, false), "volley from a half draw"));
+        t.at(24, () -> {
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.BARRAGE, false), "volley refused from a full draw");
+            t.check(!p.isUsingItem(), "the bow is still drawn after the volley started");
+            t.close(s.energy, 100f - MovesConfig.costBarrage(), "energy after a volley");
+        });
+        t.at(24 + Move.BARRAGE.length, () -> {
+            int arrows = h.getLevel().getEntitiesOfClass(Arrow.class, p.getBoundingBox().inflate(64)).size();
+            t.check(arrows == 2, "arrows flying: " + arrows);
+            t.check(p.getInventory().countItem(Items.ARROW) == 0, "arrows left: " + p.getInventory().countItem(Items.ARROW));
+            t.check(p.getMainHandItem().getDamageValue() == 2, "bow wear: " + p.getMainHandItem().getDamageValue());
+        }).run(25 + Move.BARRAGE.length);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /**

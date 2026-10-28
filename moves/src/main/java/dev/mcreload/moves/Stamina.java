@@ -317,6 +317,7 @@ public final class Stamina {
                 Guard.serverTick(sp, s);
                 Hop.serverTick(sp, s);
                 Deflect.serverTick(sp, s);
+                Bow.serverTick(sp, s);
                 MoveServer.afterTick(sp, s);
             }
         }
