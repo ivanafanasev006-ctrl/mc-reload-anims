@@ -448,6 +448,24 @@ public final class MovesGameTests {
                 .run(4 + dev.mcreload.moves.Strikes.FINISH_KILL);
     }
 
+    /** The finisher with an axe (author, 2026-10-28): it kills a weak mob as the sword does; a pickaxe makes none. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void finisherWithAnAxe(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 4);
+        t.at(2, () -> {
+            zombie.setHealth(3f);
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_PICKAXE));
+            t.check(!MoveServer.request(p, Move.FINISHER, false, zombie.getId()), "finisher with a pickaxe");
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+            t.check(MoveServer.request(p, Move.FINISHER, false, zombie.getId()), "finisher refused with an axe");
+            t.check(!MoveServer.request(p, Move.DASH, false), "the dash strike is a sword's: refused with an axe");
+        });
+        t.at(3 + dev.mcreload.moves.Strikes.FINISH_KILL, () -> t.check(!zombie.isAlive(), "the zombie survived the axe's finisher"))
+                .run(4 + dev.mcreload.moves.Strikes.FINISH_KILL);
+    }
+
     /** No finisher on a healthy mob, without a sword, on a boss (by the tag or by its health), too far. */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void finisherRules(GameTestHelper h) {

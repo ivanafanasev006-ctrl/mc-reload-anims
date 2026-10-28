@@ -183,17 +183,9 @@ public final class MovesSelfTest {
                     mc.player.position().subtract(startPos).horizontalDistance()));
             if (t == 24 || t == 46) dummyReport(mc, "dash", t == 46);
         }, new int[]{10, 13, 16, 19, 21, 24, 28, 34}, true));
-        SCENARIOS.add(new Scenario("91_finisher", 50, sp -> {
-            place(sp, 0, new ItemStack(Items.IRON_SWORD));
-            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.6, 3f);
-        }, (mc, t) -> {
-            camera(mc, t < 8 ? CameraType.FIRST_PERSON : CameraType.THIRD_PERSON_BACK);
-            if (t == 6) note("finisher: hint shown " + (StrikeInput.finisherTarget() != null));
-            if (t == 8) mc.options.keyAttack.setDown(true);    // no click, as in the dash
-            if (t == 10) note("finisher: move " + Stamina.of(mc.player).move);
-            if (t == 30) mc.options.keyAttack.setDown(false);
-            if (t == 14 || t == 34) dummyReport(mc, "finisher", t == 34);
-        }, new int[]{6, 9, 12, 15, 18, 21, 24, 27, 31}, true));
+        finisher("91_finisher", Items.IRON_SWORD);
+        finisher("92_finisher_axe", Items.IRON_AXE);
+
 
         SCENARIOS.add(new Scenario("71_deflect_arrow", 30, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
@@ -400,6 +392,21 @@ public final class MovesSelfTest {
                 HudConfig.SWAP_SIDES.set(swap);
             }
         }, new int[]{10}, false));
+    }
+
+    /** The finisher on a weakened zombie at point blank: the hint, then the left button held; with this weapon. */
+    private static void finisher(String name, net.minecraft.world.item.Item weapon) {
+        SCENARIOS.add(new Scenario(name, 50, sp -> {
+            place(sp, 0, new ItemStack(weapon));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.6, 3f);
+        }, (mc, t) -> {
+            camera(mc, t < 8 ? CameraType.FIRST_PERSON : CameraType.THIRD_PERSON_BACK);
+            if (t == 6) note("finisher: hint shown " + (StrikeInput.finisherTarget() != null));
+            if (t == 8) mc.options.keyAttack.setDown(true);    // no click, as in the dash
+            if (t == 10) note("finisher: move " + Stamina.of(mc.player).move);
+            if (t == 30) mc.options.keyAttack.setDown(false);
+            if (t == 14 || t == 34) dummyReport(mc, "finisher", t == 34);
+        }, new int[]{6, 9, 12, 15, 18, 21, 24, 27, 31}, true));
     }
 
     /**

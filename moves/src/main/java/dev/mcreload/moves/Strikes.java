@@ -35,7 +35,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  *   on into a lunge and the blade goes into the belly of whoever is in front at 0.45 s, as a crit
  *   (the weapon's blow times 1.5, as in a jump).</li>
  *   <li><b>Finisher</b> ({@code finisher_stab}): a mob with a fifth of its health or less at point
- *   blank, the left button held. It is held on the blade from the stab (0.35 s) and dies when the
+ *   blank, the left button held, a sword or an axe in hand. It is held on the blade from the stab (0.35 s) and dies when the
  *   blade comes out (0.95 s). Not on bosses (the dragon, the wither, the forge:bosses tag, our
  *   kinetrix_moves:no_finisher tag, or anything with more health than a config limit).</li>
  * </ul>
@@ -73,13 +73,20 @@ public final class Strikes {
         return Guard.isSword(p.getMainHandItem());
     }
 
+    /** The finisher is made with a sword or an axe (author, 2026-10-28; other mods' axes too: whatever chops like one). */
+    public static boolean finisherWeapon(Player p) {
+        ItemStack hand = p.getMainHandItem();
+        return Guard.isSword(hand) || hand.getItem() instanceof net.minecraft.world.item.AxeItem
+                || hand.canPerformAction(net.minecraftforge.common.ToolActions.AXE_DIG);
+    }
+
     /**
      * The mob a finisher would be made on, or null: the one the player looks at (or, without one,
      * the nearest in front), at point blank, a mob (not a player) with a fifth of its health or less,
-     * not a boss; a sword in hand. {@code strict}: the client deciding; the server is looser, for lag.
+     * not a boss; a sword or an axe in hand. {@code strict}: the client deciding; the server is looser, for lag.
      */
     public static LivingEntity finisherTarget(Player p, Entity looked, boolean strict) {
-        if (!sword(p) || p.isUsingItem()) return null;
+        if (!finisherWeapon(p) || p.isUsingItem()) return null;
         if (looked instanceof LivingEntity le && finishable(p, le, strict)) return le;
         double range = MovesConfig.finisherRange() + (strict ? 0 : 1.0);
         Vec3 look = flat(p.getViewVector(1f));

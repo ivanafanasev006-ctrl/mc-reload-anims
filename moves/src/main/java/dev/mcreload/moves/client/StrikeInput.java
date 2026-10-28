@@ -14,7 +14,7 @@ import net.minecraft.world.phys.EntityHitResult;
  * The sword moves of the left button on the player's side (author, 2026-10-28).
  *
  * <ul>
- *   <li><b>Finisher.</b> A mob with a fifth of its health or less at point blank, a sword in hand: a
+ *   <li><b>Finisher.</b> A mob with a fifth of its health or less at point blank, a sword or an axe in hand: a
  *   hint shows under the crosshair; the left button held (pressed while the hint shows, or kept
  *   down a moment, as when holding it to attack) starts the finishing stab.</li>
  *   <li><b>Dash strike.</b> Sprinting with W, a sword in hand: the left button lunges.</li>

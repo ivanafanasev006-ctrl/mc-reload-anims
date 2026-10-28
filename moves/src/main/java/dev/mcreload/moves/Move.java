@@ -96,7 +96,7 @@ public enum Move {
     DASH("dash_strike", 1f, 31, -1, -1, -1, -1, Side.FRONT, MovesConfig::costDash),
     /**
      * A weakened mob (a fifth of its health or less) at point blank, the left button held with a
-     * sword: the finishing stab (finisher_stab). The free hand takes it by the shoulder, the blade
+     * sword or an axe: the finishing stab (finisher_stab). The free hand takes it by the shoulder, the blade
      * goes in at 0.35 s and it is held on it until the blade comes out at 0.95 s, when it dies
      * (Strikes.FINISH_STAB, FINISH_KILL). Not on bosses. It cannot hurt the player meanwhile.
      */

@@ -74,8 +74,9 @@ public final class MoveServer {
         boolean ground = p.onGround() || p.tickCount - lastGround(p) <= GROUND_GRACE;
         boolean sprint = p.isSprinting() || p.tickCount - lastSprint(p) <= GROUND_GRACE;
         if (move == Move.SLIDE) return ground && sprint;
-        // The sword moves of the left button: a sword in hand; the dash off a sprint.
-        if (move.strike() && !Strikes.sword(p)) return false;
+        // The moves of the left button: the dash with a sword, off a sprint; the finisher with a sword or an axe.
+        if (move == Move.DASH && !Strikes.sword(p)) return false;
+        if (move == Move.FINISHER && !Strikes.finisherWeapon(p)) return false;
         if (move == Move.DASH) return ground && sprint;
         return ground || !MovesConfig.dodgeOnlyOnGround();
     }
