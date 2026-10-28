@@ -19,5 +19,6 @@
   "kinetrix_moves.settings.sides.tip": "Shields above armour on the left and energy above hunger on the right, or the other way round.",
   "kinetrix_moves.settings.arrows": "Arrow counter",
   "kinetrix_moves.settings.arrows.tip": "Left of the hotbar while a bow is in hand: an arrow and how many you carry.",
-  "kinetrix_moves.settings.preview": "How the bars look"
+  "kinetrix_moves.settings.preview": "How the bars look",
+  "kinetrix_moves.hint.finisher": "[%s] Finish off"
 }

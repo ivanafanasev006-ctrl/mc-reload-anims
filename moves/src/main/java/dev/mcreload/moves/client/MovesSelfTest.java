@@ -153,38 +153,48 @@ public final class MovesSelfTest {
         guard("63_guard_two_swords_front", true, CameraType.THIRD_PERSON_FRONT);
         guard("64_guard_two_swords_walking", true, CameraType.THIRD_PERSON_FRONT);
 
-        // ---- the hop over a zombie set on the player, and an arrow knocked aside by a dodge
-        SCENARIOS.add(new Scenario("70_hop_over_zombie", 60, sp -> {
+        // ---- the vault: running at a mob, R + W 2.4 blocks before it: over a zombie, over a pig; a
+        // chicken is too small (R + W rolls); then an arrow knocked aside by a dodge
+        vault("70_vault_zombie", net.minecraft.world.entity.EntityType.ZOMBIE, Move.HOP);
+        vault("72_vault_pig", net.minecraft.world.entity.EntityType.PIG, Move.HOP);
+        vault("73_vault_chicken_rolls", net.minecraft.world.entity.EntityType.CHICKEN, Move.DODGE_FRONT);
+
+        // ---- the sword strikes: the dash off a run into a zombie 7 blocks ahead; the finisher on a
+        // weakened zombie at point blank (the hint, then the left button held)
+        SCENARIOS.add(new Scenario("90_dash_strike", 50, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
-            net.minecraft.world.entity.monster.Zombie z = net.minecraft.world.entity.EntityType.ZOMBIE.create(sp.serverLevel());
-            z.moveTo(sp.getX(), sp.getY(), sp.getZ() + 2, 180f, 0f);
-            z.setYHeadRot(180f);
-            z.setNoAi(true);
-            z.setAggressive(true);
-            z.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));    // not burning in the sun
-            z.addTag("kinetrix_moves.selftest");
-            sp.serverLevel().addFreshEntity(z);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 7, 20f);
         }, (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
-            if (t == 8) {
+            mc.options.keyUp.setDown(t >= 2 && t < 30);
+            mc.options.keySprint.setDown(t >= 2 && t < 30);
+            // The button goes down without a click: a real press reaches the moves' tick handler
+            // before vanilla's keys, here it would come after them and vanilla would swing first.
+            if (t == 10) {
                 startPos = mc.player.position();
-                press(mc, MovesClient.DODGE, mc.options.keyUp);
+                note("dash: sprinting " + mc.player.isSprinting());
+                mc.options.keyAttack.setDown(true);
             }
-            if (t == 10) release(mc);
-            if (t == 11) note("hop: move " + Stamina.of(mc.player).move);
-            if (t == 34) {
-                Vec3 d = mc.player.position().subtract(startPos);
-                note(String.format(Locale.ROOT, "hop: went %.2f blocks along z (zombie at +2), now facing yaw %.0f, health %.1f, move %s",
-                        d.z, mc.player.getYRot(), mc.player.getHealth(), Stamina.of(mc.player).move));
-                IntegratedServer srv = mc.getSingleplayerServer();
-                srv.execute(() -> {
-                    ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
-                    note("hop: Speed after landing " + sp.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED));
-                    for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Zombie.class,
-                            sp.getBoundingBox().inflate(8))) if (e.getTags().contains("kinetrix_moves.selftest")) e.discard();
-                });
+            if (t == 11) {
+                mc.options.keyAttack.setDown(false);
+                note("dash: move " + Stamina.of(mc.player).move);
             }
-        }, new int[]{9, 11, 13, 15, 17, 19, 21, 23, 25, 28, 32}, true));
+            if (t == 22) note(String.format(Locale.ROOT, "dash: went %.2f blocks to the lunge",
+                    mc.player.position().subtract(startPos).horizontalDistance()));
+            if (t == 24 || t == 46) dummyReport(mc, "dash", t == 46);
+        }, new int[]{10, 13, 16, 19, 21, 24, 28, 34}, true));
+        SCENARIOS.add(new Scenario("91_finisher", 50, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.6, 3f);
+        }, (mc, t) -> {
+            camera(mc, t < 8 ? CameraType.FIRST_PERSON : CameraType.THIRD_PERSON_BACK);
+            if (t == 6) note("finisher: hint shown " + (StrikeInput.finisherTarget() != null));
+            if (t == 8) mc.options.keyAttack.setDown(true);    // no click, as in the dash
+            if (t == 10) note("finisher: move " + Stamina.of(mc.player).move);
+            if (t == 30) mc.options.keyAttack.setDown(false);
+            if (t == 14 || t == 34) dummyReport(mc, "finisher", t == 34);
+        }, new int[]{6, 9, 12, 15, 18, 21, 24, 27, 31}, true));
+
         SCENARIOS.add(new Scenario("71_deflect_arrow", 30, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
             deflectShot = false;
@@ -390,6 +400,73 @@ public final class MovesSelfTest {
                 HudConfig.SWAP_SIDES.set(swap);
             }
         }, new int[]{10}, false));
+    }
+
+    /**
+     * A mob standing still 4.5 blocks ahead; the player runs at it and presses R + W at 2.4 blocks:
+     * {@code expect} is the move that should start (the vault, or a roll for a mob too small).
+     * Measures how high the player went, where they landed, the mob's shove and the facing.
+     */
+    private static void vault(String name, net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.Mob> type, Move expect) {
+        double[] top = new double[1];
+        SCENARIOS.add(new Scenario(name, 56, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            dummy(sp, type, 4.5, -1f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            mc.options.keyUp.setDown(t >= 2 && t < 40);
+            mc.options.keySprint.setDown(t >= 2 && t < 40);
+            LocalPlayer p = mc.player;
+            if (t >= 2 && Stamina.of(p).move == null && startPos == null) {
+                net.minecraft.world.entity.Entity mob = mc.level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class,
+                        p.getBoundingBox().inflate(8)).stream().findFirst().orElse(null);
+                if (mob != null && mob.position().subtract(p.position()).horizontalDistance() - mob.getBbWidth() / 2 <= 2.4) {
+                    startPos = p.position();
+                    top[0] = p.getY();
+                    KeyMapping.click(MovesClient.DODGE.getKey());
+                    note(String.format(Locale.ROOT, "%s: R + W at z %.2f", name, p.getZ()));
+                }
+            }
+            if (startPos != null) top[0] = Math.max(top[0], p.getY());
+            if (t == 1) startPos = null;
+            if (startPos != null && Stamina.of(p).move != null && Stamina.of(p).moveTick == 1) note(name + ": move " + Stamina.of(p).move + " (expected " + expect + ")");
+            if (t == 44 && startPos != null) {
+                note(String.format(Locale.ROOT, "%s: highest %.2f blocks up, ran on to z %.2f (mob was at z 5), facing yaw %.0f",
+                        name, top[0] - startPos.y, p.getZ(), p.getYRot()));
+                dummyReport(mc, name, true);
+            }
+        }, new int[]{8, 10, 12, 14, 16, 18, 20, 22, 24, 27, 32}, true));
+    }
+
+    /** A mob that stands still {@code dz} blocks in front of the player (facing them), with this health (-1: full). */
+    private static void dummy(ServerPlayer sp, net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.Mob> type, double dz, float health) {
+        net.minecraft.world.entity.Mob z = type.create(sp.serverLevel());
+        z.moveTo(sp.getX(), sp.getY(), sp.getZ() + dz, 180f, 0f);
+        z.setYHeadRot(180f);
+        z.setYBodyRot(180f);
+        // No goals (it stands still) but its own physics: the vault's shove and the dash's knockback move it.
+        z.removeFreeWill();
+        z.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));    // not burning in the sun
+        if (health > 0) z.setHealth(health);
+        z.addTag("kinetrix_moves.selftest");
+        sp.serverLevel().addFreshEntity(z);
+    }
+
+    /** The test mob's health and place, from the server (and it goes away with {@code clear}). */
+    private static void dummyReport(Minecraft mc, String what, boolean clear) {
+        IntegratedServer srv = mc.getSingleplayerServer();
+        srv.execute(() -> {
+            ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
+            boolean any = false;
+            for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, sp.getBoundingBox().inflate(12))) {
+                if (!e.getTags().contains("kinetrix_moves.selftest")) continue;
+                any = true;
+                note(String.format(Locale.ROOT, "%s: mob %s health %.1f of %.1f, alive %s, at z %.2f; player energy %.1f",
+                        what, e.getType().toShortString(), e.getHealth(), e.getMaxHealth(), e.isAlive(), e.getZ(), Stamina.of(sp).energy));
+                if (clear) e.discard();
+            }
+            if (!any) note(what + ": the mob is gone (dead)");
+        });
     }
 
     private static void dodge(String name, Move move, java.util.function.Function<Minecraft, KeyMapping> dir) {

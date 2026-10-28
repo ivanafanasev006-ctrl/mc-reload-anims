@@ -115,6 +115,7 @@ public final class MovesClient {
         attackWasDown = attackDown;
         if (p == null || mc.screen != null || !serverHasMod()) {
             dodgeWait = 0;
+            StrikeInput.reset();
             return;
         }
         Stamina s = Stamina.of(p);
@@ -144,6 +145,9 @@ public final class MovesClient {
         // slide or the hop does not hold the player in place while its animation plays out
         if (s.move != null && recoverable(s) && (moving(mc) || jumpPressed || attackPressed)) cancel(p, s, 3);
 
+        // ---- the sword moves of the left button: the finisher, the dash strike (they take the click)
+        if (StrikeInput.tick(mc, p, s, attackDown, attackPressed)) attackPressed = false;
+
         // ---- the bow: the flow and the Legolas stance (their arrows, poses and dodges), then the
         // volley: a fully drawn bow and the left button (which in the flow is the flow's next step)
         BowStance.tickLocal(p, s);
@@ -160,7 +164,7 @@ public final class MovesClient {
             Move move = direction(mc);
             if (move != null) {
                 dodgeWait = 0;
-                // R + W against an enemy about to strike at point blank: hop over them instead of rolling.
+                // R + W with a mob of some size at point blank: vault over it instead of rolling.
                 net.minecraft.world.entity.LivingEntity enemy = move == Move.DODGE_FRONT ? dev.mcreload.moves.Hop.target(p, true) : null;
                 if (enemy != null) start(p, s, Move.HOP, false, enemy.getId());
                 else start(p, s, move, false, -1);
@@ -217,6 +221,11 @@ public final class MovesClient {
         return true;
     }
 
+    /** Starts a move made at a mob (the vault, the finisher). Returns whether it started. */
+    static boolean start(LocalPlayer p, Stamina s, Move move, int target) {
+        return start(p, s, move, false, target);
+    }
+
     private static boolean start(LocalPlayer p, Stamina s, Move move, boolean held, int target) {
         if (!MoveServer.allowed(p, s, move)) {
             if (!s.canAfford(move, p)) flash = 12;
@@ -228,7 +237,7 @@ public final class MovesClient {
         moveYaw = p.getYRot();
         pushDir = null;
         airTicks = 0;
-        s.hopTarget = target;
+        s.target = target;
         MoveAnimator.play(p, move);
         MovesNet.CHANNEL.sendToServer(new MovesNet.Request((byte) move.ordinal(), held, target));
         return true;
@@ -257,6 +266,10 @@ public final class MovesClient {
             hop(p, s, t);
             return;
         }
+        if (move == Move.DASH) {
+            dash(p, t);
+            return;
+        }
         float speed;
         if (move == Move.SLIDE) {
             // The run-up before the push counts towards the slide's length.
@@ -272,45 +285,71 @@ public final class MovesClient {
         p.setDeltaMovement(dir.x * speed, p.getDeltaMovement().y, dir.z * speed);
     }
 
-    /** The hop's flight: velocity for this tick, every tick of the hop. */
+    /** The vault's flight: horizontal velocity, take-off speed and the share of vanilla gravity in the air. */
     private static Vec3 hopVelocity = Vec3.ZERO;
-    private static float hopYaw;
+    private static float hopUp, hopGravity;
 
     /**
-     * The hop: still while turning and crouching, then a jump over the enemy that lands
-     * {@link Move#HOP_BEYOND} blocks behind them, with lighter gravity; on the way the player turns
-     * round to face them (client setting).
+     * The vault: the run goes on through the crouch (stopping short of the mob), then a jump over
+     * its back, as high as that back is as it stoops (Hop.back: a pig needs less than a zombie),
+     * 13 ticks in the air whatever the height, landing {@link Move#HOP_BEYOND} blocks beyond it
+     * and running on the way the player was going.
      */
     private static void hop(AbstractClientPlayer p, Stamina s, int t) {
         Vec3 v = p.getDeltaMovement();
+        net.minecraft.world.entity.Entity enemy = p.level().getEntity(s.target);
         if (t < Move.HOP_TAKEOFF) {
-            p.setDeltaMovement(0, v.y, 0);
+            Vec3 dir = move(Move.HOP);
+            double speed = Math.min(Math.max(v.horizontalDistance(), 0.15), 0.28);
+            if (enemy != null && gap(p, enemy) < 0.35) speed = 0;
+            p.setDeltaMovement(dir.x * speed, v.y, dir.z * speed);
             return;
         }
         int air = Move.HOP_LAND - Move.HOP_TAKEOFF;
         if (t == Move.HOP_TAKEOFF) {
-            net.minecraft.world.entity.Entity enemy = p.level().getEntity(s.hopTarget);
             Vec3 over = enemy != null ? enemy.position() : p.position().add(move(Move.HOP).scale(1.5));
             Vec3 dir = new Vec3(over.x - p.getX(), 0, over.z - p.getZ());
             if (dir.lengthSqr() < 1.0E-4) dir = move(Move.HOP);
             Vec3 land = over.add(dir.normalize().scale(Move.HOP_BEYOND));
             hopVelocity = new Vec3((land.x - p.getX()) / air, 0, (land.z - p.getZ()) / air);
-            hopYaw = p.getYRot();
-            p.setDeltaMovement(hopVelocity.x, Move.HOP_JUMP, hopVelocity.z);
+            // A jump that tops out at the mob's stooping back and comes down after `air` ticks, tick
+            // by tick (vanilla drag aside): gravity 8h/(air^2 - 1) a tick, up at 4h/(air + 1).
+            float top = enemy instanceof net.minecraft.world.entity.LivingEntity le
+                    ? (float) (dev.mcreload.moves.Hop.back(le) + le.getY() - p.getY()) : 1.0f;
+            top = Mth.clamp(top, 0.35f, 2.2f);
+            hopUp = 4f * top / (air + 1);
+            hopGravity = 8f * top / (air * air - 1) / 0.08f;
+            p.setDeltaMovement(hopVelocity.x, hopUp, hopVelocity.z);
             p.setOnGround(false);
             return;
         }
         if (t <= Move.HOP_LAND + 2 && !p.onGround()) {
-            p.setDeltaMovement(hopVelocity.x, v.y + 0.08 * (1 - Move.HOP_GRAVITY), hopVelocity.z);
-            if (dev.mcreload.moves.HudConfig.hopTurn()) {
-                // Done turning a little before touchdown (the landing may come a tick or two early).
-                float turned = Math.min(1f, (t - Move.HOP_TAKEOFF) / (float) (air - 4));
-                p.setYRot(hopYaw + 180f * turned);
-                p.setYHeadRot(p.getYRot());
-            }
+            p.setDeltaMovement(hopVelocity.x, v.y + 0.08 * (1 - hopGravity), hopVelocity.z);
         } else if (t <= Move.HOP_LAND + 3) {
-            p.setDeltaMovement(v.x * 0.3, v.y, v.z * 0.3);    // a short skid on landing
+            // Landed: running on, the way the vault went.
+            Vec3 dir = hopVelocity.lengthSqr() > 1.0E-6 ? hopVelocity.normalize() : move(Move.HOP);
+            p.setDeltaMovement(dir.x * 0.28, v.y, dir.z * 0.28);
         }
+    }
+
+    /** Blocks between the player's hitbox and another entity's, horizontally. */
+    private static double gap(net.minecraft.world.entity.Entity a, net.minecraft.world.entity.Entity b) {
+        double d = new Vec3(b.getX() - a.getX(), 0, b.getZ() - a.getZ()).length();
+        return d - a.getBbWidth() / 2 - b.getBbWidth() / 2;
+    }
+
+    /**
+     * The dash strike: the run goes on and speeds up into the lunge (Strikes.DASH_RUN), stopping
+     * where the blade reaches the mob in front instead of running into it.
+     */
+    private static void dash(AbstractClientPlayer p, int t) {
+        float[] run = dev.mcreload.moves.Strikes.DASH_RUN;
+        Vec3 v = p.getDeltaMovement();
+        float speed = t < run.length ? run[t] : 0f;
+        net.minecraft.world.entity.LivingEntity ahead = dev.mcreload.moves.Strikes.dashTarget(p);
+        if (ahead != null && gap(p, ahead) <= dev.mcreload.moves.Strikes.DASH_STOP) speed = 0f;
+        Vec3 dir = move(Move.DASH);
+        p.setDeltaMovement(dir.x * speed, v.y, dir.z * speed);
     }
 
     private static Vec3 move(Move m) {
@@ -323,7 +362,9 @@ public final class MovesClient {
      */
     private static void interaction(net.minecraftforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         LocalPlayer p = Minecraft.getInstance().player;
-        if (p != null && (Stamina.of(p).move == Move.BARRAGE || (event.isAttack() && BowStance.active(p)))) {
+        Stamina s = p == null ? null : Stamina.of(p);
+        boolean striking = s != null && s.move != null && s.move.strike() && s.moveTick < s.move.recoverFrom();
+        if (p != null && (s.move == Move.BARRAGE || striking || (event.isAttack() && BowStance.active(p)))) {
             event.setCanceled(true);
             event.setSwingHand(false);
         }
@@ -362,7 +403,12 @@ public final class MovesClient {
         BlockPos below = BlockPos.containing(p.getX(), p.getY() - 0.2, p.getZ());
         BlockState ground = p.level().getBlockState(below);
         if (t == Move.PUSH_TICK) sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 0.25f, 1.6f);
-        if (move == Move.DODGE_LEFT || move == Move.DODGE_RIGHT) {
+        if (move == Move.HOP) {
+            if (t == Move.HOP_LAND) step(p, ground, 0.7f);
+        } else if (move == Move.DASH) {
+            // Footfalls of the run-in, the lunge's front foot planting.
+            if (t == 3 || t == 6 || t == 9) step(p, ground, t == 9 ? 0.8f : 0.4f);
+        } else if (move == Move.DODGE_LEFT || move == Move.DODGE_RIGHT) {
             if (t == 6) step(p, ground, 0.5f);
         } else if (move.rolls()) {
             if (t == 5 || t == 11) step(p, ground, 0.6f);

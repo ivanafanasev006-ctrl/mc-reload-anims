@@ -169,6 +169,10 @@ public final class JointRig {
                 itemTiltOff = r.motion.itemTiltOff.v;
                 mainRight = r.motion.mainRight;
             }
+            // A bow is held still: the blade's turns in the fist (drawing it, the guard, the run,
+            // the slashes) leave it as it is.
+            if (dev.mcreload.anim.client.rig.Weapons.isBow(p.getMainHandItem())) itemTilt = 0f;
+            if (dev.mcreload.anim.client.rig.Weapons.isBow(p.getOffhandItem())) itemTiltOff = 0f;
         }
     }
 

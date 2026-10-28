@@ -4,7 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.function.IntSupplier;
+import java.util.function.DoubleSupplier;
 
 /**
  * The moves, each tied to the keys of its animation (docs/moves.md). Times are game ticks from the
@@ -31,20 +31,21 @@ public enum Move {
      */
     SLIDE("slide", 1.4f, 25, -1, -1, 1, 18, Side.FRONT, MovesConfig::costSlide),
     /**
-     * R + W at point blank against an enemy winding up: a perfect parry and a jump over them,
-     * spinning round horizontally (docs/combat-spec.md, 5). Turn and crouch until 0.25 s (the
-     * parry window: their blow does not land), take-off at 0.25 s, over their head, landing behind
-     * them at 0.9 s, standing at 1.15 s; free to run or strike from the landing. They cannot hurt
-     * the player until the landing. See {@link #HOP_TAKEOFF}.
+     * R + W at point blank to a mob of some size (a zombie, a skeleton, a pig, a sheep; not a
+     * chicken): a vault over its back (hop_roll_dodge, docs/combat-spec.md, 5). Crouch until 0.25 s
+     * (its blow in this window is parried), take-off at 0.25 s, a sideways roll over it, which
+     * stoops under the hand, landing beyond it at 0.9 s and running on; at 0.8 s it is shoved back
+     * 1-2 blocks. It cannot hurt the player until the landing. See {@link #HOP_TAKEOFF}.
      */
-    HOP("hop", 1f, 24, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop),
+    HOP("hop_roll_dodge", 1f, 30, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop),
     /**
      * The volley (docs/combat-spec.md, 6.2): a fully drawn bow, then the left button. A sharp step
-     * back (0.85 block in 0.1-0.5 s) down onto a knee, and three arrows at the animation's
-     * releases, 0.54, 0.79 and 1.04 s (Bow.VOLLEY_SHOTS).
+     * back down onto a knee, sliding on into the kneel (1.85 blocks in 0.1-0.55 s; author: a block
+     * more than the 0.85 it was), and three arrows at the animation's releases, 0.54, 0.79 and
+     * 1.04 s (Bow.VOLLEY_SHOTS).
      */
     BARRAGE("bow_barrage", 1f, 24, -1, -1, -1, -1, Side.BACK, MovesConfig::costBarrage,
-            0.15f, 0.15f, 0.13f, 0.12f, 0.10f, 0.08f, 0.07f, 0.05f),
+            0.30f, 0.28f, 0.26f, 0.23f, 0.20f, 0.17f, 0.14f, 0.11f, 0.09f, 0.07f),
 
     // ---- the bow's combat flow (docs/combat-spec.md, 6.3): after the volley, the right button
     // held, each left click is a dodge by the keys held then (a spin almost in place with none),
@@ -83,14 +84,29 @@ public enum Move {
             0.62f, 0.52f, 0.40f, 0.26f),
     /** D: the spin back to the right (the second half). */
     LEGOLAS_RIGHT("bow_walk_around", Bow.shot(20, 40, -1, 17), 20, 2, 6, -1, -1, Side.RIGHT, MovesConfig::costBowDodge,
-            0.62f, 0.52f, 0.40f, 0.26f);
+            0.62f, 0.52f, 0.40f, 0.26f),
 
-    /** The hop: take-off and landing ticks (0.25 s and 0.9 s of the animation). */
+    // ---- sword moves (author, 2026-10-28)
+    /**
+     * Sprinting with W and a sword, the left button: a dash into a lunge, the blade into the
+     * belly (dash_strike). The run carries on and speeds up into the lunge (about 3.4 blocks by
+     * 0.45 s, less if someone is in the way), the stab lands at 0.45 s with a crit, as a blow in a
+     * jump does (Strikes.DASH_HIT). Free to move again once the blade is back out (0.85 s).
+     */
+    DASH("dash_strike", 1f, 31, -1, -1, -1, -1, Side.FRONT, MovesConfig::costDash),
+    /**
+     * A weakened mob (a fifth of its health or less) at point blank, the left button held with a
+     * sword: the finishing stab (finisher_stab). The free hand takes it by the shoulder, the blade
+     * goes in at 0.35 s and it is held on it until the blade comes out at 0.95 s, when it dies
+     * (Strikes.FINISH_STAB, FINISH_KILL). Not on bosses. It cannot hurt the player meanwhile.
+     */
+    FINISHER("finisher_stab", 1f, 30, -1, -1, -1, -1, Side.FRONT, MovesConfig::costFinisher);
+
+    /** The vault: take-off and landing ticks (0.25 s and 0.9 s of the animation). */
     public static final int HOP_TAKEOFF = 5, HOP_LAND = 18;
-    /** The hop's jump: upward speed at take-off and the gravity in the air (a share of vanilla's):
-     *  13 ticks up there with the top at 2.3 blocks, the feet over a zombie's head. */
-    public static final float HOP_JUMP = 0.68f, HOP_GRAVITY = 1.4f;
-    /** The hop lands this far beyond the enemy it jumps over. */
+    /** The vault shoves the mob back as the player comes down beyond it (0.8 s of the animation). */
+    public static final int HOP_SHOVE = 16;
+    /** The vault lands this far beyond the mob it goes over. */
     public static final float HOP_BEYOND = 1.4f;
     /** Side dodges knock an arrow aside with the weapon in these ticks (0-0.21 s, docs/moves.md). */
     public static final int DEFLECT_FROM = 0, DEFLECT_TO = 4;
@@ -114,19 +130,19 @@ public enum Move {
     public final Side side;
     /** Bow moves: where the animation starts and stops, when the arrow leaves; null for the rest. */
     public final Bow.Shot shot;
-    private final IntSupplier cost;
+    private final DoubleSupplier cost;
     /** Horizontal speed (blocks a tick) for each tick from {@link #PUSH_TICK}; empty for the slide. */
     private final float[] push;
 
-    Move(String anim, float animSpeed, int length, int iFrom, int iTo, int lowFrom, int lowTo, Side side, IntSupplier cost, float... push) {
+    Move(String anim, float animSpeed, int length, int iFrom, int iTo, int lowFrom, int lowTo, Side side, DoubleSupplier cost, float... push) {
         this(anim, animSpeed, null, length, iFrom, iTo, lowFrom, lowTo, side, cost, push);
     }
 
-    Move(String anim, Bow.Shot shot, int length, int iFrom, int iTo, int lowFrom, int lowTo, Side side, IntSupplier cost, float... push) {
+    Move(String anim, Bow.Shot shot, int length, int iFrom, int iTo, int lowFrom, int lowTo, Side side, DoubleSupplier cost, float... push) {
         this(anim, 1f, shot, length, iFrom, iTo, lowFrom, lowTo, side, cost, push);
     }
 
-    Move(String anim, float animSpeed, Bow.Shot shot, int length, int iFrom, int iTo, int lowFrom, int lowTo, Side side, IntSupplier cost, float... push) {
+    Move(String anim, float animSpeed, Bow.Shot shot, int length, int iFrom, int iTo, int lowFrom, int lowTo, Side side, DoubleSupplier cost, float... push) {
         this.animation = new ResourceLocation(KinetrixMoves.MODID, anim);
         this.shot = shot;
         this.animSpeed = animSpeed;
@@ -140,8 +156,8 @@ public enum Move {
         this.push = push;
     }
 
-    public int cost() {
-        return cost.getAsInt();
+    public float cost() {
+        return (float) cost.getAsDouble();
     }
 
     public boolean untouchable(int tick) {
@@ -169,6 +185,16 @@ public enum Move {
         return this == LEGOLAS_LEFT || this == LEGOLAS_RIGHT;
     }
 
+    /** A move made at someone (the vault over a mob, the finisher): the client names them, the server checks them. */
+    public boolean targeted() {
+        return this == HOP || this == FINISHER;
+    }
+
+    /** A sword move started by the left button: while it plays the button strikes nothing else. */
+    public boolean strike() {
+        return this == DASH || this == FINISHER;
+    }
+
     /**
      * The tick from which moving, jumping or striking ends the move early: once its push is over
      * (a dodge or a roll gets up, the hop has landed), so it does not hold the player in place
@@ -178,6 +204,8 @@ public enum Move {
         return switch (this) {
             case DODGE_LEFT, DODGE_RIGHT, DODGE_BACK, DODGE_FRONT -> PUSH_TICK + push.length + 1;
             case HOP -> HOP_LAND + 1;
+            case DASH -> Strikes.DASH_FREE;
+            case FINISHER -> Strikes.FINISH_KILL + 1;
             default -> -1;
         };
     }

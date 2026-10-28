@@ -19,5 +19,6 @@
   "kinetrix_moves.settings.sides.tip": "Щиты слева над бронёй и энергия справа над голодом — или наоборот.",
   "kinetrix_moves.settings.arrows": "Счётчик стрел",
   "kinetrix_moves.settings.arrows.tip": "Слева от хотбара, когда в руке лук: стрела и сколько их у тебя.",
-  "kinetrix_moves.settings.preview": "Как выглядят полоски"
+  "kinetrix_moves.settings.preview": "Как выглядят полоски",
+  "kinetrix_moves.hint.finisher": "[%s] — добить"
 }

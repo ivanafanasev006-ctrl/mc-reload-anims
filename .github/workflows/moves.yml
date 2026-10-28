@@ -87,7 +87,7 @@ jobs:
           TAG="moves-v${{ steps.ver.outputs.version }}-build${{ github.run_number }}"
           gh release create "$TAG" moves/build/libs/*.jar --target "$GITHUB_SHA" \
             --title "Kinetrix Moves ${{ steps.ver.outputs.version }} (build ${{ github.run_number }})" \
-            --notes "Automatic build of ${GITHUB_SHA::7}. Forge 1.20.1; needs Player Animator, best with Kinetrix 1.0.7-beta or later. Install on the client and the server." \
+            --notes "Automatic build of ${GITHUB_SHA::7}. Forge 1.20.1; needs Player Animator, best with Kinetrix 1.0.8-beta or later. Install on the client and the server." \
             --prerelease
 
       - name: Self-test pictures and report

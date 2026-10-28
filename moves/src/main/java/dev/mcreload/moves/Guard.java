@@ -30,15 +30,15 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  * <ul>
  *   <li>One sword ({@code cross_guard}): blows from the front lose 75 %, the sword 1 durability,
  *   the player 1 shield.</li>
- *   <li>Two swords ({@code cross_guard_double}): 90 %, each sword 1 durability, 1.5 shields.</li>
+ *   <li>Two swords ({@code cross_guard_flat}): 90 %, each sword 1 durability, 1.5 shields.</li>
  *   <li>Perfect parry: a blow in the first moments after the blade is up does not land; nothing
  *   is spent.</li>
  *   <li>No block with a shield in the other hand (that blocks the vanilla way) or without shields
  *   left.</li>
  * </ul>
  *
- * <p>Times follow the animations' keys (docs/moves.md): the blade is across at 0.2 s (0.25 s with
- * two), the parry window is the 0.2 s after that.</p>
+ * <p>Times follow the animations' keys (docs/moves.md): the blades are across at 0.2 s, the parry
+ * window is the 0.2 s after that.</p>
  */
 public final class Guard {
     /** Swords that are not {@link SwordItem}s (other mods' blades) can join through this tag. */
@@ -48,8 +48,8 @@ public final class Guard {
         NONE("", 0, 0, 0, 0f, 0f),
         /** One sword: blade up at 0.2 s, parry 0.2-0.4 s. */
         SINGLE("cross_guard", 4, 4, 8, 0.25f, 1f),
-        /** Two swords crossed: blades up at 0.25 s, parry 0.25-0.45 s. */
-        DOUBLE("cross_guard_double", 5, 5, 9, 0.10f, 1.5f);
+        /** Two swords crossed flat (cross_guard_flat, author 2026-10-28): blades up at 0.2 s, parry 0.2-0.4 s. */
+        DOUBLE("cross_guard_flat", 4, 4, 8, 0.10f, 1.5f);
 
         public final ResourceLocation animation;
         /** Guard tick from which blows are blocked; the perfect parry window (inclusive). */

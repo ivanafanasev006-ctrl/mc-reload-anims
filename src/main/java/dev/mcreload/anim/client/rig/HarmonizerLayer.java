@@ -69,6 +69,7 @@ public final class HarmonizerLayer implements IAnimation {
 
     @Override
     public @NotNull Vec3f get3DTransform(@NotNull String modelName, @NotNull TransformType type, float tickDelta, @NotNull Vec3f value0) {
+        if ((type == TransformType.ROTATION || type == TransformType.POSITION) && stillBow(modelName)) return new Vec3f(0f, 0f, 0f);
         int i = PoseFrame.indexOf(modelName);
         int t = PlayerRig.typeIndex(type);
         if (i < 0 || t < 0) return value0;
@@ -119,6 +120,19 @@ public final class HarmonizerLayer implements IAnimation {
         out[2] = z;
         lastOutValid[i][t] = true;
         return new Vec3f(x, y, z);
+    }
+
+    /**
+     * The item of this hand is a bow held in the hand (not drawn, not in a whole-body move of
+     * Kinetrix Moves, whose bow moves turn it on purpose): other mods' turns of it are dropped, so
+     * a sword's swing (Better Combat) swings the arm and the bow stays as it is held.
+     */
+    private boolean stillBow(String part) {
+        boolean right = "rightItem".equals(part);
+        if (!right && !"leftItem".equals(part)) return false;
+        net.minecraft.world.entity.player.Player p = rig.player;
+        net.minecraft.world.item.ItemStack stack = right == rig.motion.mainRight ? p.getMainHandItem() : p.getOffhandItem();
+        return Weapons.isBow(stack) && !p.isUsingItem() && !dev.mcreload.anim.api.KinetrixApi.wholeBody(p.getUUID());
     }
 
     boolean lastOut(int part, int type, float[] out) {

@@ -1,32 +1,6 @@
 {
   "parent": "bettercombat:sword",
   "attributes": {
-    "category": "bow",
-    "attacks": [
-      {
-        "hitbox": "HORIZONTAL_PLANE",
-        "damage_multiplier": 1,
-        "angle": 120,
-        "upswing": 0.45,
-        "animation": "kinetrix_moves:bow_strike_side",
-        "swing_sound": { "id": "bettercombat:staff_slash" }
-      },
-      {
-        "hitbox": "VERTICAL_PLANE",
-        "damage_multiplier": 1,
-        "angle": 120,
-        "upswing": 0.45,
-        "animation": "kinetrix_moves:bow_strike_overhead",
-        "swing_sound": { "id": "bettercombat:staff_slam", "pitch": 1.2 }
-      },
-      {
-        "hitbox": "FORWARD_BOX",
-        "damage_multiplier": 1,
-        "angle": 0,
-        "upswing": 0.43,
-        "animation": "kinetrix_moves:bow_strike_thrust",
-        "swing_sound": { "id": "bettercombat:staff_stab" }
-      }
-    ]
+    "category": "sword"
   }
 }

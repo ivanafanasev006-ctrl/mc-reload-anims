@@ -195,7 +195,7 @@ public final class MovesGameTests {
             s.energy = MovesConfig.maxEnergy() - 5f;
             eat(p, new ItemStack(Items.BAKED_POTATO));
             t.close(s.energy, MovesConfig.maxEnergy(), "energy over the top of the bar");
-            t.check(MovesConfig.appleFreeTicks() == 15 * 20, "golden apple free time " + MovesConfig.appleFreeTicks());
+            t.check(MovesConfig.appleFreeTicks() == 10 * 20, "golden apple free time " + MovesConfig.appleFreeTicks());
         }).run(5);
     }
 
@@ -342,8 +342,9 @@ public final class MovesGameTests {
     // ------------------------------------------------------------------ the hop and the deflect
 
     /**
-     * Hop over a zombie set on the player: its blow in the wind-up is parried, it cannot hurt the
-     * player until the landing, a later blow lands; Speed I at the end; 25 energy.
+     * Vault over a zombie at point blank: its blow in the crouch is parried, it cannot hurt the
+     * player until the landing, a later blow lands; it is shoved back 1-2 blocks; Speed I at the
+     * end; the vault's energy.
      */
     @GameTest(template = FLOOR, timeoutTicks = 240)
     public static void hopOverZombie(GameTestHelper h) {
@@ -351,50 +352,148 @@ public final class MovesGameTests {
         ServerPlayer p = t.player();
         Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
         Stamina s = Stamina.of(p);
+        double[] before = new double[1];
         t.at(2, () -> {
             zombie.setTarget(p);
             zombie.setAggressive(true);
             zombie.setYRot(180f);
             zombie.setYHeadRot(180f);
             s.energy = 100f;
-            t.check(MoveServer.request(p, Move.HOP, false, zombie.getId()), "hop refused against a zombie at point blank");
-            t.close(s.energy, 100f - MovesConfig.costHop(), "energy after a hop");
+            t.check(MoveServer.request(p, Move.HOP, false, zombie.getId()), "vault refused over a zombie at point blank");
+            t.close(s.energy, 100f - MovesConfig.costHop(), "energy after a vault");
         });
         t.at(5, () -> {
             p.hurt(p.damageSources().mobAttack(zombie), 6f);
-            t.close(p.getHealth(), 20f, "health after the zombie's blow in the wind-up");
+            t.close(p.getHealth(), 20f, "health after the zombie's blow in the crouch");
         });
+        t.at(1 + Move.HOP_SHOVE, () -> before[0] = zombie.distanceTo(p));
         t.at(20, () -> {
             p.invulnerableTime = 0;
             p.hurt(p.damageSources().mobAttack(zombie), 6f);
-            t.close(p.getHealth(), 20f, "health after the zombie's blow during the flip");
+            t.close(p.getHealth(), 20f, "health after the zombie's blow during the vault");
+        });
+        t.at(12 + Move.HOP_SHOVE, () -> {
+            // Shoved back the way the player came from: here, where the test player stands.
+            double moved = zombie.position().subtract(h.absoluteVec(new Vec3(3.5, 2.0, 5.5))).horizontalDistance();
+            t.check(moved >= 0.8 && moved <= 2.5, "zombie shoved " + moved + " blocks (want 1-2)");
         });
         t.at(2 + Move.HOP.length, () -> {
-            t.check(p.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED), "no Speed after the hop");
+            t.check(p.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED), "no Speed after the vault");
             p.invulnerableTime = 0;
             p.hurt(p.damageSources().mobAttack(zombie), 6f);
-            t.check(p.getHealth() < 20f, "the zombie still cannot hurt the player after the hop");
+            t.check(p.getHealth() < 20f, "the zombie still cannot hurt the player after the vault");
         }).run(3 + Move.HOP.length);
     }
 
-    /** No hop without an enemy set on the player (a calm zombie, a cow): R + W rolls instead. */
+    /**
+     * Who can be vaulted (author): a zombie (even a calm one), a pig, a sheep; not a chicken, a baby
+     * zombie (too small), an iron golem (too tall), nobody. R + W rolls instead.
+     */
     @GameTest(template = FLOOR, timeoutTicks = 200)
-    public static void hopNeedsAnEnemy(GameTestHelper h) {
+    public static void vaultNeedsAMobOfSomeSize(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Zombie calm = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
-        net.minecraft.world.entity.animal.Cow cow = h.spawnWithNoFreeWill(EntityType.COW, 4, 2, 5);
-        Stamina s = Stamina.of(p);
-        // Truly calm: a test mob keeps choosing targets unless its AI is off.
+        net.minecraft.world.entity.animal.Pig pig = h.spawnWithNoFreeWill(EntityType.PIG, 2, 2, 5);
+        net.minecraft.world.entity.animal.Sheep sheep = h.spawnWithNoFreeWill(EntityType.SHEEP, 4, 2, 5);
+        net.minecraft.world.entity.animal.Chicken chicken = h.spawnWithNoFreeWill(EntityType.CHICKEN, 3, 2, 4);
+        Zombie baby = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 2, 4);
+        baby.setBaby(true);
+        net.minecraft.world.entity.animal.IronGolem golem = h.spawnWithNoFreeWill(EntityType.IRON_GOLEM, 4, 2, 6);
         calm.setNoAi(true);
         t.at(2, () -> {
-            calm.setTarget(null);
-            calm.setAggressive(false);
-            t.check(!MoveServer.request(p, Move.HOP, false, calm.getId()), "hop over a zombie that is not after the player");
-            t.check(!MoveServer.request(p, Move.HOP, false, cow.getId()), "hop over a cow");
-            t.check(!MoveServer.request(p, Move.HOP, false, -1), "hop over nobody");
-            t.check(s.move == null, "a refused hop left a move running");
+            t.check(dev.mcreload.moves.Hop.valid(p, calm), "a calm zombie cannot be vaulted");
+            t.check(dev.mcreload.moves.Hop.valid(p, pig), "a pig cannot be vaulted");
+            t.check(dev.mcreload.moves.Hop.valid(p, sheep), "a sheep cannot be vaulted");
+            t.check(!dev.mcreload.moves.Hop.valid(p, chicken), "a chicken can be vaulted");
+            t.check(!dev.mcreload.moves.Hop.valid(p, baby), "a baby zombie can be vaulted");
+            t.check(!dev.mcreload.moves.Hop.valid(p, golem), "an iron golem can be vaulted");
+            t.check(!MoveServer.request(p, Move.HOP, false, chicken.getId()), "vault over a chicken");
+            t.check(!MoveServer.request(p, Move.HOP, false, -1), "vault over nobody");
+            t.check(s(p).move == null, "a refused vault left a move running");
+            t.check(MoveServer.request(p, Move.HOP, false, pig.getId()), "vault over a pig refused");
         }).run(3);
+    }
+
+    private static Stamina s(ServerPlayer p) {
+        return Stamina.of(p);
+    }
+
+    // ------------------------------------------------------------------ the sword strikes
+
+    /**
+     * Finisher: a zombie at a fifth of its health, a sword, point blank. It is held (its blows do
+     * not land), hurt but alive after the stab, dead when the blade comes out; it costs its energy.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void finisherKillsAWeakMob(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 4);
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            zombie.setHealth(zombie.getMaxHealth() * 0.2f);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.FINISHER, false, zombie.getId()), "finisher refused on a weak zombie at point blank");
+            t.close(s.energy, 100f - MovesConfig.costFinisher(), "energy after a finisher");
+        });
+        t.at(6, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 6f);
+            t.close(p.getHealth(), 20f, "health after the held zombie's blow");
+        });
+        t.at(3 + dev.mcreload.moves.Strikes.FINISH_STAB, () -> t.check(zombie.isAlive() && zombie.getHealth() < 4f,
+                "after the stab the zombie should be hurt and alive: " + zombie.getHealth()));
+        t.at(3 + dev.mcreload.moves.Strikes.FINISH_KILL, () -> t.check(!zombie.isAlive(), "the zombie survived the finisher"))
+                .run(4 + dev.mcreload.moves.Strikes.FINISH_KILL);
+    }
+
+    /** No finisher on a healthy mob, without a sword, on a boss (by the tag or by its health), too far. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void finisherRules(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie healthy = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 4);
+        Zombie big = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 4, 2, 4);
+        Zombie far = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 7);
+        t.at(2, () -> {
+            big.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(300.0);
+            big.setHealth(20f);
+            far.setHealth(2f);
+            healthy.setHealth(healthy.getMaxHealth());
+            t.check(!MoveServer.request(p, Move.FINISHER, false, healthy.getId()), "finisher without a sword");
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            t.check(!MoveServer.request(p, Move.FINISHER, false, healthy.getId()), "finisher on a zombie at full health");
+            t.check(!MoveServer.request(p, Move.FINISHER, false, big.getId()), "finisher on a boss (300 health)");
+            t.check(!MoveServer.request(p, Move.FINISHER, false, far.getId()), "finisher 3.5 blocks away");
+            t.check(dev.mcreload.moves.Strikes.boss(big), "300 health is not a boss");
+            t.check(!dev.mcreload.moves.Strikes.boss(healthy), "a zombie is a boss");
+            t.check(s(p).move == null, "a refused finisher left a move running");
+        }).run(3);
+    }
+
+    /** Dash strike: sprinting with a sword, the stab at 0.45 s is a crit into the zombie in front; no dash walking. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void dashStrikeCrits(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            p.setSprinting(false);
+            t.check(!MoveServer.request(p, Move.DASH, false), "dash strike while walking");
+            p.setSprinting(true);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.DASH, false), "dash strike refused while sprinting with a sword");
+            t.close(s.energy, 100f - MovesConfig.costDash(), "energy after a dash strike");
+        });
+        t.at(2 + dev.mcreload.moves.Strikes.DASH_HIT - 1, () -> t.close(zombie.getHealth(), 20f, "zombie hurt before the stab"));
+        t.at(3 + dev.mcreload.moves.Strikes.DASH_HIT, () -> {
+            // An iron sword hits for 6; a crit for 9 (a zombie's 2 armour takes a little off).
+            float lost = 20f - zombie.getHealth();
+            t.check(lost >= 6f * 1.4f && lost <= 6f * 1.5f + 0.01f, "dash strike took " + lost + " health (a crit of 6 is 9)");
+        }).run(4 + dev.mcreload.moves.Strikes.DASH_HIT);
     }
 
     /** A side dodge with a sword knocks an arrow off to the sword's side, for 1.5 shields. */

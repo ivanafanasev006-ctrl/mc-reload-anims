@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "1";
+    public static final String VERSION = "2";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -63,9 +63,9 @@ public final class MovesNet {
         if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), msg);
     }
 
-    /** Everyone who sees {@code e} sees them stoop forward (a missed blow) in {@code delay} ticks, for {@code ticks}. */
-    public static void stoop(net.minecraft.world.entity.Entity e, int delay, int ticks) {
-        CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> e), new Stoop(e.getId(), (byte) delay, (byte) ticks));
+    /** Everyone who sees {@code e} sees it stoop forward by {@code lean} degrees (under a vaulting hand) in {@code delay} ticks, for {@code ticks}. */
+    public static void stoop(net.minecraft.world.entity.Entity e, int delay, int ticks, float lean) {
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> e), new Stoop(e.getId(), (byte) delay, (byte) ticks, (byte) Math.round(lean)));
     }
 
     public static void deny(ServerPlayer p, Move move) {
@@ -90,7 +90,7 @@ public final class MovesNet {
 
     // ------------------------------------------------------------------ messages
 
-    /** Client -> server: the player started this move (held: C still down, for the slide; target: whom a hop goes over, -1). */
+    /** Client -> server: the player started this move (held: C still down, for the slide; target: the mob a vault goes over or a finisher is made on, -1). */
     public record Request(byte move, boolean held, int target) {
         static void write(Request m, FriendlyByteBuf b) { b.writeByte(m.move); b.writeBoolean(m.held); b.writeVarInt(m.target + 1); }
         static Request read(FriendlyByteBuf b) { return new Request(b.readByte(), b.readBoolean(), b.readVarInt() - 1); }
@@ -178,13 +178,13 @@ public final class MovesNet {
         }
     }
 
-    /** Server -> client: entity {@code entity} stoops forward as if it had missed (the hop). */
-    public record Stoop(int entity, byte delay, byte ticks) {
-        static void write(Stoop m, FriendlyByteBuf b) { b.writeVarInt(m.entity); b.writeByte(m.delay); b.writeByte(m.ticks); }
-        static Stoop read(FriendlyByteBuf b) { return new Stoop(b.readVarInt(), b.readByte(), b.readByte()); }
+    /** Server -> client: entity {@code entity} stoops forward by {@code lean} degrees (the vault's hand on its back). */
+    public record Stoop(int entity, byte delay, byte ticks, byte lean) {
+        static void write(Stoop m, FriendlyByteBuf b) { b.writeVarInt(m.entity); b.writeByte(m.delay); b.writeByte(m.ticks); b.writeByte(m.lean); }
+        static Stoop read(FriendlyByteBuf b) { return new Stoop(b.readVarInt(), b.readByte(), b.readByte(), b.readByte()); }
         static void handle(Stoop m, Supplier<NetworkEvent.Context> ctx) {
             ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                    () -> () -> dev.mcreload.moves.client.StoopFx.stoop(m.entity, m.delay, m.ticks)));
+                    () -> () -> dev.mcreload.moves.client.StoopFx.stoop(m.entity, m.delay, m.ticks, m.lean)));
             ctx.get().setPacketHandled(true);
         }
     }

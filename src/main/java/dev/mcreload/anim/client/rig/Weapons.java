@@ -34,6 +34,15 @@ public final class Weapons {
         return isMeleeWeapon(stack) && !(stack.getItem() instanceof net.minecraft.world.item.ProjectileWeaponItem);
     }
 
+    /**
+     * A bow (Kinetrix Moves makes it hit like a sword): held still in the hand. It takes the sword's
+     * stance and swings, but is never turned over in the fist like a blade, nor by another mod's
+     * sword animation (Better Combat's swings turn the item they hold).
+     */
+    public static boolean isBow(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() instanceof net.minecraft.world.item.BowItem;
+    }
+
     /** A sword (or a modded blade like one): a melee weapon that is not an axe or a trident. */
     public static boolean isSword(ItemStack stack) {
         if (stack.isEmpty()) return false;

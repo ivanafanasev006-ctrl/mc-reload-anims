@@ -22,11 +22,11 @@ public final class MoveServer {
         return request(p, move, held, -1);
     }
 
-    /** {@code target}: the enemy a hop goes over (its entity id), -1 for other moves. */
+    /** {@code target}: the mob a vault goes over or a finisher is made on (its entity id), -1 for other moves. */
     public static boolean request(ServerPlayer p, Move move, boolean held, int target) {
         Stamina s = Stamina.of(p);
-        net.minecraft.world.entity.Entity enemy = move == Move.HOP ? p.level().getEntity(target) : null;
-        if (!allowed(p, s, move) || (move == Move.HOP && !Hop.valid(p, enemy))) {
+        net.minecraft.world.entity.Entity enemy = move.targeted() ? p.level().getEntity(target) : null;
+        if (!allowed(p, s, move) || !validTarget(p, move, enemy)) {
             MovesNet.deny(p, move);
             sync(p, s, true);
             return false;
@@ -35,6 +35,7 @@ public final class MoveServer {
         Guard.lower(p, s);
         s.start(p, move, held);
         if (move == Move.HOP) Hop.started(p, s, enemy);
+        if (move == Move.FINISHER) Strikes.finisherStarted(p, s, enemy);
         if (move == Move.BARRAGE) p.stopUsingItem();     // the volley takes over the drawn bow
         MovesNet.play(p, move);
         sync(p, s, true);
@@ -54,6 +55,13 @@ public final class MoveServer {
         MovesNet.stop(p);
     }
 
+    /** The mob a targeted move is made at is one it may be made at (the client named it; the server checks). */
+    private static boolean validTarget(ServerPlayer p, Move move, net.minecraft.world.entity.Entity e) {
+        if (move == Move.HOP) return Hop.valid(p, e);
+        if (move == Move.FINISHER) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
+        return true;
+    }
+
     public static boolean allowed(Player p, Stamina s, Move move) {
         if (!p.isAlive() || p.isSpectator() || p.isPassenger() || p.isSleeping() || p.isFallFlying()
                 || p.getAbilities().flying || p.isInWater() || p.isInLava()) return false;
@@ -64,7 +72,11 @@ public final class MoveServer {
         if (s.move != null && s.moveTick < s.move.freeFrom()) return false;
         if (!s.canAfford(move, p)) return false;
         boolean ground = p.onGround() || p.tickCount - lastGround(p) <= GROUND_GRACE;
-        if (move == Move.SLIDE) return ground && (p.isSprinting() || p.tickCount - lastSprint(p) <= GROUND_GRACE);
+        boolean sprint = p.isSprinting() || p.tickCount - lastSprint(p) <= GROUND_GRACE;
+        if (move == Move.SLIDE) return ground && sprint;
+        // The sword moves of the left button: a sword in hand; the dash off a sprint.
+        if (move.strike() && !Strikes.sword(p)) return false;
+        if (move == Move.DASH) return ground && sprint;
         return ground || !MovesConfig.dodgeOnlyOnGround();
     }
 

@@ -39,6 +39,33 @@ public final class MovesHud {
         event.registerAbove(VanillaGuiOverlay.ARMOR_LEVEL.id(), "left_bar", MovesHud::left);
         event.registerAbove(VanillaGuiOverlay.FOOD_LEVEL.id(), "right_bar", MovesHud::right);
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "arrows", MovesHud::arrows);
+        event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "finisher_hint", MovesHud::finisherHint);
+    }
+
+    /** How visible the finisher hint is, 0..1 (it fades in and out instead of blinking). */
+    private static float hint;
+    private static long hintFrame;
+
+    /**
+     * Under the crosshair, while a weakened mob can be finished (StrikeInput): which button does it.
+     * Fades in over 0.15 s and out over 0.25 s, pulsing a little so the eye catches it.
+     */
+    private static void finisherHint(ForgeGui gui, GuiGraphics g, float partialTick, int width, int height) {
+        Minecraft mc = gui.getMinecraft();
+        long now = net.minecraft.Util.getMillis();
+        float dt = hintFrame == 0 ? 0f : Math.min(0.1f, (now - hintFrame) / 1000f);
+        hintFrame = now;
+        boolean on = !mc.options.hideGui && mc.player != null && mc.screen == null && StrikeInput.finisherTarget() != null;
+        hint = Mth.clamp(hint + (on ? dt / 0.15f : -dt / 0.25f), 0f, 1f);
+        if (hint <= 0f) return;
+        float pulse = 0.85f + 0.15f * Mth.sin(now / 1000f * Mth.TWO_PI * 1.5f);
+        int alpha = Math.max(8, Math.round(255 * hint * pulse));
+        net.minecraft.network.chat.Component text = net.minecraft.network.chat.Component.translatable(
+                "kinetrix_moves.hint.finisher", mc.options.keyAttack.getTranslatedKeyMessage());
+        int y = height / 2 + 10;
+        int w = gui.getFont().width(text);
+        g.fill(width / 2 - w / 2 - 3, y - 2, width / 2 + (w + 1) / 2 + 3, y + 10, (Math.round(0x90 * hint) << 24));
+        g.drawCenteredString(gui.getFont(), text, width / 2, y, (alpha << 24) | 0xFFD050);
     }
 
     private static boolean show(ForgeGui gui) {

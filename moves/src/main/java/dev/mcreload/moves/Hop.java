@@ -12,28 +12,33 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
- * The hop over an enemy at point blank (docs/combat-spec.md, 5): R + W when an enemy right in
- * front is about to strike. Their blow in the wind-up (0-0.35 s) does not land; until the player
- * lands behind them they cannot hurt the player, and they stoop forward as if they had missed.
- * After the hop the player has Speed I for 1 s to strike back.
+ * The vault over a mob at point blank (docs/combat-spec.md, 5): R + W with a mob of some size right
+ * in front (a zombie, a skeleton, a pig, a sheep; not a chicken nor anything as small). The player
+ * rolls over its back: it stoops under the hand, its blow in the crouch (0-0.25 s) does not land,
+ * and until the player lands beyond it it cannot hurt them; at 0.8 s it is shoved back 1-2 blocks
+ * and the player runs on, with Speed I for 1 s.
  */
 public final class Hop {
-    /** The enemy stoops (as if they had missed) from the take-off until shortly after the landing. */
+    /** The mob stoops from the take-off until shortly after the landing. */
     public static final int STOOP_TICKS = Move.HOP_LAND - Move.HOP_TAKEOFF + 6;
+    /** How far the mob stoops under the hand (degrees, from its feet): a tall one deep, a low one hardly. */
+    public static final float LEAN_TALL = 40f, LEAN_LOW = 12f;
+    /** Above this height a mob stoops deep (a zombie does, a pig or a sheep does not). */
+    public static final float TALL = 1.4f;
+    /** Room left between the rolling body and the mob's back (blocks). */
+    public static final float CLEARANCE = 0.15f;
 
     /**
-     * The enemy R + W would hop over, or null: the nearest one within reach in front of the player
-     * that means to strike them. {@code strict} (the client choosing between hop and roll) also
-     * wants them facing the player; the server's check is looser, for lag.
+     * The mob R + W would vault over, or null: the nearest one within reach in front of the player
+     * that is big enough to vault. {@code strict} (the client choosing between vault and roll) wants
+     * it within 50 degrees of the look; the server's check is looser, for lag.
      */
     public static LivingEntity target(Player p, boolean strict) {
         double range = MovesConfig.hopRange() + (strict ? 0 : 1.5);
@@ -46,38 +51,41 @@ public final class Hop {
             double dist = to.length() - e.getBbWidth() / 2;
             if (dist > range || dist >= bestDist) continue;
             if (to.lengthSqr() > 1.0E-4 && angle(look, to) > (strict ? 50 : 80)) continue;
-            if (!threatens(e, p, strict)) continue;
+            if (!vaultable(e)) continue;
             best = e;
             bestDist = dist;
         }
         return best;
     }
 
-    /** The server's check of the enemy a client hops over: near enough, in front, set on the player. */
+    /** The server's check of the mob a client vaults over: near enough, in front, the right size. */
     public static boolean valid(Player p, Entity e) {
         if (!(e instanceof LivingEntity le) || !le.isAlive() || le == p) return false;
         Vec3 to = horizontal(le.position().subtract(p.position()));
         if (to.length() - le.getBbWidth() / 2 > MovesConfig.hopRange() + 1.5) return false;
         if (to.lengthSqr() > 1.0E-4 && angle(horizontal(p.getViewVector(1f)), to) > 80) return false;
-        return threatens(le, p, false);
+        return vaultable(le);
     }
 
-    /** A melee enemy set on the player (a monster that is aggressive or targets them, or a player). */
-    private static boolean threatens(LivingEntity e, Player p, boolean strict) {
-        if (e instanceof Player other) {
-            if (other.isCreative() || other.isSpectator()) return false;
-            return !strict || facing(e, p, 70);
-        }
-        if (!(e instanceof Mob mob) || !(e instanceof Enemy)) return false;
-        if (mob.getMainHandItem().getItem() instanceof ProjectileWeaponItem) return false;    // archers do not wind up
-        boolean set = mob.isAggressive() || mob.getTarget() == p;
-        return set && (!strict || facing(e, p, 70));
+    /**
+     * Big enough to put a hand on and low enough to go over (author: a zombie, a skeleton, a pig, a
+     * sheep, not a chicken nor a small mob), standing on something, not a boss; another player too.
+     */
+    public static boolean vaultable(LivingEntity e) {
+        if (e instanceof Player other) return !other.isCreative() && !other.isSpectator();
+        if (!(e instanceof Mob) || Strikes.boss(e) || e.isPassenger() || e.isVehicle()) return false;
+        float w = e.getBbWidth(), h = e.getBbHeight();
+        return w >= MovesConfig.vaultMinWidth() && h >= MovesConfig.vaultMinHeight() && h <= MovesConfig.vaultMaxHeight();
     }
 
-    private static boolean facing(LivingEntity e, Player p, double degrees) {
-        Vec3 look = horizontal(Vec3.directionFromRotation(0, e.getYHeadRot()));
-        Vec3 to = horizontal(p.position().subtract(e.position()));
-        return to.lengthSqr() < 1.0E-4 || angle(look, to) <= degrees;
+    /** How far this mob stoops under the vaulting hand (degrees). */
+    public static float lean(LivingEntity e) {
+        return e.getBbHeight() > TALL ? LEAN_TALL : LEAN_LOW;
+    }
+
+    /** Height of the mob's back as it stoops (blocks above its feet): what the vault must clear. */
+    public static float back(LivingEntity e) {
+        return e.getBbHeight() * Mth.cos(lean(e) * Mth.DEG_TO_RAD) + CLEARANCE;
     }
 
     private static Vec3 horizontal(Vec3 v) {
@@ -92,21 +100,39 @@ public final class Hop {
 
     // ------------------------------------------------------------------ server
 
-    /** The hop starts: the enemy is remembered and everyone who sees them is told to make them stoop. */
+    /** The vault starts: the mob is remembered, and everyone who sees it is told to make it stoop. */
     static void started(ServerPlayer p, Stamina s, Entity target) {
-        s.hopTarget = target.getId();
+        s.target = target.getId();
         s.hopSped = false;
-        MovesNet.stoop(target, Move.HOP_TAKEOFF, STOOP_TICKS);
+        s.hopFrom = p.position();
+        if (target instanceof LivingEntity le) MovesNet.stoop(target, Move.HOP_TAKEOFF, STOOP_TICKS, lean(le));
     }
 
-    /** Every server tick of a hop: no fall damage from it, and Speed I from the landing. */
+    /** Every server tick of a vault: no fall damage from it, the shove, and Speed I from the landing. */
     static void serverTick(ServerPlayer p, Stamina s) {
         if (s.move != Move.HOP) return;
         p.fallDistance = 0f;
+        if (s.moveTick == Move.HOP_SHOVE) shove(p, s);
         if (s.moveTick >= Move.HOP_LAND) landed(p, s);
     }
 
-    /** Speed I to strike back (author: 1 s), once: at the landing, or when the player runs off before it. */
+    /**
+     * The hand pushes off the mob's back: it is shoved back the way the player came, 1-2 blocks
+     * (less if it resists knockback), without harm.
+     */
+    static void shove(ServerPlayer p, Stamina s) {
+        Entity e = p.level().getEntity(s.target);
+        if (!(e instanceof LivingEntity mob) || !mob.isAlive() || s.hopFrom == null) return;
+        Vec3 back = horizontal(s.hopFrom.subtract(mob.position()));
+        if (back.lengthSqr() < 1.0E-4) back = horizontal(p.getViewVector(1f)).scale(-1);
+        back = back.normalize();
+        // knockback(strength, x, z) pushes away from (x, z): pass the opposite of where it should go.
+        mob.knockback(MovesConfig.vaultShove(), -back.x, -back.z);
+        mob.hurtMarked = true;
+        p.level().playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.PLAYERS, 0.6f, 0.9f);
+    }
+
+    /** Speed I to run on (author: 1 s), once: at the landing, or when the player runs off before it. */
     static void landed(ServerPlayer p, Stamina s) {
         if (s.hopSped) return;
         s.hopSped = true;
@@ -115,8 +141,8 @@ public final class Hop {
     }
 
     /**
-     * The enemy's blow: in the wind-up it is parried (it does not land, a clang); later, until the
-     * landing, they cannot hurt the player at all.
+     * The mob's blow: in the crouch it is parried (it does not land, a clang); later, until the
+     * landing, it cannot hurt the player at all.
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void attack(LivingAttackEvent event) {
@@ -124,7 +150,7 @@ public final class Hop {
         Stamina s = Stamina.of(p);
         if (s.move != Move.HOP || s.moveTick > Move.HOP_LAND + 3) return;
         Entity by = event.getSource().getEntity();
-        if (by == null || by.getId() != s.hopTarget) return;
+        if (by == null || by.getId() != s.target) return;
         event.setCanceled(true);
         if (s.moveTick <= Move.HOP_TAKEOFF && p.invulnerableTime <= 10) {
             ServerLevel level = p.serverLevel();

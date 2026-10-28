@@ -65,10 +65,12 @@ public final class Stamina {
     /** When the guard was last lowered (player ticks), for the parry re-arm time. */
     public int guardEndTick = Integer.MIN_VALUE / 2;
 
-    /** Hop: the entity id of the enemy jumped over. */
-    public int hopTarget = -1;
-    /** The hop's Speed I was given (at the landing, or when the player broke off the hop's end). */
+    /** The vault and the finisher: the entity id of the mob they are made at (-1: none). */
+    public int target = -1;
+    /** The vault's Speed I was given (at the landing, or when the player broke off the vault's end). */
     public boolean hopSped;
+    /** Where the vault took off (server): the mob is shoved back that way. */
+    public net.minecraft.world.phys.Vec3 hopFrom;
 
     /** The pose this move forced to keep the low hitbox standing (cleared when it ends). */
     boolean forcedStanding;
@@ -332,6 +334,7 @@ public final class Stamina {
                 s.serverTick(sp);
                 Guard.serverTick(sp, s);
                 Hop.serverTick(sp, s);
+                Strikes.serverTick(sp, s);
                 Deflect.serverTick(sp, s);
                 Bow.serverTick(sp, s);
                 MoveServer.afterTick(sp, s);

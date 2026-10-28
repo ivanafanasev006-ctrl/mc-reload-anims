@@ -14,12 +14,14 @@ public final class MovesConfig {
     public static final ForgeConfigSpec SPEC;
 
     private static final ForgeConfigSpec.DoubleValue MAX_ENERGY, REGEN, REGEN_BUSY, REGEN_STILL, REGEN_FED, EXHAUSTION,
-            APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD, COOKED_FOOD;
+            APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD, COOKED_FOOD,
+            COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
-            SHIELD_REGEN_SECONDS, COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, HOP_SPEED_TICKS;
+            SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
     private static final ForgeConfigSpec.IntValue PARRY_REARM;
-    private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE, KNEEL_MOVE;
+    private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE, KNEEL_MOVE,
+            VAULT_MIN_WIDTH, VAULT_MIN_HEIGHT, VAULT_MAX_HEIGHT, VAULT_SHOVE, DASH_CRIT, FINISH_HEALTH, FINISH_RANGE, FINISH_MAX_HEALTH;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -38,8 +40,9 @@ public final class MovesConfig {
                 .defineInRange("exhaustionPerEnergy", 0.05, 0.0, 4.0);
         COMBAT_SECONDS = b.comment("Seconds a player counts as in combat after hitting or being hit. [default]")
                 .defineInRange("combatSeconds", 5, 0, 600);
-        APPLE_INFINITE = b.comment("Golden apple: seconds during which moves cost no energy (author: 5, then 10 more: 15).")
-                .defineInRange("goldenAppleInfiniteSeconds", 15, 0, 3600);
+        // Renamed from goldenAppleInfiniteSeconds (15) so worlds made before get the new number.
+        APPLE_INFINITE = b.comment("Golden apple: seconds during which moves cost no energy (author: 5, then 15, then 10).")
+                .defineInRange("goldenAppleFreeSeconds", 10, 0, 3600);
         APPLE_BOOST_SECONDS = b.comment("Golden apple: seconds of faster refill. [default]")
                 .defineInRange("goldenAppleBoostSeconds", 30, 0, 3600);
         APPLE_BOOST = b.comment("Golden apple: refill multiplier during the boost. [default]")
@@ -63,29 +66,58 @@ public final class MovesConfig {
                 .defineInRange("regenEnergyCost", 5.0, 0.0, 10000.0);
         b.pop();
 
-        b.comment("Energy cost of each move.").push("costs");
-        COST_DODGE = b.comment("Side dodge, R + A / R + D. [default]").defineInRange("dodge", 15, 0, 10000);
-        COST_ROLL = b.comment("Roll back or forward, R + S / R + W. [default]").defineInRange("roll", 20, 0, 10000);
-        COST_SLIDE = b.comment("Slide, sprint + C. [default]").defineInRange("slide", 20, 0, 10000);
-        COST_HOP = b.comment("Hop over an enemy winding up, R + W at point blank. [default]").defineInRange("hop", 25, 0, 10000);
-        COST_BARRAGE = b.comment("Bow volley: full draw, then the left button. [default]").defineInRange("volley", 20, 0, 10000);
-        COST_BOW_DODGE = b.comment("A dodge with a shot: in the Legolas stance and the bow's combat flow (a roll, a step back). [default]")
-                .defineInRange("bowDodge", 10, 0, 10000);
+        // Renamed from "costs" (whole numbers, twice as much) so worlds made before get the new numbers.
+        b.comment("Energy cost of each move (author, 2026-10-28: half of what they were).").push("energyCost");
+        COST_DODGE = b.comment("Side dodge, R + A / R + D (was 15). [default]").defineInRange("dodge", 7.5, 0.0, 10000.0);
+        COST_ROLL = b.comment("Roll back or forward, R + S / R + W (was 20). [default]").defineInRange("roll", 10.0, 0.0, 10000.0);
+        COST_SLIDE = b.comment("Slide, sprint + C (was 20). [default]").defineInRange("slide", 10.0, 0.0, 10000.0);
+        COST_HOP = b.comment("Vault over a mob at point blank, R + W (was 25). [default]").defineInRange("hop", 12.5, 0.0, 10000.0);
+        COST_BARRAGE = b.comment("Bow volley: full draw, then the left button (was 20). [default]").defineInRange("volley", 10.0, 0.0, 10000.0);
+        COST_BOW_DODGE = b.comment("A dodge with a shot: in the Legolas stance and the bow's combat flow (was 10). [default]")
+                .defineInRange("bowDodge", 5.0, 0.0, 10000.0);
+        COST_DASH = b.comment("Dash strike: sprinting with W and a sword, the left button. [default]")
+                .defineInRange("dashStrike", 7.5, 0.0, 10000.0);
+        COST_FINISHER = b.comment("Finisher: the left button held at point blank to a weakened enemy. [default]")
+                .defineInRange("finisher", 5.0, 0.0, 10000.0);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
         DODGE_ON_GROUND = b.comment("Dodges and rolls only from the ground, not in mid-air. [default]")
                 .define("dodgeOnlyOnGround", true);
-        SLIDE_TAP = b.comment("Slide length in blocks when C is tapped (author: 4).").defineInRange("slideBlocks", 4.0, 1.0, 16.0);
-        SLIDE_HELD = b.comment("Slide length in blocks when C is held; the player then goes on crawling (author: 5).")
-                .defineInRange("slideHeldBlocks", 5.0, 1.0, 16.0);
+        // Renamed from slideBlocks / slideHeldBlocks (4 / 5) so worlds made before get the new lengths.
+        SLIDE_TAP = b.comment("Slide length in blocks when C is tapped (author: 4, then a block more: 5).")
+                .defineInRange("slideTapBlocks", 5.0, 1.0, 16.0);
+        SLIDE_HELD = b.comment("Slide length in blocks when C is held; the player then goes on crawling (author: 5, then 6).")
+                .defineInRange("slideHoldBlocks", 6.0, 1.0, 16.0);
         b.pop();
 
-        b.comment("The hop over an enemy winding up (R + W at point blank).").push("hop");
-        HOP_RANGE = b.comment("Blocks between the player and the enemy for R + W to hop over them instead of rolling. [default]")
+        b.comment("The vault over a mob at point blank (R + W): the player rolls over its back, it stoops and is shoved back.").push("hop");
+        HOP_RANGE = b.comment("Blocks between the player and the mob for R + W to vault over it instead of rolling. [default]")
                 .defineInRange("range", 2.5, 1.0, 6.0);
-        HOP_SPEED_TICKS = b.comment("Ticks of Speed I after the hop, to strike back (author: 1 s = 20).")
+        HOP_SPEED_TICKS = b.comment("Ticks of Speed I after the vault, to run on (author: 1 s = 20).")
                 .defineInRange("speedTicks", 20, 0, 600);
+        VAULT_MIN_WIDTH = b.comment("Mobs narrower than this are not vaulted (a chicken is 0.4, a zombie 0.6, a pig 0.9). [default]")
+                .defineInRange("minWidth", 0.6, 0.0, 10.0);
+        VAULT_MIN_HEIGHT = b.comment("Mobs lower than this are not vaulted (a chicken is 0.7, a pig 0.9). [default]")
+                .defineInRange("minHeight", 0.85, 0.0, 10.0);
+        VAULT_MAX_HEIGHT = b.comment("Mobs taller than this are not vaulted (a zombie is 1.95, an enderman 2.9). [default]")
+                .defineInRange("maxHeight", 2.2, 0.5, 10.0);
+        VAULT_SHOVE = b.comment("How hard the hand shoves the mob back as the player comes down beyond it (0.3: about 1.5 blocks;",
+                        "author: 1-2 blocks). [default]")
+                .defineInRange("shove", 0.3, 0.0, 3.0);
+        b.pop();
+
+        b.comment("The sword moves of the left button: the dash strike and the finisher.").push("strikes");
+        DASH_CRIT = b.comment("Dash strike (sprinting with W, the left button): the blow is the weapon's times this (author: a crit",
+                        "as in a jump; vanilla's crit is 1.5).")
+                .defineInRange("dashCrit", 1.5, 1.0, 10.0);
+        FINISH_HEALTH = b.comment("Finisher: a mob with this share of its health or less can be finished (author: 20 %).")
+                .defineInRange("finisherHealth", 0.2, 0.0, 1.0);
+        FINISH_RANGE = b.comment("Finisher: blocks between the player and the mob (point blank). [default]")
+                .defineInRange("finisherRange", 1.5, 0.5, 4.0);
+        FINISH_MAX_HEALTH = b.comment("Finisher and vault: mobs with more maximum health than this count as bosses (author: not on the",
+                        "dragon nor the wither; those and the forge:bosses tag never). [default]")
+                .defineInRange("bossHealth", 100.0, 1.0, 100000.0);
         b.pop();
 
         b.comment("Knocking an arrow aside: R (a side dodge) with a sword or a bow in hand as it comes.").push("deflect");
@@ -118,7 +150,7 @@ public final class MovesConfig {
     public static float exhaustionPerEnergy() { return f(EXHAUSTION, 0.05); }
     public static float cookedFoodEnergy() { return f(COOKED_FOOD, 25.0); }
     public static int combatTicks() { return get(COMBAT_SECONDS, 5) * 20; }
-    public static int appleFreeTicks() { return get(APPLE_INFINITE, 15) * 20; }
+    public static int appleFreeTicks() { return get(APPLE_INFINITE, 10) * 20; }
     public static int appleBoostTicks() { return get(APPLE_BOOST_SECONDS, 30) * 20; }
     public static float appleBoostFactor() { return f(APPLE_BOOST, 2.0); }
     public static int enchantedFreeTicks() { return get(ENCHANTED_INFINITE, 30) * 20; }
@@ -126,21 +158,31 @@ public final class MovesConfig {
     public static float shieldRegen() { return f(SHIELD_REGEN, 0.5); }
     public static int shieldRegenTicks() { return get(SHIELD_REGEN_SECONDS, 4) * 20; }
     public static float shieldRegenCost() { return f(SHIELD_REGEN_COST, 5.0); }
-    public static int costDodge() { return get(COST_DODGE, 15); }
-    public static int costRoll() { return get(COST_ROLL, 20); }
-    public static int costSlide() { return get(COST_SLIDE, 20); }
+    public static float costDodge() { return f(COST_DODGE, 7.5); }
+    public static float costRoll() { return f(COST_ROLL, 10.0); }
+    public static float costSlide() { return f(COST_SLIDE, 10.0); }
     public static boolean dodgeOnlyOnGround() { return get(DODGE_ON_GROUND, true); }
-    public static float slideBlocks() { return f(SLIDE_TAP, 4.0); }
-    public static float slideHeldBlocks() { return f(SLIDE_HELD, 5.0); }
+    public static float slideBlocks() { return f(SLIDE_TAP, 5.0); }
+    public static float slideHeldBlocks() { return f(SLIDE_HELD, 6.0); }
     public static int parryRearmTicks() { return get(PARRY_REARM, 10); }
-    public static int costHop() { return get(COST_HOP, 25); }
-    public static int costBarrage() { return get(COST_BARRAGE, 20); }
-    public static int costBowDodge() { return get(COST_BOW_DODGE, 10); }
+    public static float costHop() { return f(COST_HOP, 12.5); }
+    public static float costBarrage() { return f(COST_BARRAGE, 10.0); }
+    public static float costBowDodge() { return f(COST_BOW_DODGE, 5.0); }
+    public static float costDash() { return f(COST_DASH, 7.5); }
+    public static float costFinisher() { return f(COST_FINISHER, 5.0); }
     public static float hopRange() { return f(HOP_RANGE, 2.5); }
     public static int hopSpeedTicks() { return get(HOP_SPEED_TICKS, 20); }
     public static float deflectShields() { return f(DEFLECT_SHIELDS, 1.5); }
     public static float guardMoveFactor() { return f(GUARD_MOVE, 0.2); }
     public static float kneelMoveFactor() { return f(KNEEL_MOVE, 0.3); }
+    public static float vaultMinWidth() { return f(VAULT_MIN_WIDTH, 0.6); }
+    public static float vaultMinHeight() { return f(VAULT_MIN_HEIGHT, 0.85); }
+    public static float vaultMaxHeight() { return f(VAULT_MAX_HEIGHT, 2.2); }
+    public static float vaultShove() { return f(VAULT_SHOVE, 0.3); }
+    public static float dashCrit() { return f(DASH_CRIT, 1.5); }
+    public static float finisherHealth() { return f(FINISH_HEALTH, 0.2); }
+    public static float finisherRange() { return f(FINISH_RANGE, 1.5); }
+    public static float finisherMaxHealth() { return f(FINISH_MAX_HEALTH, 100.0); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();
