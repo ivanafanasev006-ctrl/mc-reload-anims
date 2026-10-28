@@ -17,8 +17,8 @@ public final class HudConfig {
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
         b.push("hud");
-        STYLE = b.comment("Colours of the shields and the energy bar: CLOCK (gold and steel of the vanilla clock),",
-                        "MEDIEVAL (dark orange, medieval RPG) or STEEL.")
+        STYLE = b.comment("Colours of the energy bar: CLOCK (gold of the vanilla clock), MEDIEVAL (dark orange,",
+                        "medieval RPG) or STEEL. The shields are always steel grey.")
                 .defineEnum("style", Style.CLOCK);
         SHAPE = b.comment("Shield icon: HEATER (a heraldic shield) or ROUND.").defineEnum("shieldShape", Shape.HEATER);
         SWAP_SIDES = b.comment("Shields on the right above hunger and energy on the left above armour (normally the other way round).")

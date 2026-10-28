@@ -21,9 +21,9 @@ import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import java.util.Locale;
 
 /**
- * The bars (docs/combat-spec.md, 9): shields as a row of icons on the left above armour, energy as
- * a bar with a lightning icon on the right above hunger (sides swap in the settings), and an arrow
- * counter left of the hotbar while a bow is in hand.
+ * The bars (docs/combat-spec.md, 9): shields as a row of grey icons on the left above armour,
+ * energy as a bar with a lightning icon on the right above hunger, coloured in the chosen style
+ * (sides swap in the settings), and an arrow counter left of the hotbar while a bow is in hand.
  *
  * <p>Rows take their place through Forge's shared row count ({@code leftHeight} / {@code
  * rightHeight}), so other mods' rows (thirst, extra hearts...) stack above or below ours instead of
@@ -95,7 +95,7 @@ public final class MovesHud {
         for (int i = 0; i < icons; i++) {
             float left = shields - i;
             String state = left >= 1f ? "full" : left >= 0.5f ? "half" : "empty";
-            g.blit(tex(shape + "_" + state), x + (i % 10) * 8, top - (i / 10) * 10, 0, 0, 9, 9, 9, 9);
+            g.blit(shieldTex(shape + "_" + state), x + (i % 10) * 8, top - (i / 10) * 10, 0, 0, 9, 9, 9, 9);
         }
         RenderSystem.disableBlend();
         return ((icons - 1) / 10 + 1) * 10;
@@ -158,8 +158,14 @@ public final class MovesHud {
         g.drawString(mc.font, text, x + 8 - mc.font.width(text) / 2, height - 11, color, true);
     }
 
+    /** Energy bar textures, in the chosen style. */
     private static ResourceLocation tex(String name) {
         return new ResourceLocation(KinetrixMoves.MODID, "textures/gui/hud/" + HudConfig.style().name().toLowerCase(Locale.ROOT) + "/" + name + ".png");
+    }
+
+    /** Shield icons: always steel grey, whatever the style (the author's choice). */
+    private static ResourceLocation shieldTex(String name) {
+        return new ResourceLocation(KinetrixMoves.MODID, "textures/gui/hud/shields/" + name + ".png");
     }
 
     private MovesHud() {}

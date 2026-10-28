@@ -2,9 +2,10 @@
 
     python3 art/refined/hud/make_hud.py
 
-writes, for every style (clock, medieval, steel), into art/refined/hud/<style>/:
+writes into art/refined/hud/shields/ (shields are always steel grey, the author's choice):
     shield_full|half|empty.png        9x9, the heater shield of art/author/hud/shield.png
     round_full|half|empty.png         9x9, the round shield of art/author/hud/shield_round.png
+for every style of the energy bar (clock, medieval, steel), into art/refined/hud/<style>/:
     energy_icon.png, energy_icon_infinite.png       9x9 lightning
     energy_bar_bg.png, energy_bar_fill.png, energy_bar_fill_infinite.png   71x5
 and art/refined/hud/preview.png: the styles on a mock vanilla HUD, 3x.
@@ -153,13 +154,21 @@ def bar(c, kind, w=71, h=5):
 
 def build():
     out = {}
+    shields = {}
+    d = os.path.join(HERE, "shields")
+    os.makedirs(d, exist_ok=True)
+    for state in ("full", "half", "empty"):
+        shields[f"shield_{state}"] = icon(STYLES["steel"], HEATER, state)
+        shields[f"round_{state}"] = icon(STYLES["steel"], round_mask(), state, boss=True)
+    for k, im in shields.items():
+        im.save(os.path.join(d, k + ".png"))
     for name, c in STYLES.items():
         d = os.path.join(HERE, name)
         os.makedirs(d, exist_ok=True)
+        for old in os.listdir(d):
+            if old.startswith(("shield_", "round_")):
+                os.remove(os.path.join(d, old))   # shields moved to shields/
         tex = {}
-        for state in ("full", "half", "empty"):
-            tex[f"shield_{state}"] = icon(c, HEATER, state)
-            tex[f"round_{state}"] = icon(c, round_mask(), state, boss=True)
         tex["energy_icon"] = bolt(c)
         tex["energy_icon_infinite"] = bolt(c, True)
         tex["energy_bar_bg"] = bar(c, "bg")
@@ -167,6 +176,7 @@ def build():
         tex["energy_bar_fill_infinite"] = bar(c, "infinite")
         for k, im in tex.items():
             im.save(os.path.join(d, k + ".png"))
+        tex.update(shields)
         out[name] = tex
     preview(out)
     return out
