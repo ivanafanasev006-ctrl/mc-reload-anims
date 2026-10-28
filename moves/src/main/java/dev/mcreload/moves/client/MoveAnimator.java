@@ -1,5 +1,6 @@
 package dev.mcreload.moves.client;
 
+import dev.kosmx.playerAnim.api.TransformType;
 import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
 import dev.kosmx.playerAnim.api.layered.ModifierLayer;
@@ -7,6 +8,7 @@ import dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier;
 import dev.kosmx.playerAnim.api.layered.modifier.SpeedModifier;
 import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
 import dev.kosmx.playerAnim.core.util.Ease;
+import dev.kosmx.playerAnim.core.util.Vec3f;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationFactory;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationRegistry;
@@ -15,6 +17,7 @@ import dev.mcreload.moves.Move;
 import dev.mcreload.moves.compat.KinetrixBridge;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 
 /**
  * Plays the moves on the players through playerAnimator, on a layer of our own. Kinetrix bends the
@@ -52,8 +55,85 @@ public final class MoveAnimator {
             return;
         }
         layer.speed.speed = move.animSpeed;
-        layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), new KeyframeAnimationPlayer(anim));
+        // Bow moves may play a part of their animation (a half of bow_walk_around) and hold its last frame.
+        int from = move.shot != null ? move.shot.animStart() : 0;
+        IAnimation played = new KeyframeAnimationPlayer(anim, from);
+        if (move.shot != null && move.shot.holdAt() >= 0) played = new Segment(played, move.shot.holdAt() - from);
+        layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), unwound(layer, anim, from, played));
         KinetrixBridge.wholeBody(p.getUUID(), move.length * 50L + 100L);
+    }
+
+    /**
+     * The new animation turned by whole turns so it starts where the body faces now: a spin may end
+     * at 360 degrees (or 412, a turn and a bit) and the next animation start at 0; the blend between
+     * them would otherwise spin the player round once more in two ticks.
+     */
+    private static IAnimation unwound(MoveLayer layer, KeyframeAnimation anim, int from, IAnimation played) {
+        IAnimation now = layer.getAnimation();
+        if (now == null || !now.isActive()) return played;
+        float current = now.get3DTransform("body", TransformType.ROTATION, 0f, new Vec3f(0f, 0f, 0f)).getY();
+        float start = new KeyframeAnimationPlayer(anim, from).get3DTransform("body", TransformType.ROTATION, 0f, new Vec3f(0f, 0f, 0f)).getY();
+        float turns = Math.round((current - start) / Mth.TWO_PI);
+        return turns == 0 ? played : new Spun(played, turns * Mth.TWO_PI);
+    }
+
+    /** An animation with the whole body turned a little more round (whole turns: it looks the same). */
+    private record Spun(IAnimation inner, float yaw) implements IAnimation {
+        @Override
+        public void tick() {
+            inner.tick();
+        }
+
+        @Override
+        public boolean isActive() {
+            return inner.isActive();
+        }
+
+        @Override
+        public void setupAnim(float tickDelta) {
+            inner.setupAnim(tickDelta);
+        }
+
+        @Override
+        public Vec3f get3DTransform(String part, TransformType type, float tickDelta, Vec3f value0) {
+            Vec3f v = inner.get3DTransform(part, type, tickDelta, value0);
+            return "body".equals(part) && type == TransformType.ROTATION ? new Vec3f(v.getX(), v.getY() + yaw, v.getZ()) : v;
+        }
+    }
+
+    /** An animation played for {@code ticks}, then held on that frame. */
+    private static final class Segment implements IAnimation {
+        private final IAnimation inner;
+        private final int ticks;
+        private int played;
+
+        Segment(IAnimation inner, int ticks) {
+            this.inner = inner;
+            this.ticks = ticks;
+        }
+
+        @Override
+        public void tick() {
+            if (played < ticks) {
+                inner.tick();
+                played++;
+            }
+        }
+
+        @Override
+        public boolean isActive() {
+            return inner.isActive();
+        }
+
+        @Override
+        public void setupAnim(float tickDelta) {
+            inner.setupAnim(played < ticks ? tickDelta : 0f);
+        }
+
+        @Override
+        public Vec3f get3DTransform(String part, TransformType type, float tickDelta, Vec3f value0) {
+            return inner.get3DTransform(part, type, played < ticks ? tickDelta : 0f, value0);
+        }
     }
 
     /**
@@ -86,7 +166,7 @@ public final class MoveAnimator {
         if (layer == null || anim == null) return;
         layer.speed.speed = 1f;
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(3, Ease.INOUTSINE),
-                new Kneel(new KeyframeAnimationPlayer(anim, KNEEL_TICK)));
+                unwound(layer, anim, KNEEL_TICK, new Kneel(new KeyframeAnimationPlayer(anim, KNEEL_TICK))));
         KinetrixBridge.wholeBody(p.getUUID(), 200);
     }
 

@@ -58,6 +58,8 @@ public final class MovesClient {
     private static boolean slideWasDown, jumpWasDown, attackWasDown;
     /** Facing at the start of the local move: the push keeps this direction. */
     private static float moveYaw;
+    /** The local move's push direction when it is not the move's own side (a bow dodge on the slant), else null. */
+    private static Vec3 pushDir;
     /** Ticks the slide has been off the ground. */
     private static int airTicks;
     /** The bars as the server last sent them. */
@@ -138,13 +140,16 @@ public final class MovesClient {
             if (slidePressed) start(p, s, Move.SLIDE, true, -1);
         }
 
-        // ---- the bow volley: a fully drawn bow, then the left button; after it, on one knee, the left button shoots early
-        if (attackPressed && !BowStance.shoot(p) && s.move == null && dev.mcreload.moves.Bow.volleyReady(p)) {
+        // ---- the bow: the flow and the Legolas stance (their arrows, turns and dodges), then the
+        // volley: a fully drawn bow and the left button (which in the flow is the flow's next step)
+        BowStance.tickLocal(p, s);
+        if (attackPressed && !BowStance.attackKey(p, s) && s.move == null && dev.mcreload.moves.Bow.volleyReady(p)) {
             start(p, s, Move.BARRAGE, false, -1);
             if (s.move == Move.BARRAGE) p.stopUsingItem();    // the volley takes over the drawn bow
         }
 
-        // ---- dodges and rolls: R and a direction
+        // ---- dodges and rolls: R and a direction (R with the bow fully drawn: the Legolas stance)
+        if (dodgePressed && BowStance.dodgeKey(p)) dodgePressed = false;
         if (dodgePressed) dodgeWait = 4;
         if (dodgeWait > 0) {
             dodgeWait--;
@@ -188,22 +193,31 @@ public final class MovesClient {
 
     // ------------------------------------------------------------------ the local move
 
-    private static void start(LocalPlayer p, Stamina s, Move move, boolean held, int target) {
+    /** Starts a bow move pushed along {@code dir} (null: the move's own side). Returns whether it started. */
+    static boolean start(LocalPlayer p, Stamina s, Move move, Vec3 dir) {
+        if (!start(p, s, move, false, -1)) return false;
+        pushDir = dir;
+        return true;
+    }
+
+    private static boolean start(LocalPlayer p, Stamina s, Move move, boolean held, int target) {
         if (!MoveServer.allowed(p, s, move)) {
             if (!s.canAfford(move, p)) flash = 12;
-            return;
+            return false;
         }
         s.spend(move.cost(), p);
         GuardInput.lowerLocal(p, s, false);     // the server lowers it too
         s.start(p, move, held);
         moveYaw = p.getYRot();
+        pushDir = null;
         airTicks = 0;
         s.hopTarget = target;
         MoveAnimator.play(p, move);
         MovesNet.CHANNEL.sendToServer(new MovesNet.Request((byte) move.ordinal(), held, target));
+        return true;
     }
 
-    private static void cancel(LocalPlayer p, Stamina s, int fade) {
+    static void cancel(LocalPlayer p, Stamina s, int fade) {
         Move move = s.move;
         if (move == null) return;
         s.end(p);
@@ -237,7 +251,7 @@ public final class MovesClient {
             speed = move.pushSpeed(t);
         }
         if (speed <= 0f) return;
-        Vec3 dir = move.direction(moveYaw);
+        Vec3 dir = pushDir != null ? pushDir : move.direction(moveYaw);
         p.setDeltaMovement(dir.x * speed, p.getDeltaMovement().y, dir.z * speed);
     }
 
@@ -287,12 +301,12 @@ public final class MovesClient {
     }
 
     /**
-     * During the volley the bow is not drawn again nor swung: the volley plays out first. On one
-     * knee after it the left button shoots (BowStance), it does not swing the bow.
+     * During the volley the bow is not drawn again nor swung: the volley plays out first. In the
+     * flow and the Legolas stance the left button is theirs (BowStance), it does not swing the bow.
      */
     private static void interaction(net.minecraftforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         LocalPlayer p = Minecraft.getInstance().player;
-        if (p != null && (Stamina.of(p).move == Move.BARRAGE || (event.isAttack() && BowStance.kneeling(p)))) {
+        if (p != null && (Stamina.of(p).move == Move.BARRAGE || (event.isAttack() && BowStance.active(p)))) {
             event.setCanceled(true);
             event.setSwingHand(false);
         }
@@ -315,18 +329,16 @@ public final class MovesClient {
 
     /** The move each player was doing last tick (to stop looping animations when it ends). */
     private static final java.util.Map<AbstractClientPlayer, Move> LAST = new java.util.WeakHashMap<>();
-    /** How far each player's volley got. */
-    private static final java.util.Map<AbstractClientPlayer, Integer> VOLLEY_TICK = new java.util.WeakHashMap<>();
+    /** How far each player's move got. */
+    private static final java.util.Map<AbstractClientPlayer, Integer> LAST_TICK = new java.util.WeakHashMap<>();
 
     private static void cues(AbstractClientPlayer p, Stamina s) {
         Move move = s.move;
-        // The volley's animation loops (from its marker): when the volley ends the player stays on
-        // one knee if the right button is still held, else the animation stops.
-        if (move == Move.BARRAGE) VOLLEY_TICK.put(p, s.moveTick);
-        if (LAST.put(p, move) == Move.BARRAGE && move == null) {
-            Integer reached = VOLLEY_TICK.remove(p);
-            if (!BowStance.volleyEnded(p, reached == null ? 0 : reached)) MoveAnimator.stop(p, 4);
-        }
+        // A move ended with none after it: the bow's moves may leave a pose held (on one knee after
+        // the volley, side-on after a Legolas spin), or stop their looping animation.
+        Move was = LAST.put(p, move);
+        Integer reached = move != null ? LAST_TICK.put(p, s.moveTick) : LAST_TICK.remove(p);
+        if (was != null && move == null) BowStance.moveEnded(p, was, reached == null ? 0 : reached);
         BowStance.tick(p);
         if (move == null) return;
         int t = s.moveTick;    // already counted on for this tick

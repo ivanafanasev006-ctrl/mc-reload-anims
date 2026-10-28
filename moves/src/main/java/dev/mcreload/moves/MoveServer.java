@@ -52,10 +52,11 @@ public final class MoveServer {
     public static boolean allowed(Player p, Stamina s, Move move) {
         if (!p.isAlive() || p.isSpectator() || p.isPassenger() || p.isSleeping() || p.isFallFlying()
                 || p.getAbilities().flying || p.isInWater() || p.isInLava()) return false;
-        // Using an item (eating, drawing a bow) rules moves out, except the volley, which needs a full draw.
-        if (move == Move.BARRAGE ? !Bow.volleyReady(p) : p.isUsingItem()) return false;
+        // Using an item (eating, drawing a bow) rules moves out, except the volley, which needs a full
+        // draw, and the moves of the flow and the Legolas stance, made with the bow drawn.
+        if (move == Move.BARRAGE ? !Bow.volleyReady(p) : move.drawnBow() ? !Bow.drawing(p) : p.isUsingItem()) return false;
         // One move at a time; the next may start once this one has played out (its fade aside).
-        if (s.move != null && s.moveTick < s.move.length - 3) return false;
+        if (s.move != null && s.moveTick < s.move.freeFrom()) return false;
         if (!s.canAfford(move, p)) return false;
         boolean ground = p.onGround() || p.tickCount - lastGround(p) <= GROUND_GRACE;
         if (move == Move.SLIDE) return ground && (p.isSprinting() || p.tickCount - lastSprint(p) <= GROUND_GRACE);

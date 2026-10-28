@@ -231,44 +231,114 @@ public final class MovesSelfTest {
             if (t == 66) mc.options.keyUse.setDown(false);
         }, new int[]{26, 29, 33, 37, 41, 46, 52, 60}, true));
 
-        // ---- after the volley, the right button still held: on one knee, creeping and aiming; the
-        // left button shoots early and the next arrow is drawn at once; letting go shoots and stands up
-        SCENARIOS.add(new Scenario("81_bow_kneel", 112, sp -> {
+        // ---- after the volley, the right button still held: on one knee, creeping and aiming; then
+        // the flow: left clicks with no keys (crouch, a turn, standing, back on the knee), with A (a
+        // roll to the left) and with S (a hop back); letting go shoots the last arrow and stands up
+        SCENARIOS.add(new Scenario("81_bow_flow", 290, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
-            sp.getInventory().add(new ItemStack(Items.ARROW, 10));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 16));
         }, (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
             if (t == 2) {
                 mc.options.keyUse.setDown(true);
                 KeyMapping.click(mc.options.keyUse.getKey());
             }
-            if (t == 26) mc.options.keyAttack.setDown(true);
-            if (t == 27) mc.options.keyAttack.setDown(false);
+            if (t == 26 || t == 80 || t == 131 || t == 182 || t == 201 || t == 241) mc.options.keyAttack.setDown(true);
+            if (t == 27 || t == 81 || t == 132 || t == 183 || t == 202 || t == 242) mc.options.keyAttack.setDown(false);
             if (t == 56) {
-                note("kneel: kneeling " + BowStance.kneeling(mc.player) + ", drawing " + mc.player.isUsingItem());
+                note("flow: kneeling " + BowStance.kneeling(mc.player) + ", drawing " + mc.player.isUsingItem() + ", in the flow " + BowStance.inFlow());
                 startPos = mc.player.position();
-                mc.player.setXRot(-20f);
             }
             mc.options.keyUp.setDown(t >= 56 && t < 76);
             if (t == 76) {
+                note(String.format(Locale.ROOT, "flow: crept %.2f blocks in 1 s on the knee (walking with a drawn bow: about 0.9)",
+                        mc.player.position().subtract(startPos).horizontalDistance()));
+            }
+            if (t == 79 || t == 100 || t == 120 || t == 150 || t == 197 || t == 236 || t == 276 || t == 286) {
+                Move m = Stamina.of(mc.player).move;
+                note(String.format(Locale.ROOT, "flow t=%d: arrows %d, move %s, kneeling %s, energy %.0f", t,
+                        mc.player.getInventory().countItem(Items.ARROW), m, BowStance.kneeling(mc.player), Stamina.of(mc.player).energy));
+            }
+            if (t == 200) {
+                startPos = mc.player.position();
+                mc.options.keyLeft.setDown(true);
+            }
+            if (t == 205) mc.options.keyLeft.setDown(false);
+            if (t == 236) note(String.format(Locale.ROOT, "flow: rolled %.2f blocks to the left", mc.player.position().subtract(startPos).horizontalDistance()));
+            if (t == 240) {
+                startPos = mc.player.position();
+                mc.options.keyDown.setDown(true);
+            }
+            if (t == 245) mc.options.keyDown.setDown(false);
+            if (t == 272) note(String.format(Locale.ROOT, "flow: hopped back %.2f blocks", mc.player.position().subtract(startPos).horizontalDistance()));
+            if (t == 278) mc.options.keyUse.setDown(false);
+        }, new int[]{60, 88, 97, 118, 140, 148, 186, 192, 208, 218, 248, 258, 284}, true));
+
+        // ---- the Legolas stance: the bow fully drawn, R once; the arrow leaves by itself at every full
+        // draw, then a dodge by the keys: A, then S + A (back and to the left), then D, then none
+        SCENARIOS.add(new Scenario("83_bow_legolas", 150, sp -> {
+            place(sp, 0, new ItemStack(Items.BOW));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 16));
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 2) {
+                mc.options.keyUse.setDown(true);
+                KeyMapping.click(mc.options.keyUse.getKey());
+            }
+            if (t == 23) {
+                startPos = mc.player.position();
+                mc.options.keyLeft.setDown(true);
+            }
+            if (t == 24) KeyMapping.click(MovesClient.DODGE.getKey());
+            if (t == 72) mc.options.keyDown.setDown(true);
+            if (t == 96) {
+                mc.options.keyLeft.setDown(false);
+                mc.options.keyDown.setDown(false);
+                mc.options.keyRight.setDown(true);
+            }
+            if (t == 118) mc.options.keyRight.setDown(false);
+            if (t == 30 || t == 51 || t == 72 || t == 96 || t == 118 || t == 138) {
                 Vec3 d = mc.player.position().subtract(startPos);
-                note(String.format(Locale.ROOT, "kneel: crept %.2f blocks in 1 s (walking with a drawn bow: about 0.9)", d.horizontalDistance()));
+                float r = mc.player.getYRot() * Mth.DEG_TO_RAD;
+                // Along the look and to the left of it (Minecraft's strafe: left = (cos, sin)).
+                double fwd = -d.x * Mth.sin(r) + d.z * Mth.cos(r), left = d.x * Mth.cos(r) + d.z * Mth.sin(r);
+                note(String.format(Locale.ROOT, "legolas t=%d: forward %.2f, left %.2f, arrows %d, move %s, energy %.0f, stance %s", t,
+                        fwd, left, mc.player.getInventory().countItem(Items.ARROW), Stamina.of(mc.player).move,
+                        Stamina.of(mc.player).energy, BowStance.inLegolas()));
             }
-            if (t == 80) {
-                note("kneel: arrows left " + mc.player.getInventory().countItem(Items.ARROW) + ", drawn " + mc.player.getTicksUsingItem() + " ticks");
+            if (t == 140) mc.options.keyUse.setDown(false);
+        }, new int[]{24, 28, 32, 36, 44, 50, 76, 80, 100, 104, 128, 146}, true));
+
+        // ---- the bow in close combat: three blows at a husk (with Better Combat its strikes: from the
+        // side, overhead, a thrust; without it vanilla's swing)
+        SCENARIOS.add(new Scenario("84_bow_strikes", 56, sp -> {
+            place(sp, 0, new ItemStack(Items.BOW));
+            net.minecraft.world.entity.monster.Husk z = net.minecraft.world.entity.EntityType.HUSK.create(sp.serverLevel());
+            z.moveTo(sp.getX(), sp.getY(), sp.getZ() + 2, 180f, 0f);
+            z.setYHeadRot(180f);
+            z.setNoAi(true);
+            z.addTag("kinetrix_moves.selftest");
+            sp.serverLevel().addFreshEntity(z);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 4 || t == 20 || t == 36) {
                 mc.options.keyAttack.setDown(true);
+                KeyMapping.click(mc.options.keyAttack.getKey());
             }
-            if (t == 81) mc.options.keyAttack.setDown(false);
-            if (t == 84) {
-                note("kneel: after the early shot arrows left " + mc.player.getInventory().countItem(Items.ARROW)
-                        + ", kneeling " + BowStance.kneeling(mc.player) + ", drawing again " + mc.player.isUsingItem());
+            if (t == 5 || t == 21 || t == 37) mc.options.keyAttack.setDown(false);
+            if (t == 18 || t == 34 || t == 52) {
+                IntegratedServer srv = mc.getSingleplayerServer();
+                srv.execute(() -> {
+                    ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
+                    for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Husk.class, sp.getBoundingBox().inflate(8))) {
+                        if (!e.getTags().contains("kinetrix_moves.selftest")) continue;
+                        note(String.format(Locale.ROOT, "strikes t=%d: husk health %.1f of %.1f, Better Combat %s", t, e.getHealth(), e.getMaxHealth(),
+                                net.minecraftforge.fml.ModList.get().isLoaded("bettercombat")));
+                        if (t == 52) e.discard();
+                    }
+                });
             }
-            if (t == 96) mc.options.keyUse.setDown(false);
-            if (t == 102) {
-                note("kneel: let go, arrows left " + mc.player.getInventory().countItem(Items.ARROW)
-                        + ", kneeling " + BowStance.kneeling(mc.player));
-            }
-        }, new int[]{50, 58, 70, 80, 82, 90, 98, 108}, true));
+        }, new int[]{6, 9, 12, 15, 22, 25, 28, 38, 41, 44}, true));
 
         // ---- the settings screen, at the usual GUI scale and at the largest (a small window's worth of room)
         SCENARIOS.add(new Scenario("50_settings", 22, sp -> place(sp, 0, new ItemStack(Items.BOW)), (mc, t) -> {

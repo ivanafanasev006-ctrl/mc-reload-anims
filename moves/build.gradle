@@ -97,6 +97,11 @@ tasks.named('processResources', ProcessResources).configure {
         include '*/*.png'
         into "assets/${mod_id}/textures/gui/hud"
     }
+    // Better Combat reads attack animations from attack_animations/ only: the bow strikes go there too.
+    from('src/main/resources/assets/' + mod_id + '/player_animation') {
+        include 'bow_strike_*.json'
+        into "assets/${mod_id}/attack_animations"
+    }
 }
 
 tasks.named('jar', Jar).configure {

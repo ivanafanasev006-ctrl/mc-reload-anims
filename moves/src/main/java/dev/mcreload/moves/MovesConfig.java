@@ -16,7 +16,7 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue MAX_ENERGY, REGEN, REGEN_BUSY, REGEN_STILL, REGEN_FED, EXHAUSTION,
             APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
-            SHIELD_REGEN_SECONDS, COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, HOP_SPEED_TICKS;
+            SHIELD_REGEN_SECONDS, COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
     private static final ForgeConfigSpec.IntValue PARRY_REARM;
     private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE, KNEEL_MOVE;
@@ -64,6 +64,8 @@ public final class MovesConfig {
         COST_SLIDE = b.comment("Slide, sprint + C. [default]").defineInRange("slide", 20, 0, 10000);
         COST_HOP = b.comment("Hop over an enemy winding up, R + W at point blank. [default]").defineInRange("hop", 25, 0, 10000);
         COST_BARRAGE = b.comment("Bow volley: full draw, then the left button. [default]").defineInRange("volley", 20, 0, 10000);
+        COST_BOW_DODGE = b.comment("A dodge with a shot: in the Legolas stance and the bow's combat flow (a roll, a step back). [default]")
+                .defineInRange("bowDodge", 10, 0, 10000);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -127,6 +129,7 @@ public final class MovesConfig {
     public static int parryRearmTicks() { return get(PARRY_REARM, 10); }
     public static int costHop() { return get(COST_HOP, 25); }
     public static int costBarrage() { return get(COST_BARRAGE, 20); }
+    public static int costBowDodge() { return get(COST_BOW_DODGE, 10); }
     public static float hopRange() { return f(HOP_RANGE, 2.5); }
     public static int hopSpeedTicks() { return get(HOP_SPEED_TICKS, 20); }
     public static float deflectShields() { return f(DEFLECT_SHIELDS, 1.5); }

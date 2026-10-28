@@ -475,6 +475,69 @@ public final class MovesGameTests {
         }).run(25 + Move.BARRAGE.length);
     }
 
+    /**
+     * The flow's steps are made with the bow drawn, not without it. A pose in place costs nothing, a
+     * roll its energy; a step cannot be cut short before its arrow has left and the hand followed
+     * through (1 s), a turn between two poses can.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void bowFlowNeedsADrawnBow(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            p.getInventory().add(new ItemStack(Items.ARROW, 8));
+        });
+        t.at(3, () -> {
+            s.energy = 100f;
+            t.check(!MoveServer.request(p, Move.FLOW_CROUCH, false), "a flow step without a drawn bow");
+            t.check(!MoveServer.request(p, Move.LEGOLAS_LEFT, false), "a Legolas dodge without a drawn bow");
+            p.startUsingItem(InteractionHand.MAIN_HAND);
+        });
+        t.at(5, () -> {
+            t.check(MoveServer.request(p, Move.FLOW_CROUCH, false), "a flow step refused with the bow drawn");
+            t.close(s.energy, 100f, "energy after a pose in place");
+            t.check(!MoveServer.request(p, Move.FLOW_STAND, false), "a flow step cut into the last before its arrow left");
+        });
+        t.at(26, () -> {
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.FLOW_ROLL_LEFT, false), "a roll refused once the last step's arrow had left");
+            t.close(s.energy, 100f - MovesConfig.costBowDodge(), "energy after a roll in the flow");
+        });
+        t.at(70, () -> {
+            t.check(MoveServer.request(p, Move.FLOW_TURN_LEFT, false), "a turn between two poses refused");
+            t.check(MoveServer.request(p, Move.FLOW_STAND, false), "a click during a turn did not cut it short");
+        }).run(71);
+    }
+
+    /** A Legolas dodge: the bow drawn, its energy, untouchable like a side dodge. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void legolasDodge(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.HUSK, 5, 2, 3);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            p.getInventory().add(new ItemStack(Items.ARROW, 8));
+            p.startUsingItem(InteractionHand.MAIN_HAND);
+        });
+        t.at(4, () -> {
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.LEGOLAS_LEFT, false), "a Legolas dodge refused with the bow drawn");
+            t.close(s.energy, 100f - MovesConfig.costBowDodge(), "energy after a Legolas dodge");
+        });
+        t.at(7, () -> {
+            t.check(s.untouchable(), "not untouchable at Legolas tick " + s.moveTick);
+            p.hurt(p.damageSources().mobAttack(zombie), 4f);
+            t.close(p.getHealth(), 20f, "health after a blow in the Legolas dodge");
+        });
+        t.at(4 + 18, () -> {
+            t.check(MoveServer.request(p, Move.LEGOLAS_RIGHT, false), "the next Legolas dodge refused at the end of the spin");
+        }).run(4 + 19);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /**

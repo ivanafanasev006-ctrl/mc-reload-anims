@@ -53,6 +53,27 @@ public final class Bow {
         return stack.getItem() instanceof BowItem;
     }
 
+    /** Drawing a bow in the main hand, as the flow and the Legolas stance need. */
+    public static boolean drawing(Player p) {
+        return p.isUsingItem() && isBow(p.getUseItem()) && isBow(p.getMainHandItem());
+    }
+
+    /** The bow fully drawn (vanilla: 1 s). */
+    public static boolean fullyDrawn(Player p) {
+        return drawing(p) && p.getTicksUsingItem() >= 20;
+    }
+
+    /**
+     * A bow move's timing (Move): the animation from tick {@code animStart}, held still at tick
+     * {@code holdAt} (-1: it plays out by itself); the arrow leaves at move tick {@code release}
+     * (-1: none); another move may cut in from {@code freeFrom}.
+     */
+    public record Shot(int animStart, int holdAt, int release, int freeFrom) {}
+
+    static Shot shot(int animStart, int holdAt, int release, int freeFrom) {
+        return new Shot(animStart, holdAt, release, freeFrom);
+    }
+
     /** Every bow in the game lasts half as long again. */
     static void setup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
@@ -77,12 +98,17 @@ public final class Bow {
         event.addModifier(Attributes.ATTACK_SPEED, new AttributeModifier(SPEED_ID, "Bow melee", MELEE_SPEED - 4.0, AttributeModifier.Operation.ADDITION));
     }
 
+    /** Better Combat swings the bow itself (its own strikes, data/minecraft/weapon_attributes/bow.json), hitting all in the arc. */
+    private static final boolean BETTER_COMBAT = net.minecraftforge.fml.ModList.get().isLoaded("bettercombat");
+
     /**
      * A sword's sweep with a bow: a full-strength blow on the ground, not a crit nor a sprint hit,
-     * also hits whoever stands around the target (vanilla's rules and numbers).
+     * also hits whoever stands around the target (vanilla's rules and numbers). With Better Combat
+     * its strikes hit everyone in their arc instead.
      */
     @SubscribeEvent
     public static void sweep(AttackEntityEvent event) {
+        if (BETTER_COMBAT) return;
         Player p = event.getEntity();
         Entity target = event.getTarget();
         if (p.level().isClientSide || !isBow(p.getMainHandItem()) || !target.isAttackable() || target.skipAttackInteraction(p)) return;

@@ -43,7 +43,39 @@ public enum Move {
      * releases, 0.54, 0.79 and 1.04 s (Bow.VOLLEY_SHOTS).
      */
     BARRAGE("bow_barrage", 1f, 24, -1, -1, -1, -1, Side.BACK, MovesConfig::costBarrage,
-            0.15f, 0.15f, 0.13f, 0.12f, 0.10f, 0.08f, 0.07f, 0.05f);
+            0.15f, 0.15f, 0.13f, 0.12f, 0.10f, 0.08f, 0.07f, 0.05f),
+
+    // ---- the bow's combat flow (docs/combat-spec.md, 6.3): after the volley, the right button
+    // held, each left click is one of these, by the keys held then. The bow stays drawn through
+    // them; the arrow leaves on the animation's release (0.75 s), with the draw it has by then.
+    /** No keys, the poses in turn: crouched side-on, a shot. */
+    FLOW_CROUCH("bow_flow_crouch_shot", Bow.shot(0, -1, 15, 20), 30, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** Standing side-on, a shot. */
+    FLOW_STAND("bow_flow_stand_shot", Bow.shot(0, -1, 15, 20), 30, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** Down onto one knee with a spin (the volley's), a shot at 0.54 s; then held on the knee. */
+    FLOW_KNEEL("bow_barrage", Bow.shot(0, -1, 11, 13), 14, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** S: a hop back (about 1.3 blocks, in the air 0.1-0.44 s), a shot. */
+    FLOW_BACKSTEP("bow_flow_backstep_shot", Bow.shot(0, -1, 15, 20), 30, 2, 6, -1, -1, Side.BACK, MovesConfig::costBowDodge,
+            0.30f, 0.26f, 0.22f, 0.17f, 0.12f, 0.07f),
+    /** A: a roll to the left (0.08-0.5 s, as far as a back roll), up onto one knee, a shot. */
+    FLOW_ROLL_LEFT("bow_flow_roll_left_shot", Bow.shot(0, -1, 15, 20), 35, 2, 9, 2, 10, Side.LEFT, MovesConfig::costBowDodge,
+            0.45f, 0.43f, 0.40f, 0.36f, 0.31f, 0.27f, 0.22f, 0.18f),
+    /** D: the same to the right. */
+    FLOW_ROLL_RIGHT("bow_flow_roll_right_shot", Bow.shot(0, -1, 15, 20), 35, 2, 9, 2, 10, Side.RIGHT, MovesConfig::costBowDodge,
+            0.45f, 0.43f, 0.40f, 0.36f, 0.31f, 0.27f, 0.22f, 0.18f),
+    /** Between two poses in place, a full turn to the left (the next click cuts it short). */
+    FLOW_TURN_LEFT("bow_flow_turn_left", Bow.shot(0, -1, -1, 0), 18, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    FLOW_TURN_RIGHT("bow_flow_turn_right", Bow.shot(0, -1, -1, 0), 18, -1, -1, -1, -1, Side.FRONT, () -> 0),
+
+    // ---- the Legolas stance (docs/combat-spec.md, 6.4): the bow fully drawn, R once. Each time the
+    // draw is full again the arrow leaves by itself; then, with A or D held, a dodge to that side
+    // spinning round (with S or W too, on the slant). The halves of bow_walk_around, 1 s each.
+    /** A: the spin to the left (the animation's first half), pushed like a side dodge, untouchable as one. */
+    LEGOLAS_LEFT("bow_walk_around", Bow.shot(0, 20, -1, 17), 20, 2, 6, -1, -1, Side.LEFT, MovesConfig::costBowDodge,
+            0.62f, 0.52f, 0.40f, 0.26f),
+    /** D: the spin back to the right (the second half). */
+    LEGOLAS_RIGHT("bow_walk_around", Bow.shot(20, 40, -1, 17), 20, 2, 6, -1, -1, Side.RIGHT, MovesConfig::costBowDodge,
+            0.62f, 0.52f, 0.40f, 0.26f);
 
     /** The hop: take-off and landing ticks (0.35 s and 1.25 s of the animation). */
     public static final int HOP_TAKEOFF = 7, HOP_LAND = 26;
@@ -72,12 +104,23 @@ public enum Move {
     /** A 0.6-block hitbox from {@code lowFrom} to {@code lowTo} (inclusive); -1 for none. */
     public final int lowFrom, lowTo;
     public final Side side;
+    /** Bow moves: where the animation starts and stops, when the arrow leaves; null for the rest. */
+    public final Bow.Shot shot;
     private final IntSupplier cost;
     /** Horizontal speed (blocks a tick) for each tick from {@link #PUSH_TICK}; empty for the slide. */
     private final float[] push;
 
     Move(String anim, float animSpeed, int length, int iFrom, int iTo, int lowFrom, int lowTo, Side side, IntSupplier cost, float... push) {
+        this(anim, animSpeed, null, length, iFrom, iTo, lowFrom, lowTo, side, cost, push);
+    }
+
+    Move(String anim, Bow.Shot shot, int length, int iFrom, int iTo, int lowFrom, int lowTo, Side side, IntSupplier cost, float... push) {
+        this(anim, 1f, shot, length, iFrom, iTo, lowFrom, lowTo, side, cost, push);
+    }
+
+    Move(String anim, float animSpeed, Bow.Shot shot, int length, int iFrom, int iTo, int lowFrom, int lowTo, Side side, IntSupplier cost, float... push) {
         this.animation = new ResourceLocation(KinetrixMoves.MODID, anim);
+        this.shot = shot;
         this.animSpeed = animSpeed;
         this.length = length;
         this.iFrom = iFrom;
@@ -107,6 +150,20 @@ public enum Move {
 
     public boolean sideDodge() {
         return this == DODGE_LEFT || this == DODGE_RIGHT;
+    }
+
+    /** A move of the drawn bow (the flow, the Legolas stance): the bow stays drawn through it. */
+    public boolean drawnBow() {
+        return shot != null;
+    }
+
+    public boolean legolas() {
+        return this == LEGOLAS_LEFT || this == LEGOLAS_RIGHT;
+    }
+
+    /** The tick from which another move may cut in: once this one has played out (its fade aside), or earlier for some bow moves. */
+    public int freeFrom() {
+        return shot != null ? shot.freeFrom() : length - 3;
     }
 
     /** Push speed at this tick of a dodge or roll (blocks a tick), 0 outside the push. */
