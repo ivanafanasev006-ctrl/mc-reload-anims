@@ -158,33 +158,16 @@ public final class MovesSelfTest {
         vault("70_vault_zombie", net.minecraft.world.entity.EntityType.ZOMBIE, Move.HOP);
         vault("72_vault_pig", net.minecraft.world.entity.EntityType.PIG, Move.HOP);
         vault("73_vault_chicken_rolls", net.minecraft.world.entity.EntityType.CHICKEN, Move.DODGE_FRONT);
+        vault("74_vault_first_person", net.minecraft.world.entity.EntityType.ZOMBIE, Move.HOP, CameraType.FIRST_PERSON);
 
         // ---- the sword strikes: the dash off a run into a zombie 7 blocks ahead; the finisher on a
         // weakened zombie at point blank (the hint, then the left button held)
-        SCENARIOS.add(new Scenario("90_dash_strike", 50, sp -> {
-            place(sp, 0, new ItemStack(Items.IRON_SWORD));
-            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 7, 20f);
-        }, (mc, t) -> {
-            camera(mc, CameraType.THIRD_PERSON_BACK);
-            mc.options.keyUp.setDown(t >= 2 && t < 30);
-            mc.options.keySprint.setDown(t >= 2 && t < 30);
-            // The button goes down without a click: a real press reaches the moves' tick handler
-            // before vanilla's keys, here it would come after them and vanilla would swing first.
-            if (t == 10) {
-                startPos = mc.player.position();
-                note("dash: sprinting " + mc.player.isSprinting());
-                mc.options.keyAttack.setDown(true);
-            }
-            if (t == 11) {
-                mc.options.keyAttack.setDown(false);
-                note("dash: move " + Stamina.of(mc.player).move);
-            }
-            if (t == 22) note(String.format(Locale.ROOT, "dash: went %.2f blocks to the lunge",
-                    mc.player.position().subtract(startPos).horizontalDistance()));
-            if (t == 24 || t == 46) dummyReport(mc, "dash", t == 46);
-        }, new int[]{10, 13, 16, 19, 21, 24, 28, 34}, true));
-        finisher("91_finisher", Items.IRON_SWORD);
-        finisher("92_finisher_axe", Items.IRON_AXE);
+        dash("90_dash_strike", 7, CameraType.THIRD_PERSON_BACK);
+        dash("93_dash_mob_near", 2.2, CameraType.THIRD_PERSON_BACK);
+        dash("94_dash_first_person", 7, CameraType.FIRST_PERSON);
+        finisher("91_finisher", Items.IRON_SWORD, CameraType.THIRD_PERSON_BACK);
+        finisher("92_finisher_axe", Items.IRON_AXE, CameraType.THIRD_PERSON_BACK);
+        finisher("95_finisher_first_person", Items.IRON_SWORD, CameraType.FIRST_PERSON);
 
 
         SCENARIOS.add(new Scenario("71_deflect_arrow", 30, sp -> {
@@ -395,18 +378,49 @@ public final class MovesSelfTest {
     }
 
     /** The finisher on a weakened zombie at point blank: the hint, then the left button held; with this weapon. */
-    private static void finisher(String name, net.minecraft.world.item.Item weapon) {
+    private static void finisher(String name, net.minecraft.world.item.Item weapon, CameraType camera) {
         SCENARIOS.add(new Scenario(name, 50, sp -> {
             place(sp, 0, new ItemStack(weapon));
-            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.6, 3f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.0, 3f);    // point blank: the two nearly touch
         }, (mc, t) -> {
-            camera(mc, t < 8 ? CameraType.FIRST_PERSON : CameraType.THIRD_PERSON_BACK);
+            camera(mc, t < 8 ? CameraType.FIRST_PERSON : camera);
             if (t == 6) note("finisher: hint shown " + (StrikeInput.finisherTarget() != null));
             if (t == 8) mc.options.keyAttack.setDown(true);    // no click, as in the dash
             if (t == 10) note("finisher: move " + Stamina.of(mc.player).move);
             if (t == 30) mc.options.keyAttack.setDown(false);
             if (t == 14 || t == 34) dummyReport(mc, "finisher", t == 34);
-        }, new int[]{6, 9, 12, 15, 18, 21, 24, 27, 31}, true));
+        }, new int[]{6, 9, 12, 15, 18, 21, 24, 27, 31}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /**
+     * Sprinting at a zombie {@code dz} blocks ahead, the left button: the dash strike. Near (2.2), it
+     * must still run up to the zombie's side, not stand where it started.
+     */
+    private static void dash(String name, double dz, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 50, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, dz, 20f);
+        }, (mc, t) -> {
+            camera(mc, camera);
+            if (t == 1) Stamina.of(mc.player).dashCooldown = 0;
+            int run = dz > 3 ? 2 : 8;    // near: a couple of sprinting steps only, then the dash
+            mc.options.keyUp.setDown(t >= run && t < 30);
+            mc.options.keySprint.setDown(t >= run && t < 30);
+            // The button goes down without a click: a real press reaches the moves' tick handler
+            // before vanilla's keys, here it would come after them and vanilla would swing first.
+            if (t == 10) {
+                startPos = mc.player.position();
+                note("dash: sprinting " + mc.player.isSprinting());
+                mc.options.keyAttack.setDown(true);
+            }
+            if (t == 11) {
+                mc.options.keyAttack.setDown(false);
+                note("dash: move " + Stamina.of(mc.player).move + ", cooldown " + Stamina.of(mc.player).dashCooldown / 20 + " s");
+            }
+            if (t == 22) note(String.format(Locale.ROOT, "dash: went %.2f blocks to the lunge",
+                    mc.player.position().subtract(startPos).horizontalDistance()));
+            if (t == 24 || t == 46) dummyReport(mc, "dash", t == 46);
+        }, new int[]{10, 13, 16, 19, 21, 24, 28, 34}, camera != CameraType.FIRST_PERSON));
     }
 
     /**
@@ -415,12 +429,17 @@ public final class MovesSelfTest {
      * Measures how high the player went, where they landed, the mob's shove and the facing.
      */
     private static void vault(String name, net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.Mob> type, Move expect) {
+        vault(name, type, expect, CameraType.THIRD_PERSON_BACK);
+    }
+
+    private static void vault(String name, net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.Mob> type, Move expect,
+                              CameraType camera) {
         double[] top = new double[1];
         SCENARIOS.add(new Scenario(name, 56, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
             dummy(sp, type, 4.5, -1f);
         }, (mc, t) -> {
-            camera(mc, CameraType.THIRD_PERSON_BACK);
+            camera(mc, camera);
             mc.options.keyUp.setDown(t >= 2 && t < 40);
             mc.options.keySprint.setDown(t >= 2 && t < 40);
             LocalPlayer p = mc.player;
@@ -442,7 +461,7 @@ public final class MovesSelfTest {
                         name, top[0] - startPos.y, p.getZ(), p.getYRot()));
                 dummyReport(mc, name, true);
             }
-        }, new int[]{8, 10, 12, 14, 16, 18, 20, 22, 24, 27, 32}, true));
+        }, new int[]{8, 10, 12, 14, 16, 18, 20, 22, 24, 27, 32}, camera != CameraType.FIRST_PERSON));
     }
 
     /** A mob that stands still {@code dz} blocks in front of the player (facing them), with this health (-1: full). */
@@ -601,6 +620,7 @@ public final class MovesSelfTest {
         s.shields = 10f;
         s.freeTicks = 0;
         s.boostTicks = 0;
+        s.dashCooldown = 0;
         sp.teleportTo(sp.serverLevel(), x + 0.5, Y + 1, 0.5, 0f, 10f);
     }
 

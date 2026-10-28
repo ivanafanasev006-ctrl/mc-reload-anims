@@ -352,7 +352,6 @@ public final class MovesGameTests {
         ServerPlayer p = t.player();
         Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
         Stamina s = Stamina.of(p);
-        double[] before = new double[1];
         t.at(2, () -> {
             zombie.setTarget(p);
             zombie.setAggressive(true);
@@ -366,7 +365,12 @@ public final class MovesGameTests {
             p.hurt(p.damageSources().mobAttack(zombie), 6f);
             t.close(p.getHealth(), 20f, "health after the zombie's blow in the crouch");
         });
-        t.at(1 + Move.HOP_SHOVE, () -> before[0] = zombie.distanceTo(p));
+        // The test player does not jump: put them where the vault lands, beyond the zombie, before the
+        // shove, so the zombie flies back the way they came instead of into them.
+        t.at(Move.HOP_SHOVE, () -> {
+            Vec3 beyond = h.absoluteVec(new Vec3(3.5, 2.0, 7.3));
+            p.teleportTo(beyond.x, beyond.y, beyond.z);
+        });
         t.at(20, () -> {
             p.invulnerableTime = 0;
             p.hurt(p.damageSources().mobAttack(zombie), 6f);
@@ -375,7 +379,7 @@ public final class MovesGameTests {
         t.at(12 + Move.HOP_SHOVE, () -> {
             // Shoved back the way the player came from: here, where the test player stands.
             double moved = zombie.position().subtract(h.absoluteVec(new Vec3(3.5, 2.0, 5.5))).horizontalDistance();
-            t.check(moved >= 0.8 && moved <= 2.5, "zombie shoved " + moved + " blocks (want 1-2)");
+            t.check(moved >= 1.8 && moved <= 3.5, "zombie shoved " + moved + " blocks (want about 2.3)");
         });
         t.at(2 + Move.HOP.length, () -> {
             t.check(p.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED), "no Speed after the vault");
@@ -423,13 +427,15 @@ public final class MovesGameTests {
 
     /**
      * Finisher: a zombie at a fifth of its health, a sword, point blank. It is held (its blows do
-     * not land), hurt but alive after the stab, dead when the blade comes out; it costs its energy.
+     * not land, nor anyone else's: the player stands still, so they are untouchable), hurt but
+     * alive after the stab, dead when the blade comes out; it costs its energy.
      */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void finisherKillsAWeakMob(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 4);
+        Zombie other = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 2, 3);
         Stamina s = Stamina.of(p);
         t.at(2, () -> {
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
@@ -441,6 +447,9 @@ public final class MovesGameTests {
         t.at(6, () -> {
             p.hurt(p.damageSources().mobAttack(zombie), 6f);
             t.close(p.getHealth(), 20f, "health after the held zombie's blow");
+            p.invulnerableTime = 0;
+            p.hurt(p.damageSources().mobAttack(other), 6f);
+            t.close(p.getHealth(), 20f, "health after another zombie's blow during the finisher");
         });
         t.at(3 + dev.mcreload.moves.Strikes.FINISH_STAB, () -> t.check(zombie.isAlive() && zombie.getHealth() < 4f,
                 "after the stab the zombie should be hurt and alive: " + zombie.getHealth()));
@@ -474,6 +483,7 @@ public final class MovesGameTests {
         Zombie healthy = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 4);
         Zombie big = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 4, 2, 4);
         Zombie far = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 7);
+        Zombie near = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 2, 5);
         t.at(2, () -> {
             big.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(300.0);
             big.setHealth(20f);
@@ -484,6 +494,9 @@ public final class MovesGameTests {
             t.check(!MoveServer.request(p, Move.FINISHER, false, healthy.getId()), "finisher on a zombie at full health");
             t.check(!MoveServer.request(p, Move.FINISHER, false, big.getId()), "finisher on a boss (300 health)");
             t.check(!MoveServer.request(p, Move.FINISHER, false, far.getId()), "finisher 3.5 blocks away");
+            // Point blank only (author): 1.8 blocks away (a step short of touching) the client offers none.
+            near.setHealth(2f);
+            t.check(!dev.mcreload.moves.Strikes.finishable(p, near, true), "finisher offered 1.8 blocks away");
             t.check(dev.mcreload.moves.Strikes.boss(big), "300 health is not a boss");
             t.check(!dev.mcreload.moves.Strikes.boss(healthy), "a zombie is a boss");
             t.check(s(p).move == null, "a refused finisher left a move running");
@@ -511,7 +524,16 @@ public final class MovesGameTests {
             // An iron sword hits for 6; a crit for 9 (a zombie's 2 armour takes a little off).
             float lost = 20f - zombie.getHealth();
             t.check(lost >= 6f * 1.4f && lost <= 6f * 1.5f + 0.01f, "dash strike took " + lost + " health (a crit of 6 is 9)");
-        }).run(4 + dev.mcreload.moves.Strikes.DASH_HIT);
+        });
+        // Then 30 s before the next one (author); once it has passed, again.
+        t.at(4 + Move.DASH.length, () -> {
+            p.setSprinting(true);
+            s.energy = 100f;
+            t.check(!MoveServer.request(p, Move.DASH, false), "a second dash strike right after the first");
+            t.check(s.dashCooldown > 20 * 25, "dash cooldown " + s.dashCooldown + " ticks (want about 30 s)");
+            s.dashCooldown = 0;
+            t.check(MoveServer.request(p, Move.DASH, false), "dash strike refused once the cooldown is over");
+        }).run(5 + Move.DASH.length);
     }
 
     /** A side dodge with a sword knocks an arrow off to the sword's side, for 1.5 shields. */

@@ -50,8 +50,9 @@ public final class Strikes {
     public static final int DASH_HIT = 9, DASH_FREE = 17;
     /** Dash: speed (blocks a tick) for each tick from the start: the run goes on and speeds up into the lunge. */
     public static final float[] DASH_RUN = {0.30f, 0.30f, 0.31f, 0.32f, 0.33f, 0.35f, 0.38f, 0.46f, 0.50f, 0.20f};
-    /** Dash: the run stops this close to the mob in front (blocks between the hitboxes): the blade reaches it there. */
-    public static final float DASH_STOP = 0.7f;
+    /** Dash: the run goes on until it is this close to the mob in front (blocks between the hitboxes), right at its side:
+     *  a mob already near does not hold the player in place (author, 2026-10-28). */
+    public static final float DASH_STOP = 0.15f;
     /** Dash: how far in front the blade reaches (blocks from the player's centre). */
     public static final double DASH_REACH = 2.6;
     /** A crit's blow, as in a jump (vanilla). */

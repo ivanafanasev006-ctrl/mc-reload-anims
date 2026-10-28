@@ -91,16 +91,19 @@ public enum Move {
      * Sprinting with W and a sword, the left button: a dash into a lunge, the blade into the
      * belly (dash_strike). The run carries on and speeds up into the lunge (about 3.4 blocks by
      * 0.45 s, less if someone is in the way), the stab lands at 0.45 s with a crit, as a blow in a
-     * jump does (Strikes.DASH_HIT). Free to move again once the blade is back out (0.85 s).
+     * jump does (Strikes.DASH_HIT). The run follows the look (it is not fixed to the way it started)
+     * and goes on to the mob's side. Free to move again once the blade is back out (0.85 s). Then
+     * 30 s before the next one (MovesConfig.dashCooldownTicks).
      */
     DASH("dash_strike", 1f, 31, -1, -1, -1, -1, Side.FRONT, MovesConfig::costDash),
     /**
      * A weakened mob (a fifth of its health or less) at point blank, the left button held with a
      * sword or an axe: the finishing stab (finisher_stab). The free hand takes it by the shoulder, the blade
      * goes in at 0.35 s and it is held on it until the blade comes out at 0.95 s, when it dies
-     * (Strikes.FINISH_STAB, FINISH_KILL). Not on bosses. It cannot hurt the player meanwhile.
+     * (Strikes.FINISH_STAB, FINISH_KILL). Not on bosses. The player stands still meanwhile, so
+     * nothing hurts them until the kill (author), the mob least of all.
      */
-    FINISHER("finisher_stab", 1f, 30, -1, -1, -1, -1, Side.FRONT, MovesConfig::costFinisher);
+    FINISHER("finisher_stab", 1f, 30, 0, Strikes.FINISH_KILL + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher);
 
     /** The vault: take-off and landing ticks (0.25 s and 0.9 s of the animation). */
     public static final int HOP_TAKEOFF = 5, HOP_LAND = 18;
@@ -193,6 +196,11 @@ public enum Move {
     /** A sword move started by the left button: while it plays the button strikes nothing else. */
     public boolean strike() {
         return this == DASH || this == FINISHER;
+    }
+
+    /** Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28). */
+    public boolean firstPerson() {
+        return this == HOP || this == DASH || this == FINISHER;
     }
 
     /**

@@ -22,6 +22,7 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.IntValue PARRY_REARM;
     private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE, KNEEL_MOVE,
             VAULT_MIN_WIDTH, VAULT_MIN_HEIGHT, VAULT_MAX_HEIGHT, VAULT_SHOVE, DASH_CRIT, FINISH_HEALTH, FINISH_RANGE, FINISH_MAX_HEALTH;
+    private static final ForgeConfigSpec.IntValue DASH_COOLDOWN;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -75,8 +76,9 @@ public final class MovesConfig {
         COST_BARRAGE = b.comment("Bow volley: full draw, then the left button (was 20). [default]").defineInRange("volley", 10.0, 0.0, 10000.0);
         COST_BOW_DODGE = b.comment("A dodge with a shot: in the Legolas stance and the bow's combat flow (was 10). [default]")
                 .defineInRange("bowDodge", 5.0, 0.0, 10000.0);
-        COST_DASH = b.comment("Dash strike: sprinting with W and a sword, the left button. [default]")
-                .defineInRange("dashStrike", 7.5, 0.0, 10000.0);
+        // Renamed from dashStrike (7.5) so worlds made before get the author's number.
+        COST_DASH = b.comment("Dash strike: sprinting with W and a sword, the left button (author: 15).")
+                .defineInRange("dash", 15.0, 0.0, 10000.0);
         COST_FINISHER = b.comment("Finisher: the left button held at point blank to a weakened enemy. [default]")
                 .defineInRange("finisher", 5.0, 0.0, 10000.0);
         b.pop();
@@ -102,19 +104,24 @@ public final class MovesConfig {
                 .defineInRange("minHeight", 0.85, 0.0, 10.0);
         VAULT_MAX_HEIGHT = b.comment("Mobs taller than this are not vaulted (a zombie is 1.95, an enderman 2.9). [default]")
                 .defineInRange("maxHeight", 2.2, 0.5, 10.0);
-        VAULT_SHOVE = b.comment("How hard the hand shoves the mob back as the player comes down beyond it (0.3: about 1.5 blocks;",
-                        "author: 1-2 blocks). [default]")
-                .defineInRange("shove", 0.3, 0.0, 3.0);
+        // Renamed from shove (0.3) so worlds made before get the new strength.
+        VAULT_SHOVE = b.comment("How hard the hand shoves the mob back as the player comes down beyond it (0.45: about 2.3 blocks;",
+                        "author: 1-2 blocks, then half as far again).")
+                .defineInRange("shoveStrength", 0.45, 0.0, 3.0);
         b.pop();
 
         b.comment("The sword moves of the left button: the dash strike and the finisher.").push("strikes");
         DASH_CRIT = b.comment("Dash strike (sprinting with W, the left button): the blow is the weapon's times this (author: a crit",
                         "as in a jump; vanilla's crit is 1.5).")
                 .defineInRange("dashCrit", 1.5, 1.0, 10.0);
+        DASH_COOLDOWN = b.comment("Dash strike: seconds before it can be made again (author: at least 30).")
+                .defineInRange("dashCooldownSeconds", 30, 0, 3600);
         FINISH_HEALTH = b.comment("Finisher: a mob with this share of its health or less can be finished (author: 20 %).")
                 .defineInRange("finisherHealth", 0.2, 0.0, 1.0);
-        FINISH_RANGE = b.comment("Finisher: blocks between the player and the mob (point blank). [default]")
-                .defineInRange("finisherRange", 1.5, 0.5, 4.0);
+        // Renamed from finisherRange (1.5) so worlds made before get the shorter reach.
+        FINISH_RANGE = b.comment("Finisher: blocks from the player's middle to the mob's side (0.8: the two nearly touch;",
+                        "author: only at point blank). [default]")
+                .defineInRange("finisherReach", 0.8, 0.3, 4.0);
         FINISH_MAX_HEALTH = b.comment("Finisher and vault: mobs with more maximum health than this count as bosses (author: not on the",
                         "dragon nor the wither; those and the forge:bosses tag never). [default]")
                 .defineInRange("bossHealth", 100.0, 1.0, 100000.0);
@@ -168,7 +175,7 @@ public final class MovesConfig {
     public static float costHop() { return f(COST_HOP, 12.5); }
     public static float costBarrage() { return f(COST_BARRAGE, 10.0); }
     public static float costBowDodge() { return f(COST_BOW_DODGE, 5.0); }
-    public static float costDash() { return f(COST_DASH, 7.5); }
+    public static float costDash() { return f(COST_DASH, 15.0); }
     public static float costFinisher() { return f(COST_FINISHER, 5.0); }
     public static float hopRange() { return f(HOP_RANGE, 2.5); }
     public static int hopSpeedTicks() { return get(HOP_SPEED_TICKS, 20); }
@@ -178,10 +185,11 @@ public final class MovesConfig {
     public static float vaultMinWidth() { return f(VAULT_MIN_WIDTH, 0.6); }
     public static float vaultMinHeight() { return f(VAULT_MIN_HEIGHT, 0.85); }
     public static float vaultMaxHeight() { return f(VAULT_MAX_HEIGHT, 2.2); }
-    public static float vaultShove() { return f(VAULT_SHOVE, 0.3); }
+    public static float vaultShove() { return f(VAULT_SHOVE, 0.45); }
     public static float dashCrit() { return f(DASH_CRIT, 1.5); }
     public static float finisherHealth() { return f(FINISH_HEALTH, 0.2); }
-    public static float finisherRange() { return f(FINISH_RANGE, 1.5); }
+    public static float finisherRange() { return f(FINISH_RANGE, 0.8); }
+    public static int dashCooldownTicks() { return get(DASH_COOLDOWN, 30) * 20; }
     public static float finisherMaxHealth() { return f(FINISH_MAX_HEALTH, 100.0); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {

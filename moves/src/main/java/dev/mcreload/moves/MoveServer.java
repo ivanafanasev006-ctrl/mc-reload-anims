@@ -36,6 +36,7 @@ public final class MoveServer {
         s.start(p, move, held);
         if (move == Move.HOP) Hop.started(p, s, enemy);
         if (move == Move.FINISHER) Strikes.finisherStarted(p, s, enemy);
+        if (move == Move.DASH) s.dashCooldown = MovesConfig.dashCooldownTicks();
         if (move == Move.BARRAGE) p.stopUsingItem();     // the volley takes over the drawn bow
         MovesNet.play(p, move);
         sync(p, s, true);
@@ -51,6 +52,7 @@ public final class MoveServer {
         Stamina s = Stamina.of(p);
         if (s.move != move) return;
         if (move == Move.HOP && s.moveTick >= Move.HOP_TAKEOFF) Hop.landed(p, s);
+        if (move == Move.HOP && s.moveTick >= Move.HOP_SHOVE && !s.hopShoved) Hop.shove(p, s);
         s.end(p);
         MovesNet.stop(p);
     }
@@ -77,7 +79,8 @@ public final class MoveServer {
         // The moves of the left button: the dash with a sword, off a sprint; the finisher with a sword or an axe.
         if (move == Move.DASH && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER && !Strikes.finisherWeapon(p)) return false;
-        if (move == Move.DASH) return ground && sprint;
+        // The dash waits out its cooldown (the server lets a client a few ticks ahead of it through).
+        if (move == Move.DASH) return ground && sprint && s.dashCooldown <= (p.level().isClientSide ? 0 : 5);
         return ground || !MovesConfig.dodgeOnlyOnGround();
     }
 

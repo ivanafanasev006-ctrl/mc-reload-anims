@@ -104,16 +104,31 @@ public final class Hop {
     static void started(ServerPlayer p, Stamina s, Entity target) {
         s.target = target.getId();
         s.hopSped = false;
+        s.hopShoved = false;
         s.hopFrom = p.position();
         if (target instanceof LivingEntity le) MovesNet.stoop(target, Move.HOP_TAKEOFF, STOOP_TICKS, lean(le));
     }
 
-    /** Every server tick of a vault: no fall damage from it, the shove, and Speed I from the landing. */
+    /**
+     * Every server tick of a vault: no fall damage from it, the shove, and Speed I from the landing.
+     * The shove waits until this end sees the player past the mob (it hears of the player's moves a
+     * little late), or the landing at the latest: shoved while the player is still over it, the mob
+     * would fly into them and stop.
+     */
     static void serverTick(ServerPlayer p, Stamina s) {
         if (s.move != Move.HOP) return;
         p.fallDistance = 0f;
-        if (s.moveTick == Move.HOP_SHOVE) shove(p, s);
+        if (!s.hopShoved && s.moveTick >= Move.HOP_SHOVE && (past(p, s) || s.moveTick >= Move.HOP_LAND + 2)) shove(p, s);
         if (s.moveTick >= Move.HOP_LAND) landed(p, s);
+    }
+
+    /** The player is beyond the mob, seen from where the vault took off. */
+    private static boolean past(ServerPlayer p, Stamina s) {
+        Entity e = p.level().getEntity(s.target);
+        if (e == null || s.hopFrom == null) return true;
+        Vec3 way = horizontal(e.position().subtract(s.hopFrom));
+        if (way.lengthSqr() < 1.0E-4) return true;
+        return horizontal(p.position().subtract(e.position())).dot(way.normalize()) > e.getBbWidth() / 2 + 0.3;
     }
 
     /**
@@ -121,6 +136,7 @@ public final class Hop {
      * (less if it resists knockback), without harm.
      */
     static void shove(ServerPlayer p, Stamina s) {
+        s.hopShoved = true;
         Entity e = p.level().getEntity(s.target);
         if (!(e instanceof LivingEntity mob) || !mob.isAlive() || s.hopFrom == null) return;
         Vec3 back = horizontal(s.hopFrom.subtract(mob.position()));

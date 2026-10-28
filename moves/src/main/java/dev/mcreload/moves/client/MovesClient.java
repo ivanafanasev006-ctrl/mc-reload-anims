@@ -155,6 +155,10 @@ public final class MovesClient {
             start(p, s, Move.BARRAGE, false, -1);
             if (s.move == Move.BARRAGE) p.stopUsingItem();    // the volley takes over the drawn bow
         }
+        // The left button is the bow's while the volley plays and in the flow and the Legolas stance
+        // (on one knee between two arrows the bow is not drawn): it swings nothing, not even Better
+        // Combat's blow, which comes before Forge's interaction event that stops vanilla's.
+        if (s.move == Move.BARRAGE || BowStance.active(p) || BowStance.kneeling(p)) StrikeInput.swallow(mc);
 
         // ---- dodges and rolls: R and a direction (R with the bow fully drawn: the Legolas stance)
         if (dodgePressed && BowStance.dodgeKey(p)) dodgePressed = false;
@@ -238,6 +242,7 @@ public final class MovesClient {
         pushDir = null;
         airTicks = 0;
         s.target = target;
+        if (move == Move.DASH) s.dashCooldown = MovesConfig.dashCooldownTicks();
         MoveAnimator.play(p, move);
         MovesNet.CHANNEL.sendToServer(new MovesNet.Request((byte) move.ordinal(), held, target));
         return true;
@@ -339,8 +344,9 @@ public final class MovesClient {
     }
 
     /**
-     * The dash strike: the run goes on and speeds up into the lunge (Strikes.DASH_RUN), stopping
-     * where the blade reaches the mob in front instead of running into it.
+     * The dash strike: the run goes on and speeds up into the lunge (Strikes.DASH_RUN), the way the
+     * player looks (it can be turned on the way), up to the side of the mob in front instead of
+     * through it.
      */
     private static void dash(AbstractClientPlayer p, int t) {
         float[] run = dev.mcreload.moves.Strikes.DASH_RUN;
@@ -348,7 +354,7 @@ public final class MovesClient {
         float speed = t < run.length ? run[t] : 0f;
         net.minecraft.world.entity.LivingEntity ahead = dev.mcreload.moves.Strikes.dashTarget(p);
         if (ahead != null && gap(p, ahead) <= dev.mcreload.moves.Strikes.DASH_STOP) speed = 0f;
-        Vec3 dir = move(Move.DASH);
+        Vec3 dir = Move.DASH.direction(p.getYRot());
         p.setDeltaMovement(dir.x * speed, v.y, dir.z * speed);
     }
 

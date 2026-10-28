@@ -69,8 +69,12 @@ public final class Stamina {
     public int target = -1;
     /** The vault's Speed I was given (at the landing, or when the player broke off the vault's end). */
     public boolean hopSped;
+    /** The vault's shove was given (server). */
+    public boolean hopShoved;
     /** Where the vault took off (server): the mob is shoved back that way. */
     public net.minecraft.world.phys.Vec3 hopFrom;
+    /** Ticks before the next dash strike (both ends: the client does not try it before, the server refuses it). */
+    public int dashCooldown;
 
     /** The pose this move forced to keep the low hitbox standing (cleared when it ends). */
     boolean forcedStanding;
@@ -133,6 +137,7 @@ public final class Stamina {
     /** Counts the move on; at the edges of its low frames the hitbox changes. Every tick, both ends. */
     public void tickMove(Player p) {
         if (guard != Guard.Kind.NONE) guardTick++;
+        if (dashCooldown > 0) dashCooldown--;
         if (move == null) return;
         boolean wasLow = low();
         moveTick++;

@@ -1,6 +1,8 @@
 package dev.mcreload.moves.client;
 
 import dev.kosmx.playerAnim.api.TransformType;
+import dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration;
+import dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode;
 import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
 import dev.kosmx.playerAnim.api.layered.ModifierLayer;
@@ -57,7 +59,9 @@ public final class MoveAnimator {
         layer.speed.speed = move.animSpeed;
         // Bow moves may play a part of their animation (a half of bow_walk_around) and hold its last frame.
         int from = move.shot != null ? move.shot.animStart() : 0;
-        IAnimation played = new KeyframeAnimationPlayer(anim, from);
+        KeyframeAnimationPlayer keyframes = new KeyframeAnimationPlayer(anim, from);
+        if (move.firstPerson()) firstPerson(keyframes);
+        IAnimation played = keyframes;
         if (move.shot != null && move.shot.holdAt() >= 0) played = new Segment(played, move.shot.holdAt() - from);
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), unwound(layer, anim, from, played));
         KinetrixBridge.wholeBody(p.getUUID(), move.length * 50L + 100L);
@@ -82,6 +86,16 @@ public final class MoveAnimator {
         @Override
         public void tick() {
             inner.tick();
+        }
+
+        @Override
+        public FirstPersonMode getFirstPersonMode(float tickDelta) {
+            return inner.getFirstPersonMode(tickDelta);
+        }
+
+        @Override
+        public FirstPersonConfiguration getFirstPersonConfiguration(float tickDelta) {
+            return inner.getFirstPersonConfiguration(tickDelta);
         }
 
         @Override
@@ -126,6 +140,16 @@ public final class MoveAnimator {
         }
 
         @Override
+        public FirstPersonMode getFirstPersonMode(float tickDelta) {
+            return inner.getFirstPersonMode(tickDelta);
+        }
+
+        @Override
+        public FirstPersonConfiguration getFirstPersonConfiguration(float tickDelta) {
+            return inner.getFirstPersonConfiguration(tickDelta);
+        }
+
+        @Override
         public void setupAnim(float tickDelta) {
             inner.setupAnim(played < ticks ? tickDelta : 0f);
         }
@@ -146,10 +170,13 @@ public final class MoveAnimator {
         KeyframeAnimation anim = kind.animation == null ? null : PlayerAnimationRegistry.getAnimation(kind.animation);
         if (layer == null || anim == null) return;
         layer.speed.speed = 1f;
-        KeyframeAnimationPlayer player = new KeyframeAnimationPlayer(anim)
-                .setFirstPersonMode(dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode.THIRD_PERSON_MODEL)
-                .setFirstPersonConfiguration(new dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration(true, true, true, true));
-        layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), player);
+        layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), firstPerson(new KeyframeAnimationPlayer(anim)));
+    }
+
+    /** Seen in first person too: both arms and what they hold, in front of the camera (as in 1.7.10's sword block). */
+    private static KeyframeAnimationPlayer firstPerson(KeyframeAnimationPlayer player) {
+        return player.setFirstPersonMode(FirstPersonMode.THIRD_PERSON_MODEL)
+                .setFirstPersonConfiguration(new FirstPersonConfiguration(true, true, true, true));
     }
 
     /** The tick of {@code bow_barrage} held after the volley: down on one knee, the bow at full draw. */
@@ -209,6 +236,16 @@ public final class MoveAnimator {
         @Override
         public void tick() {
             inner.tick();
+        }
+
+        @Override
+        public FirstPersonMode getFirstPersonMode(float tickDelta) {
+            return inner.getFirstPersonMode(tickDelta);
+        }
+
+        @Override
+        public FirstPersonConfiguration getFirstPersonConfiguration(float tickDelta) {
+            return inner.getFirstPersonConfiguration(tickDelta);
         }
 
         @Override

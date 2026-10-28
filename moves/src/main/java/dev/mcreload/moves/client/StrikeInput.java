@@ -17,7 +17,8 @@ import net.minecraft.world.phys.EntityHitResult;
  *   <li><b>Finisher.</b> A mob with a fifth of its health or less at point blank, a sword or an axe in hand: a
  *   hint shows under the crosshair; the left button held (pressed while the hint shows, or kept
  *   down a moment, as when holding it to attack) starts the finishing stab.</li>
- *   <li><b>Dash strike.</b> Sprinting with W, a sword in hand: the left button lunges.</li>
+ *   <li><b>Dash strike.</b> Sprinting with W, a sword in hand: the left button lunges; then 30 s
+ *   before the next one (until then the button strikes as usual, and the hotbar says how long).</li>
  * </ul>
  *
  * <p>They take the click: the button is let go of for vanilla and for Better Combat (whose
@@ -63,6 +64,12 @@ public final class StrikeInput {
             }
         }
         if (attackPressed && s.move == null && p.isSprinting() && mc.options.keyUp.isDown() && Strikes.sword(p)) {
+            if (s.dashCooldown > 0) {
+                // Not yet: an ordinary blow, and a word above the hotbar of how long the dash still needs.
+                p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_moves.dash.cooldown",
+                        (s.dashCooldown + 19) / 20), true);
+                return false;
+            }
             if (MovesClient.start(p, s, Move.DASH, -1)) {
                 swallow(mc);
                 return true;
@@ -77,7 +84,7 @@ public final class StrikeInput {
     }
 
     /** Lets go of the left button: its clicks this tick are used up and it reads as up until pressed again. */
-    private static void swallow(Minecraft mc) {
+    static void swallow(Minecraft mc) {
         while (mc.options.keyAttack.consumeClick()) {
             // used up
         }
