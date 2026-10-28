@@ -78,6 +78,7 @@ public final class MovesClient {
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> new MovesSettingsScreen(parent)));
         GuardInput.init();
+        StoopFx.init();
                 if (MovesSelfTest.enabled()) MovesSelfTest.init();
     }
 
@@ -133,7 +134,7 @@ public final class MovesClient {
             }
         } else if (p.isSprinting() && p.onGround() && MoveServer.allowed(p, s, Move.SLIDE)) {
             KinetrixBridge.blockCrawl(250);
-            if (slidePressed) start(p, s, Move.SLIDE, true);
+            if (slidePressed) start(p, s, Move.SLIDE, true, -1);
         }
 
         // ---- dodges and rolls: R and a direction
@@ -143,7 +144,10 @@ public final class MovesClient {
             Move move = direction(mc);
             if (move != null) {
                 dodgeWait = 0;
-                start(p, s, move, false);
+                // R + W against an enemy about to strike at point blank: hop over them instead of rolling.
+                net.minecraft.world.entity.LivingEntity enemy = move == Move.DODGE_FRONT ? dev.mcreload.moves.Hop.target(p, true) : null;
+                if (enemy != null) start(p, s, Move.HOP, false, enemy.getId());
+                else start(p, s, move, false, -1);
             }
         }
     }
@@ -177,7 +181,7 @@ public final class MovesClient {
 
     // ------------------------------------------------------------------ the local move
 
-    private static void start(LocalPlayer p, Stamina s, Move move, boolean held) {
+    private static void start(LocalPlayer p, Stamina s, Move move, boolean held, int target) {
         if (!MoveServer.allowed(p, s, move)) {
             if (!s.canAfford(move, p)) flash = 12;
             return;
@@ -187,8 +191,9 @@ public final class MovesClient {
         s.start(p, move, held);
         moveYaw = p.getYRot();
         airTicks = 0;
+        s.hopTarget = target;
         MoveAnimator.play(p, move);
-        MovesNet.CHANNEL.sendToServer(new MovesNet.Request((byte) move.ordinal(), held));
+        MovesNet.CHANNEL.sendToServer(new MovesNet.Request((byte) move.ordinal(), held, target));
     }
 
     private static void cancel(LocalPlayer p, Stamina s, int fade) {
@@ -210,6 +215,10 @@ public final class MovesClient {
         if (p != Minecraft.getInstance().player || s.move == null) return;
         Move move = s.move;
         int t = s.moveTick;
+        if (move == Move.HOP) {
+            hop(p, s, t);
+            return;
+        }
         float speed;
         if (move == Move.SLIDE) {
             // The run-up before the push counts towards the slide's length.
@@ -223,6 +232,51 @@ public final class MovesClient {
         if (speed <= 0f) return;
         Vec3 dir = move.direction(moveYaw);
         p.setDeltaMovement(dir.x * speed, p.getDeltaMovement().y, dir.z * speed);
+    }
+
+    /** The hop's flight: velocity for this tick, every tick of the hop. */
+    private static Vec3 hopVelocity = Vec3.ZERO;
+    private static float hopYaw;
+
+    /**
+     * The hop: still while turning and crouching, then a jump over the enemy that lands
+     * {@link Move#HOP_BEYOND} blocks behind them, with lighter gravity; on the way the player turns
+     * round to face them (client setting).
+     */
+    private static void hop(AbstractClientPlayer p, Stamina s, int t) {
+        Vec3 v = p.getDeltaMovement();
+        if (t < Move.HOP_TAKEOFF) {
+            p.setDeltaMovement(0, v.y, 0);
+            return;
+        }
+        int air = Move.HOP_LAND - Move.HOP_TAKEOFF;
+        if (t == Move.HOP_TAKEOFF) {
+            net.minecraft.world.entity.Entity enemy = p.level().getEntity(s.hopTarget);
+            Vec3 over = enemy != null ? enemy.position() : p.position().add(move(Move.HOP).scale(1.5));
+            Vec3 dir = new Vec3(over.x - p.getX(), 0, over.z - p.getZ());
+            if (dir.lengthSqr() < 1.0E-4) dir = move(Move.HOP);
+            Vec3 land = over.add(dir.normalize().scale(Move.HOP_BEYOND));
+            hopVelocity = new Vec3((land.x - p.getX()) / air, 0, (land.z - p.getZ()) / air);
+            hopYaw = p.getYRot();
+            p.setDeltaMovement(hopVelocity.x, Move.HOP_JUMP, hopVelocity.z);
+            p.setOnGround(false);
+            return;
+        }
+        if (t <= Move.HOP_LAND + 2 && !p.onGround()) {
+            p.setDeltaMovement(hopVelocity.x, v.y + 0.08 * (1 - Move.HOP_GRAVITY), hopVelocity.z);
+            if (dev.mcreload.moves.HudConfig.hopTurn()) {
+                // Done turning a little before touchdown (the landing may come a tick or two early).
+                float turned = Math.min(1f, (t - Move.HOP_TAKEOFF) / (float) (air - 4));
+                p.setYRot(hopYaw + 180f * turned);
+                p.setYHeadRot(p.getYRot());
+            }
+        } else if (t <= Move.HOP_LAND + 3) {
+            p.setDeltaMovement(v.x * 0.3, v.y, v.z * 0.3);    // a short skid on landing
+        }
+    }
+
+    private static Vec3 move(Move m) {
+        return m.direction(moveYaw);
     }
 
     /** During a move the keys do not walk (the move does); a jump still breaks off a slide. */

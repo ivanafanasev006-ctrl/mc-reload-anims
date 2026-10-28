@@ -149,6 +149,61 @@ public final class MovesSelfTest {
         guard("61_guard_two_swords", true, CameraType.THIRD_PERSON_BACK);
         guard("62_guard_first_person", false, CameraType.FIRST_PERSON);
 
+        // ---- the hop over a zombie set on the player, and an arrow knocked aside by a dodge
+        SCENARIOS.add(new Scenario("70_hop_over_zombie", 60, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            net.minecraft.world.entity.monster.Zombie z = net.minecraft.world.entity.EntityType.ZOMBIE.create(sp.serverLevel());
+            z.moveTo(sp.getX(), sp.getY(), sp.getZ() + 2, 180f, 0f);
+            z.setYHeadRot(180f);
+            z.setNoAi(true);
+            z.setAggressive(true);
+            z.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));    // not burning in the sun
+            z.addTag("kinetrix_moves.selftest");
+            sp.serverLevel().addFreshEntity(z);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 8) {
+                startPos = mc.player.position();
+                press(mc, MovesClient.DODGE, mc.options.keyUp);
+            }
+            if (t == 10) release(mc);
+            if (t == 11) note("hop: move " + Stamina.of(mc.player).move);
+            if (t == 52) {
+                Vec3 d = mc.player.position().subtract(startPos);
+                note(String.format(Locale.ROOT, "hop: went %.2f blocks along z (zombie at +2), now facing yaw %.0f, health %.1f",
+                        d.z, mc.player.getYRot(), mc.player.getHealth()));
+                IntegratedServer srv = mc.getSingleplayerServer();
+                srv.execute(() -> {
+                    ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
+                    note("hop: Speed after landing " + sp.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED));
+                    for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Zombie.class,
+                            sp.getBoundingBox().inflate(8))) if (e.getTags().contains("kinetrix_moves.selftest")) e.discard();
+                });
+            }
+        }, new int[]{8, 12, 15, 19, 23, 27, 31, 36, 46}, true));
+        SCENARIOS.add(new Scenario("71_deflect_arrow", 30, sp -> place(sp, 0, new ItemStack(Items.IRON_SWORD)), (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 8) {
+                IntegratedServer srv = mc.getSingleplayerServer();
+                srv.execute(() -> {
+                    ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
+                    net.minecraft.world.entity.projectile.Arrow a = new net.minecraft.world.entity.projectile.Arrow(sp.serverLevel(),
+                            sp.getX(), sp.getY() + 1.3, sp.getZ() + 5);
+                    a.shoot(0, 0, -1, 1.6f, 0f);
+                    sp.serverLevel().addFreshEntity(a);
+                });
+                press(mc, MovesClient.DODGE, mc.options.keyLeft);
+            }
+            if (t == 12) release(mc);
+            if (t == 24) {
+                IntegratedServer srv = mc.getSingleplayerServer();
+                srv.execute(() -> {
+                    ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
+                    note(String.format(Locale.ROOT, "deflect: health %.1f, shields %.1f", sp.getHealth(), Stamina.of(sp).shields));
+                });
+            }
+        }, new int[]{8, 10, 12, 16}, true));
+
         // ---- the settings screen, at the usual GUI scale and at the largest (a small window's worth of room)
         SCENARIOS.add(new Scenario("50_settings", 22, sp -> place(sp, 0, new ItemStack(Items.BOW)), (mc, t) -> {
             camera(mc, CameraType.FIRST_PERSON);

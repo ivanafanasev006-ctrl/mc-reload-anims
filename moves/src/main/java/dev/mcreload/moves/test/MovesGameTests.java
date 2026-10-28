@@ -309,6 +309,107 @@ public final class MovesGameTests {
         }).run(13);
     }
 
+    // ------------------------------------------------------------------ the hop and the deflect
+
+    /**
+     * Hop over a zombie set on the player: its blow in the wind-up is parried, it cannot hurt the
+     * player until the landing, a later blow lands; Speed I at the end; 25 energy.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 240)
+    public static void hopOverZombie(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            zombie.setTarget(p);
+            zombie.setAggressive(true);
+            zombie.setYRot(180f);
+            zombie.setYHeadRot(180f);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.HOP, false, zombie.getId()), "hop refused against a zombie at point blank");
+            t.close(s.energy, 100f - MovesConfig.costHop(), "energy after a hop");
+        });
+        t.at(5, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 6f);
+            t.close(p.getHealth(), 20f, "health after the zombie's blow in the wind-up");
+        });
+        t.at(20, () -> {
+            p.invulnerableTime = 0;
+            p.hurt(p.damageSources().mobAttack(zombie), 6f);
+            t.close(p.getHealth(), 20f, "health after the zombie's blow during the flip");
+        });
+        t.at(2 + Move.HOP.length, () -> {
+            t.check(p.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED), "no Speed after the hop");
+            p.invulnerableTime = 0;
+            p.hurt(p.damageSources().mobAttack(zombie), 6f);
+            t.check(p.getHealth() < 20f, "the zombie still cannot hurt the player after the hop");
+        }).run(3 + Move.HOP.length);
+    }
+
+    /** No hop without an enemy set on the player (a calm zombie, a cow): R + W rolls instead. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void hopNeedsAnEnemy(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie calm = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        net.minecraft.world.entity.animal.Cow cow = h.spawnWithNoFreeWill(EntityType.COW, 4, 2, 5);
+        Stamina s = Stamina.of(p);
+        // Truly calm: a test mob keeps choosing targets unless its AI is off.
+        calm.setNoAi(true);
+        t.at(2, () -> {
+            calm.setTarget(null);
+            calm.setAggressive(false);
+            t.check(!MoveServer.request(p, Move.HOP, false, calm.getId()), "hop over a zombie that is not after the player");
+            t.check(!MoveServer.request(p, Move.HOP, false, cow.getId()), "hop over a cow");
+            t.check(!MoveServer.request(p, Move.HOP, false, -1), "hop over nobody");
+            t.check(s.move == null, "a refused hop left a move running");
+        }).run(3);
+    }
+
+    /** A side dodge with a sword knocks an arrow off to the sword's side, for 1.5 shields. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void deflectArrowWithSword(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Arrow[] arrow = new Arrow[1];
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD)));
+        t.at(3, () -> {
+            MoveServer.request(p, Move.DODGE_LEFT, false);
+            // Straight at the player from in front (they face +Z).
+            arrow[0] = new Arrow(h.getLevel(), p.getX(), p.getY() + 1.2, p.getZ() + 2.5);
+            arrow[0].shoot(0, 0, -1, 1.2f, 0f);
+            h.getLevel().addFreshEntity(arrow[0]);
+        });
+        // Hold the dodge in its deflect frames while the arrow arrives.
+        for (int i = 4; i < 10; i++) t.at(i, () -> s.moveTick = Move.DEFLECT_TO - 1);    // deflect frames and untouchable both
+        t.at(10, () -> {
+            t.close(p.getHealth(), 20f, "health after a deflected arrow");
+            t.close(s.shields, 10f - MovesConfig.deflectShields(), "shields after a deflected arrow");
+            t.check(arrow[0].getDeltaMovement().x < -0.05, "the arrow did not go off to the right (sword hand): " + arrow[0].getDeltaMovement());
+        }).run(11);
+    }
+
+    /** Without a sword or a bow the dodge only lets the arrow fly past (no shields spent). */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void noDeflectBareHanded(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        t.at(3, () -> {
+            MoveServer.request(p, Move.DODGE_LEFT, false);
+            Arrow arrow = new Arrow(h.getLevel(), p.getX(), p.getY() + 1.2, p.getZ() + 2.5);
+            arrow.shoot(0, 0, -1, 1.2f, 0f);
+            h.getLevel().addFreshEntity(arrow);
+        });
+        for (int i = 4; i < 10; i++) t.at(i, () -> s.moveTick = Move.DEFLECT_TO - 1);    // deflect frames and untouchable both
+        t.at(10, () -> {
+            t.close(p.getHealth(), 20f, "health after an arrow through the dodge");
+            t.close(s.shields, 10f, "shields spent without a weapon");
+        }).run(11);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /**

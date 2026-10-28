@@ -19,8 +19,14 @@ public final class MoveServer {
      * stop the move it has already started.
      */
     public static boolean request(ServerPlayer p, Move move, boolean held) {
+        return request(p, move, held, -1);
+    }
+
+    /** {@code target}: the enemy a hop goes over (its entity id), -1 for other moves. */
+    public static boolean request(ServerPlayer p, Move move, boolean held, int target) {
         Stamina s = Stamina.of(p);
-        if (!allowed(p, s, move)) {
+        net.minecraft.world.entity.Entity enemy = move == Move.HOP ? p.level().getEntity(target) : null;
+        if (!allowed(p, s, move) || (move == Move.HOP && !Hop.valid(p, enemy))) {
             MovesNet.deny(p, move);
             sync(p, s, true);
             return false;
@@ -28,6 +34,7 @@ public final class MoveServer {
         s.spend(move.cost(), p);
         Guard.lower(p, s);
         s.start(p, move, held);
+        if (move == Move.HOP) Hop.started(p, s, enemy);
         MovesNet.play(p, move);
         sync(p, s, true);
         return true;

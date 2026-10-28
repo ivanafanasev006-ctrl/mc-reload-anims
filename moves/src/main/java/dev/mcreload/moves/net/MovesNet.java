@@ -41,6 +41,7 @@ public final class MovesNet {
         CHANNEL.registerMessage(id++, Bars.class, Bars::write, Bars::read, Bars::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, GuardUp.class, GuardUp::write, GuardUp::read, GuardUp::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, GuardState.class, GuardState::write, GuardState::read, GuardState::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, Stoop.class, Stoop::write, Stoop::read, Stoop::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     // ------------------------------------------------------------------ server -> clients
@@ -60,6 +61,11 @@ public final class MovesNet {
         GuardState msg = new GuardState(p.getId(), (byte) kind.ordinal());
         CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), msg);
         if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), msg);
+    }
+
+    /** Everyone who sees {@code e} sees them stoop forward (a missed blow) in {@code delay} ticks, for {@code ticks}. */
+    public static void stoop(net.minecraft.world.entity.Entity e, int delay, int ticks) {
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> e), new Stoop(e.getId(), (byte) delay, (byte) ticks));
     }
 
     public static void deny(ServerPlayer p, Move move) {
@@ -84,14 +90,14 @@ public final class MovesNet {
 
     // ------------------------------------------------------------------ messages
 
-    /** Client -> server: the player started this move (held: C still down, for the slide). */
-    public record Request(byte move, boolean held) {
-        static void write(Request m, FriendlyByteBuf b) { b.writeByte(m.move); b.writeBoolean(m.held); }
-        static Request read(FriendlyByteBuf b) { return new Request(b.readByte(), b.readBoolean()); }
+    /** Client -> server: the player started this move (held: C still down, for the slide; target: whom a hop goes over, -1). */
+    public record Request(byte move, boolean held, int target) {
+        static void write(Request m, FriendlyByteBuf b) { b.writeByte(m.move); b.writeBoolean(m.held); b.writeVarInt(m.target + 1); }
+        static Request read(FriendlyByteBuf b) { return new Request(b.readByte(), b.readBoolean(), b.readVarInt() - 1); }
         static void handle(Request m, Supplier<NetworkEvent.Context> ctx) {
             ServerPlayer p = ctx.get().getSender();
             Move move = Move.byId(m.move);
-            if (p != null && move != null) ctx.get().enqueueWork(() -> MoveServer.request(p, move, m.held));
+            if (p != null && move != null) ctx.get().enqueueWork(() -> MoveServer.request(p, move, m.held, m.target));
             ctx.get().setPacketHandled(true);
         }
     }
@@ -168,6 +174,17 @@ public final class MovesNet {
         static void handle(GuardState m, Supplier<NetworkEvent.Context> ctx) {
             ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> dev.mcreload.moves.client.GuardInput.remote(m.entity, dev.mcreload.moves.Guard.Kind.byId(m.kind))));
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Server -> client: entity {@code entity} stoops forward as if it had missed (the hop). */
+    public record Stoop(int entity, byte delay, byte ticks) {
+        static void write(Stoop m, FriendlyByteBuf b) { b.writeVarInt(m.entity); b.writeByte(m.delay); b.writeByte(m.ticks); }
+        static Stoop read(FriendlyByteBuf b) { return new Stoop(b.readVarInt(), b.readByte(), b.readByte()); }
+        static void handle(Stoop m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> dev.mcreload.moves.client.StoopFx.stoop(m.entity, m.delay, m.ticks)));
             ctx.get().setPacketHandled(true);
         }
     }

@@ -29,7 +29,24 @@ public enum Move {
      * (1.7 s) plays 1.4 times faster, so its slide (0.15-1.2 s) lasts as long as the push does:
      * 4 blocks tapped, 5 held (then the player crawls on). See {@link #slideSpeed}.
      */
-    SLIDE("slide", 1.4f, 25, -1, -1, 1, 18, Side.FRONT, MovesConfig::costSlide);
+    SLIDE("slide", 1.4f, 25, -1, -1, 1, 18, Side.FRONT, MovesConfig::costSlide),
+    /**
+     * R + W at point blank against an enemy winding up: a perfect parry and a flip over them
+     * (docs/combat-spec.md, 5). Turn and crouch until 0.35 s (the parry window: their blow does
+     * not land), take-off at 0.35 s, over their head, landing behind them at 1.25 s, standing at
+     * 1.85 s. They cannot hurt the player until the landing. See {@link #HOP_TAKEOFF}.
+     */
+    HOP("hop", 1f, 40, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop);
+
+    /** The hop: take-off and landing ticks (0.35 s and 1.25 s of the animation). */
+    public static final int HOP_TAKEOFF = 7, HOP_LAND = 26;
+    /** The hop's jump: upward speed at take-off and the share of gravity in the air: 19 ticks up
+     *  there with the top at 2 blocks, the feet over a zombie's head. */
+    public static final float HOP_JUMP = 0.40f, HOP_GRAVITY = 0.6f;
+    /** The hop lands this far beyond the enemy it jumps over. */
+    public static final float HOP_BEYOND = 1.4f;
+    /** Side dodges knock an arrow aside with the weapon in these ticks (0-0.21 s, docs/moves.md). */
+    public static final int DEFLECT_FROM = 0, DEFLECT_TO = 4;
 
     /** The slide push: full speed (12 blocks a second), then an even slowdown to a stop at the chosen
      *  length. 4 blocks take 0.6 s, 5 blocks 0.7 s; running takes 0.7 and 0.9 s. */
@@ -79,6 +96,10 @@ public enum Move {
 
     public boolean rolls() {
         return this == DODGE_BACK || this == DODGE_FRONT;
+    }
+
+    public boolean sideDodge() {
+        return this == DODGE_LEFT || this == DODGE_RIGHT;
     }
 
     /** Push speed at this tick of a dodge or roll (blocks a tick), 0 outside the push. */

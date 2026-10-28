@@ -16,10 +16,10 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue MAX_ENERGY, REGEN, REGEN_BUSY, REGEN_STILL, REGEN_FED, EXHAUSTION,
             APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
-            SHIELD_REGEN_SECONDS, COST_DODGE, COST_ROLL, COST_SLIDE;
+            SHIELD_REGEN_SECONDS, COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
     private static final ForgeConfigSpec.IntValue PARRY_REARM;
-    private static final ForgeConfigSpec.DoubleValue GUARD_MOVE;
+    private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -62,6 +62,7 @@ public final class MovesConfig {
         COST_DODGE = b.comment("Side dodge, R + A / R + D. [default]").defineInRange("dodge", 15, 0, 10000);
         COST_ROLL = b.comment("Roll back or forward, R + S / R + W. [default]").defineInRange("roll", 20, 0, 10000);
         COST_SLIDE = b.comment("Slide, sprint + C. [default]").defineInRange("slide", 20, 0, 10000);
+        COST_HOP = b.comment("Hop over an enemy winding up, R + W at point blank. [default]").defineInRange("hop", 25, 0, 10000);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -70,6 +71,18 @@ public final class MovesConfig {
         SLIDE_TAP = b.comment("Slide length in blocks when C is tapped (author: 4).").defineInRange("slideBlocks", 4.0, 1.0, 16.0);
         SLIDE_HELD = b.comment("Slide length in blocks when C is held; the player then goes on crawling (author: 5).")
                 .defineInRange("slideHeldBlocks", 5.0, 1.0, 16.0);
+        b.pop();
+
+        b.comment("The hop over an enemy winding up (R + W at point blank).").push("hop");
+        HOP_RANGE = b.comment("Blocks between the player and the enemy for R + W to hop over them instead of rolling. [default]")
+                .defineInRange("range", 2.5, 1.0, 6.0);
+        HOP_SPEED_TICKS = b.comment("Ticks of Speed I after the hop, to strike back (author: 1 s = 20).")
+                .defineInRange("speedTicks", 20, 0, 600);
+        b.pop();
+
+        b.comment("Knocking an arrow aside: R (a side dodge) with a sword or a bow in hand as it comes.").push("deflect");
+        DEFLECT_SHIELDS = b.comment("Shields it costs (author: 1.5). The dodge pays the energy.")
+                .defineInRange("shields", 1.5, 0.0, 100.0);
         b.pop();
 
         b.comment("The sword block (right mouse button with a sword).").push("guard");
@@ -105,6 +118,10 @@ public final class MovesConfig {
     public static float slideBlocks() { return f(SLIDE_TAP, 4.0); }
     public static float slideHeldBlocks() { return f(SLIDE_HELD, 5.0); }
     public static int parryRearmTicks() { return get(PARRY_REARM, 10); }
+    public static int costHop() { return get(COST_HOP, 25); }
+    public static float hopRange() { return f(HOP_RANGE, 2.5); }
+    public static int hopSpeedTicks() { return get(HOP_SPEED_TICKS, 20); }
+    public static float deflectShields() { return f(DEFLECT_SHIELDS, 1.5); }
     public static float guardMoveFactor() { return f(GUARD_MOVE, 0.2); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {

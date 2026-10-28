@@ -65,6 +65,9 @@ public final class Stamina {
     /** When the guard was last lowered (player ticks), for the parry re-arm time. */
     public int guardEndTick = Integer.MIN_VALUE / 2;
 
+    /** Hop: the entity id of the enemy jumped over. */
+    public int hopTarget = -1;
+
     /** The pose this move forced to keep the low hitbox standing (cleared when it ends). */
     boolean forcedStanding;
     /** This is the server's copy (its low frames last a little longer, see {@link #LOW_GRACE}). */
@@ -312,6 +315,8 @@ public final class Stamina {
             if (p instanceof ServerPlayer sp) {
                 s.serverTick(sp);
                 Guard.serverTick(sp, s);
+                Hop.serverTick(sp, s);
+                Deflect.serverTick(sp, s);
                 MoveServer.afterTick(sp, s);
             }
         }
@@ -348,11 +353,16 @@ public final class Stamina {
             s.combatTicks = MovesConfig.combatTicks();
         }
 
-        /** Arrows and other projectiles fly through a player in their untouchable frames. */
+        /**
+         * Arrows and other projectiles fly through a player in their untouchable frames; at the start
+         * of a side dodge, with a sword or a bow in hand, the player knocks them aside instead.
+         */
         @SubscribeEvent
         public static void projectile(ProjectileImpactEvent event) {
-            if (event.getRayTraceResult() instanceof EntityHitResult hit && hit.getEntity() instanceof Player p
-                    && of(p).untouchable()) {
+            if (!(event.getRayTraceResult() instanceof EntityHitResult hit) || !(hit.getEntity() instanceof Player p)) return;
+            Stamina s = of(p);
+            if (p instanceof ServerPlayer sp) Deflect.tryDeflect(sp, s, event.getProjectile());
+            if (s.untouchable() || event.getProjectile().getTags().contains(Deflect.TAG)) {
                 event.setImpactResult(ProjectileImpactEvent.ImpactResult.SKIP_ENTITY);
             }
         }

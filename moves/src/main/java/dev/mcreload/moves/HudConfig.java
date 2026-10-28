@@ -12,7 +12,7 @@ public final class HudConfig {
 
     public static final ForgeConfigSpec.EnumValue<Style> STYLE;
     public static final ForgeConfigSpec.EnumValue<Shape> SHAPE;
-    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS;
+    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS, HOP_TURN;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -25,6 +25,10 @@ public final class HudConfig {
                 .define("swapSides", false);
         ARROWS = b.comment("Arrow counter left of the hotbar while a bow is in hand.").define("arrowCounter", true);
         b.pop();
+        b.push("moves");
+        HOP_TURN = b.comment("The hop over an enemy turns you round in the air, so you land facing them. [default]")
+                .define("hopTurnAround", true);
+        b.pop();
         SPEC = b.build();
     }
 
@@ -32,6 +36,7 @@ public final class HudConfig {
     public static Shape shape() { return get(SHAPE, Shape.HEATER); }
     public static boolean swapSides() { return get(SWAP_SIDES, false); }
     public static boolean arrows() { return get(ARROWS, true); }
+    public static boolean hopTurn() { return get(HOP_TURN, true); }
 
     private static <T> T get(ForgeConfigSpec.ConfigValue<T> value, T fallback) {
         try {
