@@ -95,7 +95,9 @@ public final class MovesHud {
         for (int i = 0; i < icons; i++) {
             float left = shields - i;
             String state = left >= 1f ? "full" : left >= 0.5f ? "half" : "empty";
-            g.blit(shieldTex(shape + "_" + state), x + (i % 10) * 8, top - (i / 10) * 10, 0, 0, 9, 9, 9, 9);
+            // A shield just spent: the row shakes for a moment, like hearts when hurt.
+            int shake = MovesClient.shieldFlash > 0 && ((i * 7 + MovesClient.shieldFlash) % 3 == 0) ? -1 : 0;
+            g.blit(shieldTex(shape + "_" + state), x + (i % 10) * 8, top - (i / 10) * 10 + shake, 0, 0, 9, 9, 9, 9);
         }
         RenderSystem.disableBlend();
         return ((icons - 1) / 10 + 1) * 10;

@@ -39,6 +39,8 @@ public final class MovesNet {
         CHANNEL.registerMessage(id++, Play.class, Play::write, Play::read, Play::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, Deny.class, Deny::write, Deny::read, Deny::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, Bars.class, Bars::write, Bars::read, Bars::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, GuardUp.class, GuardUp::write, GuardUp::read, GuardUp::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++, GuardState.class, GuardState::write, GuardState::read, GuardState::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     // ------------------------------------------------------------------ server -> clients
@@ -51,6 +53,13 @@ public final class MovesNet {
     /** Everyone who can see {@code p} stops their move. */
     public static void stop(ServerPlayer p) {
         CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), new Play(p.getId(), (byte) -1));
+    }
+
+    /** The player's guard went up or down: everyone who sees them, and the player's own client. */
+    public static void guard(ServerPlayer p, dev.mcreload.moves.Guard.Kind kind) {
+        GuardState msg = new GuardState(p.getId(), (byte) kind.ordinal());
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), msg);
+        if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), msg);
     }
 
     public static void deny(ServerPlayer p, Move move) {
@@ -137,6 +146,28 @@ public final class MovesNet {
         static void handle(Bars m, Supplier<NetworkEvent.Context> ctx) {
             ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> dev.mcreload.moves.client.MovesClient.bars(m)));
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Client -> server: the guard button is held (true) or let go (false). */
+    public record GuardUp(boolean up) {
+        static void write(GuardUp m, FriendlyByteBuf b) { b.writeBoolean(m.up); }
+        static GuardUp read(FriendlyByteBuf b) { return new GuardUp(b.readBoolean()); }
+        static void handle(GuardUp m, Supplier<NetworkEvent.Context> ctx) {
+            ServerPlayer p = ctx.get().getSender();
+            if (p != null) ctx.get().enqueueWork(() -> dev.mcreload.moves.Guard.request(p, m.up));
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Server -> client: player {@code entity} guards like this now (0: not at all). */
+    public record GuardState(int entity, byte kind) {
+        static void write(GuardState m, FriendlyByteBuf b) { b.writeVarInt(m.entity); b.writeByte(m.kind); }
+        static GuardState read(FriendlyByteBuf b) { return new GuardState(b.readVarInt(), b.readByte()); }
+        static void handle(GuardState m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> dev.mcreload.moves.client.GuardInput.remote(m.entity, dev.mcreload.moves.Guard.Kind.byId(m.kind))));
             ctx.get().setPacketHandled(true);
         }
     }

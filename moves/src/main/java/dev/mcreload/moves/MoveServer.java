@@ -26,6 +26,7 @@ public final class MoveServer {
             return false;
         }
         s.spend(move.cost(), p);
+        Guard.lower(p, s);
         s.start(p, move, held);
         MovesNet.play(p, move);
         sync(p, s, true);

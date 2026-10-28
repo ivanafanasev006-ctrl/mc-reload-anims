@@ -144,6 +144,11 @@ public final class MovesSelfTest {
         slide("31_slide_held", true, false);
         slide("32_slide_tunnel", false, true);
 
+        // ---- the sword block: right mouse button held; a zombie's blow on it in the middle
+        guard("60_guard_one_sword", false, CameraType.THIRD_PERSON_BACK);
+        guard("61_guard_two_swords", true, CameraType.THIRD_PERSON_BACK);
+        guard("62_guard_first_person", false, CameraType.FIRST_PERSON);
+
         // ---- the settings screen, at the usual GUI scale and at the largest (a small window's worth of room)
         SCENARIOS.add(new Scenario("50_settings", 22, sp -> place(sp, 0, new ItemStack(Items.BOW)), (mc, t) -> {
             camera(mc, CameraType.FIRST_PERSON);
@@ -186,6 +191,39 @@ public final class MovesSelfTest {
             if (t == 12) release(mc);
             measure(mc, move, t, 8);
         }, new int[]{8, 10, 12, 14, 16, 20}, true));
+    }
+
+    /** Holds the use key with a sword (two swords); at tick 24 a zombie in front hits for 8. */
+    private static void guard(String name, boolean two, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 40, sp -> {
+            place(sp, 0, new ItemStack(Items.DIAMOND_SWORD));
+            if (two) sp.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD));
+            sp.serverLevel().getServer().setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
+        }, (mc, t) -> {
+            camera(mc, camera);
+            if (t == 4) {
+                mc.options.keyUse.setDown(true);
+                KeyMapping.click(mc.options.keyUse.getKey());
+            }
+            if (t == 24) {
+                IntegratedServer srv = mc.getSingleplayerServer();
+                srv.execute(() -> {
+                    ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
+                    net.minecraft.world.entity.monster.Zombie z = net.minecraft.world.entity.EntityType.ZOMBIE.create(sp.serverLevel());
+                    z.moveTo(sp.getX(), sp.getY(), sp.getZ() + 2, 180f, 0f);
+                    z.setNoAi(true);
+                    sp.serverLevel().addFreshEntity(z);
+                    sp.invulnerableTime = 0;
+                    sp.hurt(sp.damageSources().mobAttack(z), 8f);
+                    Stamina st = Stamina.of(sp);
+                    note(String.format(Locale.ROOT, "%s: guard %s, health %.1f after a blow of 8, shields %.1f, sword wear %d",
+                            name, st.guard, sp.getHealth(), st.shields, sp.getMainHandItem().getDamageValue()));
+                    z.discard();
+                });
+            }
+            if (t == 34) mc.options.keyUse.setDown(false);
+            if (t == 38) note(name + ": guard after letting go " + Stamina.of(mc.player).guard);
+        }, new int[]{6, 10, 16, 26, 36}, camera != CameraType.FIRST_PERSON));
     }
 
     /** Runs up, sprinting, then taps or holds the slide key; in the tunnel a one-block gap starts 3 blocks ahead. */

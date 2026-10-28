@@ -58,6 +58,13 @@ public final class Stamina {
     public boolean held;
     /** Slide: blocks gone so far (the client moves the player). */
     public float slid;
+    /** The sword guard held up (RMB), how long it has been up, and whether it can still parry. */
+    public Guard.Kind guard = Guard.Kind.NONE;
+    public int guardTick;
+    public boolean guardParry;
+    /** When the guard was last lowered (player ticks), for the parry re-arm time. */
+    public int guardEndTick = Integer.MIN_VALUE / 2;
+
     /** The pose this move forced to keep the low hitbox standing (cleared when it ends). */
     boolean forcedStanding;
     /** This is the server's copy (its low frames last a little longer, see {@link #LOW_GRACE}). */
@@ -118,6 +125,7 @@ public final class Stamina {
 
     /** Counts the move on; at the edges of its low frames the hitbox changes. Every tick, both ends. */
     public void tickMove(Player p) {
+        if (guard != Guard.Kind.NONE) guardTick++;
         if (move == null) return;
         boolean wasLow = low();
         moveTick++;
@@ -303,6 +311,7 @@ public final class Stamina {
             s.tickMove(p);
             if (p instanceof ServerPlayer sp) {
                 s.serverTick(sp);
+                Guard.serverTick(sp, s);
                 MoveServer.afterTick(sp, s);
             }
         }

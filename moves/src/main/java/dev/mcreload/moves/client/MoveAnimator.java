@@ -56,6 +56,22 @@ public final class MoveAnimator {
         KinetrixBridge.wholeBody(p.getUUID(), move.length * 50L + 100L);
     }
 
+    /**
+     * Raises the sword guard: its animation, held from its loop marker while the button is held.
+     * Seen in first person too (the arms and blades in front of the camera), as in 1.7.10. The
+     * legs stay Kinetrix's while walking.
+     */
+    public static void playGuard(AbstractClientPlayer p, dev.mcreload.moves.Guard.Kind kind) {
+        MoveLayer layer = layer(p);
+        KeyframeAnimation anim = kind.animation == null ? null : PlayerAnimationRegistry.getAnimation(kind.animation);
+        if (layer == null || anim == null) return;
+        layer.speed.speed = 1f;
+        KeyframeAnimationPlayer player = new KeyframeAnimationPlayer(anim)
+                .setFirstPersonMode(dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode.THIRD_PERSON_MODEL)
+                .setFirstPersonConfiguration(new dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration(true, true, true, true));
+        layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), player);
+    }
+
     /** Ends the animation early, blended out over {@code ticks}. */
     public static void stop(AbstractClientPlayer p, int ticks) {
         MoveLayer layer = layer(p);

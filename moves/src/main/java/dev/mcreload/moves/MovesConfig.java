@@ -18,6 +18,8 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, COST_DODGE, COST_ROLL, COST_SLIDE;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
+    private static final ForgeConfigSpec.IntValue PARRY_REARM;
+    private static final ForgeConfigSpec.DoubleValue GUARD_MOVE;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -69,6 +71,15 @@ public final class MovesConfig {
         SLIDE_HELD = b.comment("Slide length in blocks when C is held; the player then goes on crawling (author: 5).")
                 .defineInRange("slideHeldBlocks", 5.0, 1.0, 16.0);
         b.pop();
+
+        b.comment("The sword block (right mouse button with a sword).").push("guard");
+        PARRY_REARM = b.comment("Ticks the guard must stay down before raising it again gives a new perfect parry",
+                        "window, so tapping the button does not parry everything (20 ticks = 1 s). [default]")
+                .defineInRange("parryRearmTicks", 10, 0, 200);
+        GUARD_MOVE = b.comment("Walking speed while guarding, as a share of normal (like using an item in vanilla",
+                        "and blocking with a sword in 1.7.10). [default]")
+                .defineInRange("moveFactor", 0.2, 0.0, 1.0);
+        b.pop();
         SPEC = b.build();
     }
 
@@ -93,6 +104,8 @@ public final class MovesConfig {
     public static boolean dodgeOnlyOnGround() { return get(DODGE_ON_GROUND, true); }
     public static float slideBlocks() { return f(SLIDE_TAP, 4.0); }
     public static float slideHeldBlocks() { return f(SLIDE_HELD, 5.0); }
+    public static int parryRearmTicks() { return get(PARRY_REARM, 10); }
+    public static float guardMoveFactor() { return f(GUARD_MOVE, 0.2); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

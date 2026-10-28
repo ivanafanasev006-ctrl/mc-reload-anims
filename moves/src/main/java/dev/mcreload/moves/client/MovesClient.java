@@ -64,6 +64,8 @@ public final class MovesClient {
     static float maxEnergy = 100f, maxShields = 10f;
     /** Ticks left of the energy bar's flash (a move was refused for lack of energy). */
     static int flash;
+    /** Ticks left of the shield row's shake (a shield was spent on a block). */
+    static int shieldFlash;
 
     public static void init(IEventBus modBus) {
         modBus.addListener(MovesClient::registerKeys);
@@ -75,7 +77,8 @@ public final class MovesClient {
         MinecraftForge.EVENT_BUS.addListener(MovesSettingsScreen::registerCommand);
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> new MovesSettingsScreen(parent)));
-        if (MovesSelfTest.enabled()) MovesSelfTest.init();
+        GuardInput.init();
+                if (MovesSelfTest.enabled()) MovesSelfTest.init();
     }
 
     private static void registerKeys(RegisterKeyMappingsEvent event) {
@@ -96,6 +99,7 @@ public final class MovesClient {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         if (flash > 0) flash--;
+        if (shieldFlash > 0) shieldFlash--;
         boolean dodgePressed = false;
         while (DODGE.consumeClick()) dodgePressed = true;
         boolean slideDown = held(mc, slideKey(mc));
@@ -179,6 +183,7 @@ public final class MovesClient {
             return;
         }
         s.spend(move.cost(), p);
+        GuardInput.lowerLocal(p, s, false);     // the server lowers it too
         s.start(p, move, held);
         moveYaw = p.getYRot();
         airTicks = 0;
@@ -301,6 +306,7 @@ public final class MovesClient {
         LocalPlayer p = Minecraft.getInstance().player;
         if (p == null) return;
         Stamina s = Stamina.of(p);
+        if (m.shields() < s.shields) shieldFlash = 10;
         s.energy = m.energy();
         s.shields = m.shields();
         s.freeTicks = m.freeTicks();

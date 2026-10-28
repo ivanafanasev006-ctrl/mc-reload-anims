@@ -1,6 +1,7 @@
 package dev.mcreload.moves.test;
 
 import com.mojang.authlib.GameProfile;
+import dev.mcreload.moves.Guard;
 import dev.mcreload.moves.KinetrixMoves;
 import dev.mcreload.moves.Move;
 import dev.mcreload.moves.MoveServer;
@@ -12,9 +13,12 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
@@ -184,6 +188,127 @@ public final class MovesGameTests {
         t.at(after, () -> t.close(s.shields, 5f + MovesConfig.shieldRegen(), "shields after one refill")).run(after + 1);
     }
 
+    // ------------------------------------------------------------------ the sword block
+
+    /** A sword held across: a blow from the front loses 75 %, the sword 1 durability, the player 1 shield. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void guardOneSword(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> Guard.request(p, true));
+        t.at(12, () -> {
+            t.check(s.guard == Guard.Kind.SINGLE, "guard not up: " + s.guard);
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.close(p.getHealth(), 18f, "health after a blocked blow of 8");
+            t.close(s.shields, 9f, "shields after a blocked blow");
+            t.check(p.getMainHandItem().getDamageValue() == 1, "sword wear: " + p.getMainHandItem().getDamageValue());
+        }).run(13);
+    }
+
+    /** Two swords crossed: 90 % held, each sword 1 durability, 1.5 shields. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void guardTwoSwords(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD));
+            p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.IRON_SWORD));
+        });
+        t.at(3, () -> Guard.request(p, true));
+        t.at(13, () -> {
+            t.check(s.guard == Guard.Kind.DOUBLE, "double guard not up: " + s.guard);
+            p.hurt(p.damageSources().mobAttack(zombie), 10f);
+            t.close(p.getHealth(), 19f, "health after a blow of 10 on two swords");
+            t.close(s.shields, 8.5f, "shields after a blow on two swords");
+            t.check(p.getMainHandItem().getDamageValue() == 1 && p.getOffhandItem().getDamageValue() == 1,
+                    "sword wear: " + p.getMainHandItem().getDamageValue() + ", " + p.getOffhandItem().getDamageValue());
+        }).run(14);
+    }
+
+    /** A blow right after the blade is up does not land; nothing is spent. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void guardPerfectParry(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> Guard.request(p, true));
+        t.at(9, () -> {
+            t.check(Guard.inParryWindow(s), "not in the parry window at guard tick " + s.guardTick);
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.close(p.getHealth(), 20f, "health after a parried blow");
+            t.close(s.shields, 10f, "shields after a parried blow");
+            t.check(p.getMainHandItem().getDamageValue() == 0, "a parry wore the sword");
+        }).run(10);
+    }
+
+    /** Tapping the button: no new parry window until the guard has been down a moment. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void guardTapNoParry(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> Guard.request(p, true));
+        t.at(4, () -> Guard.request(p, false));
+        t.at(5, () -> Guard.request(p, true));
+        t.at(11, () -> {
+            t.check(!Guard.inParryWindow(s), "a tapped guard parried");
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.close(p.getHealth(), 18f, "health after a blow on a tapped guard");
+        }).run(12);
+    }
+
+    /** Blows from behind are not blocked. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void guardNotFromBehind(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 1);
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> Guard.request(p, true));
+        t.at(12, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.close(p.getHealth(), 12f, "health after a blow from behind");
+            t.close(s.shields, 10f, "shields after a blow from behind");
+        }).run(13);
+    }
+
+    /** No guard with a shield in the other hand, nor without shields; the last shield drops it. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void guardNeedsShieldsAndNoShield(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD));
+            p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+            Guard.request(p, true);
+            t.check(s.guard == Guard.Kind.NONE, "guard with a shield in the other hand");
+            p.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+            s.shields = 0f;
+            Guard.request(p, true);
+            t.check(s.guard == Guard.Kind.NONE, "guard without shields");
+            s.shields = 1f;
+            Guard.request(p, true);
+            t.check(s.guard == Guard.Kind.SINGLE, "guard refused with a shield left");
+        });
+        t.at(12, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.close(s.shields, 0f, "shields after the last one was spent");
+            t.check(s.guard == Guard.Kind.NONE, "guard still up without shields");
+        }).run(13);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /**
@@ -206,7 +331,14 @@ public final class MovesGameTests {
          */
         Script settle() {
             base = 62;
+            // Blows hurt as much as they say (difficulty scales mob blows).
+            h.getLevel().getServer().setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
             return this;
+        }
+
+        /** A zombie that does nothing, 2.5 blocks in front of the player (who faces +Z). */
+        Zombie zombieInFront() {
+            return h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 6);
         }
 
         /** A survival player on the floor (relative y 1 is the floor itself: the test block sits under it). */
