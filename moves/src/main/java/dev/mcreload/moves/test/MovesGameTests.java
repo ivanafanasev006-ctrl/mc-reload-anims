@@ -430,10 +430,14 @@ public final class MovesGameTests {
     public static void bowSweeps(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
-        Zombie target = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
-        Zombie beside = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 4, 2, 5);
+        // Husks: zombies would burn in the test world's daylight, and a burning mob shrugs off a
+        // weaker hit for a moment after each burn.
+        Zombie target = h.spawnWithNoFreeWill(EntityType.HUSK, 3, 2, 5);
+        Zombie beside = h.spawnWithNoFreeWill(EntityType.HUSK, 4, 2, 5);
         t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW)));
         t.at(30, () -> {
+            target.invulnerableTime = 0;
+            beside.invulnerableTime = 0;
             float before = beside.getHealth();
             p.attack(target);
             t.check(target.getHealth() <= target.getMaxHealth() - 3.9f, "the target took " + (target.getMaxHealth() - target.getHealth()));
@@ -463,7 +467,8 @@ public final class MovesGameTests {
             t.close(s.energy, 100f - MovesConfig.costBarrage(), "energy after a volley");
         });
         t.at(24 + Move.BARRAGE.length, () -> {
-            int arrows = h.getLevel().getEntitiesOfClass(Arrow.class, p.getBoundingBox().inflate(64)).size();
+            // Only this player's: the other tests of the batch shoot arrows nearby too.
+            int arrows = h.getLevel().getEntitiesOfClass(Arrow.class, p.getBoundingBox().inflate(64), a -> a.getOwner() == p).size();
             t.check(arrows == 2, "arrows flying: " + arrows);
             t.check(p.getInventory().countItem(Items.ARROW) == 0, "arrows left: " + p.getInventory().countItem(Items.ARROW));
             t.check(p.getMainHandItem().getDamageValue() == 2, "bow wear: " + p.getMainHandItem().getDamageValue());
