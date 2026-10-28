@@ -24,11 +24,12 @@ public enum Move {
     /** R + W: roll forward, the same as the back roll. */
     DODGE_FRONT("dodge_front", 1f, 18, 2, 9, 2, 12, Side.FRONT, MovesConfig::costRoll, 0.45f, 0.43f, 0.40f, 0.36f, 0.31f, 0.27f, 0.22f, 0.18f),
     /**
-     * Sprint + C: a slide along the look, faster than running; low the whole way. The animation
+     * Sprint + C: a slide along the look, faster than running; low from the first tick (a sprint
+     * into a one-block gap must not hit its edge before the body drops). The animation
      * (1.7 s) plays 1.4 times faster, so its slide (0.15-1.2 s) lasts as long as the push does:
      * 4 blocks tapped, 5 held (then the player crawls on). See {@link #slideSpeed}.
      */
-    SLIDE("slide", 1.4f, 25, -1, -1, 2, 18, Side.FRONT, MovesConfig::costSlide);
+    SLIDE("slide", 1.4f, 25, -1, -1, 1, 18, Side.FRONT, MovesConfig::costSlide);
 
     /** The slide push: full speed (12 blocks a second), then an even slowdown to a stop at the chosen
      *  length. 4 blocks take 0.6 s, 5 blocks 0.7 s; running takes 0.7 and 0.9 s. */

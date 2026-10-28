@@ -203,7 +203,7 @@ public final class MovesSelfTest {
             measure(mc, Move.SLIDE, t, 12);
             if (t == 50) note(name + ": pose " + mc.player.getPose() + ", health " + mc.player.getHealth()
                     + ", stuck in a block " + mc.player.isInWall());
-        }, new int[]{12, 14, 17, 20, 24, 30, 40}, true));
+        }, held ? new int[]{12, 17, 24, 28, 31, 34, 37, 40} : new int[]{12, 14, 17, 20, 24, 30, 40}, true));
     }
 
     private static KeyMapping slideKey(Minecraft mc) {

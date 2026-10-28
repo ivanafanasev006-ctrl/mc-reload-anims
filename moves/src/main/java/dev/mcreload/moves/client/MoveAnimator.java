@@ -64,5 +64,37 @@ public final class MoveAnimator {
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(ticks, Ease.INOUTSINE), null);
     }
 
+    /**
+     * Ends the move by handing the player to another pose (the slide held into Kinetrix's crawl):
+     * the move's pose stops where it is, instead of going on to get up, and fades out over
+     * {@code ticks} while the next pose comes in under it.
+     */
+    public static void handOver(AbstractClientPlayer p, int ticks) {
+        MoveLayer layer = layer(p);
+        KinetrixBridge.wholeBody(p.getUUID(), 0);
+        if (layer == null || layer.getAnimation() == null) return;
+        layer.setAnimation(new Held(layer.getAnimation()));
+        layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(ticks, Ease.INOUTSINE), null);
+    }
+
+    /** An animation stopped on its current frame. */
+    private record Held(IAnimation pose) implements IAnimation {
+        @Override
+        public boolean isActive() {
+            return true;
+        }
+
+        @Override
+        public void setupAnim(float tickDelta) {
+            pose.setupAnim(0f);
+        }
+
+        @Override
+        public dev.kosmx.playerAnim.core.util.Vec3f get3DTransform(String part, dev.kosmx.playerAnim.api.TransformType type,
+                                                                   float tickDelta, dev.kosmx.playerAnim.core.util.Vec3f value0) {
+            return pose.get3DTransform(part, type, 0f, value0);
+        }
+    }
+
     private MoveAnimator() {}
 }

@@ -119,8 +119,12 @@ public final class MovesClient {
             if (jumpPressed || attackPressed || airTicks > 4) {
                 cancel(p, s, 3);
             } else if (s.held && s.moveTick >= Move.SLIDE_CRAWL_TICK) {
-                // Held to the end: the slide becomes Kinetrix's crawl (C is still down).
-                cancel(p, s, 4);
+                // Held to the end: the slide becomes Kinetrix's crawl (C is still down). The slide's
+                // pose stays and fades while the crawl comes in, instead of standing up first.
+                Move move = s.move;
+                s.end(p);
+                MoveAnimator.handOver(p, 10);
+                MovesNet.CHANNEL.sendToServer(new MovesNet.Cancel((byte) move.ordinal()));
                 KinetrixBridge.blockCrawl(0);
             }
         } else if (p.isSprinting() && p.onGround() && MoveServer.allowed(p, s, Move.SLIDE)) {
