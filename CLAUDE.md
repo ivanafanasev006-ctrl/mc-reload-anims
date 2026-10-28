@@ -4,7 +4,7 @@ Kinetrix — мод на анимации игрока с суставами (Fo
 этих анимациях (план: `docs/combat-moves.md`), он лежит в `moves/` (Kinetrix Moves, сборка и тесты —
 `moves/README.md`). Анимации делаются в Blockbench на модели с суставами
 (`tools/blockbench/`, правила модели и конвертер — в `tools/blockbench/README.md`). Конспект всего
-проекта — `docs/SUMMARY.md`.
+проекта — `docs/SUMMARY.md`; всё нужное для нового чата на одной странице — `docs/HANDOFF.md`.
 
 ## Материалы автора — это каркас, а не готовая работа
 
