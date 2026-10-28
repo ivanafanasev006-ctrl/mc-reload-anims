@@ -92,14 +92,18 @@ public final class MovesGameTests {
         t.at(3, () -> MoveServer.request(p, Move.DODGE_LEFT, false));
         t.at(6, () -> {
             t.check(s.untouchable(), "not untouchable at dodge tick " + s.moveTick);
+            // Against the blow itself, not vanilla's moment of invulnerability after a hit.
+            float before = p.getHealth();
+            p.invulnerableTime = 0;
             p.hurt(p.damageSources().mobAttack(zombie), 4f);
-            t.close(p.getHealth(), 20f, "health after a blow in the dodge frames");
+            t.close(p.getHealth(), before, "health after a blow in the dodge frames");
         });
         t.at(14, () -> {
             t.check(!s.untouchable(), "still untouchable at dodge tick " + s.moveTick);
+            float before = p.getHealth();
             p.invulnerableTime = 0;
             p.hurt(p.damageSources().mobAttack(zombie), 4f);
-            t.check(p.getHealth() < 20f, "a blow after the dodge frames did not land");
+            t.check(p.getHealth() < before, "a blow after the dodge frames did not land");
         }).run(15);
     }
 
@@ -533,8 +537,12 @@ public final class MovesGameTests {
         });
         t.at(7, () -> {
             t.check(s.untouchable(), "not untouchable at Legolas tick " + s.moveTick);
+            // Against the blow itself (other tests' arrows may have grazed the player before), not
+            // vanilla's moment of invulnerability after a hit.
+            float before = p.getHealth();
+            p.invulnerableTime = 0;
             p.hurt(p.damageSources().mobAttack(zombie), 4f);
-            t.close(p.getHealth(), 20f, "health after a blow in the Legolas dodge");
+            t.close(p.getHealth(), before, "health after a blow in the Legolas dodge");
         });
         t.at(4 + 18, () -> {
             t.check(MoveServer.request(p, Move.LEGOLAS_RIGHT, false), "the next Legolas dodge refused at the end of the spin");
