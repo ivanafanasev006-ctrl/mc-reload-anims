@@ -280,6 +280,8 @@ public final class MovesSelfTest {
             level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, srv);
             level.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false, srv);
             level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, srv);
+            // No "advancement made" lines in the chat over the bars in the pictures.
+            level.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS).set(false, srv);
             level.setDayTime(6000);
             for (int x = -12; x <= 32; x++) {
                 for (int z = -16; z <= 24; z++) {
@@ -381,6 +383,7 @@ public final class MovesSelfTest {
         Scenario sc = SCENARIOS.get(index);
         label = sc.name;
         panel = sc.panel;
+        mc.gui.getChat().clearMessages(false);
         tick = -10;     // ten ticks to settle after the setup
         IntegratedServer srv = mc.getSingleplayerServer();
         SERVER_READY.set(false);
