@@ -95,17 +95,23 @@ public final class Hop {
     /** The hop starts: the enemy is remembered and everyone who sees them is told to make them stoop. */
     static void started(ServerPlayer p, Stamina s, Entity target) {
         s.hopTarget = target.getId();
+        s.hopSped = false;
         MovesNet.stoop(target, Move.HOP_TAKEOFF, STOOP_TICKS);
     }
 
-    /** Every server tick of a hop: no fall damage from it, and Speed I as it ends. */
+    /** Every server tick of a hop: no fall damage from it, and Speed I from the landing. */
     static void serverTick(ServerPlayer p, Stamina s) {
         if (s.move != Move.HOP) return;
         p.fallDistance = 0f;
-        if (s.moveTick == Move.HOP.length - 4) {
-            int ticks = MovesConfig.hopSpeedTicks();
-            if (ticks > 0) p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, ticks, 0, false, true, true));
-        }
+        if (s.moveTick >= Move.HOP_LAND) landed(p, s);
+    }
+
+    /** Speed I to strike back (author: 1 s), once: at the landing, or when the player runs off before it. */
+    static void landed(ServerPlayer p, Stamina s) {
+        if (s.hopSped) return;
+        s.hopSped = true;
+        int ticks = MovesConfig.hopSpeedTicks();
+        if (ticks > 0) p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, ticks, 0, false, true, true));
     }
 
     /**

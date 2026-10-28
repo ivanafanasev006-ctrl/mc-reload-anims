@@ -196,7 +196,39 @@ public final class MoveAnimator {
         MoveLayer layer = layer(p);
         KinetrixBridge.wholeBody(p.getUUID(), 0);
         if (layer == null || layer.getAnimation() == null) return;
+        layer.setAnimation(new Upright(layer.getAnimation()));
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(ticks, Ease.INOUTSINE), null);
+    }
+
+    /**
+     * An animation with the whole body's turns taken within half a turn either way (the same pose):
+     * blended out from the end of a roll (-340 degrees) it must not turn the player all the way
+     * back, only the last 20 degrees.
+     */
+    private record Upright(IAnimation inner) implements IAnimation {
+        @Override
+        public void tick() {
+            inner.tick();
+        }
+
+        @Override
+        public boolean isActive() {
+            return inner.isActive();
+        }
+
+        @Override
+        public void setupAnim(float tickDelta) {
+            inner.setupAnim(tickDelta);
+        }
+
+        @Override
+        public Vec3f get3DTransform(String part, TransformType type, float tickDelta, Vec3f value0) {
+            Vec3f v = inner.get3DTransform(part, type, tickDelta, value0);
+            if (!"body".equals(part) || type != TransformType.ROTATION) return v;
+            return new Vec3f(Mth.wrapDegrees(v.getX() * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD,
+                    Mth.wrapDegrees(v.getY() * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD,
+                    Mth.wrapDegrees(v.getZ() * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD);
+        }
     }
 
     /**
@@ -208,7 +240,7 @@ public final class MoveAnimator {
         MoveLayer layer = layer(p);
         KinetrixBridge.wholeBody(p.getUUID(), 0);
         if (layer == null || layer.getAnimation() == null) return;
-        layer.setAnimation(new Held(layer.getAnimation()));
+        layer.setAnimation(new Upright(new Held(layer.getAnimation())));
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(ticks, Ease.INOUTSINE), null);
     }
 

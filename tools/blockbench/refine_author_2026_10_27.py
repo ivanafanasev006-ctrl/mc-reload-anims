@@ -223,32 +223,39 @@ def hop(data):
     a = ak.Anim.load(data, "hop")
     no_twist(a)
     # Every key was linear, so each limb moved like a robot from pose to pose: limbs now ease in
-    # and out (smooth). The body's own spin stays linear while it is in the air (a body turns at
-    # a steady speed there).
+    # and out (smooth).
     a.interp("catmullrom")
-    a.interp("linear", bones=["body"], channels=("rotation",), t0=0.75, t1=1.5)
-    # The hop is a point-blank parry (docs/combat-spec.md, 5): the enemy's blow lands right after
-    # the key press, so the wind-up (turn and crouch) is 0.35 s instead of 0.75 - still 7 game
-    # ticks, seen - and it is the parry window. The flip keeps 0.9 s of the author's 1 s in the
-    # air, the landing keeps its 0.1 s longer absorb: 1.85 s in all.
+    # The author (2026-10-28, after playing it): the hop spins horizontally only, and is quick
+    # enough to strike back or get away right after it. The flip upside down (the body turned
+    # about x and z) becomes one turn about the vertical in the air, at a steady speed; the limbs
+    # keep the author's poses (the crouch, the tuck, the landing).
+    # Timing: the wind-up (turn and crouch, the parry window) 0.25 s instead of 0.35, in the air
+    # 0.25-0.9 s (13 game ticks: the mechanic's jump, Move.HOP_TAKEOFF / HOP_LAND), the landing
+    # absorbs for 0.1 s, standing at 1.15 s (was 1.85).
     def timeline(t):
         if t <= 0.75:
-            return t * 0.35 / 0.75
+            return t * 0.25 / 0.75
         if t <= 1.75:
-            return 0.35 + (t - 0.75) * 0.9
+            return 0.25 + (t - 0.75) * 0.65
         if t <= 2.0:
-            return 1.25 + (t - 1.75)
-        return 1.5 + (t - 2.0) * 1.4
+            return 0.9 + (t - 1.75) * 0.4
+        return 1.0 + (t - 2.0) * 0.6
     a.retime(timeline)
-    a.length = 1.85
-    # It ended 2.4 deg tilted (roll 357.6), 1 px sunk, with arms and legs a few degrees off: the
-    # last frame is now exactly the plain stance (roll 360 = upright), so it hands over cleanly.
-    at_rest(a, 1.85, body_turn=(0.0, 0.0, 360.0))
-    # Feet on the floor before take-off and after landing (the crouch had them 1.8 px under it);
-    # in the air nothing may go under the floor either.
-    a.ground(data, 0.0, 0.35)
-    a.ground(data, 0.35, 1.3, mode="above")
-    a.ground(data, 1.3, 1.85)
+    a.length = 1.15
+    a.drop("body", "rotation")
+    for t, yaw in ((0.0, 0.0), (0.12, -18.0), (0.25, -30.0), (0.9, -360.0), (1.15, -360.0)):
+        a.key("body", "rotation", t, (0.0, yaw, 0.0))
+    a.interp("linear", bones=["body"], channels=("rotation",), t0=0.25, t1=0.9)
+    # The model rose 6 px inside its hitbox in the air: the jump itself lifts the player now.
+    a.drop("body", "position")
+    a.key("body", "position", 0.0, (0.0, 0.0, 0.0))
+    a.key("body", "position", 1.15, (0.0, 0.0, 0.0))
+    # The last frame is exactly the plain stance (a whole turn = upright), so it hands over cleanly.
+    at_rest(a, 1.15, body_turn=(0.0, -360.0, 0.0))
+    # Feet on the floor before take-off and after landing; in the air nothing may go under it.
+    a.ground(data, 0.0, 0.25)
+    a.ground(data, 0.25, 0.9, mode="above")
+    a.ground(data, 0.9, 1.15)
     a.loop = "once"
     return a
 

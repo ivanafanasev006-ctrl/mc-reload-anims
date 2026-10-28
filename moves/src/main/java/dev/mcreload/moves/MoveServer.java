@@ -41,10 +41,15 @@ public final class MoveServer {
         return true;
     }
 
-    /** The player cancelled their slide (jump or attack). */
+    /**
+     * The player broke off their move: a slide by a jump or a blow, any move's end (once its push is
+     * over) by running or striking. A hop broken off over its landing still gives its Speed (this
+     * end may hear of it before its own landing tick, the client being ahead).
+     */
     public static void cancel(ServerPlayer p, Move move) {
         Stamina s = Stamina.of(p);
         if (s.move != move) return;
+        if (move == Move.HOP && s.moveTick >= Move.HOP_TAKEOFF) Hop.landed(p, s);
         s.end(p);
         MovesNet.stop(p);
     }

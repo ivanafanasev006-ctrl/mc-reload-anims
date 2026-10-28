@@ -31,12 +31,13 @@ public enum Move {
      */
     SLIDE("slide", 1.4f, 25, -1, -1, 1, 18, Side.FRONT, MovesConfig::costSlide),
     /**
-     * R + W at point blank against an enemy winding up: a perfect parry and a flip over them
-     * (docs/combat-spec.md, 5). Turn and crouch until 0.35 s (the parry window: their blow does
-     * not land), take-off at 0.35 s, over their head, landing behind them at 1.25 s, standing at
-     * 1.85 s. They cannot hurt the player until the landing. See {@link #HOP_TAKEOFF}.
+     * R + W at point blank against an enemy winding up: a perfect parry and a jump over them,
+     * spinning round horizontally (docs/combat-spec.md, 5). Turn and crouch until 0.25 s (the
+     * parry window: their blow does not land), take-off at 0.25 s, over their head, landing behind
+     * them at 0.9 s, standing at 1.15 s; free to run or strike from the landing. They cannot hurt
+     * the player until the landing. See {@link #HOP_TAKEOFF}.
      */
-    HOP("hop", 1f, 40, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop),
+    HOP("hop", 1f, 24, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop),
     /**
      * The volley (docs/combat-spec.md, 6.2): a fully drawn bow, then the left button. A sharp step
      * back (0.85 block in 0.1-0.5 s) down onto a knee, and three arrows at the animation's
@@ -84,11 +85,11 @@ public enum Move {
     LEGOLAS_RIGHT("bow_walk_around", Bow.shot(20, 40, -1, 17), 20, 2, 6, -1, -1, Side.RIGHT, MovesConfig::costBowDodge,
             0.62f, 0.52f, 0.40f, 0.26f);
 
-    /** The hop: take-off and landing ticks (0.35 s and 1.25 s of the animation). */
-    public static final int HOP_TAKEOFF = 7, HOP_LAND = 26;
-    /** The hop's jump: upward speed at take-off and the share of gravity in the air: 19 ticks up
-     *  there with the top at 2 blocks, the feet over a zombie's head. */
-    public static final float HOP_JUMP = 0.40f, HOP_GRAVITY = 0.6f;
+    /** The hop: take-off and landing ticks (0.25 s and 0.9 s of the animation). */
+    public static final int HOP_TAKEOFF = 5, HOP_LAND = 18;
+    /** The hop's jump: upward speed at take-off and the gravity in the air (a share of vanilla's):
+     *  13 ticks up there with the top at 2.3 blocks, the feet over a zombie's head. */
+    public static final float HOP_JUMP = 0.68f, HOP_GRAVITY = 1.4f;
     /** The hop lands this far beyond the enemy it jumps over. */
     public static final float HOP_BEYOND = 1.4f;
     /** Side dodges knock an arrow aside with the weapon in these ticks (0-0.21 s, docs/moves.md). */
@@ -166,6 +167,19 @@ public enum Move {
 
     public boolean legolas() {
         return this == LEGOLAS_LEFT || this == LEGOLAS_RIGHT;
+    }
+
+    /**
+     * The tick from which moving, jumping or striking ends the move early: once its push is over
+     * (a dodge or a roll gets up, the hop has landed), so it does not hold the player in place
+     * while it plays out. -1: never (the slide decides by its own push, see the client).
+     */
+    public int recoverFrom() {
+        return switch (this) {
+            case DODGE_LEFT, DODGE_RIGHT, DODGE_BACK, DODGE_FRONT -> PUSH_TICK + push.length + 1;
+            case HOP -> HOP_LAND + 1;
+            default -> -1;
+        };
     }
 
     /** The tick from which another move may cut in: once this one has played out (its fade aside), or earlier for some bow moves. */

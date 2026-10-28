@@ -76,6 +76,8 @@ public final class MovesSelfTest {
     private static boolean panel;
     /** Measured in the current scenario: where the move started, lowest hitbox, health. */
     private static Vec3 startPos;
+    /** The deflect scenario's arrow is in the air. */
+    private static volatile boolean deflectShot;
     private static float minHeight;
     private static int moveStart = -1;
     /**
@@ -148,6 +150,8 @@ public final class MovesSelfTest {
         guard("60_guard_one_sword", false, CameraType.THIRD_PERSON_BACK);
         guard("61_guard_two_swords", true, CameraType.THIRD_PERSON_BACK);
         guard("62_guard_first_person", false, CameraType.FIRST_PERSON);
+        guard("63_guard_two_swords_front", true, CameraType.THIRD_PERSON_FRONT);
+        guard("64_guard_two_swords_walking", true, CameraType.THIRD_PERSON_FRONT);
 
         // ---- the hop over a zombie set on the player, and an arrow knocked aside by a dodge
         SCENARIOS.add(new Scenario("70_hop_over_zombie", 60, sp -> {
@@ -168,10 +172,10 @@ public final class MovesSelfTest {
             }
             if (t == 10) release(mc);
             if (t == 11) note("hop: move " + Stamina.of(mc.player).move);
-            if (t == 52) {
+            if (t == 34) {
                 Vec3 d = mc.player.position().subtract(startPos);
-                note(String.format(Locale.ROOT, "hop: went %.2f blocks along z (zombie at +2), now facing yaw %.0f, health %.1f",
-                        d.z, mc.player.getYRot(), mc.player.getHealth()));
+                note(String.format(Locale.ROOT, "hop: went %.2f blocks along z (zombie at +2), now facing yaw %.0f, health %.1f, move %s",
+                        d.z, mc.player.getYRot(), mc.player.getHealth(), Stamina.of(mc.player).move));
                 IntegratedServer srv = mc.getSingleplayerServer();
                 srv.execute(() -> {
                     ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
@@ -180,19 +184,26 @@ public final class MovesSelfTest {
                             sp.getBoundingBox().inflate(8))) if (e.getTags().contains("kinetrix_moves.selftest")) e.discard();
                 });
             }
-        }, new int[]{8, 12, 15, 19, 23, 27, 31, 36, 46}, true));
-        SCENARIOS.add(new Scenario("71_deflect_arrow", 30, sp -> place(sp, 0, new ItemStack(Items.IRON_SWORD)), (mc, t) -> {
+        }, new int[]{9, 11, 13, 15, 17, 19, 21, 23, 25, 28, 32}, true));
+        SCENARIOS.add(new Scenario("71_deflect_arrow", 30, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            deflectShot = false;
+        }, (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
-            if (t == 8) {
+            if (t == 8) press(mc, MovesClient.DODGE, mc.options.keyLeft);
+            // The arrow leaves once the server has the dodge (a busy test server may hear of it a tick
+            // or two late): it arrives in the deflect frames, 0-0.21 s.
+            if (t >= 9 && t <= 16) {
                 IntegratedServer srv = mc.getSingleplayerServer();
                 srv.execute(() -> {
                     ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
+                    if (deflectShot || Stamina.of(sp).move != Move.DODGE_LEFT) return;
+                    deflectShot = true;
                     net.minecraft.world.entity.projectile.Arrow a = new net.minecraft.world.entity.projectile.Arrow(sp.serverLevel(),
-                            sp.getX(), sp.getY() + 1.3, sp.getZ() + 5);
+                            sp.getX(), sp.getY() + 1.3, sp.getZ() + 4);
                     a.shoot(0, 0, -1, 1.6f, 0f);
                     sp.serverLevel().addFreshEntity(a);
                 });
-                press(mc, MovesClient.DODGE, mc.options.keyLeft);
             }
             if (t == 12) release(mc);
             if (t == 24) {
@@ -402,6 +413,8 @@ public final class MovesSelfTest {
                 mc.options.keyUse.setDown(true);
                 KeyMapping.click(mc.options.keyUse.getKey());
             }
+            // Walking while guarding: Kinetrix's legs walk, the guard's arms and blades must stay.
+            if (name.contains("walking")) mc.options.keyUp.setDown(t >= 8 && t < 22);
             if (t == 24) {
                 IntegratedServer srv = mc.getSingleplayerServer();
                 srv.execute(() -> {

@@ -140,6 +140,10 @@ public final class MovesClient {
             if (slidePressed) start(p, s, Move.SLIDE, true, -1);
         }
 
+        // ---- once a move's push is over, running, jumping or striking ends it: a dodge, a roll, a
+        // slide or the hop does not hold the player in place while its animation plays out
+        if (s.move != null && recoverable(s) && (moving(mc) || jumpPressed || attackPressed)) cancel(p, s, 3);
+
         // ---- the bow: the flow and the Legolas stance (their arrows, poses and dodges), then the
         // volley: a fully drawn bow and the left button (which in the flow is the flow's next step)
         BowStance.tickLocal(p, s);
@@ -171,6 +175,19 @@ public final class MovesClient {
         if (mc.options.keyDown.isDown()) return Move.DODGE_BACK;
         if (mc.options.keyUp.isDown()) return Move.DODGE_FRONT;
         return null;
+    }
+
+    /** The move's push is over: from now on the player may break it off (Move.recoverFrom; the slide once it has slid its length). */
+    private static boolean recoverable(Stamina s) {
+        if (s.move == Move.SLIDE) {
+            return !s.held && s.moveTick > Move.PUSH_TICK && Move.slideSpeed(MovesConfig.slideBlocks(), s.slid) <= 0f;
+        }
+        int from = s.move.recoverFrom();
+        return from >= 0 && s.moveTick >= from;
+    }
+
+    private static boolean moving(Minecraft mc) {
+        return mc.options.keyUp.isDown() || mc.options.keyDown.isDown() || mc.options.keyLeft.isDown() || mc.options.keyRight.isDown();
     }
 
     private static KeyMapping slideKey(Minecraft mc) {

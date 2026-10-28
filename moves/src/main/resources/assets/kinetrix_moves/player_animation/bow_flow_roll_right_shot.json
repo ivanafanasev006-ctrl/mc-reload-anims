@@ -6,7 +6,7 @@
  "emote": {
   "beginTick": 0,
   "endTick": 35,
-  "stopTick": 38,
+  "stopTick": 35,
   "isLoop": false,
   "returnTick": 0,
   "degrees": false,

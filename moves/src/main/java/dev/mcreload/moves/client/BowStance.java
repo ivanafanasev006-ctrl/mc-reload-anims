@@ -40,8 +40,11 @@ public final class BowStance {
     /** What the local player does with the drawn bow. */
     private enum Mode { NONE, FLOW, LEGOLAS }
 
-    /** A pose held between moves: down on one knee, or side-on at the end of a Legolas spin. */
-    private enum Hold { KNEEL, SIDE }
+    /**
+     * A pose held between moves: down on one knee, side-on at the end of a Legolas spin, or the
+     * last frame of a flow dodge for the moment until its pose starts.
+     */
+    private enum Hold { KNEEL, SIDE, STEP }
 
     /** The volley's tick by which the player is down on one knee. */
     private static final int KNELT = 10;
@@ -110,6 +113,12 @@ public final class BowStance {
             // The spin's last frame is held (the animation stops there by itself) until the next one.
             if (bow) HOLDING.put(p, new HeldPose(Hold.SIDE));
             else MoveAnimator.stop(p, 4);
+        } else if (move.drawnBow() && move.shot.holdAt() >= 0) {
+            // A flow dodge holds its last frame too, for the pose that follows it; let go of the
+            // button during the dodge and there is no pose: the player stands up (it was left
+            // frozen in the dodge's last frame).
+            if (bow) HOLDING.put(p, new HeldPose(Hold.STEP));
+            else MoveAnimator.stop(p, 4);
         }
     }
 
@@ -124,9 +133,10 @@ public final class BowStance {
         }
         Minecraft mc = Minecraft.getInstance();
         boolean local = p == mc.player;
-        if (Bow.drawing(p)) h.grace = GRACE;
+        // A dodge's frame waits a moment for its pose and no longer; the stances wait while the bow is drawn.
+        if (Bow.drawing(p) && h.hold != Hold.STEP) h.grace = GRACE;
         else h.grace--;
-        boolean left = local && mode != (h.hold == Hold.KNEEL ? Mode.FLOW : Mode.LEGOLAS);
+        boolean left = local && mode != (h.hold == Hold.SIDE ? Mode.LEGOLAS : Mode.FLOW);
         if (h.grace < 0 || !Bow.isBow(p.getMainHandItem()) || (h.hold == Hold.KNEEL && !p.onGround()) || left) {
             HOLDING.remove(p);
             MoveAnimator.stop(p, 4);

@@ -67,6 +67,8 @@ public final class Stamina {
 
     /** Hop: the entity id of the enemy jumped over. */
     public int hopTarget = -1;
+    /** The hop's Speed I was given (at the landing, or when the player broke off the hop's end). */
+    public boolean hopSped;
 
     /** The pose this move forced to keep the low hitbox standing (cleared when it ends). */
     boolean forcedStanding;
@@ -226,6 +228,20 @@ public final class Stamina {
         return p.onGround() && dx * dx + dz * dz < 1.0E-4;
     }
 
+    /** Cooked or prepared food, which gives back a little energy (MovesConfig.cookedFoodEnergy). */
+    public static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> COOKED_FOOD =
+            net.minecraft.tags.ItemTags.create(new net.minecraft.resources.ResourceLocation(KinetrixMoves.MODID, "cooked_food"));
+    /** Other mods' cooked food, by name (Farmer's Delight's roast chicken, a fried egg, a beef stew...). */
+    private static final java.util.regex.Pattern COOKED_NAME =
+            java.util.regex.Pattern.compile("(^|_)(cooked|baked|roast|roasted|fried|grilled|smoked|stew|soup|pie|bread)(_|$)");
+
+    public static boolean cooked(ItemStack item) {
+        if (!item.isEdible()) return false;
+        if (item.is(COOKED_FOOD)) return true;
+        net.minecraft.resources.ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item.getItem());
+        return id != null && COOKED_NAME.matcher(id.getPath()).find();
+    }
+
     public void ateGoldenApple(boolean enchanted) {
         if (enchanted) {
             energy = MovesConfig.maxEnergy();
@@ -326,8 +342,12 @@ public final class Stamina {
         public static void ate(LivingEntityUseItemEvent.Finish event) {
             if (!(event.getEntity() instanceof ServerPlayer p)) return;
             ItemStack item = event.getItem();
-            if (item.is(Items.GOLDEN_APPLE)) of(p).ateGoldenApple(false);
-            else if (item.is(Items.ENCHANTED_GOLDEN_APPLE)) of(p).ateGoldenApple(true);
+            Stamina s = of(p);
+            if (item.is(Items.GOLDEN_APPLE)) s.ateGoldenApple(false);
+            else if (item.is(Items.ENCHANTED_GOLDEN_APPLE)) s.ateGoldenApple(true);
+            else if (cooked(item)) s.energy = Math.min(MovesConfig.maxEnergy(), s.energy + MovesConfig.cookedFoodEnergy());
+            else return;
+            MoveServer.sync(p, s, true);
         }
 
         /** Hitting someone puts the player in combat (slower refill). */

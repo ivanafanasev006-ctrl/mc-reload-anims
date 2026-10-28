@@ -178,6 +178,32 @@ public final class MovesGameTests {
         }).run(5);
     }
 
+    /** Cooked food gives back a little energy (author: 25 of 100), raw food none; a golden apple frees moves for 15 s. */
+    @GameTest(template = FLOOR)
+    public static void cookedFoodGivesEnergy(GameTestHelper h) {
+        Script t = new Script(h);
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        t.at(3, () -> {
+            s.energy = 10f;
+            eat(p, new ItemStack(Items.BEEF));
+            t.close(s.energy, 10f, "energy after raw beef");
+            eat(p, new ItemStack(Items.COOKED_BEEF));
+            t.close(s.energy, 10f + MovesConfig.cookedFoodEnergy(), "energy after a steak");
+            eat(p, new ItemStack(Items.RABBIT_STEW));
+            t.close(s.energy, 10f + 2 * MovesConfig.cookedFoodEnergy(), "energy after a rabbit stew");
+            s.energy = MovesConfig.maxEnergy() - 5f;
+            eat(p, new ItemStack(Items.BAKED_POTATO));
+            t.close(s.energy, MovesConfig.maxEnergy(), "energy over the top of the bar");
+            t.check(MovesConfig.appleFreeTicks() == 15 * 20, "golden apple free time " + MovesConfig.appleFreeTicks());
+        }).run(5);
+    }
+
+    private static void eat(ServerPlayer p, ItemStack food) {
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+                new net.minecraftforge.event.entity.living.LivingEntityUseItemEvent.Finish(p, food, 0, food.copy()));
+    }
+
     /** Shields refill half a shield at a time, paid with energy. */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void shieldsRefill(GameTestHelper h) {

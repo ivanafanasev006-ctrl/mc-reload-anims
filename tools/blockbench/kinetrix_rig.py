@@ -1037,6 +1037,13 @@ def emote_json(name, frames, length_ticks, loop, author, loop_from=None):
             moves.append({"tick": tick, "easing": "LINEAR", "turn": 0, part: entry})
     emote = {"beginTick": 0, "endTick": max(1, length_ticks), "stopTick": max(1, length_ticks) + 3,
              "isLoop": loop == "loop", "returnTick": 0, "degrees": False, "moves": moves}
+    # After its last frame playerAnimator eases every value back to zero over the stop ticks. A
+    # move that ends turned by whole turns (a roll at -360 degrees, a spin at 360) is upright
+    # already, and easing it back would spin the player once more the other way: it stops on
+    # its last frame instead.
+    last = frames[-1][1].get("body", {}) if frames else {}
+    if any(abs(last.get(ax, 0.0)) > math.pi for ax in ("pitch", "yaw", "roll")):
+        emote["stopTick"] = max(1, length_ticks)
     if loop == "hold":
         emote["stopTick"] = 2 ** 31 - 1
     if loop_from is not None and loop in ("hold", "loop"):
