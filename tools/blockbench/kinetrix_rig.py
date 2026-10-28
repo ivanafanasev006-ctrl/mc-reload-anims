@@ -1032,7 +1032,8 @@ def emote_json(name, frames, length_ticks, loop, author, loop_from=None):
     moves = []
     for tick, values in frames:
         for part, v in values.items():
-            entry = {k: round(float(x), 5) for k, x in v.items()}
+            # + 0.0 turns -0.0 into 0.0: numpy builds differ in the sign of zero, the files must not.
+            entry = {k: round(float(x), 5) + 0.0 for k, x in v.items()}
             moves.append({"tick": tick, "easing": "LINEAR", "turn": 0, part: entry})
     emote = {"beginTick": 0, "endTick": max(1, length_ticks), "stopTick": max(1, length_ticks) + 3,
              "isLoop": loop == "loop", "returnTick": 0, "degrees": False, "moves": moves}

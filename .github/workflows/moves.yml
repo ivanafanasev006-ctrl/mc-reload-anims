@@ -50,7 +50,7 @@ jobs:
           for f in tools/blockbench/refined/*.bbmodel; do
             python3 tools/blockbench/kinetrix_rig.py convert "$f" build/moves-anims --namespace kinetrix_moves > /dev/null
           done
-          diff -r build/moves-anims moves/src/main/resources/assets/kinetrix_moves/player_animation
+          python3 moves/tools/check_anims.py build/moves-anims moves/src/main/resources/assets/kinetrix_moves/player_animation
 
       - name: Kinetrix into a local repository (the moves run on it in the development game)
         run: |
