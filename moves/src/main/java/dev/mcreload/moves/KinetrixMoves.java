@@ -39,6 +39,7 @@ public final class KinetrixMoves {
         MinecraftForge.EVENT_BUS.register(Strikes.class);
         MinecraftForge.EVENT_BUS.register(Kick.class);
         MinecraftForge.EVENT_BUS.register(Fall.class);
+        MinecraftForge.EVENT_BUS.register(Plunge.class);
         MinecraftForge.EVENT_BUS.register(Ledge.class);
         MinecraftForge.EVENT_BUS.register(Bow.class);
         if (FMLEnvironment.dist == Dist.CLIENT) {

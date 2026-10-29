@@ -77,6 +77,10 @@ public final class Stamina {
     public int dashCooldown;
     /** The dash's blade found its mob (server): it hits once. */
     public boolean dashHit;
+    /** Ticks before the next axe whirlwind (both ends, as the dash's). */
+    public int whirlCooldown;
+    /** The whirlwind: the last turn each mob was hit in (server; entity id to turn). */
+    public final java.util.Map<Integer, Integer> whirlHits = new java.util.HashMap<>();
     /** Ticks before the next attack out of a slide (both ends, as the dash's). */
     public int slideAttackCooldown;
     /** The facing when the attack out of a slide started (both ends): it ends half a turn round from it. */
@@ -87,6 +91,10 @@ public final class Stamina {
     public float kickYaw;
     /** Ticks a tuck has been on the ground without rolling (server). */
     public int tuckLanded;
+    /** Ticks the blade held for the plunge has been on the ground without the landing (server). */
+    public int plungeLanded;
+    /** The fast run (server): the client says its key is held; the player runs fast now. */
+    public boolean runKey, fastRunning;
     /** The ledge being held (both ends): which way its wall is from the player (Ledge.dir) and the height of its top. */
     public int ledgeDir = -1;
     public double ledgeTop;
@@ -166,6 +174,7 @@ public final class Stamina {
         if (guard != Guard.Kind.NONE) guardTick++;
         if (dashCooldown > 0) dashCooldown--;
         if (slideAttackCooldown > 0) slideAttackCooldown--;
+        if (whirlCooldown > 0) whirlCooldown--;
         if (move == null) return;
         boolean wasLow = low();
         moveTick++;
@@ -248,7 +257,7 @@ public final class Stamina {
     /** Energy refilled this tick, by the author's rules (docs/combat-spec.md, 7). */
     public float refillPerTick(Player p) {
         FoodData food = p.getFoodData();
-        if (food.getFoodLevel() <= 0) return 0f;
+        if (food.getFoodLevel() <= 0 || fastRunning) return 0f;
         float rate = MovesConfig.regenPerSecond() / 20f;
         boolean busy = combatTicks > 0 || p.isSprinting() || move != null;
         if (busy) rate *= MovesConfig.busyFactor();
@@ -370,6 +379,9 @@ public final class Stamina {
                 Kick.serverTick(sp, s);
                 Fall.serverTick(sp, s);
                 Ledge.serverTick(sp, s);
+                FastRun.serverTick(sp, s);
+                Plunge.serverTick(sp, s);
+                Whirl.serverTick(sp, s);
                 Strikes.serverTick(sp, s);
                 Deflect.serverTick(sp, s);
                 Bow.serverTick(sp, s);

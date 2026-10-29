@@ -38,7 +38,7 @@
   "kinetrix_moves.settings.move.dive": "Deep jump",
   "kinetrix_moves.settings.move.dive.tip": "W and Space down, R with no mob near: a dive forward into a roll.",
   "kinetrix_moves.settings.move.dash": "Dash strike",
-  "kinetrix_moves.settings.move.dash.tip": "The left button sprinting with W and a sword: a lunge with a crit.",
+  "kinetrix_moves.settings.move.dash.tip": "S and the left button held with a sword, the right button once: a lunge forward with a crit.",
   "kinetrix_moves.settings.move.finisher": "Finisher",
   "kinetrix_moves.settings.move.finisher.tip": "The left button at point blank to a weakened mob: the finishing blow.",
   "kinetrix_moves.settings.move.guard": "Sword block",
@@ -64,5 +64,14 @@
   "kinetrix_moves.slide_attack.cooldown": "Slide attack ready in %s s",
   "kinetrix_moves.ledge.no_room": "No room to climb up there",
   "kinetrix_moves.ledge.hops": "Ledge: hops (A / D)",
-  "kinetrix_moves.ledge.shimmy": "Ledge: hand over hand (A / D)"
+  "kinetrix_moves.ledge.shimmy": "Ledge: hand over hand (A / D)",
+  "kinetrix_moves.settings.move.fastRun": "Fast run",
+  "kinetrix_moves.settings.move.fastRun.tip": "Ctrl held while running: 7 blocks a second, eats 1% of the energy a second.",
+  "kinetrix_moves.settings.move.rollKick": "Roll kick",
+  "kinetrix_moves.settings.move.rollKick.tip": "Ctrl, W and Space down, R at a mob: a flip over it, a kick into its back, a roll.",
+  "kinetrix_moves.settings.move.whirlwind": "Axe whirlwind",
+  "kinetrix_moves.settings.move.whirlwind.tip": "S and the left button held with an axe, then the right button held: three turns forward with the axe out. Let go to stop.",
+  "kinetrix_moves.settings.move.plunge": "Blade into the ground",
+  "kinetrix_moves.settings.move.plunge.tip": "Falling with a sword or an axe: the blade goes into the ground on landing, 20% less damage.",
+  "kinetrix_moves.whirl.cooldown": "Whirlwind recharging: %s s"
 }

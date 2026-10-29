@@ -17,8 +17,12 @@ import net.minecraft.world.phys.EntityHitResult;
  *   <li><b>Finisher.</b> A mob with a fifth of its health or less at point blank, a sword or an axe in hand: a
  *   hint shows under the crosshair; the left button held (pressed while the hint shows, or kept
  *   down a moment, as when holding it to attack) starts the finishing stab.</li>
- *   <li><b>Dash strike.</b> Sprinting with W, a sword in hand: the left button lunges; then 30 s
- *   before the next one (until then the button strikes as usual, and the hotbar says how long).</li>
+ *   <li><b>Dash strike.</b> A sword in hand, S and the left button held, the right button once
+ *   (author, 2026-10-29, fifth message): a lunge forward; then 30 s before the next one (the
+ *   hotbar says how long).</li>
+ *   <li><b>Axe whirlwind.</b> An axe in hand, S and the left button held, then the right button
+ *   held: three turns round with the axe out (Whirl); it goes on by itself while both buttons are
+ *   held, letting go of either stops it. 45 s before the next one.</li>
  * </ul>
  *
  * <p>They take the click: the button is let go of for vanilla and for Better Combat (whose
@@ -32,6 +36,8 @@ public final class StrikeInput {
     private static LivingEntity finisherTarget;
     /** Ticks the left button has been down. */
     private static int held;
+    /** The right button was down last tick (as it is under the hand). */
+    private static boolean useWasDown;
 
     static LivingEntity finisherTarget() {
         return finisherTarget;
@@ -49,6 +55,18 @@ public final class StrikeInput {
      */
     static boolean tick(Minecraft mc, LocalPlayer p, Stamina s, boolean attackDown, boolean attackPressed) {
         held = attackDown ? held + 1 : 0;
+        boolean lmb = MovesClient.held(mc, mc.options.keyAttack), rmb = MovesClient.held(mc, mc.options.keyUse);
+        boolean rmbPressed = rmb && !useWasDown;
+        useWasDown = rmb;
+        // The whirlwind goes on while both buttons are held (author: letting go of either stops it);
+        // they swing nothing and use nothing meanwhile.
+        if (s.move == Move.WHIRL) {
+            finisherTarget = null;
+            swallow(mc);
+            LedgeInput.swallowUse(mc);
+            if ((!lmb || !rmb) && s.moveTick < dev.mcreload.moves.Whirl.SPIN_TO) MovesClient.cancel(p, s, 4);
+            return true;
+        }
         // A strike going on: the button strikes nothing else until the blade is back.
         if (s.move != null && s.move.strike() && s.moveTick < s.move.recoverFrom()) {
             finisherTarget = null;
@@ -63,17 +81,24 @@ public final class StrikeInput {
                 return true;
             }
         }
-        if (attackPressed && s.move == null && dev.mcreload.moves.HudConfig.Moves.DASH.on() && p.isSprinting()
-                && mc.options.keyUp.isDown() && Strikes.sword(p)) {
-            if (s.dashCooldown > 0) {
-                // Not yet: an ordinary blow, and a word above the hotbar of how long the dash still needs.
-                p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_moves.dash.cooldown",
-                        (s.dashCooldown + 19) / 20), true);
-                return false;
-            }
-            if (MovesClient.start(p, s, Move.DASH, -1)) {
-                swallow(mc);
-                return true;
+        // S and the left button held, the right one: the dash with a sword, the whirlwind with an axe
+        if (rmbPressed && s.move == null && lmb && mc.options.keyDown.isDown()) {
+            Move move = Strikes.sword(p) && dev.mcreload.moves.HudConfig.Moves.DASH.on() ? Move.DASH
+                    : Strikes.axe(p) && dev.mcreload.moves.HudConfig.Moves.WHIRL.on() ? Move.WHIRL : null;
+            if (move != null) {
+                // the right button is theirs either way: no sword block, no log stripped
+                LedgeInput.swallowUse(mc);
+                int cooldown = move == Move.DASH ? s.dashCooldown : s.whirlCooldown;
+                if (cooldown > 0) {
+                    // Not yet: a word above the hotbar of how long it still needs.
+                    p.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                            move == Move.DASH ? "kinetrix_moves.dash.cooldown" : "kinetrix_moves.whirl.cooldown", (cooldown + 19) / 20), true);
+                    return false;
+                }
+                if (MovesClient.start(p, s, move, -1)) {
+                    swallow(mc);
+                    return true;
+                }
             }
         }
         return false;

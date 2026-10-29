@@ -28,7 +28,7 @@ public final class Cutscene {
 
     /** Every client tick: the camera taken for the kick and given back when it ends. */
     static void tick(Minecraft mc, LocalPlayer p, Stamina s) {
-        boolean kicking = p != null && s.move == Move.KICK && s.moveTick < Kick.LAND;
+        boolean kicking = p != null && (s.move == Move.KICK || s.move == Move.ROLL_KICK) && s.moveTick < Kick.land(s.move);
         if (kicking && before == null && HudConfig.kickCutscene() && mc.options.getCameraType() == CameraType.FIRST_PERSON) {
             before = mc.options.getCameraType();
             mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
@@ -40,9 +40,11 @@ public final class Cutscene {
 
     /** How narrow the view is this far into the kick: 0 none, 1 the narrowest. */
     private static float slow(Stamina s, float partial) {
-        if (s.move != Move.KICK) return 0f;
+        if (s.move != Move.KICK && s.move != Move.ROLL_KICK) return 0f;
         float t = s.moveTick + partial;
-        float in = Mth.clamp((t - Kick.TAKEOFF) / 10f, 0f, 1f), out = Mth.clamp((Kick.LAND + 2 - t) / 5f, 0f, 1f);
+        boolean roll = s.move == Move.ROLL_KICK;
+        float in = Mth.clamp((t - (roll ? Kick.RK_TAKEOFF : Kick.TAKEOFF)) / (roll ? 6f : 10f), 0f, 1f),
+                out = Mth.clamp((Kick.land(s.move) + 2 - t) / 5f, 0f, 1f);
         float f = Math.min(in, out);
         return f * f * (3 - 2 * f);
     }

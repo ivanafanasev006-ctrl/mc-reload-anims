@@ -73,12 +73,62 @@ public final class MoveAnimator {
         if (move == Move.LEDGE_HANG && was != null && was.ledge()) from = HANG_LOOP;
         KeyframeAnimationPlayer keyframes = new KeyframeAnimationPlayer(anim, from);
         if (move.firstPerson()) firstPerson(keyframes);
-        IAnimation played = keyframes;
+        IAnimation played = endsTurned(anim) ? new EndsOnLastFrame(keyframes) : keyframes;
         if (move.shot != null && move.shot.holdAt() >= 0) played = new Segment(played, move.shot.holdAt() - from);
         // On the ledge the moves follow each other quickly: a longer blend, the hands do not jump.
         int fade = move.ledge() && was != null && was.ledge() ? 4 : 2;
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(fade, Ease.INOUTSINE), unwound(layer, anim, from, played));
         KinetrixBridge.wholeBody(p.getUUID(), move.length * 50L + 100L);
+    }
+
+    /**
+     * The animation ends with the whole player turned by whole turns (a roll at -360 degrees, a spin
+     * at 360): upright already. playerAnimator never stops an animation on its last frame, it eases
+     * every value back to zero over three more ticks, and from -360 that is a whole turn backwards
+     * in three ticks (author, 2026-10-29: "a very quick flip back" at the end of the fall's roll).
+     */
+    private static boolean endsTurned(KeyframeAnimation anim) {
+        if (anim.isInfinite) return false;
+        KeyframeAnimation.StateCollection body = anim.getPart("body");
+        if (body == null) return false;
+        for (KeyframeAnimation.StateCollection.State axis : new KeyframeAnimation.StateCollection.State[]{body.pitch, body.yaw, body.roll}) {
+            java.util.List<KeyframeAnimation.KeyFrame> frames = axis.getKeyFrames();
+            if (!frames.isEmpty() && Math.abs(frames.get(frames.size() - 1).value) > Mth.PI) return true;
+        }
+        return false;
+    }
+
+    /** An animation stopped on its last frame (see {@link #endsTurned}): over once it gets there. */
+    private record EndsOnLastFrame(KeyframeAnimationPlayer inner) implements IAnimation {
+        @Override
+        public void tick() {
+            inner.tick();
+        }
+
+        @Override
+        public boolean isActive() {
+            return inner.isActive() && inner.getTick() < inner.getData().endTick;
+        }
+
+        @Override
+        public FirstPersonMode getFirstPersonMode(float tickDelta) {
+            return inner.getFirstPersonMode(tickDelta);
+        }
+
+        @Override
+        public FirstPersonConfiguration getFirstPersonConfiguration(float tickDelta) {
+            return inner.getFirstPersonConfiguration(tickDelta);
+        }
+
+        @Override
+        public void setupAnim(float tickDelta) {
+            inner.setupAnim(tickDelta);
+        }
+
+        @Override
+        public Vec3f get3DTransform(String part, TransformType type, float tickDelta, Vec3f value0) {
+            return inner.get3DTransform(part, type, tickDelta, value0);
+        }
     }
 
     /**

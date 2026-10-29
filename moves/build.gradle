@@ -38,6 +38,7 @@ minecraft {
                 args '--width', '1280', '--height', '720'
                 if (project.hasProperty('selftestOnly')) property 'kinetrix_moves.selftest.only', project.property('selftestOnly')
                 if (project.hasProperty('selftestFrames')) property 'kinetrix_moves.selftest.frames', 'true'
+                if (project.hasProperty('selftestProbe')) property 'kinetrix_moves.selftest.probe', 'true'
             }
         }
         server {

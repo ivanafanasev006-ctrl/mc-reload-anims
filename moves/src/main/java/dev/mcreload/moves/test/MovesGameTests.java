@@ -522,12 +522,13 @@ public final class MovesGameTests {
         noSun(zombie);
         Stamina s = Stamina.of(p);
         t.at(2, () -> {
+            // author, 2026-10-29, fifth message: S and the left button held, the right one: no run needed
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+            t.check(!MoveServer.request(p, Move.DASH, false), "dash strike with an axe");
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
             p.setSprinting(false);
-            t.check(!MoveServer.request(p, Move.DASH, false), "dash strike while walking");
-            p.setSprinting(true);
             s.energy = 100f;
-            t.check(MoveServer.request(p, Move.DASH, false), "dash strike refused while sprinting with a sword");
+            t.check(MoveServer.request(p, Move.DASH, false), "dash strike refused standing with a sword");
             t.close(s.energy, 100f - MovesConfig.costDash(), "energy after a dash strike");
         });
         t.at(2 + dev.mcreload.moves.Strikes.DASH_REACH_FROM - 1, () -> t.close(zombie.getHealth(), 20f, "zombie hurt before the lunge"));
@@ -734,12 +735,236 @@ public final class MovesGameTests {
             t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "the edge just slid off was not caught");
             t.check(Math.abs(s.ledgeTop - top.y) < 0.01, "edge top " + s.ledgeTop + " (want " + top.y + ")");
             t.close(s.energy, 100f - MovesConfig.costLedgeGrab(), "energy after catching the edge");
-            t.check(MoveServer.request(p, Move.LEDGE_HOP_LEFT, false, south), "a hop along the edge refused");
-            t.check(MoveServer.request(p, Move.LEDGE_HOP_LEFT, false, south), "the next hop refused while the first plays");
+            int along = dev.mcreload.moves.Ledge.hopTarget(net.minecraft.core.Direction.SOUTH, 0);
+            t.check(MoveServer.request(p, Move.LEDGE_HOP_LEFT, false, along), "a hop along the edge refused");
+            t.check(MoveServer.request(p, Move.LEDGE_HOP_LEFT, false, along), "the next hop refused while the first plays");
             t.close(s.energy, 100f - MovesConfig.costLedgeGrab() - 2 * MovesConfig.costLedgeHop(), "energy after two hops");
             t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "back to the hang refused");
             t.close(s.energy, 100f - MovesConfig.costLedgeGrab() - 2 * MovesConfig.costLedgeHop(), "energy after hanging again (free)");
         }).run(3);
+    }
+
+    /**
+     * The fifth message's hops along a ledge (author: on to the next blocks, every side of a block):
+     * round the end of a one-block pillar to its side, into the wall of an inside corner, onto the
+     * next block a step up; the server takes the new edge from the hop's request.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void ledgeCornersAndSteps(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        net.minecraft.core.Direction south = net.minecraft.core.Direction.SOUTH;
+        t.at(2, () -> {
+            net.minecraft.world.level.block.state.BlockState stone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+            // a pillar three high at x 2, z 5; a wall to its east two higher at x 3 (a step up), and at x 5 a
+            // wall coming out towards the player (an inside corner with the wall along z 5)
+            for (int y = 2; y <= 4; y++) h.setBlock(2, y, 5, stone);
+            for (int y = 2; y <= 5; y++) h.setBlock(3, y, 5, stone);
+            for (int y = 2; y <= 5; y++) h.setBlock(4, y, 5, stone);
+            for (int y = 2; y <= 6; y++) h.setBlock(5, y, 4, stone);
+            for (int y = 2; y <= 6; y++) h.setBlock(5, y, 5, stone);
+            double top = h.absoluteVec(new Vec3(0, 5.0, 0)).y;
+            Vec3 hang = h.absoluteVec(new Vec3(2.5, 5.0 - dev.mcreload.moves.Ledge.HANG, 5.0 - 0.301));
+            p.teleportTo(hang.x, hang.y, hang.z);
+            // hanging on the pillar's front (north face, the wall to the south): to the west, round its corner
+            dev.mcreload.moves.Ledge.Step round = dev.mcreload.moves.Ledge.next(p, p.position(), south, top, false, true);
+            t.check(round != null && round.via() != null && round.spot().dir() == net.minecraft.core.Direction.EAST,
+                    "round the pillar's west corner: " + round);
+            // to the east, the next block a step up
+            dev.mcreload.moves.Ledge.Step up = dev.mcreload.moves.Ledge.next(p, p.position(), south, top, true, true);
+            t.check(up != null && up.via() == null && Math.abs(up.spot().top() - (top + 1)) < 0.01, "a step up onto the next block: " + up);
+            // the server: hanging, then the hop to the step up (one block higher, the same way)
+            p.fallDistance = 4f;
+            t.check(MoveServer.request(p, Move.LEDGE_HANG, false, dev.mcreload.moves.Ledge.id(south)), "the pillar's edge not caught");
+            t.check(MoveServer.request(p, Move.LEDGE_HOP_LEFT, false, dev.mcreload.moves.Ledge.hopTarget(south, 1.0)), "the hop up refused");
+            t.check(Math.abs(s.ledgeTop - (top + 1)) < 0.01 && s.ledgeDir == dev.mcreload.moves.Ledge.id(south),
+                    "the server's edge after the hop up: top " + s.ledgeTop + ", way " + s.ledgeDir);
+            t.check(!MoveServer.request(p, Move.LEDGE_HOP_LEFT, false, dev.mcreload.moves.Ledge.id(south) | 9 << 2), "a hop of four blocks up");
+            // on the higher wall at x 4, to the east: the wall at x 5 comes out at the side (an inside corner)
+            Vec3 high = h.absoluteVec(new Vec3(4.5, 6.0 - dev.mcreload.moves.Ledge.HANG, 5.0 - 0.301));
+            p.teleportTo(high.x, high.y, high.z);
+            dev.mcreload.moves.Ledge.Step in = dev.mcreload.moves.Ledge.next(p, p.position(), south, top + 1, true, true);
+            t.check(in != null && in.spot().dir() == net.minecraft.core.Direction.EAST && in.via() == null,
+                    "into the inside corner, facing the wall at the side: " + in);
+        }).run(3);
+    }
+
+    /** Round a one-block pillar by its corners: four hops to the right go round it and back to the face it started on. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void ledgeRoundAPillar(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        t.at(2, () -> {
+            for (int y = 2; y <= 4; y++) h.setBlock(3, y, 4, net.minecraft.world.level.block.Blocks.STONE);
+            double top = h.absoluteVec(new Vec3(0, 5.0, 0)).y;
+            Vec3 start = h.absoluteVec(new Vec3(3.5, 5.0 - dev.mcreload.moves.Ledge.HANG, 4.0 - 0.301));
+            p.teleportTo(start.x, start.y, start.z);
+            net.minecraft.core.Direction d = net.minecraft.core.Direction.SOUTH;
+            StringBuilder way = new StringBuilder(d.toString());
+            for (int i = 0; i < 4; i++) {
+                dev.mcreload.moves.Ledge.Step st = dev.mcreload.moves.Ledge.next(p, p.position(), d, top, false, true);
+                if (st == null) {
+                    t.check(false, "hop " + (i + 1) + " round the pillar found nowhere to go, after " + way);
+                    return;
+                }
+                d = st.spot().dir();
+                Vec3 at = st.spot().at();
+                p.teleportTo(at.x, at.y, at.z);
+                way.append(" -> ").append(d).append(String.format(java.util.Locale.ROOT, " (%.2f, %.2f)",
+                        at.x - h.absoluteVec(Vec3.ZERO).x, at.z - h.absoluteVec(Vec3.ZERO).z));
+            }
+            t.check(d == net.minecraft.core.Direction.SOUTH && p.position().distanceTo(start) < 0.7, "round the pillar: " + way);
+        }).run(3);
+    }
+
+    /**
+     * The fast run (author, 2026-10-29, fifth message): Ctrl held while sprinting, 7 blocks a second
+     * (the speed attribute), a hundredth of the bar a second, no refill meanwhile; without the key, the
+     * vanilla sprint and the bar refills.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void fastRun(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        float[] e = new float[1];
+        t.at(2, () -> {
+            s.energy = 50f;
+            s.runKey = true;
+            p.setSprinting(true);
+        });
+        t.at(4, () -> {
+            double speed = p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+            double bps = speed / 0.13 * dev.mcreload.moves.FastRun.VANILLA_SPRINT;
+            t.check(Math.abs(bps - 7.0) < 0.05, "the fast run goes " + bps + " blocks a second (want 7)");
+            e[0] = s.energy;
+        });
+        t.at(24, () -> {
+            float spent = e[0] - s.energy;
+            t.check(Math.abs(spent - 1f) < 0.06, "the fast run ate " + spent + " energy in a second (want 1 of 100)");
+            s.runKey = false;
+        });
+        t.at(26, () -> {
+            double speed = p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+            t.check(Math.abs(speed - 0.13) < 1.0E-3, "the sprint without the key: speed " + speed);
+            e[0] = s.energy;
+        });
+        t.at(46, () -> t.check(s.energy > e[0], "the bar does not refill after the fast run")).run(47);
+    }
+
+    /**
+     * The plunge (author, 2026-10-29, fifth message): falling with a sword or an axe, the blade held
+     * ready; the landing hurts 20 % less, drives it in (energy), a short stun; bare-handed or in a
+     * short drop, nothing.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void plungeCutsDamage(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        ServerPlayer other = t.player();
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            p.setOnGround(false);
+            p.fallDistance = 10f;
+            t.check(!MoveServer.request(p, Move.PLUNGE_FALL, false), "the blade held ready bare-handed");
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+            p.fallDistance = 2f;
+            t.check(!MoveServer.request(p, Move.PLUNGE_FALL, false), "the blade held ready in a drop that does not hurt");
+            p.fallDistance = 10f;
+            t.check(MoveServer.request(p, Move.PLUNGE_FALL, false), "the blade not held ready in a 10-block fall with an axe");
+            p.causeFallDamage(10f, 1f, p.damageSources().fall());
+            other.causeFallDamage(10f, 1f, other.damageSources().fall());
+            t.close(other.getHealth(), 13f, "health after a 10-block fall bare-handed");
+            t.close(p.getHealth(), 14f, "health after it with the blade (7 damage less 20 %, rounded up)");
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.PLUNGE, false), "the plunge on landing refused");
+            t.close(s.energy, 100f - MovesConfig.costPlunge(), "energy after the plunge");
+            t.check(Move.PLUNGE.recoverFrom() == dev.mcreload.moves.Plunge.STAND && Move.PLUNGE.recoverFrom() <= 15,
+                    "the stun lasts " + Move.PLUNGE.recoverFrom() + " ticks (a short one)");
+        }).run(3);
+    }
+
+    /**
+     * The axe whirlwind (author, 2026-10-29, fifth message): an axe only; three turns, each hitting
+     * every mob round the player once (the one behind too), not the one out of reach; then 45 s.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 240)
+    public static void whirlwindHitsAllRound(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie front = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        Zombie back = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 1);
+        Zombie far = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 8, 2, 3);
+        noSun(front, back, far);
+        Stamina s = Stamina.of(p);
+        int[] hits = new int[2];
+        float[] last = new float[2];
+        t.at(2, () -> {
+            for (Zombie z : new Zombie[]{front, back, far}) {
+                z.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(200);
+                z.setHealth(200);
+                z.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
+            }
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            t.check(!MoveServer.request(p, Move.WHIRL, false), "the whirlwind with a sword");
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.WHIRL, false), "the whirlwind refused with an axe");
+            t.close(s.energy, 100f - MovesConfig.costWhirl(), "energy after the whirlwind");
+            last[0] = front.getHealth();
+            last[1] = back.getHealth();
+        });
+        for (int i = 3; i < 4 + Move.WHIRL.length; i++) {
+            t.at(i, () -> {
+                // the zombies are held where they stood, so each turn finds them again
+                Vec3 fp = h.absoluteVec(new Vec3(3.5, 2, 5.5)), bp = h.absoluteVec(new Vec3(3.5, 2, 1.5));
+                if (front.getHealth() < last[0]) hits[0]++;
+                if (back.getHealth() < last[1]) hits[1]++;
+                last[0] = front.getHealth();
+                last[1] = back.getHealth();
+                front.teleportTo(fp.x, fp.y, fp.z);
+                back.teleportTo(bp.x, bp.y, bp.z);
+                Vec3 me = h.absoluteVec(new Vec3(3.5, 2, 3.5));
+                p.teleportTo(me.x, me.y, me.z);
+            });
+        }
+        t.at(5 + Move.WHIRL.length, () -> {
+            t.check(hits[0] == 3 && hits[1] == 3, "hits a turn: in front " + hits[0] + ", behind " + hits[1] + " (want 3 each)");
+            t.close(far.getHealth(), 200f, "the zombie out of reach was hit");
+            s.energy = 100f;
+            t.check(!MoveServer.request(p, Move.WHIRL, false), "a second whirlwind right after the first");
+            t.check(s.whirlCooldown > 20 * 40, "whirlwind cooldown " + s.whirlCooldown + " ticks (want 45 s)");
+        }).run(6 + Move.WHIRL.length);
+    }
+
+    /** The roll kick (Ctrl, W, Space, R at a mob): its energy, the kick into the mob at RK_HIT, nothing hurts the player until the landing. */
+    @GameTest(template = FLOOR, timeoutTicks = 240)
+    public static void rollKickFlingsTheMob(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        noSun(zombie);
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            p.setOnGround(true);
+            MoveServer.seen(p);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.ROLL_KICK, false, zombie.getId()), "the roll kick refused at a zombie in front");
+            t.close(s.energy, 100f - MovesConfig.costRollKick(), "energy after the roll kick");
+        });
+        t.at(8, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 6f);
+            t.close(p.getHealth(), 20f, "health after the zombie's blow in the flip");
+            Vec3 beyond = h.absoluteVec(new Vec3(3.5, 2.0, 7.0));
+            p.teleportTo(beyond.x, beyond.y, beyond.z);
+        });
+        float[] before = new float[1];
+        t.at(1 + dev.mcreload.moves.Kick.RK_HIT, () -> before[0] = zombie.getHealth());
+        t.at(2 + dev.mcreload.moves.Kick.RK_HIT, () -> {
+            float lost = before[0] - zombie.getHealth();
+            t.check(lost >= 1.8f && lost <= 2.01f, "the roll kick took " + lost + " health (want 1 heart)");
+        }).run(3 + dev.mcreload.moves.Kick.RK_HIT);
     }
 
     /**

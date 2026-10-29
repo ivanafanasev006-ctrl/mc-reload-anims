@@ -32,6 +32,25 @@ public final class Kick {
     public static final double REACH = 2.4;
     /** The mob is held still from the take-off until it is kicked. */
     public static final int HOLD_FROM = TAKEOFF, HOLD_TO = HIT - 1;
+    /**
+     * The roll kick (hop_roll_kick; author's draft, 2026-10-29, fifth message), in ticks: the take-off
+     * (0.15 s), the half turn to the mob in the flip (0.4-0.68 s), the kick into its back (0.8 s), the
+     * landing facing it (0.95 s), the roll after it (1.05-1.45 s).
+     */
+    public static final int RK_TAKEOFF = 3, RK_TURN_FROM = 8, RK_TURN_TO = 14, RK_HIT = 16, RK_LAND = 19,
+            RK_ROLL_FROM = 21, RK_ROLL_TO = 29;
+    /** The roll kick lands this far beyond the mob (blocks) and rolls this far on after it. */
+    public static final float RK_BEYOND = 1.3f, RK_ROLL_BLOCKS = 1.5f;
+
+    /** The tick the leg meets the mob, for either kick. */
+    public static int hit(Move m) {
+        return m == Move.ROLL_KICK ? RK_HIT : HIT;
+    }
+
+    /** The landing tick, for either kick. */
+    public static int land(Move m) {
+        return m == Move.ROLL_KICK ? RK_LAND : LAND;
+    }
     /** The mob a kick goes over: one the vault could go over. */
     public static boolean valid(ServerPlayer p, Entity e) {
         return Hop.valid(p, e);
@@ -43,22 +62,24 @@ public final class Kick {
         s.kickDone = false;
         s.kickFrom = p.position();
         s.kickYaw = p.getYRot();
-        if (target instanceof LivingEntity le) MovesNet.stoop(target, TAKEOFF, Hop.STOOP_TICKS, Hop.lean(le));
+        int from = s.move == Move.ROLL_KICK ? RK_TAKEOFF : TAKEOFF;
+        if (target instanceof LivingEntity le) MovesNet.stoop(target, from, Hop.STOOP_TICKS, Hop.lean(le));
     }
 
     /** Every server tick of a kick: no fall damage, the mob held still in the air time, the kick. */
     static void serverTick(ServerPlayer p, Stamina s) {
-        if (s.move != Move.KICK) return;
+        if (s.move != Move.KICK && s.move != Move.ROLL_KICK) return;
         p.fallDistance = 0f;
         Entity e = p.level().getEntity(s.target);
         if (!(e instanceof LivingEntity mob) || !mob.isAlive()) return;
-        if (s.moveTick >= HOLD_FROM && s.moveTick <= HOLD_TO) {
+        int from = s.move == Move.ROLL_KICK ? RK_TAKEOFF : HOLD_FROM, hit = hit(s.move);
+        if (s.moveTick >= from && s.moveTick < hit) {
             Vec3 v = mob.getDeltaMovement();
             mob.setDeltaMovement(0, Math.min(v.y, 0), 0);
             mob.hurtMarked = true;
             if (mob instanceof Mob m) m.getNavigation().stop();
         }
-        if (!s.kickDone && s.moveTick >= HIT) {
+        if (!s.kickDone && s.moveTick >= hit) {
             // The leg meets the mob if it is still in reach (it was held still; a lagging client is let through).
             double gap = mob.position().subtract(p.position()).horizontalDistance() - mob.getBbWidth() / 2;
             if (gap <= REACH + 1.0) kick(p, s, mob);
@@ -99,7 +120,7 @@ public final class Kick {
     public static void attack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer p) || event.isCanceled()) return;
         Stamina s = Stamina.of(p);
-        if (s.move != Move.KICK || s.moveTick > LAND + 3) return;
+        if ((s.move != Move.KICK && s.move != Move.ROLL_KICK) || s.moveTick > land(s.move) + 3) return;
         Entity by = event.getSource().getEntity();
         if (by != null && by.getId() == s.target) event.setCanceled(true);
     }

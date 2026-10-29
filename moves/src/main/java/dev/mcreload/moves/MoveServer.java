@@ -44,7 +44,8 @@ public final class MoveServer {
         if (move.ledge() || move == Move.FALL_TUCK) p.stopUsingItem();
         s.start(p, move, held);
         if (move == Move.HOP) Hop.started(p, s, enemy);
-        if (move == Move.KICK) Kick.started(p, s, enemy);
+        if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
+        if (move == Move.WHIRL) Whirl.started(p, s);
         if (move == Move.FINISHER) Strikes.finisherStarted(p, s, enemy);
         if (move == Move.DASH) {
             s.dashCooldown = MovesConfig.dashCooldownTicks();
@@ -81,7 +82,7 @@ public final class MoveServer {
                 Strikes.blow(p, target, MovesConfig.dashCrit(), true);
             }
         }
-        if (move == Move.KICK && !s.kickDone && s.moveTick >= Kick.HIT - 2
+        if ((move == Move.KICK || move == Move.ROLL_KICK) && !s.kickDone && s.moveTick >= Kick.hit(move) - 2
                 && p.level().getEntity(s.target) instanceof net.minecraft.world.entity.LivingEntity mob) Kick.kick(p, s, mob);
         s.end(p);
         MovesNet.stop(p);
@@ -90,7 +91,7 @@ public final class MoveServer {
     /** The mob a targeted move is made at is one it may be made at (the client named it; the server checks). */
     private static boolean validTarget(ServerPlayer p, Move move, net.minecraft.world.entity.Entity e) {
         if (move == Move.HOP) return Hop.valid(p, e);
-        if (move == Move.KICK) return Kick.valid(p, e);
+        if (move == Move.KICK || move == Move.ROLL_KICK) return Kick.valid(p, e);
         if (move == Move.LEDGE_HELP) return e instanceof Player;
         if (move == Move.FINISHER) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;
@@ -102,7 +103,7 @@ public final class MoveServer {
         // Using an item (eating, drawing a bow) rules moves out, except the volley, which needs a full
         // draw, and the moves of the flow and the Legolas stance, made with the bow drawn.
         // The ledge and the fall take the hands from whatever they were doing.
-        boolean hands = move.ledge() || move == Move.FALL_TUCK || move == Move.FALL_ROLL;
+        boolean hands = move.ledge() || move == Move.FALL_TUCK || move == Move.FALL_ROLL || move == Move.PLUNGE_FALL || move == Move.PLUNGE;
         if (!hands && (move == Move.BARRAGE ? !Bow.volleyReady(p) : move.drawnBow() ? !Bow.drawing(p) : p.isUsingItem())) return false;
         // One move at a time; the next may start once this one has played out (its fade aside), or at
         // once if it follows from it (the attack out of a slide, the moves on a ledge...).
@@ -118,18 +119,24 @@ public final class MoveServer {
         // In the air: the tuck while falling far enough, the roll out of it; the ledge from a jump or a fall.
         if (move == Move.FALL_TUCK) return p.fallDistance >= Fall.TUCK_FROM - (p.level().isClientSide ? 0f : 1f);
         if (move == Move.FALL_ROLL) return s.move == Move.FALL_TUCK;
+        // Falling with a sword or an axe: the blade held for the plunge, and driven in on landing.
+        if (move == Move.PLUNGE_FALL) return Strikes.finisherWeapon(p) && p.fallDistance >= MovesConfig.plungeFrom() - (p.level().isClientSide ? 0f : 1f);
+        if (move == Move.PLUNGE) return s.move == Move.PLUNGE_FALL;
         if (move.ledge()) return move != Move.LEDGE_DOWN || ground;
         if (move == Move.LEDGE_HELP) return ground;
         // W + Space + R: the kick and the dive from the ground or a jump already begun, not out of a fall.
-        if (move == Move.KICK || move == Move.DIVE) {
+        if (move == Move.KICK || move == Move.DIVE || move == Move.ROLL_KICK) {
             int grace = JUMP_GRACE + (p.level().isClientSide ? 0 : GROUND_GRACE);
             return p.fallDistance < Fall.TUCK_FROM && (ground || p.tickCount - lastGround(p) <= grace);
         }
-        // The moves of the left button: the dash with a sword, off a sprint; the finisher with a sword or an axe.
+        // The strikes: the dash with a sword, the whirlwind with an axe (S and the left button held,
+        // the right one; author, 2026-10-29, fifth message); the finisher with a sword or an axe.
         if (move == Move.DASH && !Strikes.sword(p)) return false;
+        if (move == Move.WHIRL && !Strikes.axe(p)) return false;
         if (move == Move.FINISHER && !Strikes.finisherWeapon(p)) return false;
-        // The dash waits out its cooldown (the server lets a client a few ticks ahead of it through).
-        if (move == Move.DASH) return ground && sprint && s.dashCooldown <= (p.level().isClientSide ? 0 : 5);
+        // They wait out their cooldowns (the server lets a client a few ticks ahead of it through).
+        if (move == Move.DASH) return ground && s.dashCooldown <= (p.level().isClientSide ? 0 : 5);
+        if (move == Move.WHIRL) return ground && s.whirlCooldown <= (p.level().isClientSide ? 0 : 5);
         return ground || !MovesConfig.dodgeOnlyOnGround();
     }
 

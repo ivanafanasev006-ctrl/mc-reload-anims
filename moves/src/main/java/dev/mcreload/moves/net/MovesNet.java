@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "3";
+    public static final String VERSION = "4";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -42,6 +42,7 @@ public final class MovesNet {
         CHANNEL.registerMessage(id++, GuardUp.class, GuardUp::write, GuardUp::read, GuardUp::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, GuardState.class, GuardState::write, GuardState::read, GuardState::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, Stoop.class, Stoop::write, Stoop::read, Stoop::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, Run.class, Run::write, Run::read, Run::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
     // ------------------------------------------------------------------ server -> clients
@@ -173,6 +174,17 @@ public final class MovesNet {
         static void handle(GuardUp m, Supplier<NetworkEvent.Context> ctx) {
             ServerPlayer p = ctx.get().getSender();
             if (p != null) ctx.get().enqueueWork(() -> dev.mcreload.moves.Guard.request(p, m.up));
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Client -> server: the fast run's key (Ctrl) is held (true) or let go (false). */
+    public record Run(boolean on) {
+        static void write(Run m, FriendlyByteBuf b) { b.writeBoolean(m.on); }
+        static Run read(FriendlyByteBuf b) { return new Run(b.readBoolean()); }
+        static void handle(Run m, Supplier<NetworkEvent.Context> ctx) {
+            ServerPlayer p = ctx.get().getSender();
+            if (p != null) ctx.get().enqueueWork(() -> Stamina.of(p).runKey = m.on);
             ctx.get().setPacketHandled(true);
         }
     }

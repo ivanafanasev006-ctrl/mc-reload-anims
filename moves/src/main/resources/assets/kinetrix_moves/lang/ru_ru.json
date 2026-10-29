@@ -38,7 +38,7 @@
   "kinetrix_moves.settings.move.dive": "Глубокий прыжок",
   "kinetrix_moves.settings.move.dive.tip": "W и пробел нажаты, R без моба рядом: прыжок рыбкой вперёд с перекатом.",
   "kinetrix_moves.settings.move.dash": "Рывок",
-  "kinetrix_moves.settings.move.dash.tip": "ЛКМ на бегу с W и мечом: выпад с критом.",
+  "kinetrix_moves.settings.move.dash.tip": "S и ЛКМ зажаты с мечом, один клик ПКМ: выпад вперёд с критом.",
   "kinetrix_moves.settings.move.finisher": "Добивание",
   "kinetrix_moves.settings.move.finisher.tip": "ЛКМ вплотную к ослабленному мобу: добивание.",
   "kinetrix_moves.settings.move.guard": "Блок мечом",
@@ -64,5 +64,14 @@
   "kinetrix_moves.slide_attack.cooldown": "Удар из подката перезаряжается: %s с",
   "kinetrix_moves.ledge.no_room": "Наверху нет места, чтобы залезть",
   "kinetrix_moves.ledge.hops": "Край: прыжки (A / D)",
-  "kinetrix_moves.ledge.shimmy": "Край: перехват руками (A / D)"
+  "kinetrix_moves.ledge.shimmy": "Край: перехват руками (A / D)",
+  "kinetrix_moves.settings.move.fastRun": "Быстрый бег",
+  "kinetrix_moves.settings.move.fastRun.tip": "Ctrl зажат на бегу: 7 блоков в секунду, тратит 1% энергии в секунду.",
+  "kinetrix_moves.settings.move.rollKick": "Пинок с сальто",
+  "kinetrix_moves.settings.move.rollKick.tip": "Ctrl, W и пробел нажаты, R у моба: сальто через него, пинок в спину, кувырок.",
+  "kinetrix_moves.settings.move.whirlwind": "Юла с топором",
+  "kinetrix_moves.settings.move.whirlwind.tip": "S и ЛКМ зажаты с топором, затем зажать ПКМ: три оборота с топором вперёд. Отпустить кнопку — стоп.",
+  "kinetrix_moves.settings.move.plunge": "Удар клинком в землю",
+  "kinetrix_moves.settings.move.plunge.tip": "Падение с мечом или топором: клинок втыкается в землю при приземлении, урон на 20% меньше.",
+  "kinetrix_moves.whirl.cooldown": "Юла перезаряжается: %s с"
 }

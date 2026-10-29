@@ -90,6 +90,7 @@ public final class MovesSelfTest {
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onTick);
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onGui);
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onScreen);
+        if (Boolean.getBoolean("kinetrix_moves.selftest.probe")) MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::probe);
         build();
         String only = System.getProperty("kinetrix_moves.selftest.only", "");
         if (!only.isBlank()) SCENARIOS.removeIf(s -> !s.name.matches(".*(" + only + ").*"));
@@ -162,9 +163,10 @@ public final class MovesSelfTest {
 
         // ---- the sword strikes: the dash off a run into a zombie 7 blocks ahead; the finisher on a
         // weakened zombie at point blank (the hint, then the left button held)
-        dash("90_dash_strike", 7, CameraType.THIRD_PERSON_BACK);
+        // no run-up any more (S and the left button, the right one): the zombie within the lunge's reach
+        dash("90_dash_strike", 4.5, CameraType.THIRD_PERSON_BACK);
         dash("93_dash_mob_near", 2.2, CameraType.THIRD_PERSON_BACK);
-        dash("94_dash_first_person", 7, CameraType.FIRST_PERSON);
+        dash("94_dash_first_person", 4.5, CameraType.FIRST_PERSON);
         finisher("91_finisher", Items.IRON_SWORD, CameraType.THIRD_PERSON_BACK);
         finisher("92_finisher_axe", Items.IRON_AXE, CameraType.THIRD_PERSON_BACK);
         finisher("95_finisher_first_person", Items.IRON_SWORD, CameraType.FIRST_PERSON);
@@ -174,6 +176,14 @@ public final class MovesSelfTest {
         kick("75_kick_zombie_cutscene", CameraType.FIRST_PERSON);
         kick("76_kick_zombie_side", CameraType.THIRD_PERSON_BACK);
         dive("77_dive", CameraType.THIRD_PERSON_BACK);
+        // the author's fifth message of 2026-10-29
+        diveOverBlock("78_dive_over_block");
+        rollKick("79_roll_kick");
+        plunge("99a_plunge", CameraType.THIRD_PERSON_BACK);
+        whirlwind("92a_whirlwind", CameraType.THIRD_PERSON_BACK);
+        whirlwind("92b_whirlwind_front", CameraType.THIRD_PERSON_FRONT);
+        fastRun("16_fast_run");
+        ledgeCorner("87_ledge_corner");
         slideAttack("96_slide_attack", CameraType.THIRD_PERSON_BACK);
         slideAttack("97_slide_attack_first_person", CameraType.FIRST_PERSON);
         fallRoll("98_fall_roll", CameraType.THIRD_PERSON_BACK);
@@ -183,6 +193,7 @@ public final class MovesSelfTest {
         ledgeDown("82_ledge_auto_hang_and_hops");
         ledgeTooFar("83_ledge_too_far_from_the_edge");
         ledgeSlideOff("85_ledge_slide_off_catch");
+        ledgeClimbRun("86_ledge_climb_running_on");
 
 
         SCENARIOS.add(new Scenario("71_deflect_arrow", 30, sp -> {
@@ -432,18 +443,17 @@ public final class MovesSelfTest {
         }, (mc, t) -> {
             camera(mc, camera);
             if (t == 1) Stamina.of(mc.player).dashCooldown = 0;
-            int run = dz > 3 ? 2 : 8;    // near: a couple of sprinting steps only, then the dash
-            mc.options.keyUp.setDown(t >= run && t < 30);
-            mc.options.keySprint.setDown(t >= run && t < 30);
-            // The button goes down without a click: a real press reaches the moves' tick handler
-            // before vanilla's keys, here it would come after them and vanilla would swing first.
+            // author, 2026-10-29, fifth message: S and the left button held, the right button once.
+            // The buttons go down without a click: a real press reaches the moves' tick handler before
+            // vanilla's keys, here it would come after them and vanilla would swing first.
+            mc.options.keyDown.setDown(t >= 6 && t < 12);
+            mc.options.keyAttack.setDown(t >= 7 && t < 12);
             if (t == 10) {
                 startPos = mc.player.position();
-                note("dash: sprinting " + mc.player.isSprinting());
-                mc.options.keyAttack.setDown(true);
+                mc.options.keyUse.setDown(true);
             }
             if (t == 11) {
-                mc.options.keyAttack.setDown(false);
+                mc.options.keyUse.setDown(false);
                 note("dash: move " + Stamina.of(mc.player).move + ", cooldown " + Stamina.of(mc.player).dashCooldown / 20 + " s");
             }
             if (t == 22) note(String.format(Locale.ROOT, "dash: went %.2f blocks to the lunge",
@@ -525,6 +535,149 @@ public final class MovesSelfTest {
     }
 
     /** Running, Space and R with no mob near: the deep jump, the hands on the ground, the roll; how far and how high. */
+    /** The deep jump at a block a block high, 1.5 blocks ahead (author, 2026-10-29, fifth message: at least over that). */
+    private static void diveOverBlock(String name) {
+        SCENARIOS.add(new Scenario(name, 60, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            for (int x = -1; x <= 1; x++) sp.serverLevel().setBlock(new BlockPos(x, Y + 1, 2), Blocks.STONE_BRICKS.defaultBlockState(), 2);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            mc.options.keyUp.setDown(t >= 2 && t < 6);
+            mc.options.keyJump.setDown(t == 5);
+            if (t == 5) {
+                startPos = mc.player.position();
+                minHeight = 0f;
+                KeyMapping.click(MovesClient.DODGE.getKey());
+            }
+            if (t > 5 && startPos != null) minHeight = Math.max(minHeight, (float) (mc.player.getY() - startPos.y));
+            if (t == 7) note(name + ": move " + Stamina.of(mc.player).move);
+            if (t == 45) note(String.format(Locale.ROOT, "%s: at z %.2f (the block is z 2-3), %.2f up at most, on the floor %s, %s", name,
+                    mc.player.getZ(), minHeight, Math.abs(mc.player.getY() - (Y + 1)) < 0.01, Stamina.of(mc.player).move));
+            if (t == 58) mc.getSingleplayerServer().execute(() -> {
+                ServerLevel level = mc.getSingleplayerServer().overworld();
+                for (int x = -1; x <= 1; x++) level.setBlock(new BlockPos(x, Y + 1, 2), Blocks.AIR.defaultBlockState(), 2);
+            });
+        }, new int[]{6, 8, 10, 12, 14, 16, 18, 22, 26}, true));
+    }
+
+    /** Dropped from 15 blocks with a sword, R not held: the blade held point down, driven into the ground, up; the fall's damage. */
+    private static void plunge(String name, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 70, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            sp.teleportTo(sp.serverLevel(), 0.5, Y + 16, 0.5, 0f, 10f);
+        }, (mc, t) -> {
+            camera(mc, camera);
+            if (t == 12) note(name + ": move " + Stamina.of(mc.player).move + ", fallen " + mc.player.fallDistance);
+            if (mc.player.onGround() && startPos == null && t > 0) {
+                startPos = mc.player.position();
+                moveStart = t;
+                note(name + ": landed at t " + t + ", move " + Stamina.of(mc.player).move);
+            }
+            if (t == 1) startPos = null;
+            if (startPos != null && t == moveStart + 3) note(String.format(Locale.ROOT, "%s: health %.1f after a fall of 15 (bare: 8; tucked: 16)",
+                    name, mc.player.getHealth()));
+            if (startPos != null && Stamina.of(mc.player).move == Move.PLUNGE && Stamina.of(mc.player).moveTick == Move.PLUNGE.recoverFrom()) {
+                note(String.format(Locale.ROOT, "%s: the stun ends %.2f s after the landing", name, (t - moveStart) / 20f));
+            }
+            if (t == 60) note(String.format(Locale.ROOT, "%s: %s, pose %s", name, Stamina.of(mc.player).move, mc.player.getPose()));
+        }, new int[]{6, 12, 15, 17, 19, 21, 23, 26, 29, 32, 36, 40}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /** An axe, S and the left button held, then the right one held: the whirlwind among three zombies; its reach, its run, its cooldown. */
+    private static void whirlwind(String name, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 70, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_AXE));
+            Stamina.of(sp).whirlCooldown = 0;
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0, 2.2, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.8, 3.6, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -2.0, 1.0, 20f);
+        }, (mc, t) -> {
+            camera(mc, camera);
+            if (t == 1) Stamina.of(mc.player).whirlCooldown = 0;
+            mc.options.keyDown.setDown(t >= 4 && t < 9);
+            mc.options.keyAttack.setDown(t >= 5 && t < 60);
+            if (t == 8) startPos = mc.player.position();
+            mc.options.keyUse.setDown(t >= 8 && t < 60);
+            if (t == 9) note(name + ": move " + Stamina.of(mc.player).move);
+            if (t == 30) note(name + ": still turning " + Stamina.of(mc.player).move);
+            if (t == 54) {
+                note(String.format(Locale.ROOT, "%s: went %.2f blocks, cooldown %d s, %s", name,
+                        mc.player.position().subtract(startPos).horizontalDistance(), Stamina.of(mc.player).whirlCooldown / 20, Stamina.of(mc.player).move));
+                dummyReport(mc, name, true);
+            }
+        }, new int[]{8, 10, 12, 14, 16, 18, 20, 23, 26, 30, 34, 38, 42, 46, 50}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /** Ctrl, W and Space, R at a zombie: the roll kick, a flip over it, the kick, the landing facing it, the roll. */
+    private static void rollKick(String name) {
+        SCENARIOS.add(new Scenario(name, 80, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 2.8, -1f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            mc.options.keyUp.setDown(t >= 2 && t < 12);
+            mc.options.keySprint.setDown(t >= 2 && t < 12);
+            mc.options.keyJump.setDown(t >= 5 && t < 12);
+            if (t == 6) {
+                startPos = mc.player.position();
+                minHeight = 0f;
+                KeyMapping.click(MovesClient.DODGE.getKey());
+            }
+            if (t > 6 && startPos != null) minHeight = Math.max(minHeight, (float) (mc.player.getY() - startPos.y));
+            if (t == 8) note(name + ": move " + Stamina.of(mc.player).move);
+            if (t == 7 + dev.mcreload.moves.Kick.RK_TURN_TO + 1) note(String.format(Locale.ROOT, "%s: after the turn yaw %.0f (started 0)",
+                    name, mc.player.getYRot()));
+            if (t == 60) {
+                note(String.format(Locale.ROOT, "%s: %.2f up at most, went %.2f, facing yaw %.0f, health %.1f, %s", name, minHeight,
+                        mc.player.position().subtract(startPos).horizontalDistance(), mc.player.getYRot(), mc.player.getHealth(),
+                        Stamina.of(mc.player).move));
+                dummyReport(mc, name, true);
+            }
+        }, new int[]{7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 32, 36, 42}, true));
+    }
+
+    /** Ctrl and W held: the fast run, its speed and what it eats. */
+    private static void fastRun(String name) {
+        SCENARIOS.add(new Scenario(name, 70, sp -> {
+            place(sp, -10, ItemStack.EMPTY);
+            Stamina.of(sp).energy = 60f;
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            mc.options.keyUp.setDown(t >= 2 && t < 60);
+            mc.options.keySprint.setDown(t >= 2 && t < 60);
+            if (t == 30) {
+                startPos = mc.player.position();
+                minHeight = Stamina.of(mc.player).energy;
+            }
+            if (t == 50) note(String.format(Locale.ROOT, "%s: %.2f blocks a second, energy %.2f -> %.2f in a second", name,
+                    mc.player.position().subtract(startPos).horizontalDistance(), minHeight, Stamina.of(mc.player).energy));
+        }, new int[]{20, 40}, true));
+    }
+
+    /** A pillar a block wide: caught on its face, then the hop mode and D held: round its corners. */
+    private static void ledgeCorner(String name) {
+        SCENARIOS.add(new Scenario(name, 120, sp -> {
+            place(sp, 0, ItemStack.EMPTY);
+            ServerLevel level = sp.serverLevel();
+            for (int y = Y + 1; y <= Y + 3; y++) level.setBlock(new BlockPos(LEDGE_X, y, 3), Blocks.STONE_BRICKS.defaultBlockState(), 2);
+            sp.teleportTo(level, LEDGE_X + 0.5, Y + 10, 2.6, 0f, 0f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            LocalPlayer p = mc.player;
+            mc.options.keyUse.setDown(t >= 0 && t < 20);
+            if (t == 20) note(String.format(Locale.ROOT, "%s: %s, wall way %d", name, Stamina.of(p).move, Stamina.of(p).ledgeDir));
+            if (t == 22) KeyMapping.click(MovesClient.DODGE.getKey());
+            mc.options.keyRight.setDown(t >= 26 && t < 90);
+            if (t >= 24 && t <= 100 && (Boolean.getBoolean("kinetrix_moves.selftest.probe") || t % 25 == 20))
+                note(String.format(Locale.ROOT, "%s: t %d %s@%d, wall way %d, at x %.2f z %.2f, feet %.2f below the top, yaw %.0f",
+                        name, t, Stamina.of(p).move, Stamina.of(p).moveTick, Stamina.of(p).ledgeDir, p.getX(), p.getZ(), Y + 4 - p.getY(), p.getYRot()));
+            if (t == 110) mc.getSingleplayerServer().execute(() -> {
+                ServerLevel level = mc.getSingleplayerServer().overworld();
+                for (int y = Y + 1; y <= Y + 3; y++) level.setBlock(new BlockPos(LEDGE_X, y, 3), Blocks.AIR.defaultBlockState(), 2);
+            });
+        }, new int[]{20, 30, 34, 38, 42, 46, 50, 58, 66, 74, 82, 90}, true));
+    }
+
     private static void dive(String name, CameraType camera) {
         SCENARIOS.add(new Scenario(name, 60, sp -> place(sp, 0, new ItemStack(Items.IRON_SWORD)), (mc, t) -> {
             camera(mc, camera);
@@ -705,6 +858,28 @@ public final class MovesSelfTest {
             if (t == 64) note(String.format(Locale.ROOT, "%s: climbed back, feet %.2f above the top, %s", name,
                     p.getY() - (Y + 4), Stamina.of(p).move));
         }, new int[]{12, 15, 17, 19, 21, 23, 26, 30, 38, 46, 50, 56}, true));
+    }
+
+    /**
+     * Falling from high up beside the wall, caught; then W + Space with W kept down: up and running on
+     * at once (author, 2026-10-29: the pull-up turned the player over into a roll; the fall before the
+     * catch must not end in Kinetrix's own landing roll on the top).
+     */
+    private static void ledgeClimbRun(String name) {
+        SCENARIOS.add(new Scenario(name, 60, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            ledgeWall(sp);
+            sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 12, 2.6, 0f, 0f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            LocalPlayer p = mc.player;
+            mc.options.keyUse.setDown(t >= 0 && t < 24);
+            if (t == 24) note(name + ": " + Stamina.of(p).move);
+            mc.options.keyUp.setDown(t >= 26 && t < 56);
+            mc.options.keyJump.setDown(t >= 26 && t < 28);
+            if (t == 28) note(name + ": " + Stamina.of(p).move);
+            if (t == 54) note(String.format(Locale.ROOT, "%s: ran on %.2f blocks onto the top, %s", name, p.getZ() - 3, Stamina.of(p).move));
+        }, new int[]{30, 36, 40, 42, 44, 46, 48, 50}, true));
     }
 
     /** Falling from high up beside the wall, the right button held: caught at the edge (the fall forgiven); S + Space: let go. */
@@ -1006,6 +1181,7 @@ public final class MovesSelfTest {
     // ------------------------------------------------------------------ the run
 
     private static void onTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && phase == Phase.RUNNING && Boolean.getBoolean("kinetrix_moves.selftest.probe")) probeTick();
         if (event.phase != TickEvent.Phase.START) return;
         Minecraft mc = Minecraft.getInstance();
         mc.options.pauseOnLostFocus = false;
@@ -1108,9 +1284,78 @@ public final class MovesSelfTest {
         if (tick >= sc.ticks) next(mc);
     }
 
+    /**
+     * -PselftestProbe: every frame the player is drawn, the turn of the body as it is drawn (all the
+     * layers, Kinetrix's too), to run/moves-probe.txt: a turn the pictures are too far apart to show.
+     */
+    private static final List<String> PROBE = new ArrayList<>();
+
+    private static void probe(net.minecraftforge.client.event.RenderPlayerEvent.Post event) {
+        if (phase != Phase.RUNNING || !(event.getEntity() instanceof LocalPlayer p)) return;
+        if (!(p instanceof dev.kosmx.playerAnim.impl.IAnimatedPlayer a)) return;
+        dev.kosmx.playerAnim.core.util.Vec3f r = a.playerAnimator_getAnimation().get3DTransform("body",
+                dev.kosmx.playerAnim.api.TransformType.ROTATION, dev.kosmx.playerAnim.core.util.Vec3f.ZERO);
+        Stamina s = Stamina.of(p);
+        Object own = dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAssociatedData(p).get(MoveAnimator.LAYER);
+        float ownX = own instanceof dev.kosmx.playerAnim.api.layered.IAnimation a2 && a2.isActive()
+                ? a2.get3DTransform("body", dev.kosmx.playerAnim.api.TransformType.ROTATION, event.getPartialTick(),
+                dev.kosmx.playerAnim.core.util.Vec3f.ZERO).getX() * Mth.RAD_TO_DEG : Float.NaN;
+        PROBE.add(String.format(Locale.ROOT, "%s t%d+%.2f %s@%d body %.0f %.0f %.0f ours %.0f ground %s", label, tick, event.getPartialTick(),
+                s.move, s.moveTick, r.getX() * Mth.RAD_TO_DEG, r.getY() * Mth.RAD_TO_DEG, r.getZ() * Mth.RAD_TO_DEG, ownX, p.onGround()));
+    }
+
+    /** -PselftestProbe: every tick, what the moves' own layer plays and its body turn at the tick and half way to the next. */
+    private static void probeTick() {
+        LocalPlayer p = Minecraft.getInstance().player;
+        if (p == null) return;
+        Object own = dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAssociatedData(p).get(MoveAnimator.LAYER);
+        if (!(own instanceof dev.kosmx.playerAnim.api.layered.ModifierLayer<?> layer)) return;
+        Object inner = layer.getAnimation();
+        String what = inner == null ? "none" : inner.getClass().getSimpleName();
+        if (inner instanceof dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer k) what += "@" + k.getTick();
+        StringBuilder b = new StringBuilder();
+        for (float d : new float[]{0f, 0.5f}) {
+            layer.setupAnim(d);
+            dev.kosmx.playerAnim.core.util.Vec3f r = layer.get3DTransform("body", dev.kosmx.playerAnim.api.TransformType.ROTATION, d,
+                    dev.kosmx.playerAnim.core.util.Vec3f.ZERO);
+            b.append(String.format(Locale.ROOT, " %.0f", r.getX() * Mth.RAD_TO_DEG));
+        }
+        if (p instanceof dev.kosmx.playerAnim.impl.IAnimatedPlayer a) {
+            b.append(" all");
+            for (float d : new float[]{0f, 0.5f}) {
+                a.playerAnimator_getAnimation().setTickDelta(d);
+                dev.kosmx.playerAnim.core.util.Vec3f r = a.playerAnimator_getAnimation().get3DTransform("body",
+                        dev.kosmx.playerAnim.api.TransformType.ROTATION, dev.kosmx.playerAnim.core.util.Vec3f.ZERO);
+                b.append(String.format(Locale.ROOT, " %.0f", r.getX() * Mth.RAD_TO_DEG));
+            }
+        }
+        try {
+            // Kinetrix's own state (it runs in the development game when published locally): its landing
+            Object rig = Class.forName("dev.mcreload.anim.client.rig.RigRegistry")
+                    .getMethod("get", net.minecraft.client.player.AbstractClientPlayer.class).invoke(null, p);
+            if (rig != null) {
+                Object m = rig.getClass().getField("motion").get(rig);
+                b.append(" kin");
+                for (String f : new String[]{"landKind", "landStart", "time", "airTicks", "minAirVy", "wasOnGround", "rollEarly"}) {
+                    java.lang.reflect.Field fd = m.getClass().getDeclaredField(f);
+                    fd.setAccessible(true);
+                    b.append(' ').append(f).append('=').append(fd.get(m));
+                }
+                b.append(" whole=").append(Class.forName("dev.mcreload.anim.api.KinetrixApi")
+                        .getMethod("wholeBody", java.util.UUID.class).invoke(null, p.getUUID()));
+            }
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            b.append(" kin?").append(e.getClass().getSimpleName());
+        }
+        Stamina s = Stamina.of(p);
+        PROBE.add(String.format(Locale.ROOT, "%s TICK t%d %s@%d layer %s active %s pitch%s ground %s", label, tick, s.move, s.moveTick, what,
+                layer.isActive(), b, p.onGround()));
+    }
+
     private static void writeReport(Minecraft mc) {
         Path out = mc.gameDirectory.toPath().resolve("moves-selftest.txt");
         try {
+            if (!PROBE.isEmpty()) Files.write(mc.gameDirectory.toPath().resolve("moves-probe.txt"), PROBE, StandardCharsets.UTF_8);
             Files.write(out, REPORT, StandardCharsets.UTF_8);
         } catch (IOException e) {
             KinetrixMoves.LOG.error("[kinetrix_moves] cannot write {}", out, e);

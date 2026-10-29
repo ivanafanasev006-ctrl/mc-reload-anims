@@ -4,7 +4,10 @@ the key poses, perfect the execution) and the ledge set made from the author's d
     python3 tools/blockbench/refine_author_2026_10_29/refine.py
 
 reads  tools/blockbench/animations/author_2026-10-29.bbmodel  (never changed)
-writes tools/blockbench/refined/author_2026-10-29.bbmodel     (hop_on_kick, slide_under_attack)
+writes tools/blockbench/refined/author_2026-10-29.bbmodel     (hop_on_kick, slide_under_attack, the falls, the dive)
+       tools/blockbench/refined/author_2026-10-29b.bbmodel    (the fifth message: hop_roll_kick from
+                                                              animations/author_2026-10-29b.bbmodel, the
+                                                              plunge, the axe whirlwind; round5.py)
        tools/blockbench/refined/ledge_2026-10-29.bbmodel      (the ledge set, with the ledge to see it by)
 
 The same round also changed hop_roll_dodge and finisher_stab (refine_author_2026_10_28b.py) and is
@@ -28,9 +31,13 @@ import kit
 import landings
 import ledge
 import moves
+import round5
 from kit import L
 
 DST = os.path.join(kit.BB, 'refined', 'author_2026-10-29.bbmodel')
+#: The author's fifth message's file (hop_roll_kick) and its set (round5.py).
+SRC_B = os.path.join(kit.BB, 'animations', 'author_2026-10-29b.bbmodel')
+DST_B = os.path.join(kit.BB, 'refined', 'author_2026-10-29b.bbmodel')
 DST_LEDGE = os.path.join(kit.BB, 'refined', 'ledge_2026-10-29.bbmodel')
 #: The mechanic's paths (moves.paths), read by the mod.
 DST_PATHS = os.path.join(os.path.dirname(kit.BB), '..', 'moves', 'src', 'main', 'resources', 'kinetrix_moves_paths.json')
@@ -145,6 +152,19 @@ def main():
     with open(DST, 'w', encoding='utf-8', newline='\n') as f:
         json.dump(model, f, separators=(',', ':'))
     print(f'wrote {DST}: ' + ', '.join(a.name for a in made))
+
+    # --- the fifth message: the roll kick (the author's draft), the plunge, the whirlwind ---
+    with open(SRC_B, encoding='utf-8') as f:
+        mb = json.load(f)
+    made_b = [round5.hop_roll_kick(), round5.plunge_fall(), round5.plunge_land(), round5.axe_whirlwind()]
+    uuids = L.bone_uuids(mb)
+    for a in made_b:
+        no_bow(a)
+    mb['animations'] = [to_json(a, uuids) for a in made_b]
+    mb['animations'][0]['selected'] = True
+    with open(DST_B, 'w', encoding='utf-8', newline='\n') as f:
+        json.dump(mb, f, separators=(',', ':'))
+    print(f'wrote {DST_B}: ' + ', '.join(a.name for a in made_b))
 
     # --- the ledge set ---
     lm = copy.deepcopy(src)

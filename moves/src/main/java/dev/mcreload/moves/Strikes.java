@@ -31,7 +31,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  * The sword moves of the left button (author, 2026-10-28):
  *
  * <ul>
- *   <li><b>Dash strike</b> ({@code dash_strike}): sprinting with W, the left button. The player runs
+ *   <li><b>Dash strike</b> ({@code dash_strike}): S and the left button held, the right button once. The player runs
  *   on into a lunge and the blade goes into the belly of whoever is in front at 0.45 s, as a crit
  *   (the weapon's blow times 1.5, as in a jump).</li>
  *   <li><b>Finisher</b> ({@code finisher_stab}): a mob with a fifth of its health or less at point
@@ -84,6 +84,13 @@ public final class Strikes {
     /** Swords (and other mods' blades in the tag kinetrix_moves:swords) make the sword moves. */
     public static boolean sword(Player p) {
         return Guard.isSword(p.getMainHandItem());
+    }
+
+    /** An axe in hand (other mods' axes too: whatever chops like one): the whirlwind's weapon. */
+    public static boolean axe(Player p) {
+        ItemStack hand = p.getMainHandItem();
+        return !Guard.isSword(hand) && (hand.getItem() instanceof net.minecraft.world.item.AxeItem
+                || hand.canPerformAction(net.minecraftforge.common.ToolActions.AXE_DIG));
     }
 
     /** The finisher is made with a sword or an axe (author, 2026-10-28; other mods' axes too: whatever chops like one). */

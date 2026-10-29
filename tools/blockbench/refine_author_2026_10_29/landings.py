@@ -17,14 +17,16 @@ from kit import L
 # dive_roll
 # --------------------------------------------------------------------------------------------
 
-#: The dive: the crouch to 0.12 s, the push off at TAKEOFF, the flight with the body along the
-#: way it flies, the hands on the ground at TOUCH, a forward roll over the shoulders to ROLL_END,
-#: up from the squat by DIVE_LEN.
-TAKEOFF, TOUCH, ROLL_END, DIVE_LEN = 0.22, 0.62, 1.02, 1.35
+#: The dive: the crouch to CROUCH, the push off at TAKEOFF, the flight with the body along the way
+#: it flies, the hands on the ground at TOUCH, a forward roll over the shoulders to ROLL_END, up from
+#: the squat by DIVE_LEN. Author, 2026-10-29, fifth message: "sharper, it must at least fly over a
+#: one-block obstacle; now it is sluggish": the crouch and the getting up are quicker (1.35 s in all
+#: before), the flight as long but higher.
+CROUCH, TAKEOFF, APEX, TOUCH, ROLL_END, DIVE_LEN = 0.07, 0.13, 0.33, 0.55, 0.88, 1.12
 #: How high the mechanic lifts the player (px of the model) and how far it carries them (blocks):
-#: a long low dive, then the roll goes on [default].
-DIVE_LIFT = kit.keys((0.0, 0), (TAKEOFF, 0), (0.42, 15), (TOUCH, 0), (DIVE_LEN, 0))
-DIVE_FORWARD = kit.keys((0.0, 0), (0.14, 0), (TOUCH, 3.0), (ROLL_END, 4.5), (DIVE_LEN, 4.5))
+#: the feet 1.3 blocks up at the top, over a block in the way, then the roll goes on [default].
+DIVE_LIFT = kit.keys((0.0, 0), (TAKEOFF, 0), (APEX, 22), (TOUCH, 0), (DIVE_LEN, 0))
+DIVE_FORWARD = kit.keys((0.0, 0), (0.08, 0), (TOUCH, 3.4), (ROLL_END, 5.0), (DIVE_LEN, 5.0))
 
 
 def dive_roll():
@@ -36,7 +38,7 @@ def dive_roll():
     blade_in = (-90, 0, 0)  # the blade turned along the forearm from the push off, so the dive and the roll do not cut the player
     keys = [
         (0.0, {'right_item_sword': (0, 0, 0)}, 'auto'),
-        (0.12, {'chest': (-28, 0, 0), 'head': (14, 0, 0),
+        (CROUCH, {'chest': (-28, 0, 0), 'head': (14, 0, 0),
                 'right_arm': (-50, 0, 10), 'left_arm': (-50, 0, -10), 'right_forearm': (20, 0, 0), 'left_forearm': (20, 0, 0),
                 'right_leg': (45, 0, 3), 'right_shin': (-80, 0, 0), 'left_leg': (45, 0, -3), 'left_shin': (-80, 0, 0),
                 'right_item_sword': (0, 0, 0)}, 'inout'),
@@ -44,11 +46,11 @@ def dive_roll():
                    'right_arm': (150, 0, 8), 'left_arm': (150, 0, -8), 'right_forearm': (8, 0, 0), 'left_forearm': (8, 0, 0),
                    'right_leg': (-10, 0, 2), 'right_shin': (-15, 0, 0), 'left_leg': (-6, 0, -2), 'left_shin': (-25, 0, 0),
                    'right_item_sword': blade_in}, 'hit'),
-        (0.34, {'body': (-66, 0, 0), 'chest': (-4, 0, 0), 'head': (26, 0, 0),
+        (0.24, {'body': (-66, 0, 0), 'chest': (-4, 0, 0), 'head': (26, 0, 0),
                 'right_arm': (172, 0, 6), 'left_arm': (172, 0, -6), 'right_forearm': (4, 0, 0), 'left_forearm': (4, 0, 0),
                 'right_leg': (-8, 0, 1), 'right_shin': (-6, 0, 0), 'left_leg': (-8, 0, -1), 'left_shin': (-10, 0, 0),
                 'right_item_sword': blade_in}, 'out'),
-        (0.52, {'body': (-90, 0, 0), 'chest': (-6, 0, 0), 'head': (18, 0, 0),
+        (0.45, {'body': (-90, 0, 0), 'chest': (-6, 0, 0), 'head': (18, 0, 0),
                 'right_arm': (178, 0, 8), 'left_arm': (178, 0, -8), 'right_forearm': (6, 0, 0), 'left_forearm': (6, 0, 0),
                 'right_leg': (-10, 0, 1), 'right_shin': (-14, 0, 0), 'left_leg': (-6, 0, -1), 'left_shin': (-10, 0, 0),
                 'right_item_sword': blade_in}, 'inout'),
@@ -58,11 +60,11 @@ def dive_roll():
                  'right_leg': (25, 0, 2), 'right_shin': (-60, 0, 0), 'left_leg': (25, 0, -2), 'left_shin': (-60, 0, 0),
                  'right_item_sword': blade_in}, 'in'),
         # the roll, tucked tight (the refined forward roll's group)
-        (0.74, {'body': (-185, 0, 0), 'chest': (-35, 0, 0), 'head': (-28, 0, 0),
+        (0.65, {'body': (-185, 0, 0), 'chest': (-35, 0, 0), 'head': (-28, 0, 0),
                 'right_arm': (80, 0, 18), 'right_forearm': (75, 0, 0), 'left_arm': (80, 0, -18), 'left_forearm': (75, 0, 0),
                 'right_leg': (105, 0, 5), 'right_shin': (-128, 0, 0), 'left_leg': (105, 0, -5), 'left_shin': (-128, 0, 0),
                 'right_item_sword': blade_in}, 'linear'),
-        (0.88, {'body': (-280, 0, 0), 'chest': (-35, 0, 0), 'head': (-28, 0, 0),
+        (0.765, {'body': (-280, 0, 0), 'chest': (-35, 0, 0), 'head': (-28, 0, 0),
                 'right_arm': (72, 0, 18), 'right_forearm': (80, 0, 0), 'left_arm': (72, 0, -18), 'left_forearm': (80, 0, 0),
                 'right_leg': (108, 0, 5), 'right_shin': (-128, 0, 0), 'left_leg': (108, 0, -5), 'left_shin': (-128, 0, 0),
                 'right_item_sword': blade_in}, 'linear'),
@@ -71,7 +73,7 @@ def dive_roll():
                     'right_arm': (60, 0, 15), 'right_forearm': (40, 0, 0), 'left_arm': (55, 0, -15), 'left_forearm': (40, 0, 0),
                     'right_leg': (95, 0, 6), 'right_shin': (-122, 0, 0), 'left_leg': (90, 0, -6), 'left_shin': (-124, 0, 0),
                     'right_item_sword': (-40, 0, 0)}, 'out'),
-        (1.16, {'body': (-360, 0, 0), 'chest': (-18, 0, 0), 'head': (2, 0, 0),
+        (0.99, {'body': (-360, 0, 0), 'chest': (-18, 0, 0), 'head': (2, 0, 0),
                 'right_arm': (28, 0, 12), 'right_forearm': (25, 0, 0), 'left_arm': (24, 0, -12), 'left_forearm': (25, 0, 0),
                 'right_leg': (42, 0, 3), 'right_shin': (-70, 0, 0), 'left_leg': (40, 0, -3), 'left_shin': (-72, 0, 0),
                 'right_item_sword': (0, 0, 0)}, 'inout'),

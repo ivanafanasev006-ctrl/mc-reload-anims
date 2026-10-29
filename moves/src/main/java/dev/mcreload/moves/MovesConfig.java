@@ -17,7 +17,7 @@ public final class MovesConfig {
             APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD, COOKED_FOOD,
             COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER,
             COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP, COST_DIVE, COST_FALL_ROLL, COST_LEDGE_GRAB, COST_LEDGE_CLIMB,
-            COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_SHIMMY;
+            COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_SHIMMY, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
@@ -28,6 +28,8 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue DASH_WIDTH, SLIDE_ATTACK_CRIT, SLIDE_ATTACK_REACH, KICK_DAMAGE, KICK_STRENGTH,
             FALL_CUT;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
+    private static final ForgeConfigSpec.DoubleValue FAST_RUN_SPEED, FAST_RUN_COST, PLUNGE_CUT, PLUNGE_FROM, WHIRL_DAMAGE, WHIRL_REACH;
+    private static final ForgeConfigSpec.IntValue WHIRL_COOLDOWN;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -82,7 +84,7 @@ public final class MovesConfig {
         COST_BOW_DODGE = b.comment("A dodge with a shot: in the Legolas stance and the bow's combat flow (was 10). [default]")
                 .defineInRange("bowDodge", 5.0, 0.0, 10000.0);
         // Renamed from dashStrike (7.5) so worlds made before get the author's number.
-        COST_DASH = b.comment("Dash strike: sprinting with W and a sword, the left button (author: 15).")
+        COST_DASH = b.comment("Dash strike: S and the left button held with a sword, the right button once (author: 15).")
                 .defineInRange("dash", 15.0, 0.0, 10000.0);
         COST_FINISHER = b.comment("Finisher: the left button held at point blank to a weakened enemy. [default]")
                 .defineInRange("finisher", 5.0, 0.0, 10000.0);
@@ -110,6 +112,13 @@ public final class MovesConfig {
         COST_SHIMMY = b.comment("Each second of creeping along a ledge with A or D (more than a move's slow refill gives back);",
                         "with no energy left the player only hangs. [default]")
                 .defineInRange("ledgeShimmyPerSecond", 3.0, 0.0, 10000.0);
+        // Author, 2026-10-29, fifth message.
+        COST_ROLL_KICK = b.comment("The roll kick: Ctrl (the fast run), W and Space down, R at a mob. [default]")
+                .defineInRange("rollKick", 15.0, 0.0, 10000.0);
+        COST_PLUNGE = b.comment("Driving the blade into the ground on landing from a fall, a sword or an axe in hand. [default]")
+                .defineInRange("plunge", 2.5, 0.0, 10000.0);
+        COST_WHIRL = b.comment("The axe whirlwind: S and the left button held, then the right button. [default]")
+                .defineInRange("whirlwind", 20.0, 0.0, 10000.0);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -120,6 +129,15 @@ public final class MovesConfig {
                 .defineInRange("slideTapBlocks", 5.0, 1.0, 16.0);
         SLIDE_HELD = b.comment("Slide length in blocks when C is held; the player then goes on crawling (author: 5, then 6).")
                 .defineInRange("slideHoldBlocks", 6.0, 1.0, 16.0);
+        b.pop();
+
+        // Author, 2026-10-29, fifth message: "a fast run with Ctrl held, 7 blocks a second, eating 1/100 of the
+        // energy bar a second (almost as with a potion of Swiftness I)".
+        b.comment("The fast run: Ctrl held while sprinting.").push("run");
+        FAST_RUN_SPEED = b.comment("Its speed on flat ground, blocks a second (vanilla's sprint: 5.6; author: 7).")
+                .defineInRange("fastRunBlocksPerSecond", 7.0, 1.0, 40.0);
+        FAST_RUN_COST = b.comment("Share of the energy bar it eats a second; the bar does not refill meanwhile (author: 1/100).")
+                .defineInRange("fastRunBarPerSecond", 0.01, 0.0, 1.0);
         b.pop();
 
         b.comment("The vault over a mob at point blank (R + W): the player rolls over its back, it stoops and is shoved back.").push("hop");
@@ -144,8 +162,14 @@ public final class MovesConfig {
                 .defineInRange("kickStrength", 0.9, 0.0, 3.0);
         b.pop();
 
-        b.comment("The sword moves of the left button: the dash strike and the finisher.").push("strikes");
-        DASH_CRIT = b.comment("Dash strike (sprinting with W, the left button): the blow is the weapon's times this (author: a crit",
+        b.comment("The sword moves of the left button: the dash strike and the finisher; the axe whirlwind.").push("strikes");
+        WHIRL_COOLDOWN = b.comment("The axe whirlwind: seconds before it can be made again (author: 45).")
+                .defineInRange("whirlwindCooldownSeconds", 45, 0, 3600);
+        WHIRL_DAMAGE = b.comment("The axe whirlwind: each of its three turns hits everything round once with the axe's blow times this. [default]")
+                .defineInRange("whirlwindDamage", 0.6, 0.0, 10.0);
+        WHIRL_REACH = b.comment("The axe whirlwind: how far round the player the axe reaches (blocks, to the mob's side). [default]")
+                .defineInRange("whirlwindReach", 2.6, 1.0, 8.0);
+        DASH_CRIT = b.comment("Dash strike (S and the left button held, the right one): the blow is the weapon's times this (author: a crit",
                         "as in a jump; vanilla's crit is 1.5).")
                 .defineInRange("dashCrit", 1.5, 1.0, 10.0);
         DASH_COOLDOWN = b.comment("Dash strike: seconds before it can be made again (author: at least 30).")
@@ -176,6 +200,11 @@ public final class MovesConfig {
         b.comment("Falling and the ledge.").push("fall");
         FALL_CUT = b.comment("R held while falling: the tuck and the roll on landing take this share off the fall's damage (author: 70 %).")
                 .defineInRange("rollDamageCut", 0.7, 0.0, 1.0);
+        PLUNGE_CUT = b.comment("Falling with a sword or an axe in hand, the blade driven into the ground on landing takes this",
+                        "share off the fall's damage (author: 20 %).")
+                .defineInRange("plungeDamageCut", 0.2, 0.0, 1.0);
+        PLUNGE_FROM = b.comment("The blade is held ready for the plunge from this many blocks of fall (vanilla hurts from 3). [default]")
+                .defineInRange("plungeFromBlocks", 3.5, 1.0, 64.0);
         LEDGE_GRAB = b.comment("The right button in a jump or a fall catches a ledge (author: before the sword block, placing",
                         "blocks and the rest of the right button).")
                 .define("ledgeGrab", true);
@@ -263,6 +292,16 @@ public final class MovesConfig {
     public static float kickStrength() { return f(KICK_STRENGTH, 0.9); }
     public static float fallRollCut() { return f(FALL_CUT, 0.7); }
     public static boolean ledgeGrab() { return get(LEDGE_GRAB, true); }
+    public static float fastRunSpeed() { return f(FAST_RUN_SPEED, 7.0); }
+    public static float costRollKick() { return f(COST_ROLL_KICK, 15.0); }
+    public static float costPlunge() { return f(COST_PLUNGE, 2.5); }
+    public static float costWhirl() { return f(COST_WHIRL, 20.0); }
+    public static float plungeCut() { return f(PLUNGE_CUT, 0.2); }
+    public static float plungeFrom() { return f(PLUNGE_FROM, 3.5); }
+    public static int whirlCooldownTicks() { return get(WHIRL_COOLDOWN, 45) * 20; }
+    public static float whirlDamage() { return f(WHIRL_DAMAGE, 0.6); }
+    public static float whirlReach() { return f(WHIRL_REACH, 2.6); }
+    public static float fastRunBarPerSecond() { return f(FAST_RUN_COST, 0.01); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

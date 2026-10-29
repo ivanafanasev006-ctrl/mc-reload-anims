@@ -141,6 +141,58 @@ public final class Ledge {
         return null;
     }
 
+    /**
+     * A move along the edge: the hang it ends in, and the point it goes round on the way (round an
+     * outer corner; null when it goes straight).
+     */
+    public record Step(Spot spot, Vec3 via) {}
+
+    /**
+     * Where a hop from {@code at} (hanging from the wall that way, {@code top} high) goes, to the left
+     * or right (author, 2026-10-29, fifth message: on to the next blocks, not only along one edge, and
+     * every side of a block): into a wall at the side, turning to it (an inner corner); a block along
+     * the same edge; onto the next block's edge a step up or down (half a block or a block); round the
+     * end of the block to its side (an outer corner). Null: nowhere to go. {@code straight}: the
+     * plain hop along the same edge counts too (the shimmy asks only for the others).
+     */
+    public static Step next(Player p, Vec3 at, Direction d, double top, boolean left, boolean straight) {
+        Level level = p.level();
+        Direction side = left ? d.getCounterClockWise() : d.getClockWise();
+        Vec3 sv = new Vec3(side.getStepX(), 0, side.getStepZ());
+        // an inner corner: a wall at the side within the hop's reach, its edge as high or a little higher
+        for (double reach : new double[]{0.05, 0.5, 1.0}) {
+            Vec3 beside = at.add(sv.scale(HALF + reach));
+            int bx = Mth.floor(beside.x), bz = Mth.floor(beside.z);
+            if (emptyAt(level, bx, Mth.floor(at.y + 0.5), bz) && emptyAt(level, bx, Mth.floor(at.y + 1.4), bz)) continue;
+            double t2 = topIn(level, bx, bz, top - 0.05, top + 1.05);
+            if (Double.isNaN(t2)) return null;
+            Vec3 there = hangAt(at, side, face(bx, bz, side), t2);
+            return holds(level, there, side, t2) && fits(p, there) ? new Step(new Spot(side, t2, there), null) : null;
+        }
+        Vec3 there = at.add(sv);
+        if (straight && holds(level, there, d, top) && fits(p, there)) return new Step(new Spot(d, top, there), null);
+        // the next block's edge a step up or down, its face in line with this one
+        Vec3 probe = there.add(d.getStepX() * (HALF + 0.02), 0, d.getStepZ() * (HALF + 0.02));
+        int nx = Mth.floor(probe.x), nz = Mth.floor(probe.z);
+        if (face(nx, nz, d) <= along(at, d) + HALF + 0.05) {
+            double t2 = topIn(level, nx, nz, top - 1.05, top + 1.05);
+            if (!Double.isNaN(t2) && Math.abs(t2 - top) > 0.05) {
+                Vec3 step = new Vec3(there.x, t2 - HANG, there.z);
+                if (fits(p, step) && holds(level, step, d, t2)) return new Step(new Spot(d, t2, step), null);
+            }
+        }
+        // the end of the block: round its corner to its side
+        Vec3 hand = at.add(d.getStepX() * (HALF + 0.02), 0, d.getStepZ() * (HALF + 0.02));
+        int hx = Mth.floor(hand.x), hz = Mth.floor(hand.z);
+        if (Double.isNaN(topIn(level, hx, hz, top - 0.05, top + 0.05))) return null;
+        Direction wall = side.getOpposite();
+        Vec3 inside = at.add(d.getStepX() * (2 * HALF + 0.002), 0, d.getStepZ() * (2 * HALF + 0.002));
+        Vec3 round = hangAt(inside, wall, face(hx, hz, wall), top);
+        Vec3 via = at.add(sv.scale(along(round, side) - along(at, side)));
+        if (!holds(level, round, wall, top) || !fits(p, round) || !fits(p, via)) return null;
+        return new Step(new Spot(wall, top, round), via);
+    }
+
     /** The edge is still there for a player hanging at {@code at} (the wall that way, its top where it was). */
     public static boolean holds(Level level, Vec3 at, Direction d, double top) {
         Vec3 probe = at.add(d.getStepX() * (HALF + 0.02), 0, d.getStepZ() * (HALF + 0.02));
@@ -248,6 +300,11 @@ public final class Ledge {
         return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
     }
 
+    /** A hop's target in the request: the way of the edge it goes on to and how many half blocks higher it is. */
+    public static int hopTarget(Direction d, double rise) {
+        return id(d) | ((int) Math.round(rise * 2) + 4) << 2;
+    }
+
     /** The direction (0-3, Direction's 2D value) as it travels in packets, and back. */
     public static int id(Direction d) {
         return d.get2DDataValue();
@@ -272,7 +329,16 @@ public final class Ledge {
             remember(s, spot);
             return true;
         }
-        if (s.move != null && s.move.ledge()) return true;     // moving on an edge already caught
+        if (s.move != null && s.move.ledge()) {
+            // moving on an edge already caught; a hop says which edge it goes on to (Ledge.next)
+            if (move == Move.LEDGE_HOP_LEFT || move == Move.LEDGE_HOP_RIGHT) {
+                int step = (dirId >> 2) - 4;
+                if (Math.abs(step) > 2) return false;
+                s.ledgeDir = dirId & 3;
+                s.ledgeTop += step * 0.5;
+            }
+            return true;
+        }
         Direction d = dir(dirId);
         Spot spot = findTowards(p, d, p.getY() + HANG - 1.5, p.getY() + HANG + 1.5, REACH + SLACK);
         if (spot == null) {

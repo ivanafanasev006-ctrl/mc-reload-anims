@@ -89,7 +89,8 @@ public enum Move {
 
     // ---- sword moves (author, 2026-10-28)
     /**
-     * Sprinting with W and a sword, the left button: a dash into a lunge, the blade into the
+     * A sword in hand, S and the left button held, the right button once (author, 2026-10-29, fifth
+     * message; it was the left button sprinting with W): a dash into a lunge, the blade into the
      * belly (dash_strike). The run carries on and speeds up into the lunge (about 3.4 blocks by
      * 0.45 s, less if someone is in the way); the blade hits the first one it reaches on the way,
      * from 0.25 s to 0.55 s (Strikes.DASH_REACH_FROM, DASH_REACH_TO), with a crit, as a blow in a
@@ -119,11 +120,20 @@ public enum Move {
     KICK("hop_on_kick", 1f, 41, 0, Kick.LAND, -1, -1, Side.FRONT, MovesConfig::costKick),
     /**
      * W and Space held (or pressed), R with no mob to vault: the deep jump (dive_roll; author,
-     * 2026-10-29, fourth message): a dive stretched out like into water, 3 blocks forward, the hands
-     * take the ground at 0.62 s and a forward roll 1.5 blocks on (low and untouchable in it, as a
-     * roll), up by 1.35 s. Also from a jump already begun.
+     * 2026-10-29, fourth message): a dive stretched out like into water, 3.4 blocks forward and the
+     * feet 1.3 blocks up at the top (fifth message: "sharper, at least over a one-block obstacle"),
+     * the hands take the ground at 0.55 s and a forward roll 1.6 blocks on (low and untouchable in
+     * it, as a roll), up by 1.12 s (it was 1.35). Also from a jump already begun.
      */
-    DIVE("dive_roll", 1f, 28, 12, 20, 12, 20, Side.FRONT, MovesConfig::costDive),
+    DIVE("dive_roll", 1f, 23, Move.DIVE_TOUCH, Move.DIVE_UP, Move.DIVE_TOUCH, Move.DIVE_UP, Side.FRONT, MovesConfig::costDive),
+    /**
+     * Ctrl (the fast run), W and Space down, R at a mob of some size: the roll kick (hop_roll_kick,
+     * the author's draft of 2026-10-29, fifth message; the keys are a default): over it in a forward
+     * flip, turned half round to its back in the air (the camera with the player), the kick into its
+     * back at 0.8 s (Kick.RK_HIT, flung away as by hop_on_kick), the landing facing it at 0.95 s and a
+     * forward roll after it, 1.5 blocks; 1.9 s in all. Nothing hurts the player until the landing.
+     */
+    ROLL_KICK("hop_roll_kick", 1f, 38, 0, Kick.RK_LAND, Kick.RK_ROLL_FROM, Kick.RK_ROLL_TO, Side.FRONT, MovesConfig::costRollKick),
     /**
      * The left button while sliding, a sword or an axe in hand: a half turn clockwise with the blade
      * out to the right (slide_under_attack), a crit to everything it sweeps through at 0.3 s, and the
@@ -140,6 +150,26 @@ public enum Move {
      * faster: it was on the knee until 1.5 s, up by 1.9). The fall hurts 70 % less (Fall).
      */
     FALL_ROLL("fall_roll", 1f, 31, -1, -1, 2, 10, Side.FRONT, MovesConfig::costFallRoll),
+    /**
+     * Falling far enough to be hurt with a sword or an axe in hand (and R not held): the blade held
+     * point down in both fists in front of the chin, ready to drive into the ground (plunge_fall,
+     * looped; author, 2026-10-29, fifth message).
+     */
+    PLUNGE_FALL("plunge_fall", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /**
+     * The landing out of it: down onto the right knee, the blade driven into the ground in front, a
+     * short stun, the blade heaved out at 0.68 s (Plunge.STAND: moving breaks off the rest), up by
+     * 1.0 s (plunge_land). The fall hurts 20 % less (author).
+     */
+    PLUNGE("plunge_land", 1f, 20, -1, -1, -1, -1, Side.FRONT, MovesConfig::costPlunge),
+    /**
+     * An axe in hand, S and the left button held, then the right button held: the berserker's
+     * whirlwind (axe_whirlwind; author, 2026-10-29, fifth message): a wind-up, three turns round with
+     * the axe out, carried forward like a top, the blade hitting everything round once a turn
+     * (Whirl), then the axe back in front; 2.1 s. Letting go of either button stops it. 45 s
+     * before the next one.
+     */
+    WHIRL("axe_whirlwind", 1f, 42, -1, -1, -1, -1, Side.FRONT, MovesConfig::costWhirl),
 
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
@@ -178,8 +208,8 @@ public enum Move {
     public static final int HOP_TAKEOFF = 4, HOP_LAND = 14;
     /** The vault shoves the mob back as the foot kicks off its back (0.63 s of the animation). */
     public static final int HOP_SHOVE = 13;
-    /** The deep jump: the hands take the ground (0.62 s; its own jump ends there), out of the roll (1.1 s), moving breaks off the rest of the getting up. */
-    public static final int DIVE_TOUCH = 13, DIVE_UP = 22;
+    /** The deep jump: the hands take the ground (0.55 s; its own jump ends there), out of the roll (0.88 s), moving breaks off the rest of the getting up. */
+    public static final int DIVE_TOUCH = 11, DIVE_UP = 18;
     /** The climb: on the top (0.7 s), moving breaks off the rest (the player runs on, no stand-still). */
     public static final int CLIMB_ON_TOP = 14;
     /** The attack out of a slide: up from its crouch (0.8 s), moving breaks off the rest of the getting up. */
@@ -271,12 +301,12 @@ public enum Move {
 
     /** A move made at someone (the vault, the kick, the finisher, a friend's hand): the client names them, the server checks them. */
     public boolean targeted() {
-        return this == HOP || this == KICK || this == FINISHER || this == LEDGE_HELP;
+        return this == HOP || this == KICK || this == ROLL_KICK || this == FINISHER || this == LEDGE_HELP;
     }
 
     /** A sword move started by the left button: while it plays the button strikes nothing else. */
     public boolean strike() {
-        return this == DASH || this == FINISHER || this == SLIDE_ATTACK;
+        return this == DASH || this == FINISHER || this == SLIDE_ATTACK || this == WHIRL;
     }
 
     /** On the ledge: hanging, moving along it, climbing onto it or off it, being pulled up (not the friend pulling). */
@@ -290,9 +320,13 @@ public enum Move {
         return this == LEDGE_HANG || this == LEDGE_SHIMMY_LEFT || this == LEDGE_SHIMMY_RIGHT;
     }
 
-    /** The mechanic carries the player through the corner of the edge: no collisions (Ledge.serverTick). */
+    /**
+     * The mechanic carries the player through the corner of the edge, or round it (a hop round a
+     * block's corner): no collisions on the server (Ledge.serverTick), which would stop the step along
+     * the wall at the corner and put the player back.
+     */
     public boolean throughEdge() {
-        return this == LEDGE_CLIMB || this == LEDGE_DOWN || this == LEDGE_PULLED;
+        return this == LEDGE_CLIMB || this == LEDGE_DOWN || this == LEDGE_PULLED || this == LEDGE_HOP_LEFT || this == LEDGE_HOP_RIGHT;
     }
 
     /**
@@ -304,8 +338,11 @@ public enum Move {
         return switch (this) {
             case SLIDE_ATTACK -> now == SLIDE;
             case FALL_ROLL -> now == FALL_TUCK;
+            // R while falling with the blade held for the plunge: the tuck instead; the plunge's landing
+            case FALL_TUCK -> now == PLUNGE_FALL;
+            case PLUNGE -> now == PLUNGE_FALL;
             // the edge caught out of a fall, a slide or a roll off a drop, or back to the hang on it
-            case LEDGE_HANG -> now == FALL_TUCK || now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT || now == LEDGE_DOWN
+            case LEDGE_HANG -> now == FALL_TUCK || now == PLUNGE_FALL || now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT || now == LEDGE_DOWN
                     || now == SLIDE || now == SLIDE_ATTACK || now.rolls() || now.sideDodge() || now == DIVE;
             case LEDGE_HOP_LEFT, LEDGE_HOP_RIGHT -> now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT;
             case LEDGE_SHIMMY_LEFT, LEDGE_SHIMMY_RIGHT, LEDGE_CLIMB, LEDGE_PULLED -> now.hanging();
@@ -320,7 +357,8 @@ public enum Move {
 
     /** Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28). */
     public boolean firstPerson() {
-        return this == HOP || this == DASH || this == FINISHER || this == SLIDE_ATTACK || this == FALL_ROLL || ledge();
+        return this == HOP || this == DASH || this == FINISHER || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
+                || this == WHIRL || ledge();
     }
 
     /**
@@ -334,6 +372,9 @@ public enum Move {
             case HOP -> HOP_LAND + 1;
             case DASH -> Strikes.DASH_FREE;
             case KICK -> Kick.LAND + 5;
+            case ROLL_KICK -> Kick.RK_ROLL_TO;
+            case PLUNGE -> Plunge.STAND;
+            case WHIRL -> Whirl.SPIN_TO + 2;
             case DIVE -> DIVE_UP;
             case LEDGE_CLIMB -> CLIMB_ON_TOP;
             case SLIDE_ATTACK -> SLIDE_ATTACK_UP;
