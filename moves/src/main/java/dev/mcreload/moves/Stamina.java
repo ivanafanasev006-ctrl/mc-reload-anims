@@ -75,6 +75,21 @@ public final class Stamina {
     public net.minecraft.world.phys.Vec3 hopFrom;
     /** Ticks before the next dash strike (both ends: the client does not try it before, the server refuses it). */
     public int dashCooldown;
+    /** The dash's blade found its mob (server): it hits once. */
+    public boolean dashHit;
+    /** Ticks before the next attack out of a slide (both ends, as the dash's). */
+    public int slideAttackCooldown;
+    /** The facing when the attack out of a slide started (both ends): it ends half a turn round from it. */
+    public float attackYaw;
+    /** The kick: given (server), where the player took off and which way they faced. */
+    public boolean kickDone;
+    public net.minecraft.world.phys.Vec3 kickFrom;
+    public float kickYaw;
+    /** Ticks a tuck has been on the ground without rolling (server). */
+    public int tuckLanded;
+    /** The ledge being held (both ends): which way its wall is from the player (Ledge.dir) and the height of its top. */
+    public int ledgeDir = -1;
+    public double ledgeTop;
 
     /** The pose this move forced to keep the low hitbox standing (cleared when it ends). */
     boolean forcedStanding;
@@ -123,6 +138,13 @@ public final class Stamina {
         this.held = held;
         slid = 0f;
         server = !p.level().isClientSide;
+        // On the ledge the player stays upright whatever touches their hitbox (the climb goes through
+        // the edge's corner; vanilla would make them crouch or crawl there, the eyes in the block).
+        if (m.ledge() && p.getForcedPose() == null) {
+            p.setForcedPose(net.minecraft.world.entity.Pose.STANDING);
+            forcedStanding = true;
+            p.refreshDimensions();
+        }
     }
 
     /** Ends the move (finished or cancelled) and gives the player their normal hitbox back. */
@@ -138,6 +160,7 @@ public final class Stamina {
     public void tickMove(Player p) {
         if (guard != Guard.Kind.NONE) guardTick++;
         if (dashCooldown > 0) dashCooldown--;
+        if (slideAttackCooldown > 0) slideAttackCooldown--;
         if (move == null) return;
         boolean wasLow = low();
         moveTick++;
@@ -339,6 +362,9 @@ public final class Stamina {
                 s.serverTick(sp);
                 Guard.serverTick(sp, s);
                 Hop.serverTick(sp, s);
+                Kick.serverTick(sp, s);
+                Fall.serverTick(sp, s);
+                Ledge.serverTick(sp, s);
                 Strikes.serverTick(sp, s);
                 Deflect.serverTick(sp, s);
                 Bow.serverTick(sp, s);

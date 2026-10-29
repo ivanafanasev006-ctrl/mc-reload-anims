@@ -21,5 +21,9 @@
   "kinetrix_moves.settings.arrows.tip": "Left of the hotbar while a bow is in hand: an arrow and how many you carry.",
   "kinetrix_moves.settings.preview": "How the bars look",
   "kinetrix_moves.hint.finisher": "[%s] Finish off",
-  "kinetrix_moves.dash.cooldown": "Dash strike ready in %s s"
+  "kinetrix_moves.dash.cooldown": "Dash strike ready in %s s",
+  "kinetrix_moves.slide_attack.cooldown": "Slide attack ready in %s s",
+  "kinetrix_moves.ledge.no_room": "No room to climb up there",
+  "kinetrix_moves.ledge.hops": "Ledge: hops (A / D)",
+  "kinetrix_moves.ledge.shimmy": "Ledge: hand over hand (A / D)"
 }

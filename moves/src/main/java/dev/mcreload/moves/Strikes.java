@@ -46,15 +46,27 @@ public final class Strikes {
             TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, new ResourceLocation(KinetrixMoves.MODID, "no_finisher"));
     private static final TagKey<EntityType<?>> FORGE_BOSSES = net.minecraftforge.common.Tags.EntityTypes.BOSSES;
 
-    /** Dash: the stab lands (0.45 s, the arm straight in the lunge); free to move once the blade is out (0.85 s). */
-    public static final int DASH_HIT = 9, DASH_FREE = 17;
-    /** Dash: speed (blocks a tick) for each tick from the start: the run goes on and speeds up into the lunge. */
-    public static final float[] DASH_RUN = {0.30f, 0.30f, 0.31f, 0.32f, 0.33f, 0.35f, 0.38f, 0.46f, 0.50f, 0.20f};
+    /** Dash: the lunge's arm is straight (0.45 s). */
+    public static final int DASH_HIT = 9;
+    /** Dash: the blade finds a mob on its way from the lunge's start to its end (0.25-0.55 s, the hitbox
+     *  moving with the player; author, 2026-10-29: "a dynamic hitbox or a bigger one"). */
+    public static final int DASH_REACH_FROM = 5, DASH_REACH_TO = 11;
+    /** Dash: from here running on breaks off the rest (the blade coming back) without a stop. */
+    public static final int DASH_FREE = DASH_REACH_TO + 1;
+    /** Dash: speed (blocks a tick) for each tick from the start: the run goes on, speeds up into the lunge
+     *  and eases back to a sprint, which it keeps while the animation plays out (it does not stop the player). */
+    public static final float[] DASH_RUN = {0.30f, 0.30f, 0.31f, 0.32f, 0.33f, 0.35f, 0.38f, 0.46f, 0.50f, 0.42f, 0.36f, 0.32f};
+    /** Dash: the run after the lunge, if the player does not run on themselves (a sprint, slowing down a little a tick). */
+    public static final float DASH_AFTER = 0.28f, DASH_AFTER_DRAG = 0.93f;
     /** Dash: the run goes on until it is this close to the mob in front (blocks between the hitboxes), right at its side:
      *  a mob already near does not hold the player in place (author, 2026-10-28). */
     public static final float DASH_STOP = 0.15f;
-    /** Dash: how far in front the blade reaches (blocks from the player's centre). */
+    /** Dash: how far in front the blade reaches (blocks from the player's centre to the mob's side). */
     public static final double DASH_REACH = 2.6;
+    /** The attack out of a slide: the blow lands as the blade, sweeping round with the half turn, is out (0.3 s). */
+    public static final int SLIDE_HIT = 6;
+    /** The attack out of a slide: the player turns half round clockwise over these ticks. */
+    public static final int SLIDE_TURN = 6;
     /** A crit's blow, as in a jump (vanilla). */
     public static final float CRIT = 1.5f;
     /** Finisher: the blade goes in (0.35 s) and comes out, when the mob dies (0.95 s). */
@@ -127,19 +139,36 @@ public final class Strikes {
 
     // ------------------------------------------------------------------ server
 
-    /** Every server tick: the dash's stab, the finisher's hold, stab and kill. */
+    /** Every server tick: the dash's stab, the attack out of a slide, the finisher's hold, stab and kill. */
     static void serverTick(ServerPlayer p, Stamina s) {
-        if (s.move == Move.DASH && s.moveTick == DASH_HIT) dashHit(p);
+        if (s.move == Move.DASH) dashTick(p, s);
+        if (s.move == Move.SLIDE_ATTACK && s.moveTick == SLIDE_HIT) slideHit(p, s);
         if (s.move == Move.FINISHER) finisherTick(p, s);
     }
 
-    /** The mob in the way of a dash's blade: the nearest in front, within reach and a narrow box. */
+    /** The dash: the blade looks for its mob every tick of the lunge, in a box that moves with the player. */
+    static void dashTick(ServerPlayer p, Stamina s) {
+        if (s.moveTick == DASH_HIT) {
+            p.serverLevel().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.5f, 1.4f);
+        }
+        if (s.dashHit || s.moveTick < DASH_REACH_FROM || s.moveTick > DASH_REACH_TO) return;
+        LivingEntity target = dashTarget(p);
+        if (target == null) return;
+        s.dashHit = true;
+        blow(p, target, (float) MovesConfig.dashCrit(), true);
+    }
+
+    /**
+     * The mob in the way of a dash's blade: the nearest in front, within reach and a box as wide as
+     * MovesConfig.dashWidth to either side of the lunge's line (author: bigger than it was, 0.7).
+     */
     public static LivingEntity dashTarget(Player p) {
         Vec3 look = flat(p.getViewVector(1f));
         if (look.lengthSqr() < 1.0E-6) return null;
         look = look.normalize();
         Vec3 from = p.position();
-        AABB box = p.getBoundingBox().expandTowards(look.scale(DASH_REACH)).inflate(0.6, 0.3, 0.6);
+        double width = MovesConfig.dashWidth();
+        AABB box = p.getBoundingBox().expandTowards(look.scale(DASH_REACH)).inflate(width + 0.5, 0.5, width + 0.5);
         LivingEntity best = null;
         double bestDist = Double.MAX_VALUE;
         for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, box,
@@ -147,23 +176,45 @@ public final class Strikes {
             Vec3 to = flat(e.position().subtract(from));
             double along = to.dot(look) - e.getBbWidth() / 2;
             double aside = to.subtract(look.scale(to.dot(look))).length() - e.getBbWidth() / 2;
-            if (along < -0.3 || along > DASH_REACH || aside > 0.7 || along >= bestDist) continue;
+            if (along < -0.3 || along > DASH_REACH || aside > width || along >= bestDist) continue;
             best = e;
             bestDist = along;
         }
         return best;
     }
 
-    /** The dash's stab: a crit into the first one in front (nothing if the lunge went into the air). */
-    static void dashHit(ServerPlayer p) {
-        LivingEntity target = dashTarget(p);
+    /**
+     * The attack out of a slide: the blade, out to the right, sweeps round with the half turn and
+     * cuts everything within reach on the way, a crit each (author). It sweeps the side the player
+     * turned through and ends facing back the way they slid, so it reaches the mobs they slid past.
+     */
+    static void slideHit(ServerPlayer p, Stamina s) {
+        double reach = MovesConfig.slideAttackReach();
+        float r = (s.attackYaw + 180f) * Mth.DEG_TO_RAD;
+        Vec3 facing = new Vec3(-Mth.sin(r), 0, Mth.cos(r));
         ServerLevel level = p.serverLevel();
-        level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.5f, 1.4f);
-        if (target == null) return;
-        ItemStack sword = p.getMainHandItem();
+        level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1f, 0.9f);
+        level.sendParticles(ParticleTypes.SWEEP_ATTACK, p.getX() + facing.x, p.getY() + 0.6, p.getZ() + facing.z, 1, 0, 0, 0, 0);
+        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(reach + 1, 1.0, reach + 1),
+                e -> e != p && e.isAlive() && e.isPickable() && !p.isAlliedTo(e) && !(e instanceof ArmorStand))) {
+            Vec3 to = flat(e.position().subtract(p.position()));
+            if (to.length() - e.getBbWidth() / 2 > reach) continue;
+            // the front half of the new facing and the right side it turned through (all but behind its back)
+            if (to.lengthSqr() > 0.04 && angle(facing, to) > 115) continue;
+            blow(p, e, MovesConfig.slideAttackCrit(), false);
+        }
+    }
+
+    /**
+     * A crit of the weapon in hand (its damage and enchantments, times {@code crit}), with fire,
+     * the blade's wear and the vanilla knockback. {@code once}: the swing's cooldown starts over.
+     */
+    static void blow(ServerPlayer p, LivingEntity target, float crit, boolean once) {
+        ServerLevel level = p.serverLevel();
+        ItemStack weapon = p.getMainHandItem();
         float damage = (float) p.getAttributeValue(Attributes.ATTACK_DAMAGE)
-                + EnchantmentHelper.getDamageBonus(sword, target.getMobType());
-        damage *= (float) MovesConfig.dashCrit();
+                + EnchantmentHelper.getDamageBonus(weapon, target.getMobType());
+        damage *= crit;
         int fire = EnchantmentHelper.getFireAspect(p);
         if (fire > 0 && !target.isOnFire()) target.setSecondsOnFire(1);
         if (!target.hurt(p.damageSources().playerAttack(p), damage)) return;
@@ -173,11 +224,26 @@ public final class Strikes {
         level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1f, 1f);
         EnchantmentHelper.doPostHurtEffects(target, p);
         EnchantmentHelper.doPostDamageEffects(p, target);
-        sword.hurtEnemy(target, p);
-        if (sword.isEmpty()) p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        weapon.hurtEnemy(target, p);
+        if (weapon.isEmpty()) p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         p.setLastHurtMob(target);
-        p.resetAttackStrengthTicker();
+        if (once) p.resetAttackStrengthTicker();
         Stamina.of(p).combatTicks = MovesConfig.combatTicks();
+    }
+
+    /**
+     * Knocks an entity along {@code dir} as vanilla knockback of this strength would, but whatever
+     * resists knockback in it (an iron golem, a ravager, armour with knockback resistance): the
+     * vault's shove and the kick (author, 2026-10-29).
+     */
+    public static void shove(LivingEntity e, Vec3 dir, double strength) {
+        Vec3 d = flat(dir);
+        if (d.lengthSqr() < 1.0E-6 || strength <= 0) return;
+        d = d.normalize().scale(strength);
+        Vec3 v = e.getDeltaMovement();
+        e.hasImpulse = true;
+        e.setDeltaMovement(v.x / 2 + d.x, e.onGround() ? Math.min(0.4, v.y / 2 + strength) : v.y, v.z / 2 + d.z);
+        e.hurtMarked = true;
     }
 
     /** The finisher starts: the mob is remembered (the client named it, MoveServer checked it). */

@@ -21,10 +21,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 /**
  * The vault over a mob at point blank (docs/combat-spec.md, 5): R + W with a mob of some size right
  * in front (a zombie, a skeleton, a pig, a sheep; not a chicken nor anything as small). The player
- * rolls over its back: it stoops under the hand pressing its head, its blow in the crouch (0-0.25 s)
- * does not land, and until the player lands beyond it it cannot hurt them; at 0.85 s the foot shoves
- * it back 1-2 blocks
- * and the player runs on, with Speed I for 1 s.
+ * rolls over its back: it stoops under the hand pressing its head, its blow in the crouch (0-0.2 s)
+ * does not land, and until the player lands beyond it it cannot hurt them; at 0.63 s the foot shoves
+ * it back 1-2 blocks, however heavy it is, and the player runs on, with Speed I for 1 s.
  */
 public final class Hop {
     /** The mob stoops from the take-off until shortly after the landing. */
@@ -134,8 +133,8 @@ public final class Hop {
     }
 
     /**
-     * The hand pushes off the mob's back: it is shoved back the way the player came, 1-2 blocks
-     * (less if it resists knockback), without harm.
+     * The hand pushes off the mob's back: it is shoved back the way the player came, 1-2 blocks,
+     * without harm, however heavy it is (author, 2026-10-29: knockback resistance is ignored).
      */
     static void shove(ServerPlayer p, Stamina s) {
         s.hopShoved = true;
@@ -144,9 +143,7 @@ public final class Hop {
         Vec3 back = horizontal(s.hopFrom.subtract(mob.position()));
         if (back.lengthSqr() < 1.0E-4) back = horizontal(p.getViewVector(1f)).scale(-1);
         back = back.normalize();
-        // knockback(strength, x, z) pushes away from (x, z): pass the opposite of where it should go.
-        mob.knockback(MovesConfig.vaultShove(), -back.x, -back.z);
-        mob.hurtMarked = true;
+        Strikes.shove(mob, back, MovesConfig.vaultShove());
         p.level().playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.PLAYERS, 0.6f, 0.9f);
     }
 

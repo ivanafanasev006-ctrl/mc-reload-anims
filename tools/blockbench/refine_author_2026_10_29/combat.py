@@ -43,10 +43,16 @@ LIFT = kit.keys((0.0, 0), (KICK_TAKEOFF, 0), (0.42, 20), (0.55, 26), (0.8, 24), 
                 (1.55, 13), (KICK_LAND, 0), (2.45, 0))
 
 
+#: Where the mob is in front of the player (px, -z is ahead): it runs in, the player goes over it,
+#: and from the kick it flies away. Until the kick, the player's own way forward is this less where
+#: it started (the mechanic's path, moves.paths).
+KICK_Z = kit.keys((0.0, -40), (0.25, -24), (0.5, -6), (0.75, 8), (KICK_HIT, 12), (1.6, 30), (2.45, 34))
+
+
 def _kick_partner(t):
     """The grey mob of the author's draft: it runs in, stoops under the hand, is kicked away. In
     Blockbench it is lowered by the lift, so the two stand as they will in the game."""
-    z = kit.keys((0.0, -40), (0.25, -24), (0.5, -6), (0.75, 8), (KICK_HIT, 12), (1.6, 30), (2.45, 34))(t)
+    z = KICK_Z(t)
     chest = kit.keys((0.0, 0), (0.25, -20), (0.4, -60), (0.55, -72), (1.1, -40), (KICK_HIT, -30), (1.45, -55),
                      (2.0, -25), (2.45, -15))(t)
     head = kit.keys((0.0, 0), (0.25, -10), (0.4, -30), (0.6, -25), (KICK_HIT, -10), (1.45, -30), (2.45, -10))(t)

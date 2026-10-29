@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "2";
+    public static final String VERSION = "3";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -46,14 +46,24 @@ public final class MovesNet {
 
     // ------------------------------------------------------------------ server -> clients
 
-    /** Everyone who can see {@code p} (not {@code p}: their client already plays it) sees the move. */
-    public static void play(ServerPlayer p, Move move) {
-        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), new Play(p.getId(), (byte) move.ordinal()));
+    /**
+     * Everyone who can see {@code p} (not {@code p}: their client already plays it) sees the move.
+     * {@code extra}: for the moves on a ledge, which way its wall is (Ledge.id); else -1.
+     */
+    public static void play(ServerPlayer p, Move move, int extra) {
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), new Play(p.getId(), (byte) move.ordinal(), extra));
+    }
+
+    /** A move the server starts on {@code p} (pulled up by a friend): everyone who sees them, and their own client. */
+    public static void force(ServerPlayer p, Move move, int extra) {
+        Play msg = new Play(p.getId(), (byte) move.ordinal(), extra);
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), msg);
+        if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), msg);
     }
 
     /** Everyone who can see {@code p} stops their move. */
     public static void stop(ServerPlayer p) {
-        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), new Play(p.getId(), (byte) -1));
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), new Play(p.getId(), (byte) -1, -1));
     }
 
     /** The player's guard went up or down: everyone who sees them, and the player's own client. */
@@ -90,7 +100,7 @@ public final class MovesNet {
 
     // ------------------------------------------------------------------ messages
 
-    /** Client -> server: the player started this move (held: C still down, for the slide; target: the mob a vault goes over or a finisher is made on, -1). */
+    /** Client -> server: the player started this move (held: C still down, for the slide; target: see MoveServer.request). */
     public record Request(byte move, boolean held, int target) {
         static void write(Request m, FriendlyByteBuf b) { b.writeByte(m.move); b.writeBoolean(m.held); b.writeVarInt(m.target + 1); }
         static Request read(FriendlyByteBuf b) { return new Request(b.readByte(), b.readBoolean(), b.readVarInt() - 1); }
@@ -114,13 +124,13 @@ public final class MovesNet {
         }
     }
 
-    /** Server -> client: player {@code entity} does this move (-1: stops it). */
-    public record Play(int entity, byte move) {
-        static void write(Play m, FriendlyByteBuf b) { b.writeVarInt(m.entity); b.writeByte(m.move); }
-        static Play read(FriendlyByteBuf b) { return new Play(b.readVarInt(), b.readByte()); }
+    /** Server -> client: player {@code entity} does this move (-1: stops it); {@code extra}: see {@link #play}. */
+    public record Play(int entity, byte move, int extra) {
+        static void write(Play m, FriendlyByteBuf b) { b.writeVarInt(m.entity); b.writeByte(m.move); b.writeVarInt(m.extra + 1); }
+        static Play read(FriendlyByteBuf b) { return new Play(b.readVarInt(), b.readByte(), b.readVarInt() - 1); }
         static void handle(Play m, Supplier<NetworkEvent.Context> ctx) {
             ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                    () -> () -> dev.mcreload.moves.client.MovesClient.remoteMove(m.entity, Move.byId(m.move))));
+                    () -> () -> dev.mcreload.moves.client.MovesClient.remoteMove(m.entity, Move.byId(m.move), m.extra)));
             ctx.get().setPacketHandled(true);
         }
     }

@@ -15,14 +15,18 @@ public final class MovesConfig {
 
     private static final ForgeConfigSpec.DoubleValue MAX_ENERGY, REGEN, REGEN_BUSY, REGEN_STILL, REGEN_FED, EXHAUSTION,
             APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD, COOKED_FOOD,
-            COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER;
+            COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER,
+            COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
     private static final ForgeConfigSpec.IntValue PARRY_REARM;
     private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE, KNEEL_MOVE,
             VAULT_MIN_WIDTH, VAULT_MIN_HEIGHT, VAULT_MAX_HEIGHT, VAULT_SHOVE, DASH_CRIT, FINISH_HEALTH, FINISH_RANGE, FINISH_MAX_HEALTH;
-    private static final ForgeConfigSpec.IntValue DASH_COOLDOWN;
+    private static final ForgeConfigSpec.IntValue DASH_COOLDOWN, SLIDE_ATTACK_COOLDOWN;
+    private static final ForgeConfigSpec.DoubleValue DASH_WIDTH, SLIDE_ATTACK_CRIT, SLIDE_ATTACK_REACH, KICK_DAMAGE, KICK_STRENGTH,
+            FALL_CUT;
+    private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -81,6 +85,12 @@ public final class MovesConfig {
                 .defineInRange("dash", 15.0, 0.0, 10000.0);
         COST_FINISHER = b.comment("Finisher: the left button held at point blank to a weakened enemy. [default]")
                 .defineInRange("finisher", 5.0, 0.0, 10000.0);
+        COST_KICK = b.comment("The vault with a kick: W held, Space and R at a mob. [default]")
+                .defineInRange("kick", 15.0, 0.0, 10000.0);
+        COST_SLIDE_ATTACK = b.comment("The attack out of a slide: the left button while sliding with a sword or an axe. [default]")
+                .defineInRange("slideAttack", 10.0, 0.0, 10000.0);
+        COST_LEDGE_HOP = b.comment("A hop along a ledge (hanging, R for the hop mode, then A or D). [default]")
+                .defineInRange("ledgeHop", 5.0, 0.0, 10000.0);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -106,8 +116,13 @@ public final class MovesConfig {
                 .defineInRange("maxHeight", 2.2, 0.5, 10.0);
         // Renamed from shove (0.3) so worlds made before get the new strength.
         VAULT_SHOVE = b.comment("How hard the hand shoves the mob back as the player comes down beyond it (0.45: about 2.3 blocks;",
-                        "author: 1-2 blocks, then half as far again).")
+                        "author: 1-2 blocks, then half as far again). Heavy mobs that resist knockback go as far (author).")
                 .defineInRange("shoveStrength", 0.45, 0.0, 3.0);
+        KICK_DAMAGE = b.comment("The vault with a kick: the kick's damage (author: 1 heart = 2).")
+                .defineInRange("kickDamage", 2.0, 0.0, 1000.0);
+        KICK_STRENGTH = b.comment("The vault with a kick: how hard the kick flings the mob, whatever resists knockback in it",
+                        "(0.9: about 4 blocks; author: \"a hard kick\"). [default]")
+                .defineInRange("kickStrength", 0.9, 0.0, 3.0);
         b.pop();
 
         b.comment("The sword moves of the left button: the dash strike and the finisher.").push("strikes");
@@ -116,6 +131,16 @@ public final class MovesConfig {
                 .defineInRange("dashCrit", 1.5, 1.0, 10.0);
         DASH_COOLDOWN = b.comment("Dash strike: seconds before it can be made again (author: at least 30).")
                 .defineInRange("dashCooldownSeconds", 30, 0, 3600);
+        DASH_WIDTH = b.comment("Dash strike: how far to either side of the lunge's line the blade still finds a mob (blocks, from",
+                        "the line to the mob's side; author: a bigger hitbox, it was 0.7). [default]")
+                .defineInRange("dashWidth", 1.1, 0.2, 4.0);
+        SLIDE_ATTACK_CRIT = b.comment("The attack out of a slide: the blow is the weapon's times this (author: a crit).")
+                .defineInRange("slideAttackCrit", 1.5, 1.0, 10.0);
+        SLIDE_ATTACK_REACH = b.comment("The attack out of a slide: how far round the player the blade reaches (blocks; author: a normal",
+                        "hitbox, not a tiny one). [default]")
+                .defineInRange("slideAttackReach", 3.0, 1.0, 8.0);
+        SLIDE_ATTACK_COOLDOWN = b.comment("The attack out of a slide: seconds before it can be made again (author: as the dash, 30).")
+                .defineInRange("slideAttackCooldownSeconds", 30, 0, 3600);
         FINISH_HEALTH = b.comment("Finisher: a mob with this share of its health or less can be finished (author: 20 %).")
                 .defineInRange("finisherHealth", 0.2, 0.0, 1.0);
         // Renamed from finisherRange (1.5) so worlds made before get the shorter reach.
@@ -125,6 +150,14 @@ public final class MovesConfig {
         FINISH_MAX_HEALTH = b.comment("Finisher and vault: mobs with more maximum health than this count as bosses (author: not on the",
                         "dragon nor the wither; those and the forge:bosses tag never). [default]")
                 .defineInRange("bossHealth", 100.0, 1.0, 100000.0);
+        b.pop();
+
+        b.comment("Falling and the ledge.").push("fall");
+        FALL_CUT = b.comment("R held while falling: the tuck and the roll on landing take this share off the fall's damage (author: 70 %).")
+                .defineInRange("rollDamageCut", 0.7, 0.0, 1.0);
+        LEDGE_GRAB = b.comment("The right button in a jump or a fall catches a ledge (author: before the sword block, placing",
+                        "blocks and the rest of the right button).")
+                .define("ledgeGrab", true);
         b.pop();
 
         b.comment("Knocking an arrow aside: R (a side dodge) with a sword or a bow in hand as it comes.").push("deflect");
@@ -191,6 +224,17 @@ public final class MovesConfig {
     public static float finisherRange() { return f(FINISH_RANGE, 0.8); }
     public static int dashCooldownTicks() { return get(DASH_COOLDOWN, 30) * 20; }
     public static float finisherMaxHealth() { return f(FINISH_MAX_HEALTH, 100.0); }
+    public static float costKick() { return f(COST_KICK, 15.0); }
+    public static float costSlideAttack() { return f(COST_SLIDE_ATTACK, 10.0); }
+    public static float costLedgeHop() { return f(COST_LEDGE_HOP, 5.0); }
+    public static float dashWidth() { return f(DASH_WIDTH, 1.1); }
+    public static float slideAttackCrit() { return f(SLIDE_ATTACK_CRIT, 1.5); }
+    public static float slideAttackReach() { return f(SLIDE_ATTACK_REACH, 3.0); }
+    public static int slideAttackCooldownTicks() { return get(SLIDE_ATTACK_COOLDOWN, 30) * 20; }
+    public static float kickDamage() { return f(KICK_DAMAGE, 2.0); }
+    public static float kickStrength() { return f(KICK_STRENGTH, 0.9); }
+    public static float fallRollCut() { return f(FALL_CUT, 0.7); }
+    public static boolean ledgeGrab() { return get(LEDGE_GRAB, true); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

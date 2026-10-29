@@ -27,10 +27,13 @@ from PIL import Image
 import combat
 import kit
 import ledge
+import moves
 from kit import L
 
 DST = os.path.join(kit.BB, 'refined', 'author_2026-10-29.bbmodel')
 DST_LEDGE = os.path.join(kit.BB, 'refined', 'ledge_2026-10-29.bbmodel')
+#: The mechanic's paths (moves.paths), read by the mod.
+DST_PATHS = os.path.join(os.path.dirname(kit.BB), '..', 'moves', 'src', 'main', 'resources', 'kinetrix_moves_paths.json')
 
 #: The ledge in the ledge file: a block wall whose top edge is where the hands hold (ledge.py). Not a
 #: bone of the rig, so it never reaches the game; in each move it moves against the player's path, so
@@ -128,7 +131,9 @@ def main():
 
     # --- the author's two drafts ---
     model = copy.deepcopy(src)
-    made = [combat.hop_on_kick(), combat.slide_under_attack()]
+    # slide_under_attack: made again for the author's second message (moves.py); the PC version
+    # (combat.slide_under_attack, a slide then the turn and back) is kept there for reference.
+    made = [combat.hop_on_kick(), moves.slide_under_attack(), moves.fall_tuck(), moves.fall_roll()]
     uuids = L.bone_uuids(model)
     for a in made:
         no_bow(a)
@@ -166,6 +171,10 @@ def main():
     wall_keys(c, c.root)
     bystander(c, c.length)
     anims.append(c)
+    down = moves.ledge_climb_down(c)
+    wall_keys(down, down.root)
+    bystander(down, down.length)
+    anims.append(down)
     pulled, helper = ledge.assisted()
     wall_keys(pulled, pulled.root)
     places = {t: ledge.HELPER_AT + kit.rot_of((0, 180, 0)) @ r for t, r in helper.root.items()}
@@ -178,6 +187,13 @@ def main():
     with open(DST_LEDGE, 'w', encoding='utf-8', newline='\n') as f:
         json.dump(lm, f, separators=(',', ':'))
     print(f'wrote {DST_LEDGE}: ' + ', '.join(a.name for a in anims))
+
+    # --- the mechanic's paths ---
+    kick_from = combat.KICK_Z(0.0)
+    data = moves.paths(c, down, pulled, helper, ledge.hop_path, combat.LIFT,
+                       lambda t: combat.KICK_Z(min(t, combat.KICK_HIT)) - kick_from, made[0].length)
+    moves.write_paths(data, os.path.normpath(DST_PATHS))
+    print(f'wrote {os.path.normpath(DST_PATHS)}: ' + ', '.join(data))
     return made, anims
 
 

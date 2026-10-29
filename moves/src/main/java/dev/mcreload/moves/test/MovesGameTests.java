@@ -353,6 +353,8 @@ public final class MovesGameTests {
         Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
         Stamina s = Stamina.of(p);
         t.at(2, () -> {
+            // a mob that resists knockback is shoved as far (author, 2026-10-29)
+            zombie.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
             zombie.setTarget(p);
             zombie.setAggressive(true);
             zombie.setYRot(180f);
@@ -371,7 +373,7 @@ public final class MovesGameTests {
             Vec3 beyond = h.absoluteVec(new Vec3(3.5, 2.0, 7.3));
             p.teleportTo(beyond.x, beyond.y, beyond.z);
         });
-        t.at(20, () -> {
+        t.at(Move.HOP_LAND, () -> {
             p.invulnerableTime = 0;
             p.hurt(p.damageSources().mobAttack(zombie), 6f);
             t.close(p.getHealth(), 20f, "health after the zombie's blow during the vault");
@@ -503,7 +505,10 @@ public final class MovesGameTests {
         }).run(3);
     }
 
-    /** Dash strike: sprinting with a sword, the stab at 0.45 s is a crit into the zombie in front; no dash walking. */
+    /**
+     * Dash strike: sprinting with a sword, the blade finds the zombie in front as the lunge starts
+     * (the hitbox moves with the player from 0.25 s), a crit; no dash walking.
+     */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void dashStrikeCrits(GameTestHelper h) {
         Script t = new Script(h).settle();
@@ -519,8 +524,8 @@ public final class MovesGameTests {
             t.check(MoveServer.request(p, Move.DASH, false), "dash strike refused while sprinting with a sword");
             t.close(s.energy, 100f - MovesConfig.costDash(), "energy after a dash strike");
         });
-        t.at(2 + dev.mcreload.moves.Strikes.DASH_HIT - 1, () -> t.close(zombie.getHealth(), 20f, "zombie hurt before the stab"));
-        t.at(3 + dev.mcreload.moves.Strikes.DASH_HIT, () -> {
+        t.at(2 + dev.mcreload.moves.Strikes.DASH_REACH_FROM - 1, () -> t.close(zombie.getHealth(), 20f, "zombie hurt before the lunge"));
+        t.at(3 + dev.mcreload.moves.Strikes.DASH_REACH_FROM, () -> {
             // An iron sword hits for 6; a crit for 9 (a zombie's 2 armour takes a little off).
             float lost = 20f - zombie.getHealth();
             t.check(lost >= 6f * 1.4f && lost <= 6f * 1.5f + 0.01f, "dash strike took " + lost + " health (a crit of 6 is 9)");
@@ -534,6 +539,175 @@ public final class MovesGameTests {
             s.dashCooldown = 0;
             t.check(MoveServer.request(p, Move.DASH, false), "dash strike refused once the cooldown is over");
         }).run(5 + Move.DASH.length);
+    }
+
+    /** The dash's blade reaches a mob a block to the side of its line (author: a bigger hitbox), not one two blocks off. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void dashStrikeWideHitbox(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie aside = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 4, 2, 5);
+        Zombie far = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 6, 2, 5);
+        t.at(2, () -> {
+            // 1.25 blocks to the side of the line: its side 0.95 from it (the old hitbox reached 0.7)
+            aside.teleportTo(aside.getX() + 0.25, aside.getY(), aside.getZ());
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            p.setSprinting(true);
+            t.check(MoveServer.request(p, Move.DASH, false), "dash strike refused");
+        });
+        t.at(3 + dev.mcreload.moves.Strikes.DASH_REACH_TO, () -> {
+            t.check(aside.getHealth() < 20f, "the dash missed a zombie 1.25 blocks to the side of its line");
+            t.close(far.getHealth(), 20f, "a zombie 3 blocks to the side was hit");
+        }).run(4 + dev.mcreload.moves.Strikes.DASH_REACH_TO);
+    }
+
+    // ------------------------------------------------------------------ the author's second message of 2026-10-29
+
+    /**
+     * The vault with a kick: over the zombie, its blows do not land, the kick takes 1 heart and flings
+     * it back the way the player came, even though it resists knockback; its energy.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 240)
+    public static void kickFlingsTheMob(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            zombie.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.KICK, false, zombie.getId()), "kick refused at a zombie in front");
+            t.close(s.energy, 100f - MovesConfig.costKick(), "energy after a kick");
+        });
+        t.at(10, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 6f);
+            t.close(p.getHealth(), 20f, "health after the zombie's blow during the kick");
+            // the test player does not fly: put them where the kick is made from, beyond the zombie
+            Vec3 beyond = h.absoluteVec(new Vec3(3.5, 2.0, 7.0));
+            p.teleportTo(beyond.x, beyond.y, beyond.z);
+        });
+        t.at(3 + dev.mcreload.moves.Kick.HIT, () -> {
+            float lost = 20f - zombie.getHealth();
+            t.check(lost >= 1.8f && lost <= 2.01f, "the kick took " + lost + " health (want 1 heart)");
+        });
+        t.at(16 + dev.mcreload.moves.Kick.HIT, () -> {
+            double moved = h.absoluteVec(new Vec3(3.5, 2.0, 5.5)).z - zombie.getZ();
+            t.check(moved >= 2.0, "the kicked zombie went " + moved + " blocks back (want 2 or more)");
+        }).run(17 + dev.mcreload.moves.Kick.HIT);
+    }
+
+    /**
+     * The attack out of a slide: only while sliding, with a sword or an axe; a half turn, so the
+     * zombie behind (the one slid past) takes a crit, the one ahead nothing; then 30 s.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void slideAttackCrits(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie behind = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 1);
+        Zombie ahead = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 6);
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            t.check(!MoveServer.request(p, Move.SLIDE_ATTACK, false), "attack out of a slide without a slide");
+            p.setSprinting(true);
+            t.check(MoveServer.request(p, Move.SLIDE, false), "slide refused");
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.SLIDE_ATTACK, false), "attack out of the slide refused");
+            t.close(s.energy, 100f - MovesConfig.costSlideAttack(), "energy after the attack");
+        });
+        t.at(3 + dev.mcreload.moves.Strikes.SLIDE_HIT, () -> {
+            float lost = 20f - behind.getHealth();
+            t.check(lost >= 8f, "the zombie slid past took " + lost + " (a crit of an iron sword is 9)");
+            t.close(ahead.getHealth(), 20f, "the zombie behind the turned player was hit");
+        });
+        t.at(4 + Move.SLIDE_ATTACK.length, () -> {
+            p.setSprinting(true);
+            t.check(MoveServer.request(p, Move.SLIDE, false), "second slide refused");
+            t.check(!MoveServer.request(p, Move.SLIDE_ATTACK, false), "a second attack out of a slide within 30 s");
+            t.check(s.slideAttackCooldown > 20 * 25, "cooldown " + s.slideAttackCooldown + " ticks (want about 30 s)");
+        }).run(5 + Move.SLIDE_ATTACK.length);
+    }
+
+    /** R held in a fall: tucked, the landing hurts 70 % less (another player's the same fall does not); then the roll. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void fallRollCutsDamage(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        ServerPlayer other = t.player();
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            p.fallDistance = 1f;
+            t.check(!MoveServer.request(p, Move.FALL_TUCK, false), "tucked after a hop of a block");
+            p.fallDistance = 10f;
+            t.check(MoveServer.request(p, Move.FALL_TUCK, false), "tuck refused in a 10-block fall");
+            p.causeFallDamage(10f, 1f, p.damageSources().fall());
+            other.causeFallDamage(10f, 1f, other.damageSources().fall());
+            t.close(other.getHealth(), 13f, "health after a 10-block fall untucked");
+            t.close(p.getHealth(), 17f, "health after a 10-block fall tucked (7 damage less 70 %, rounded up)");
+            t.check(MoveServer.request(p, Move.FALL_ROLL, false), "roll out of the tuck refused");
+            t.check(s.move == Move.FALL_ROLL, "not rolling");
+        }).run(3);
+    }
+
+    /**
+     * The ledge: a two-block wall in front; caught (the edge's top remembered), hand over hand along
+     * it, up onto it, the climb passing through the edge's corner; nothing to catch in the open.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void ledgeCatchAndClimb(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        int south = dev.mcreload.moves.Ledge.id(net.minecraft.core.Direction.SOUTH);
+        t.at(1, () -> t.check(!MoveServer.request(p, Move.LEDGE_HANG, false, south), "caught an edge in the open"));
+        t.at(2, () -> {
+            for (int x = 1; x <= 5; x++) {
+                for (int y = 2; y <= 3; y++) h.setBlock(x, y, 5, net.minecraft.world.level.block.Blocks.STONE);
+            }
+            Vec3 hang = h.absoluteVec(new Vec3(3.5, 4.0 - dev.mcreload.moves.Ledge.HANG, 5.0 - 0.301));
+            p.teleportTo(hang.x, hang.y, hang.z);
+            p.fallDistance = 6f;
+            t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "the edge of a two-block wall was not caught");
+            t.check(Math.abs(s.ledgeTop - h.absoluteVec(new Vec3(0, 4.0, 0)).y) < 0.01, "edge top " + s.ledgeTop);
+            t.check(p.fallDistance == 0f, "the fall before the catch still counts");
+            t.check(MoveServer.request(p, Move.LEDGE_SHIMMY_LEFT, false, south), "hand over hand refused");
+            t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "back to the hang refused");
+            t.check(!MoveServer.request(p, Move.DODGE_LEFT, false), "a dodge while hanging");
+            t.check(MoveServer.request(p, Move.LEDGE_CLIMB, false, south), "the climb refused");
+        });
+        t.at(4, () -> t.check(p.noPhysics, "the climb does not pass through the edge's corner"));
+        t.at(4 + Move.LEDGE_CLIMB.length, () -> t.check(s.move == null && !p.noPhysics, "the climb did not end")).run(5 + Move.LEDGE_CLIMB.length);
+    }
+
+    /** A friend on the top pulls up a player hanging below: both moves start; nobody else (on the floor below) can. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void ledgeFriendPullsUp(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer hanging = t.player();
+        ServerPlayer friend = t.player();
+        ServerPlayer below = t.player();
+        int south = dev.mcreload.moves.Ledge.id(net.minecraft.core.Direction.SOUTH);
+        t.at(2, () -> {
+            for (int x = 1; x <= 5; x++) {
+                for (int z = 5; z <= 6; z++) {
+                    for (int y = 2; y <= 3; y++) h.setBlock(x, y, z, net.minecraft.world.level.block.Blocks.STONE);
+                }
+            }
+            Vec3 hang = h.absoluteVec(new Vec3(3.5, 4.0 - dev.mcreload.moves.Ledge.HANG, 5.0 - 0.301));
+            hanging.teleportTo(hang.x, hang.y, hang.z);
+            t.check(MoveServer.request(hanging, Move.LEDGE_HANG, false, south), "the edge was not caught");
+            Vec3 top = dev.mcreload.moves.Ledge.friendAt(hanging.position(), net.minecraft.core.Direction.SOUTH, Stamina.of(hanging).ledgeTop);
+            friend.teleportTo(top.x, top.y, top.z);
+            Vec3 floor = h.absoluteVec(new Vec3(2.5, 2.0, 3.5));
+            below.teleportTo(floor.x, floor.y, floor.z);
+        });
+        t.at(4, () -> {
+            t.check(!MoveServer.request(below, Move.LEDGE_HELP, false, hanging.getId()), "pulled up from below the edge");
+            t.check(MoveServer.request(friend, Move.LEDGE_HELP, false, hanging.getId()), "the friend's hand refused");
+            t.check(Stamina.of(hanging).move == Move.LEDGE_PULLED, "the hanging player is not pulled up");
+            t.check(!MoveServer.request(hanging, Move.LEDGE_PULLED, false, south), "a client asked to be pulled up itself");
+        }).run(5);
     }
 
     /** A side dodge with a sword knocks an arrow off to the sword's side, for 1.5 shields. */

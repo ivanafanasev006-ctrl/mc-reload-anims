@@ -169,6 +169,18 @@ public final class MovesSelfTest {
         finisher("92_finisher_axe", Items.IRON_AXE, CameraType.THIRD_PERSON_BACK);
         finisher("95_finisher_first_person", Items.IRON_SWORD, CameraType.FIRST_PERSON);
 
+        // ---- the author's second message of 2026-10-29: the kick, the attack out of a slide, the
+        // roll out of a fall, the ledge
+        kick("75_kick_zombie_cutscene", CameraType.FIRST_PERSON);
+        kick("76_kick_zombie_side", CameraType.THIRD_PERSON_BACK);
+        slideAttack("96_slide_attack", CameraType.THIRD_PERSON_BACK);
+        slideAttack("97_slide_attack_first_person", CameraType.FIRST_PERSON);
+        fallRoll("98_fall_roll", CameraType.THIRD_PERSON_BACK);
+        ledgeJump("80_ledge_jump_catch_shimmy_climb", CameraType.THIRD_PERSON_BACK);
+        ledgeJump("84_ledge_first_person", CameraType.FIRST_PERSON);
+        ledgeFall("81_ledge_catch_falling");
+        ledgeDown("82_ledge_auto_hang_and_hops");
+
 
         SCENARIOS.add(new Scenario("71_deflect_arrow", 30, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
@@ -464,10 +476,222 @@ public final class MovesSelfTest {
         }, new int[]{8, 10, 12, 14, 16, 18, 20, 22, 24, 27, 32}, camera != CameraType.FIRST_PERSON));
     }
 
+    /**
+     * W held, Space and R at a zombie 2.3 blocks ahead: the vault with a kick. From first person the
+     * cutscene takes the camera behind the player and gives it back after.
+     */
+    private static void kick(String name, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 70, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 2.3, -1f);
+        }, (mc, t) -> {
+            if (t <= 1) camera(mc, camera);
+            mc.options.keyUp.setDown(t >= 4 && t < 8);
+            if (t == 6) {
+                startPos = mc.player.position();
+                mc.options.keyJump.setDown(true);
+                KeyMapping.click(MovesClient.DODGE.getKey());
+            }
+            if (t == 8) mc.options.keyJump.setDown(false);
+            if (t == 9) note(name + ": move " + Stamina.of(mc.player).move + ", camera " + mc.options.getCameraType());
+            if (t == 34) note(String.format(Locale.ROOT, "%s: at the kick %.2f blocks up, %.2f on", name,
+                    mc.player.getY() - startPos.y, mc.player.position().subtract(startPos).horizontalDistance()));
+            if (t == 60) {
+                note(name + ": camera after " + mc.options.getCameraType() + ", health " + mc.player.getHealth());
+                dummyReport(mc, name, true);
+            }
+        }, new int[]{8, 12, 16, 20, 24, 28, 31, 33, 36, 40, 44, 48, 52}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /** Sprinting, C tapped, a zombie a step to the side of the way: the left button as the slide passes it. */
+    private static void slideAttack(String name, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 60, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            sp.teleportTo(sp.serverLevel(), 0.5, Y + 1, -6.5, 0f, 0f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0.9, 5.5, -1f);
+            Stamina.of(sp).slideAttackCooldown = 0;
+        }, (mc, t) -> {
+            camera(mc, camera);
+            if (t == 1) Stamina.of(mc.player).slideAttackCooldown = 0;
+            KeyMapping slide = slideKey(mc);
+            mc.options.keyUp.setDown(t >= 2 && t < 14);
+            mc.options.keySprint.setDown(t >= 2 && t < 14);
+            if (t == 12) slide.setDown(true);
+            if (t == 13) slide.setDown(false);
+            if (t == 16) {
+                startPos = mc.player.position();
+                mc.options.keyAttack.setDown(true);
+            }
+            if (t == 17) {
+                mc.options.keyAttack.setDown(false);
+                note(name + ": move " + Stamina.of(mc.player).move + ", yaw " + Math.round(mc.player.getYRot()));
+            }
+            if (t == 40) {
+                note(String.format(Locale.ROOT, "%s: facing yaw %.0f (was 0), went %.2f blocks on, pose %s",
+                        name, mc.player.getYRot(), mc.player.position().subtract(startPos).horizontalDistance(), mc.player.getPose()));
+                dummyReport(mc, name, true);
+            }
+        }, new int[]{12, 15, 17, 18, 19, 20, 22, 24, 28, 32, 38}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /** Dropped from 11 blocks up, R held: tucked, the roll on landing, the knee; the fall's damage. */
+    private static void fallRoll(String name, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 70, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            sp.teleportTo(sp.serverLevel(), 0.5, Y + 16, 0.5, 0f, 10f);
+        }, (mc, t) -> {
+            camera(mc, camera);
+            MovesClient.DODGE.setDown(t >= 0 && t < 30);
+            if (t == 6) note(name + ": move " + Stamina.of(mc.player).move + ", fallen " + mc.player.fallDistance);
+            if (mc.player.onGround() && startPos == null && t > 0) {
+                startPos = mc.player.position();
+                moveStart = t;
+                note(name + ": landed at t " + t + ", move " + Stamina.of(mc.player).move);
+            }
+            if (t == 1) startPos = null;
+            // the health just after the landing (before food heals it)
+            if (startPos != null && t == moveStart + 3) note(String.format(Locale.ROOT, "%s: health %.1f after a fall of 15 (untucked: 8)",
+                    name, mc.player.getHealth()));
+            if (t == 60) note(String.format(Locale.ROOT, "%s: rolled %.2f blocks on, %s, pose %s", name,
+                    mc.player.position().subtract(startPos).horizontalDistance(), Stamina.of(mc.player).move, mc.player.getPose()));
+        }, new int[]{4, 10, 14, 16, 18, 20, 23, 26, 32, 40, 50, 56}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /** The ledge test wall: three blocks high, two deep, across x 24..30, its face at z 3, top at Y + 4. */
+    private static final int LEDGE_X = 27;
+
+    private static void ledgeWall(ServerPlayer sp) {
+        ServerLevel level = sp.serverLevel();
+        for (int x = LEDGE_X - 3; x <= LEDGE_X + 3; x++) {
+            for (int z = 3; z <= 4; z++) {
+                for (int y = Y + 1; y <= Y + 3; y++) level.setBlock(new BlockPos(x, y, z), Blocks.STONE_BRICKS.defaultBlockState(), 2);
+            }
+        }
+    }
+
+    /** Running at the wall, a jump with the right button: caught; D along it; R and D: a hop; W + Space: up. */
+    private static void ledgeJump(String name, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 160, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            ledgeWall(sp);
+            sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 1, 1.0, 0f, 0f);
+        }, (mc, t) -> {
+            camera(mc, camera);
+            LocalPlayer p = mc.player;
+            mc.options.keyUp.setDown(t >= 2 && t < 12);
+            if (t == 5) {
+                mc.options.keyJump.setDown(true);
+                mc.options.keyUse.setDown(true);
+            }
+            if (t == 6) mc.options.keyJump.setDown(false);
+            if (t == 14) {
+                mc.options.keyUse.setDown(false);
+                note(String.format(Locale.ROOT, "%s: move %s, feet %.2f below the top, %.3f from the wall", name,
+                        Stamina.of(p).move, Y + 4 - p.getY(), 3 - (p.getZ() + 0.3)));
+                startPos = p.position();
+            }
+            mc.options.keyRight.setDown(t >= 20 && t < 40);
+            if (t == 30) note(name + ": along the edge " + Stamina.of(p).move);
+            if (t == 44) note(String.format(Locale.ROOT, "%s: went %.2f blocks along the edge in 1 s, still %s", name,
+                    p.position().subtract(startPos).horizontalDistance(), Stamina.of(p).move));
+            if (t == 46) KeyMapping.click(MovesClient.DODGE.getKey());
+            if (t == 48) {
+                note(name + ": " + Stamina.of(p).move + " after R (the hop mode)");
+                startPos = p.position();
+                mc.options.keyRight.setDown(true);
+            }
+            if (t == 50) mc.options.keyRight.setDown(false);
+            if (t == 52) note(name + ": hop " + Stamina.of(p).move);
+            if (t == 92) note(String.format(Locale.ROOT, "%s: the hop went %.2f blocks, now %s", name,
+                    p.position().subtract(startPos).horizontalDistance(), Stamina.of(p).move));
+            if (t == 94) {
+                mc.options.keyUp.setDown(true);
+                mc.options.keyJump.setDown(true);
+            }
+            if (t == 96) {
+                mc.options.keyUp.setDown(false);
+                mc.options.keyJump.setDown(false);
+                note(name + ": climbing " + Stamina.of(p).move);
+            }
+            if (t == 94) minHeight = p.getHealth();
+            if (t > 94 && t < 150) minHeight = Math.min(minHeight, p.getHealth());
+            if (t == 150) note(String.format(Locale.ROOT, "%s: lowest health on the climb %.1f", name, minHeight));
+            if (t == 150) note(String.format(Locale.ROOT, "%s: after the climb feet %.2f above the top, %.2f onto it, on the ground %s, %s",
+                    name, p.getY() - (Y + 4), p.getZ() - 3, p.onGround(), Stamina.of(p).move));
+        }, new int[]{8, 12, 16, 24, 30, 36, 52, 62, 66, 72, 80, 100, 106, 112, 118, 124, 130, 140}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /** Falling from high up beside the wall, the right button held: caught at the edge (the fall forgiven); S + Space: let go. */
+    private static void ledgeFall(String name) {
+        SCENARIOS.add(new Scenario(name, 70, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            ledgeWall(sp);
+            sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 24, 2.6, 0f, 0f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            LocalPlayer p = mc.player;
+            mc.options.keyUse.setDown(t >= 0 && t < 40);
+            if (t == 30) note(String.format(Locale.ROOT, "%s: move %s, feet %.2f below the top, fall %.1f", name,
+                    Stamina.of(p).move, Y + 4 - p.getY(), p.fallDistance));
+            if (t == 44) {
+                mc.options.keyDown.setDown(true);
+                mc.options.keyJump.setDown(true);
+            }
+            if (t == 46) release(mc);
+            if (t == 64) note(String.format(Locale.ROOT, "%s: let go, %s, on the ground %s, health %.1f", name,
+                    Stamina.of(p).move, p.onGround(), p.getHealth()));
+        }, new int[]{20, 24, 28, 34, 46, 50, 56}, true));
+    }
+
+    /** On the top facing the drop: Ctrl + W + C hangs from the edge; then R and A: a hop to the left; C lets go. */
+    private static void ledgeDown(String name) {
+        SCENARIOS.add(new Scenario(name, 120, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            ledgeWall(sp);
+            sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 4, 3.9, 180f, 10f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            LocalPlayer p = mc.player;
+            KeyMapping slide = slideKey(mc);
+            if (t == 4) {
+                mc.options.keySprint.setDown(true);
+                mc.options.keyUp.setDown(true);
+                slide.setDown(true);
+            }
+            if (t == 6) {
+                release(mc);
+                slide.setDown(false);
+                note(name + ": move " + Stamina.of(p).move);
+            }
+            if (t >= 8 && t <= 40) minHeight = Math.min(minHeight, p.getHealth());
+            if (t == 7) minHeight = p.getHealth();
+            if (t == 41) note(String.format(Locale.ROOT, "%s: lowest health on the way down %.1f, pose %s", name, minHeight, p.getPose()));
+            if (t == 44) note(String.format(Locale.ROOT, "%s: %s, feet %.2f below the top, facing yaw %.0f, %.3f from the wall", name,
+                    Stamina.of(p).move, Y + 4 - p.getY(), p.getYRot(), 3 - (p.getZ() + 0.3)));
+            if (t == 46) {
+                startPos = p.position();
+                mc.options.keyLeft.setDown(true);
+                KeyMapping.click(MovesClient.DODGE.getKey());
+            }
+            if (t == 48) mc.options.keyLeft.setDown(false);
+            if (t == 90) note(String.format(Locale.ROOT, "%s: R + A hopped %.2f blocks, now %s", name,
+                    p.position().subtract(startPos).horizontalDistance(), Stamina.of(p).move));
+            if (t == 94) slide.setDown(true);
+            if (t == 96) slide.setDown(false);
+            if (t == 112) note(name + ": after C " + Stamina.of(p).move + ", on the ground " + p.onGround() + ", health " + p.getHealth());
+        }, new int[]{6, 10, 14, 18, 22, 26, 30, 36, 44, 56, 62, 68, 76, 98, 104}, true));
+    }
+
     /** A mob that stands still {@code dz} blocks in front of the player (facing them), with this health (-1: full). */
     private static void dummy(ServerPlayer sp, net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.Mob> type, double dz, float health) {
+        dummy(sp, type, 0, dz, health);
+    }
+
+    /** The same, {@code dx} blocks to the side. */
+    private static void dummy(ServerPlayer sp, net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.Mob> type,
+                              double dx, double dz, float health) {
         net.minecraft.world.entity.Mob z = type.create(sp.serverLevel());
-        z.moveTo(sp.getX(), sp.getY(), sp.getZ() + dz, 180f, 0f);
+        z.moveTo(sp.getX() + dx, sp.getY(), sp.getZ() + dz, 180f, 0f);
         z.setYHeadRot(180f);
         z.setYBodyRot(180f);
         // No goals (it stands still) but its own physics: the vault's shove and the dash's knockback move it.
@@ -621,6 +845,7 @@ public final class MovesSelfTest {
         s.freeTicks = 0;
         s.boostTicks = 0;
         s.dashCooldown = 0;
+        s.slideAttackCooldown = 0;
         sp.teleportTo(sp.serverLevel(), x + 0.5, Y + 1, 0.5, 0f, 10f);
     }
 

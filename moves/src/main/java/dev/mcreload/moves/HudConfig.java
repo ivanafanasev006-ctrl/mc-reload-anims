@@ -12,7 +12,7 @@ public final class HudConfig {
 
     public static final ForgeConfigSpec.EnumValue<Style> STYLE;
     public static final ForgeConfigSpec.EnumValue<Shape> SHAPE;
-    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS;
+    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS, KICK_CUTSCENE;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -25,6 +25,11 @@ public final class HudConfig {
                 .define("swapSides", false);
         ARROWS = b.comment("Arrow counter left of the hotbar while a bow is in hand.").define("arrowCounter", true);
         b.pop();
+        b.push("moves");
+        KICK_CUTSCENE = b.comment("The vault with a kick is a cutscene: the camera goes behind the player from first person and the",
+                        "view narrows as time seems to slow (author, 2026-10-29).")
+                .define("kickCutscene", true);
+        b.pop();
         SPEC = b.build();
     }
 
@@ -32,6 +37,7 @@ public final class HudConfig {
     public static Shape shape() { return get(SHAPE, Shape.HEATER); }
     public static boolean swapSides() { return get(SWAP_SIDES, false); }
     public static boolean arrows() { return get(ARROWS, true); }
+    public static boolean kickCutscene() { return get(KICK_CUTSCENE, true); }
 
     private static <T> T get(ForgeConfigSpec.ConfigValue<T> value, T fallback) {
         try {

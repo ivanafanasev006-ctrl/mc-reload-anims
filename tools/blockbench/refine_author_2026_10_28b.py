@@ -43,20 +43,18 @@ def keyed_times(a, t0, t1, bones=None):
 # Vault over a mob at point blank
 # --------------------------------------------------------------------------------------------
 
-#: Author, 2026-10-29: the push off the mob at the end (one foot and a hand shove it, the other foot
-#: and hand catch the balance for the landing) "is there but hardly seen: a fraction of a second
-#: longer". The time from 0.7 s (the roll coming out) to the landing is 1.5 times longer, so the
-#: landing is at 1.0 s (was 0.9) and the move 1.43 s.
-KICK_FROM, KICK_TO, KICK_STRETCH = 0.7, 0.9, 1.5
+#: Author, 2026-10-29 (second message): the vault must be quick, "as in the 28b file, 1 s or
+#: 1.25", and flowing like parkour: run, press, over, run on without a stop. The PC session had
+#: stretched the push off at the end 1.5 times (landing at 1.0 s, 1.43 s in all) for "the push is
+#: there but hardly seen"; that stretch is taken back (the push is made stronger instead, below),
+#: and the whole move is played 1.25 times faster than the author's 1.33 s: take-off at 0.2 s, the
+#: push at 0.63, landing at 0.72, 1.07 s in all (Move.HOP_TAKEOFF, HOP_SHOVE, HOP_LAND).
+FAST = 0.8
 
 
 def hop_time(t):
-    """Old time of the move -> new time."""
-    if t <= KICK_FROM:
-        return t
-    if t <= KICK_TO:
-        return KICK_FROM + (t - KICK_FROM) * KICK_STRETCH
-    return t + (KICK_TO - KICK_FROM) * (KICK_STRETCH - 1)
+    """Author's time of the move -> new time."""
+    return t * FAST
 
 
 def retime_extra(a, f):
@@ -96,25 +94,25 @@ def hop_roll_dodge(data):
     extra_key(a, "head2", "rotation", 0.25, (-10, 0, 0))
     extra_key(a, "head2", "rotation", 0.33, (-34, 0, 0))
     extra_key(a, "head2", "rotation", 0.47, (-30, 0, 0))
-    # The push off, a fraction of a second longer (see KICK_*), and stronger: the left leg kicks
-    # further back and nearly straight (it shoves), the left hand pushes back with it; the right
-    # leg reaches down for the landing and the right arm goes out for balance. The strongest moment
-    # (0.79 s, now 0.835) is held until 0.9 s, then the leg comes back under the body for the
-    # landing at 1.0 s.
-    a.retime(hop_time)
-    retime_extra(a, hop_time)
-    a.length = hop_time(a.length)
-    peak = hop_time(0.79)
+    # The push off, stronger: the left leg kicks further back and nearly straight (it shoves), the
+    # left hand pushes back with it; the right leg reaches down for the landing and the right arm
+    # goes out for balance. The strongest moment (0.79 s) is held a little (to 0.84), then the leg
+    # comes back under the body for the landing at 0.9 s. Then the whole move 1.25 times faster
+    # (FAST): the hop is a quick vault in a run, not a stunt to watch.
+    peak = 0.79
     kick = {"left_leg": (-70, 1, -12), "left_shin": (-22, 0, 0), "left_arm": (-40, 20, -14),
             "left_forearm": (6, 0, 5), "right_arm": (60, -46, 46), "right_leg": (30, -12, 30),
             "right_shin": (-30, 0, 0)}
     for bone, v in kick.items():
         a.key(bone, "rotation", peak, v)
-        a.key(bone, "rotation", 0.9, np.asarray(v) * 0.92)
-    a.key("left_leg", "rotation", 0.95, (-36, 1, -10))
-    a.key("left_shin", "rotation", 0.95, (-48, 0, 0))
-    # The author's crouch (0-0.25 s) and landing (now 1.0-1.43 s) already stand on the floor; the
-    # take-off is at 0.25 and the landing at 1.0 (Move.HOP_TAKEOFF, HOP_LAND in the mod).
+        a.key(bone, "rotation", 0.84, np.asarray(v) * 0.92)
+    a.key("left_leg", "rotation", 0.875, (-36, 1, -10))
+    a.key("left_shin", "rotation", 0.875, (-48, 0, 0))
+    a.retime(hop_time)
+    retime_extra(a, hop_time)
+    a.length = hop_time(a.length)
+    # The author's crouch (now 0-0.2 s) and landing (now 0.72-1.07 s) already stand on the floor; the
+    # take-off is at 0.2 and the landing at 0.72 (Move.HOP_TAKEOFF, HOP_LAND in the mod).
     # In the air the model rose up to 1.1 blocks inside the player's own hitbox: the hitbox stayed on
     # the ground under the mob being vaulted (mobs push it, blows aimed at the player hit the floor).
     # The jump now lifts the player itself, as high as the mob needs (a pig less than a zombie,
@@ -239,11 +237,30 @@ FINISH_REACH = (
     ("right_leg", "rotation", (-12, 0, 0), STANCE_IN, STANCE_OUT),
 )
 
+#: Author, 2026-10-29, second message: "more lunge forward, and the arm reaching further, straight
+#: forward". On top of FINISH_REACH: the front (left) foot steps further out and its knee bends
+#: deep, the back leg stretches back, the body goes 3 px more forward (0.37 block in all, as far as
+#: the stance lets it without the back foot leaving the floor); the sword arm points straight ahead
+#: (it came in from the side, 22 degrees across the body) and level with the shoulder, the elbow
+#: straight, the shoulder behind it, and the blade turns in the fist to go on along the arm (it
+#: stood up from the fist, so the arm reaching out lifted the point to the mob's chest).
+FINISH_LUNGE = (
+    ("body", "position", (0, 0, -3.0), STANCE_IN, STANCE_OUT),
+    ("left_leg", "rotation", (16, 0, 0), STANCE_IN, STANCE_OUT),
+    ("left_shin", "rotation", (-34, 0, 0), STANCE_IN, STANCE_OUT),
+    ("right_leg", "rotation", (-14, 0, 0), STANCE_IN, STANCE_OUT),
+    ("right_arm", "rotation", (-8, -14, -6), STAB_IN, STAB_OUT),
+    ("right_forearm", "rotation", (-3, 0, 0), STAB_IN, STAB_OUT),
+    ("right_item_sword", "rotation", (50, 0, 0), STAB_IN, STAB_OUT),
+    ("torso", "rotation", (0, 6, 0), STAB_IN, STAB_OUT),
+    ("chest", "rotation", (-6, 0, 0), STAB_IN, STAB_OUT),
+)
+
 
 def finisher_stab(data):
     a = ak.Anim.load(data, "finisher_stab")
     no_twist(a)
-    for bone, ch, d, (t0, t1), (t2, t3) in FINISH_REACH:
+    for bone, ch, d, (t0, t1), (t2, t3) in FINISH_REACH + FINISH_LUNGE:
         deepen(a, bone, ch, d, t0, t1, t2, t3)
     no_twist(a)
     # Both feet were up to 0.65 px in the floor through the whole stab: the stance stands on it,

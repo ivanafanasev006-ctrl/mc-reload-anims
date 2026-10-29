@@ -21,5 +21,9 @@
   "kinetrix_moves.settings.arrows.tip": "Слева от хотбара, когда в руке лук: стрела и сколько их у тебя.",
   "kinetrix_moves.settings.preview": "Как выглядят полоски",
   "kinetrix_moves.hint.finisher": "[%s] — добить",
-  "kinetrix_moves.dash.cooldown": "Рывок перезаряжается: %s с"
+  "kinetrix_moves.dash.cooldown": "Рывок перезаряжается: %s с",
+  "kinetrix_moves.slide_attack.cooldown": "Удар из подката перезаряжается: %s с",
+  "kinetrix_moves.ledge.no_room": "Наверху нет места, чтобы залезть",
+  "kinetrix_moves.ledge.hops": "Край: прыжки (A / D)",
+  "kinetrix_moves.ledge.shimmy": "Край: перехват руками (A / D)"
 }

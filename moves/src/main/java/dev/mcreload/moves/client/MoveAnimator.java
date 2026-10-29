@@ -47,8 +47,19 @@ public final class MoveAnimator {
         return PlayerAnimationAccess.getPlayerAssociatedData(p).get(LAYER) instanceof MoveLayer l ? l : null;
     }
 
+    /** The hang's loop starts here (ledge_hang's marker, 1.25 s): its first part is the catch. */
+    private static final int HANG_LOOP = 25;
+
     /** Starts the move's animation, blended in over two ticks. */
     public static void play(AbstractClientPlayer p, Move move) {
+        play(p, move, null);
+    }
+
+    /**
+     * The same, after the move {@code was} (or null): the hang after a move on the ledge starts in
+     * its loop (it has no edge to catch again).
+     */
+    public static void play(AbstractClientPlayer p, Move move, Move was) {
         MoveLayer layer = layer(p);
         KeyframeAnimation anim = PlayerAnimationRegistry.getAnimation(move.animation);
         if (layer == null) return;
@@ -59,11 +70,14 @@ public final class MoveAnimator {
         layer.speed.speed = move.animSpeed;
         // Bow moves may play a part of their animation (a half of bow_walk_around) and hold its last frame.
         int from = move.shot != null ? move.shot.animStart() : 0;
+        if (move == Move.LEDGE_HANG && was != null && was.ledge()) from = HANG_LOOP;
         KeyframeAnimationPlayer keyframes = new KeyframeAnimationPlayer(anim, from);
         if (move.firstPerson()) firstPerson(keyframes);
         IAnimation played = keyframes;
         if (move.shot != null && move.shot.holdAt() >= 0) played = new Segment(played, move.shot.holdAt() - from);
-        layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), unwound(layer, anim, from, played));
+        // On the ledge the moves follow each other quickly: a longer blend, the hands do not jump.
+        int fade = move.ledge() && was != null && was.ledge() ? 4 : 2;
+        layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(fade, Ease.INOUTSINE), unwound(layer, anim, from, played));
         KinetrixBridge.wholeBody(p.getUUID(), move.length * 50L + 100L);
     }
 
