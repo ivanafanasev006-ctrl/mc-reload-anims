@@ -127,8 +127,9 @@ class Anim:
             if all(np.allclose(v, lst[0][1], atol=1e-4) for _, v, _ in lst):
                 out[tk] = [(lst[0][0], lst[0][1])]
                 continue
-            tol = 0.12 if tk[1] == 'position' else 0.6
-            out[tk] = simplify(self.curve(tk), [t for t, _, _ in lst], tol)
+            # A move whose hands or feet hold on to something keeps its keys closer (tol_rot, tol_pos).
+            tol = getattr(self, 'tol_pos', 0.12) if tk[1] == 'position' else getattr(self, 'tol_rot', 0.6)
+            out[tk] = simplify(self.curve(tk), [t for t, _, _ in lst], tol, getattr(self, 'protect', ()))
         self._samples = (self._version(), out)
         return out
 
@@ -231,9 +232,10 @@ def cm_eval(K, V, ts):
     return out
 
 
-def simplify(curve, target_times, tol):
+def simplify(curve, target_times, tol, protect=()):
     """Keys on the 1/24 s grid, as few as keep Blockbench's catmullrom within tol of the curve
-    (and its speed within a margin). Target times are always keyed."""
+    (and its speed within a margin). Target times are always keyed, and so are the `protect` times
+    (a loop's marker: the frame the loop closes on)."""
     f0 = int(round(min(target_times) * FPS))
     f1 = int(round(max(target_times) * FPS))
     frames = list(range(f0, f1 + 1))
@@ -242,7 +244,7 @@ def simplify(curve, target_times, tol):
     fine_v = curve(fine_t)
     fine_vel = np.gradient(fine_v, axis=0) * FPS * SUB
     vtol_abs = 6.0 if tol < 0.5 else 30.0
-    protected = {f0, f1}
+    protected = {f0, f1} | {int(round(t * FPS)) for t in protect}
     keys = list(range(len(frames)))  # indices into frames
 
     def err_without(pos):

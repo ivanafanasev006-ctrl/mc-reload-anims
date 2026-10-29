@@ -43,11 +43,78 @@ def keyed_times(a, t0, t1, bones=None):
 # Vault over a mob at point blank
 # --------------------------------------------------------------------------------------------
 
+#: Author, 2026-10-29: the push off the mob at the end (one foot and a hand shove it, the other foot
+#: and hand catch the balance for the landing) "is there but hardly seen: a fraction of a second
+#: longer". The time from 0.7 s (the roll coming out) to the landing is 1.5 times longer, so the
+#: landing is at 1.0 s (was 0.9) and the move 1.43 s.
+KICK_FROM, KICK_TO, KICK_STRETCH = 0.7, 0.9, 1.5
+
+
+def hop_time(t):
+    """Old time of the move -> new time."""
+    if t <= KICK_FROM:
+        return t
+    if t <= KICK_TO:
+        return KICK_FROM + (t - KICK_FROM) * KICK_STRETCH
+    return t + (KICK_TO - KICK_FROM) * (KICK_STRETCH - 1)
+
+
+def retime_extra(a, f):
+    """The opponent's keys (kept as the author made them) moved in time with the player's."""
+    for an in a.extra.values():
+        for kf in an.get("keyframes", []):
+            kf["time"] = round(f(float(kf["time"])), 4)
+
+
+def extra_key(a, bone, ch, t, v):
+    """Adds or replaces a key of one of the opponent's bones (the grey figure, bones *2)."""
+    an = next(x for x in a.extra.values() if x.get("name") == bone)
+    an["keyframes"] = [kf for kf in an["keyframes"] if not (kf["channel"] == ch and abs(float(kf["time"]) - t) < 0.02)]
+    an["keyframes"].append({"channel": ch, "data_points": [{"x": v[0], "y": v[1], "z": v[2]}], "uuid": ak._uid(),
+                            "time": round(t, 4), "color": -1, "interpolation": "linear"})
+
+
 def hop_roll_dodge(data):
     a = ak.Anim.load(data, "hop_roll_dodge")
     no_twist(a)
-    # The author's crouch (0-0.25 s) and landing (0.9-1.33 s) already stand on the floor; the take-off
-    # is at 0.25 and the landing at 0.9, so the move keeps the timing of the hop the game knows.
+    # Author, 2026-10-29: the hand takes the mob by the head and presses its head and body down
+    # under the player, then the roll over its back as it was. The left hand went to the mob's
+    # back at shoulder height; it now reaches up onto the head (0.17-0.25 s, elbow bent as it takes
+    # the weight) and presses down through the take-off and the start of the roll, the arm
+    # straightening as it pushes (0.25-0.5 s). In Blockbench the grey mob stoops earlier and
+    # deeper under the hand, its head pushed down (in the game it stoops by Hop.lean).
+    for t, arm, fore in ((0.17, (100, -5, -24), (16, -1, 5)), (0.21, (112, -4, -24), (24, -1, 5)),
+                         (0.25, (110, -3, -24), (20, -1, 5)), (0.29, (101, -3, -24), (12, -1, 4)),
+                         (0.33, (90, -3, -24), (6, -1, 4)), (0.38, (78, -3, -24), (4, -1, 4)),
+                         (0.42, (66, -3, -24), (5, -1, 4)), (0.46, (55, -3, -24), (8, -1, 4)),
+                         (0.5, (46, -3, -24), (14, -1, 4))):
+        a.key("left_arm", "rotation", t, arm)
+        a.key("left_forearm", "rotation", t, fore)
+    extra_key(a, "chest2", "rotation", 0.25, (-28, 0, 0))
+    extra_key(a, "chest2", "rotation", 0.33, (-58, 0, 0))
+    extra_key(a, "chest2", "rotation", 0.47, (-76, 0, 0))
+    extra_key(a, "head2", "rotation", 0.25, (-10, 0, 0))
+    extra_key(a, "head2", "rotation", 0.33, (-34, 0, 0))
+    extra_key(a, "head2", "rotation", 0.47, (-30, 0, 0))
+    # The push off, a fraction of a second longer (see KICK_*), and stronger: the left leg kicks
+    # further back and nearly straight (it shoves), the left hand pushes back with it; the right
+    # leg reaches down for the landing and the right arm goes out for balance. The strongest moment
+    # (0.79 s, now 0.835) is held until 0.9 s, then the leg comes back under the body for the
+    # landing at 1.0 s.
+    a.retime(hop_time)
+    retime_extra(a, hop_time)
+    a.length = hop_time(a.length)
+    peak = hop_time(0.79)
+    kick = {"left_leg": (-70, 1, -12), "left_shin": (-22, 0, 0), "left_arm": (-40, 20, -14),
+            "left_forearm": (6, 0, 5), "right_arm": (60, -46, 46), "right_leg": (30, -12, 30),
+            "right_shin": (-30, 0, 0)}
+    for bone, v in kick.items():
+        a.key(bone, "rotation", peak, v)
+        a.key(bone, "rotation", 0.9, np.asarray(v) * 0.92)
+    a.key("left_leg", "rotation", 0.95, (-36, 1, -10))
+    a.key("left_shin", "rotation", 0.95, (-48, 0, 0))
+    # The author's crouch (0-0.25 s) and landing (now 1.0-1.43 s) already stand on the floor; the
+    # take-off is at 0.25 and the landing at 1.0 (Move.HOP_TAKEOFF, HOP_LAND in the mod).
     # In the air the model rose up to 1.1 blocks inside the player's own hitbox: the hitbox stayed on
     # the ground under the mob being vaulted (mobs push it, blows aimed at the player hit the floor).
     # The jump now lifts the player itself, as high as the mob needs (a pig less than a zombie,
@@ -132,8 +199,52 @@ def shoulder_grip(data, a, t):
     return kr.apply(W["right_arm2"], np.array([o[0] + 1.0, 23.0, -2.8]) - o)
 
 
+def deepen(a, bone, ch, delta, t0, t1, t2, t3):
+    """Adds `delta` to a channel, fully from t1 to t2, eased in from t0 and out by t3 (keys at
+    those four times and every key already between them)."""
+    def w(t):
+        if t <= t0 or t >= t3:
+            return 0.0
+        if t < t1:
+            f = (t - t0) / (t1 - t0)
+        elif t > t2:
+            f = (t3 - t) / (t3 - t2)
+        else:
+            return 1.0
+        return f * f * (3 - 2 * f)
+    times = sorted({t0, t1, t2, t3} | {round(kf[0], 4) for kf in a.channel(bone, ch) if t0 < kf[0] < t3})
+    vals = [(t, a.value(bone, ch, t)) for t in times]
+    for t, v in vals:
+        a.key(bone, ch, t, v + np.asarray(delta, float) * w(t))
+
+
+#: The finisher's thrust (author, 2026-10-29: "the arm a little further, the body more forward,
+#: more real"): eased in as the blade goes in (0.29-0.38 s), held while it is in, eased out as it
+#: comes out (0.83-0.96 s). The stance under it deepens from the moment it is set (0.21 s).
+STAB_IN, STAB_OUT = (0.29, 0.38), (0.83, 0.96)
+STANCE_IN, STANCE_OUT = (0.21, 0.38), (0.88, 1.04)
+FINISH_REACH = (
+    # the arm goes out nearly straight, a little higher, at the belly
+    ("right_arm", "rotation", (14, -6, 0), STAB_IN, STAB_OUT),
+    ("right_forearm", "rotation", (-11, 0, 0), STAB_IN, STAB_OUT),
+    # the right shoulder comes forward behind the blade, the chest leans into it, the head with it
+    ("torso", "rotation", (0, 11, 0), STAB_IN, STAB_OUT),
+    ("chest", "rotation", (-13, 0, 0), STAB_IN, STAB_OUT),
+    ("head", "rotation", (9, -6, 0), STAB_IN, STAB_OUT),
+    # the weight goes onto the front foot: the body forward, the front knee bends, the back leg
+    # reaches further back
+    ("body", "position", (0, 0, -2.2), STANCE_IN, STANCE_OUT),
+    ("left_leg", "rotation", (16, 0, 0), STANCE_IN, STANCE_OUT),
+    ("left_shin", "rotation", (-24, 0, 0), STANCE_IN, STANCE_OUT),
+    ("right_leg", "rotation", (-12, 0, 0), STANCE_IN, STANCE_OUT),
+)
+
+
 def finisher_stab(data):
     a = ak.Anim.load(data, "finisher_stab")
+    no_twist(a)
+    for bone, ch, d, (t0, t1), (t2, t3) in FINISH_REACH:
+        deepen(a, bone, ch, d, t0, t1, t2, t3)
     no_twist(a)
     # Both feet were up to 0.65 px in the floor through the whole stab: the stance stands on it,
     # and the back foot, which then hung 0.45 px over it, folds its knee a little to stand too.
