@@ -693,6 +693,38 @@ public final class MovesGameTests {
         t.at(4 + Move.LEDGE_CLIMB.length, () -> t.check(s.move == null && !p.noPhysics, "the climb did not end")).run(5 + Move.LEDGE_CLIMB.length);
     }
 
+    /**
+     * The hand reaches only the edge right in front (author, 2026-10-29: from the far side of a block
+     * it does not reach): 0.2 block from the wall, caught; 0.6 away, not; the automatic hang only
+     * with the toes at the drop.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void ledgeOnlyAtTheEdge(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        t.at(2, () -> {
+            for (int x = 1; x <= 5; x++) {
+                for (int z = 5; z <= 6; z++) {
+                    for (int y = 2; y <= 3; y++) h.setBlock(x, y, z, net.minecraft.world.level.block.Blocks.STONE);
+                }
+            }
+            double y = h.absoluteVec(new Vec3(0, 4.0 - dev.mcreload.moves.Ledge.HANG, 0)).y;
+            Vec3 near = h.absoluteVec(new Vec3(3.5, 0, 5.0 - 0.3 - 0.2));
+            p.teleportTo(near.x, y, near.z);
+            t.check(dev.mcreload.moves.Ledge.find(p, y, y, false) != null, "the edge 0.2 block in front was not caught");
+            Vec3 far = h.absoluteVec(new Vec3(3.5, 0, 5.0 - 0.3 - 0.6));
+            p.teleportTo(far.x, y, far.z);
+            t.check(dev.mcreload.moves.Ledge.find(p, y, y, true) == null, "an edge 0.6 block away was caught");
+            // on the top, facing the drop (north): the toes at the edge, then a step back from it
+            Vec3 edge = h.absoluteVec(new Vec3(3.5, 4.0, 5.4));
+            p.teleportTo(h.getLevel(), edge.x, edge.y, edge.z, 180f, 0f);
+            t.check(dev.mcreload.moves.Ledge.dropAhead(p) != null, "no automatic hang with the toes at the edge");
+            Vec3 back = h.absoluteVec(new Vec3(3.5, 4.0, 6.0));
+            p.teleportTo(h.getLevel(), back.x, back.y, back.z, 180f, 0f);
+            t.check(dev.mcreload.moves.Ledge.dropAhead(p) == null, "an automatic hang 0.7 block from the edge");
+        }).run(3);
+    }
+
     /** A friend on the top pulls up a player hanging below: both moves start; nobody else (on the floor below) can. */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void ledgeFriendPullsUp(GameTestHelper h) {

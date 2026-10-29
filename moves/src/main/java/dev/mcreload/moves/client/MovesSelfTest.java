@@ -180,6 +180,7 @@ public final class MovesSelfTest {
         ledgeJump("84_ledge_first_person", CameraType.FIRST_PERSON);
         ledgeFall("81_ledge_catch_falling");
         ledgeDown("82_ledge_auto_hang_and_hops");
+        ledgeTooFar("83_ledge_too_far_from_the_edge");
 
 
         SCENARIOS.add(new Scenario("71_deflect_arrow", 30, sp -> {
@@ -574,16 +575,17 @@ public final class MovesSelfTest {
         SCENARIOS.add(new Scenario(name, 160, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
             ledgeWall(sp);
-            sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 1, 1.0, 0f, 0f);
+            // a short run-up: the jump starts half a block from the wall (the hand reaches only the edge right in front)
+            sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 1, 2.0, 0f, 0f);
         }, (mc, t) -> {
             camera(mc, camera);
             LocalPlayer p = mc.player;
             mc.options.keyUp.setDown(t >= 2 && t < 12);
-            if (t == 5) {
+            if (t == 4) {
                 mc.options.keyJump.setDown(true);
                 mc.options.keyUse.setDown(true);
             }
-            if (t == 6) mc.options.keyJump.setDown(false);
+            if (t == 5) mc.options.keyJump.setDown(false);
             if (t == 14) {
                 mc.options.keyUse.setDown(false);
                 note(String.format(Locale.ROOT, "%s: move %s, feet %.2f below the top, %.3f from the wall", name,
@@ -648,7 +650,7 @@ public final class MovesSelfTest {
         SCENARIOS.add(new Scenario(name, 120, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
             ledgeWall(sp);
-            sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 4, 3.9, 180f, 10f);
+            sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 4, 3.4, 180f, 10f);     // the toes at the edge
         }, (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
             LocalPlayer p = mc.player;
@@ -680,6 +682,47 @@ public final class MovesSelfTest {
             if (t == 96) slide.setDown(false);
             if (t == 112) note(name + ": after C " + Stamina.of(p).move + ", on the ground " + p.onGround() + ", health " + p.getHealth());
         }, new int[]{6, 10, 14, 18, 22, 26, 30, 36, 44, 56, 62, 68, 76, 98, 104}, true));
+    }
+
+    /**
+     * The hand reaches only the edge right in front (author, 2026-10-29): a jump with the right
+     * button a step away from the wall catches nothing; Ctrl + W + C a step back from a drop does not
+     * hang either.
+     */
+    private static void ledgeTooFar(String name) {
+        SCENARIOS.add(new Scenario(name, 40, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            ledgeWall(sp);
+            sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 1, 2.0, 0f, 0f);     // 0.7 from the wall's face
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            LocalPlayer p = mc.player;
+            if (t == 4) {
+                mc.options.keyJump.setDown(true);
+                mc.options.keyUse.setDown(true);
+            }
+            if (t == 5) mc.options.keyJump.setDown(false);
+            if (t == 16) {
+                mc.options.keyUse.setDown(false);
+                note(name + ": jump 0.7 from the wall, " + Stamina.of(p).move + " (expected null)");
+                IntegratedServer srv = mc.getSingleplayerServer();
+                srv.execute(() -> {
+                    ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
+                    sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 4, 4.6, 180f, 10f);     // 1.3 from the drop
+                });
+            }
+            KeyMapping slide = slideKey(mc);
+            if (t == 26) {
+                mc.options.keySprint.setDown(true);
+                mc.options.keyUp.setDown(true);
+                slide.setDown(true);
+            }
+            if (t == 27) {
+                release(mc);
+                slide.setDown(false);
+                note(name + ": Ctrl + W + C 1.3 from the drop, " + Stamina.of(p).move + " (no LEDGE_DOWN)");
+            }
+        }, new int[]{8, 30}, true));
     }
 
     /** A mob that stands still {@code dz} blocks in front of the player (facing them), with this health (-1: full). */

@@ -34,10 +34,18 @@ public final class Ledge {
     public static final double HALF = 0.3;
     /** Hand over hand along the edge: the animation's 10 px a second at 15/16, a tick. */
     public static final double SHIMMY_SPEED = 10 * 0.9375 / 16 / 20;
-    /** How far from the wall (between it and the hitbox) a grab still reaches. [default] */
-    public static final double REACH = 0.65;
-    /** How far below the hands the edge may be caught, and above them (a grab pulls the player that far). */
-    public static final double BELOW = 0.45, ABOVE = 0.65;
+    /**
+     * How far from the wall (between it and the front of the hitbox) the hand still reaches its
+     * edge (author, 2026-10-29: only right at the edge; from the far side of a block the hand does
+     * not reach). [default]
+     */
+    public static final double REACH = 0.3;
+    /** How far below the hands the edge may be caught (a fall goes past it between two ticks), and above them (an arm's stretch). */
+    public static final double BELOW = 0.45, ABOVE = 0.35;
+    /** The automatic hang: the front of the feet this close to the drop's edge at most (standing at it, not a step away). */
+    public static final double AT_EDGE = 0.3;
+    /** The server checks the client's catch with this much more room: it sees the player a tick or two late. */
+    private static final double SLACK = 0.6;
     /** The friend stands this far from the edge (their middle), facing the drop (the animation's 0.49). */
     public static final double FRIEND = 8.4 * 0.9375 / 16;
 
@@ -61,22 +69,23 @@ public final class Ledge {
                 : new Direction[]{facing};
         double lo = Math.min(from, to) + HANG - BELOW, hi = Math.max(from, to) + HANG + ABOVE;
         for (Direction d : ways) {
-            Spot s = findTowards(p, d, lo, hi);
+            Spot s = findTowards(p, d, lo, hi, REACH);
             if (s != null) return s;
         }
         return null;
     }
 
-    private static Spot findTowards(Player p, Direction d, double lo, double hi) {
+    /** The edge of the wall that way, within {@code reach} of the front of the hitbox. */
+    private static Spot findTowards(Player p, Direction d, double lo, double hi, double reach) {
         Level level = p.level();
         Vec3 c = p.position();
         double front = along(c, d) + HALF;
-        for (double reach : new double[]{0.001, REACH}) {
-            Vec3 probe = c.add(d.getStepX() * (HALF + reach), 0, d.getStepZ() * (HALF + reach));
+        for (double ahead : new double[]{0.001, reach / 2, reach}) {
+            Vec3 probe = c.add(d.getStepX() * (HALF + ahead), 0, d.getStepZ() * (HALF + ahead));
             int bx = Mth.floor(probe.x), bz = Mth.floor(probe.z);
             double face = face(bx, bz, d);
             double gap = face - front;
-            if (gap < -0.05 || gap > REACH) continue;
+            if (gap < -0.05 || gap > reach) continue;
             double top = topIn(level, bx, bz, lo, hi);
             if (Double.isNaN(top)) continue;
             Vec3 at = hangAt(c, d, face, top);
@@ -152,19 +161,28 @@ public final class Ledge {
 
     /**
      * A drop in front of a player standing at its edge (for the automatic hang): the edge of the
-     * block they stand on, a block ahead at most, with at least two blocks of air under it on the
-     * far side. The spot is where they will hang, facing back at it.
+     * block they stand on, the front of their feet at most {@link #AT_EDGE} from it, with at least
+     * two blocks of air under it on the far side. The spot is where they will hang, facing back at it.
      */
     public static Spot dropAhead(Player p) {
+        return dropAhead(p, AT_EDGE);
+    }
+
+    /** The same, the edge at most {@code near} from the front of the feet. */
+    static Spot dropAhead(Player p, double near) {
         Direction d = Direction.fromYRot(p.getYRot());
         Level level = p.level();
         Vec3 c = p.position();
         double feet = c.y;
-        for (double ahead = 0.0; ahead <= 1.25; ahead += 0.25) {
+        double front = along(c, d) + HALF;
+        for (double ahead = 0.001; ahead <= near + 0.001; ahead += 0.1) {
             Vec3 probe = c.add(d.getStepX() * (HALF + ahead), 0, d.getStepZ() * (HALF + ahead));
             int bx = Mth.floor(probe.x), bz = Mth.floor(probe.z);
             int by = Mth.floor(feet - 0.01);
             if (!emptyAt(level, bx, by, bz) || !emptyAt(level, bx, by - 1, bz)) continue;
+            // the edge is where that column starts; the feet are on the near side of it, close enough
+            double gap = face(bx, bz, d) - front;
+            if (gap > near || gap < -HALF) return null;
             // the column before it (back towards the player) carries the player's feet: the edge
             int sx = bx - d.getStepX(), sz = bz - d.getStepZ();
             double top = topIn(level, sx, sz, feet - 0.05, feet + 0.05);
@@ -202,15 +220,21 @@ public final class Ledge {
     static boolean valid(ServerPlayer p, Stamina s, Move move, int dirId) {
         if (move == Move.LEDGE_DOWN) {
             if (!p.onGround() && p.fallDistance > 1f) return false;
-            Spot spot = dropAhead(p);
+            // a step's slack: this end sees the player walking to the edge a tick late
+            Spot spot = dropAhead(p, AT_EDGE + SLACK);
             if (spot == null) return false;
             remember(s, spot);
             return true;
         }
         if (s.move != null && s.move.ledge()) return true;     // moving on an edge already caught
         Direction d = dir(dirId);
-        Spot spot = findTowards(p, d, p.getY() + HANG - 1.5, p.getY() + HANG + 1.5);
-        if (spot == null) spot = find(p, p.getY() - 1.5, p.getY() + 1.5, true);
+        Spot spot = findTowards(p, d, p.getY() + HANG - 1.5, p.getY() + HANG + 1.5, REACH + SLACK);
+        if (spot == null) {
+            for (Direction other : Direction.Plane.HORIZONTAL) {
+                spot = findTowards(p, other, p.getY() + HANG - 1.5, p.getY() + HANG + 1.5, REACH + SLACK);
+                if (spot != null) break;
+            }
+        }
         if (spot == null) return false;
         remember(s, spot);
         return true;
