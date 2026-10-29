@@ -55,6 +55,9 @@ public final class MovesClient {
     /** Only registered without Kinetrix; with it the slide uses Kinetrix's crawl key. */
     private static final KeyMapping OWN_SLIDE = new KeyMapping("key.kinetrix_moves.slide", KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, "key.categories.kinetrix_moves");
+    /** The celebrate emote (author, 2026-10-29): G, again to stop it. */
+    public static final KeyMapping CELEBRATE = new KeyMapping("key.kinetrix_moves.celebrate", KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.kinetrix_moves");
     private static final boolean KINETRIX = ModList.get().isLoaded("kinetrix");
 
     /** R pressed without a direction: waits this many more ticks for A, D, S or W. */
@@ -106,6 +109,7 @@ public final class MovesClient {
 
     private static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(DODGE);
+        event.register(CELEBRATE);
         if (!KINETRIX) event.register(OWN_SLIDE);
     }
 
@@ -144,6 +148,13 @@ public final class MovesClient {
         }
         Stamina s = Stamina.of(p);
         Cutscene.tick(mc, p, s);
+
+        // ---- the celebrate emote: G (again: stop it); moving or a hit breaks it off too
+        boolean celebrate = false;
+        while (CELEBRATE.consumeClick()) celebrate = true;
+        if (celebrate && s.move == Move.CELEBRATE) cancel(p, s, 6);
+        else if (celebrate && s.move == null) start(p, s, Move.CELEBRATE, false, -1);
+        if (s.move == Move.CELEBRATE && p.hurtTime > 0) cancel(p, s, 4);
 
         // ---- the fast run: Ctrl held (the server gives the speed while sprinting and takes the energy)
         boolean run = HudConfig.Moves.FAST_RUN.on() && mc.options.keySprint.isDown();

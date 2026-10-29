@@ -46,6 +46,7 @@ public final class MoveServer {
         if (move == Move.HOP) Hop.started(p, s, enemy);
         if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
         if (move == Move.WHIRL) Whirl.started(p, s);
+        if (move == Move.CELEBRATE) Celebrate.started(p);
         if (move == Move.FINISHER) Strikes.finisherStarted(p, s, enemy);
         if (move == Move.DASH) {
             s.dashCooldown = MovesConfig.dashCooldownTicks();
@@ -84,6 +85,7 @@ public final class MoveServer {
         }
         if ((move == Move.KICK || move == Move.ROLL_KICK) && !s.kickDone && s.moveTick >= Kick.hit(move) - 2
                 && p.level().getEntity(s.target) instanceof net.minecraft.world.entity.LivingEntity mob) Kick.kick(p, s, mob);
+        if (move == Move.CELEBRATE && s.moveTick < move.length - 4) Celebrate.stopped(p);
         s.end(p);
         MovesNet.stop(p);
     }

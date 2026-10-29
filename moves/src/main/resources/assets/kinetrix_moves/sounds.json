@@ -1,0 +1,11 @@
+{
+  "celebrate": {
+    "sounds": [
+      {
+        "name": "kinetrix_moves:celebrate",
+        "stream": true
+      }
+    ],
+    "subtitle": "kinetrix_moves.subtitle.celebrate"
+  }
+}

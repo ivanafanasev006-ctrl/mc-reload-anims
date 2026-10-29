@@ -32,6 +32,7 @@ public final class KinetrixMoves {
         MovesNet.init();
         modBus.addListener(Stamina::registerCapability);
         modBus.addListener(Bow::setup);
+        Celebrate.SOUNDS.register(modBus);
         MinecraftForge.EVENT_BUS.register(Stamina.Events.class);
         MinecraftForge.EVENT_BUS.register(MoveServer.class);
         MinecraftForge.EVENT_BUS.register(Guard.class);

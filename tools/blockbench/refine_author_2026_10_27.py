@@ -405,7 +405,8 @@ def build(names=None):
     made += [roll(src, "dodge_back"), roll(src, "dodge_front")]
     made.append(slide(src))
     made += [cross_guard(src), cross_guard_double(src)]
-    made += [hop(src), bow_barrage(src), bow_walk_around(src), celebrate(src)]
+    # celebrate was made again to the author's music (2026-10-29): refine_author_2026_10_29/round5.py
+    made += [hop(src), bow_barrage(src), bow_walk_around(src)]
     if names:
         made = [a for a in made if a.name in names]
     out["animations"] = []

@@ -818,6 +818,28 @@ public final class MovesGameTests {
         }).run(3);
     }
 
+    /** The celebrate emote: free, 8 s, nothing else starts over it; moving (a cancel) ends it early. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void celebrateEmote(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            p.setOnGround(true);
+            MoveServer.seen(p);
+            s.energy = 10f;
+            t.check(MoveServer.request(p, Move.CELEBRATE, false), "the emote refused on the ground");
+            t.close(s.energy, 10f, "energy after the emote (it is free)");
+            t.check(Move.CELEBRATE.length >= 160, "the emote lasts " + Move.CELEBRATE.length + " ticks (author: 8 s)");
+            t.check(!MoveServer.request(p, Move.DODGE_LEFT, false), "a dodge over the emote (it must be broken off first)");
+        });
+        t.at(20, () -> {
+            t.check(s.move == Move.CELEBRATE, "the emote ended before its time");
+            MoveServer.cancel(p, Move.CELEBRATE);
+            t.check(s.move == null, "moving did not end the emote");
+        }).run(21);
+    }
+
     /**
      * The fast run (author, 2026-10-29, fifth message): Ctrl held while sprinting, 7 blocks a second
      * (the speed attribute), a hundredth of the bar a second, no refill meanwhile; without the key, the

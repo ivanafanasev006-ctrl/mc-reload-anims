@@ -404,3 +404,70 @@ def hop_roll_kick():
         a.key(t, p)
     a.tol_rot, a.tol_pos = 0.4, 0.08
     return a
+
+
+# --------------------------------------------------------------------------------------------
+# celebrate: the emote, made again to the author's music (2026-10-29, after the fifth message)
+# --------------------------------------------------------------------------------------------
+
+#: Author: "at the start he squats and sits until 3.5-4 seconds, then unfolds the body upwards as
+#: now, only smoother; 8 seconds in all; the music I attached plays in the background, as from a
+#: record, when the emote is used". His clip: a quiet start with two hits (1.4-1.8 s, 2.2 s), the
+#: drop at 3.4-3.7 s, the music full to 8.0 s. So: down into the squat by SQUAT, held (the hits a
+#: nod each) to RISE_FROM, unfolded on the drop by RISE_TO (it was a 0.18 s leap), the arms wide
+#: and the chest to the sky held over the music, back to the stance by CEL_LEN.
+SQUAT, RISE_FROM, RISE_MID, RISE_TO, HOLD_TO, CEL_LEN = 0.65, 3.4, 3.75, 4.3, 7.2, 8.0
+#: The music's strong beats in the held pose (s): the arms give a little pump on each.
+PUMPS = (4.9, 5.7, 6.6, 7.0)
+
+
+def celebrate():
+    """The squat of the old celebrate (the chest folded over the knees, the arms swept back and
+    out), held with a breath and a nod on each hit of the music; on the drop the legs push, the
+    chest unfolds and opens to the sky, the head goes back and the arms sweep out and up into a V,
+    over 0.9 s (it was a leap of 0.18 s); held with the music, a pump of the arms on its strong
+    beats; and back down into the stance."""
+    # the squat of the old celebrate (refined 2026-10-27, its held part)
+    squat = {'body': (0.6, 0, 0), 'chest': (-70, 0, 0), 'head': (-12.5, 0, 0),
+             'right_arm': (-63.4, 21.6, 21.3), 'right_forearm': (15, 0, 0), 'left_arm': (-63.4, -21.6, -21.3), 'left_forearm': (15, 0, 0),
+             'right_leg': (33.7, -14.3, 10.3), 'right_shin': (-77.5, 0, 0), 'left_leg': (33.7, 14.3, -10.3), 'left_shin': (-77.5, 0, 0)}
+    nod = {**squat, 'chest': (-74, 0, 0), 'head': (-20, 0, 0)}
+    mid = {'body': (2, 0, 0), 'chest': (-26, 0, 0), 'head': (6, 0, 0),
+           'right_leg': (22, -6, 8), 'right_shin': (-40, 0, 0), 'left_leg': (22, 6, -8), 'left_shin': (-40, 0, 0),
+           'right_arm': (-30, 10, 70), 'right_forearm': (25, 0, 0), 'left_arm': (-30, -10, -70), 'left_forearm': (25, 0, 0)}
+    top = {'body': (6, 0, 0), 'chest': (16, 0, 0), 'head': (26, 0, 0),
+           'right_leg': (-2, 0, 6), 'right_shin': (-3, 0, 0), 'left_leg': (-2, 0, -6), 'left_shin': (-3, 0, 0),
+           'right_arm': (-16, 0, 136), 'right_forearm': (12, 0, 0), 'left_arm': (-16, 0, -136), 'left_forearm': (12, 0, 0)}
+    keys = [(0.0, {}, 'auto'),
+            (SQUAT, squat, 'inout'),
+            (1.35, squat, 'auto'), (1.48, nod, 'out'), (1.75, squat, 'inout'),
+            (2.15, squat, 'auto'), (2.27, nod, 'out'), (2.6, squat, 'inout'),
+            (RISE_FROM, squat, 'auto'),
+            (RISE_MID, mid, 'in'),
+            (RISE_TO, top, 'out'),
+            (HOLD_TO, top, 'auto'),
+            (7.6, {**mid, 'chest': (-6, 0, 0), 'head': (0, 0, 0), 'right_leg': (8, 0, 4), 'right_shin': (-14, 0, 0),
+                   'left_leg': (8, 0, -4), 'left_shin': (-14, 0, 0), 'right_arm': (8, 0, 22), 'left_arm': (8, 0, -22),
+                   'right_forearm': (18, 0, 0), 'left_forearm': (18, 0, 0)}, 'inout'),
+            (CEL_LEN, {}, 'inout')]
+    d = L.Anim('celebrate_design', CEL_LEN)
+    for t, pose, ease in keys:
+        d.key(t, pose, ease, whole=True)
+    a = L.Anim('celebrate', CEL_LEN, 'once')
+    for t in kit.frames(0, CEL_LEN):
+        p = kit.design(d, t)
+        # breathing: slow while squatting, deep in the held pose
+        held_w = kit.span(t, RISE_TO - 0.1, RISE_TO + 0.3) * (1 - kit.span(t, HOLD_TO, HOLD_TO + 0.3))
+        sq_w = kit.span(t, SQUAT - 0.1, SQUAT + 0.2) * (1 - kit.span(t, RISE_FROM, RISE_FROM + 0.1))
+        breath = math.sin(2 * math.pi * t / 1.6)
+        c = p.get('chest', (0, 0, 0))
+        p['chest'] = (c[0] + 2.5 * breath * held_w + 1.5 * breath * sq_w, c[1], c[2])
+        # a pump of the arms on the music's strong beats
+        pump = sum(math.exp(-((t - b) / 0.09) ** 2) for b in PUMPS) * held_w
+        for side, s in (('right_arm', 1), ('left_arm', -1)):
+            r = p.get(side, (0, 0, 0))
+            p[side] = (r[0], r[1], r[2] + s * 10 * pump)
+        p = kit.grounded(p)
+        a.key(t, p)
+    a.tol_rot, a.tol_pos = 0.4, 0.08
+    return a

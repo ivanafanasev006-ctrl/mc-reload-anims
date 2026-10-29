@@ -73,5 +73,7 @@
   "kinetrix_moves.settings.move.whirlwind.tip": "S и ЛКМ зажаты с топором, затем зажать ПКМ: три оборота с топором вперёд. Отпустить кнопку — стоп.",
   "kinetrix_moves.settings.move.plunge": "Удар клинком в землю",
   "kinetrix_moves.settings.move.plunge.tip": "Падение с мечом или топором: клинок втыкается в землю при приземлении, урон на 20% меньше.",
-  "kinetrix_moves.whirl.cooldown": "Юла перезаряжается: %s с"
+  "kinetrix_moves.whirl.cooldown": "Юла перезаряжается: %s с",
+  "key.kinetrix_moves.celebrate": "Эмоция: празднование (с музыкой)",
+  "kinetrix_moves.subtitle.celebrate": "Музыка празднования"
 }

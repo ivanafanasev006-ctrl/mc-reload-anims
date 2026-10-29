@@ -73,5 +73,7 @@
   "kinetrix_moves.settings.move.whirlwind.tip": "S and the left button held with an axe, then the right button held: three turns forward with the axe out. Let go to stop.",
   "kinetrix_moves.settings.move.plunge": "Blade into the ground",
   "kinetrix_moves.settings.move.plunge.tip": "Falling with a sword or an axe: the blade goes into the ground on landing, 20% less damage.",
-  "kinetrix_moves.whirl.cooldown": "Whirlwind recharging: %s s"
+  "kinetrix_moves.whirl.cooldown": "Whirlwind recharging: %s s",
+  "key.kinetrix_moves.celebrate": "Emote: celebrate (with music)",
+  "kinetrix_moves.subtitle.celebrate": "Celebration music"
 }

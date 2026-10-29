@@ -7,7 +7,8 @@ reads  tools/blockbench/animations/author_2026-10-29.bbmodel  (never changed)
 writes tools/blockbench/refined/author_2026-10-29.bbmodel     (hop_on_kick, slide_under_attack, the falls, the dive)
        tools/blockbench/refined/author_2026-10-29b.bbmodel    (the fifth message: hop_roll_kick from
                                                               animations/author_2026-10-29b.bbmodel, the
-                                                              plunge, the axe whirlwind; round5.py)
+                                                              plunge, the axe whirlwind, celebrate made
+                                                              again to the author's music; round5.py)
        tools/blockbench/refined/ledge_2026-10-29.bbmodel      (the ledge set, with the ledge to see it by)
 
 The same round also changed hop_roll_dodge and finisher_stab (refine_author_2026_10_28b.py) and is
@@ -156,7 +157,7 @@ def main():
     # --- the fifth message: the roll kick (the author's draft), the plunge, the whirlwind ---
     with open(SRC_B, encoding='utf-8') as f:
         mb = json.load(f)
-    made_b = [round5.hop_roll_kick(), round5.plunge_fall(), round5.plunge_land(), round5.axe_whirlwind()]
+    made_b = [round5.hop_roll_kick(), round5.plunge_fall(), round5.plunge_land(), round5.axe_whirlwind(), round5.celebrate()]
     uuids = L.bone_uuids(mb)
     for a in made_b:
         no_bow(a)

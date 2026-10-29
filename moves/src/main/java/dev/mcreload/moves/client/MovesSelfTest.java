@@ -91,6 +91,12 @@ public final class MovesSelfTest {
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onGui);
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onScreen);
         if (Boolean.getBoolean("kinetrix_moves.selftest.probe")) MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::probe);
+        // the moves' own sounds as the game starts them (the celebrate emote's music)
+        MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.client.event.sound.PlaySoundEvent e) -> {
+            if (e.getSound() != null && KinetrixMoves.MODID.equals(e.getSound().getLocation().getNamespace())) {
+                note("sound " + e.getSound().getLocation() + " (" + e.getSound().getSource() + ") started at t " + tick);
+            }
+        });
         build();
         String only = System.getProperty("kinetrix_moves.selftest.only", "");
         if (!only.isBlank()) SCENARIOS.removeIf(s -> !s.name.matches(".*(" + only + ").*"));
@@ -183,6 +189,23 @@ public final class MovesSelfTest {
         whirlwind("92a_whirlwind", CameraType.THIRD_PERSON_BACK);
         whirlwind("92b_whirlwind_front", CameraType.THIRD_PERSON_FRONT);
         fastRun("16_fast_run");
+        SCENARIOS.add(new Scenario("45_celebrate", 175, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_FRONT);
+            if (t == 4) KeyMapping.click(MovesClient.CELEBRATE.getKey());
+            if (t == 6) note("celebrate: move " + Stamina.of(mc.player).move + "; its music in the sounds: "
+                    + (mc.getSoundManager().getSoundEvent(dev.mcreload.moves.Celebrate.MUSIC_ID) != null));
+            if (t == 100) note("celebrate: still " + Stamina.of(mc.player).move + " at 4.7 s");
+            if (t == 100) note("celebrate: the music playing " + musicPlaying(mc));
+            if (t == 170) note("celebrate: after 8.3 s " + Stamina.of(mc.player).move + ", the music playing " + musicPlaying(mc));
+        }, new int[]{4, 12, 30, 60, 72, 76, 80, 86, 95, 120, 145, 158, 166}, false));
+        // broken off by walking at 2 s: the emote and its music stop
+        SCENARIOS.add(new Scenario("46_celebrate_broken_off", 70, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 4) KeyMapping.click(MovesClient.CELEBRATE.getKey());
+            if (t == 40) note("celebrate broken off: before, " + Stamina.of(mc.player).move + ", the music playing " + musicPlaying(mc));
+            mc.options.keyUp.setDown(t >= 44 && t < 50);
+            if (t == 60) note("celebrate broken off: after walking, " + Stamina.of(mc.player).move + ", the music playing " + musicPlaying(mc));
+        }, new int[]{}, false));
         ledgeCorner("87_ledge_corner");
         slideAttack("96_slide_attack", CameraType.THIRD_PERSON_BACK);
         slideAttack("97_slide_attack_first_person", CameraType.FIRST_PERSON);
@@ -1350,6 +1373,23 @@ public final class MovesSelfTest {
         Stamina s = Stamina.of(p);
         PROBE.add(String.format(Locale.ROOT, "%s TICK t%d %s@%d layer %s active %s pitch%s ground %s", label, tick, s.move, s.moveTick, what,
                 layer.isActive(), b, p.onGround()));
+    }
+
+    /** The celebrate emote's music is playing on this client (the sound engine's playing instances; the development game's names). */
+    private static boolean musicPlaying(Minecraft mc) {
+        try {
+            java.lang.reflect.Field f = mc.getSoundManager().getClass().getDeclaredField("soundEngine");
+            f.setAccessible(true);
+            Object engine = f.get(mc.getSoundManager());
+            java.lang.reflect.Field g = engine.getClass().getDeclaredField("instanceToChannel");
+            g.setAccessible(true);
+            for (Object o : ((java.util.Map<?, ?>) g.get(engine)).keySet()) {
+                if (o instanceof net.minecraft.client.resources.sounds.SoundInstance si && si.getLocation().equals(dev.mcreload.moves.Celebrate.MUSIC_ID)) return true;
+            }
+            return false;
+        } catch (ReflectiveOperationException e) {
+            return false;
+        }
     }
 
     private static void writeReport(Minecraft mc) {
