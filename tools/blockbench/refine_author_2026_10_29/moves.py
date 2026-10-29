@@ -192,27 +192,27 @@ def roll_path(t):
 # --------------------------------------------------------------------------------------------
 
 TURN = 0.3        # standing while the mechanic turns the player round, back to the drop
-DOWN_LEN = 1.55   # the climb (2.0 s) backwards in 1.25 s: going down is quicker than up
+DOWN_LEN = 1.2    # the quick climb up (0.75 s) backwards in 0.9 s: lowering oneself is a little slower
 
 
-def _down_src(t):
+def _down_src(t, climb_len):
     """Time of the climb up shown at time t of the climb down."""
     if t <= TURN:
-        return 2.0
-    return 2.0 * (1 - (t - TURN) / (DOWN_LEN - TURN))
+        return climb_len
+    return climb_len * (1 - (t - TURN) / (DOWN_LEN - TURN))
 
 
 def ledge_climb_down(climb):
     """`climb`: the baked ledge_climb_up (with its root path). The same poses backwards: the player
-    steps to the edge, kneels on the top with the right knee, puts the hands on it, lowers the legs
-    over and walks the right foot down the wall, and hangs on both hands. Returns the animation with
-    its root path (px, as the climb up's)."""
+    steps to the edge, crouches, hooks the right heel over the corner and puts the hands on it,
+    lowers the legs over and down the arms, and hangs on both hands. Returns the animation with its
+    root path (px, as the climb up's)."""
     a = L.Anim('ledge_climb_down', DOWN_LEN, 'once')
     a.tol_rot, a.tol_pos = 0.3, 0.06
     ts = sorted(climb.root)
     root = {}
     for t in kit.frames(0, DOWN_LEN):
-        s = _down_src(t)
+        s = _down_src(t, climb.length)
         p = kit.design(climb, s)
         a.key(t, p)
         r = np.array([np.interp(s, ts, [climb.root[x][i] for x in ts]) for i in range(3)])

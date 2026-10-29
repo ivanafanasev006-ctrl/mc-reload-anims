@@ -26,6 +26,7 @@ from PIL import Image
 
 import combat
 import kit
+import landings
 import ledge
 import moves
 from kit import L
@@ -133,7 +134,8 @@ def main():
     model = copy.deepcopy(src)
     # slide_under_attack: made again for the author's second message (moves.py); the PC version
     # (combat.slide_under_attack, a slide then the turn and back) is kept there for reference.
-    made = [combat.hop_on_kick(), moves.slide_under_attack(), moves.fall_tuck(), moves.fall_roll()]
+    made = [combat.hop_on_kick(), moves.slide_under_attack(), moves.fall_tuck(), moves.fall_roll(),
+            landings.dive_roll(), landings.land_heavy()]
     uuids = L.bone_uuids(model)
     for a in made:
         no_bow(a)
@@ -192,6 +194,9 @@ def main():
     kick_from = combat.KICK_Z(0.0)
     data = moves.paths(c, down, pulled, helper, ledge.hop_path, combat.LIFT,
                        lambda t: combat.KICK_Z(min(t, combat.KICK_HIT)) - kick_from, made[0].length)
+    # the dive: up and forward [default], for the mechanic once the author says how it starts
+    data['dive_roll'] = [[round(landings.DIVE_LIFT(i / 20) * moves.PX, 4), round(landings.DIVE_FORWARD(i / 20), 4)]
+                         for i in range(int(round(landings.DIVE_LEN * 20)) + 1)]
     moves.write_paths(data, os.path.normpath(DST_PATHS))
     print(f'wrote {os.path.normpath(DST_PATHS)}: ' + ', '.join(data))
     return made, anims

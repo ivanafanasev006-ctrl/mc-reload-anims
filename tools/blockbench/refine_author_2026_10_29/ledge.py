@@ -274,10 +274,11 @@ def limb_of(point):
     return side, part
 
 
-def on_targets(pose, targets, prev, key, partner=False, body=()):
+def on_targets(pose, targets, prev, key, partner=False, body=(), bounds=None):
     """targets: [(point, world xyz, weight 0..1)]. Solves the limbs of the weighted points (their
     designed angles preferred a little, the turn about the limb's own length more), warm-started
-    from the previous frame under the same key."""
+    from the previous frame under the same key. bounds: joint ranges {(key, axis): (lo, hi)} on top
+    of the elbow and knee folds."""
     s = '2' if partner else ''
     tg = [(n + s, np.asarray(x, float), w) for n, x, w in targets if w > 1e-3]
     if not tg:
@@ -291,6 +292,7 @@ def on_targets(pose, targets, prev, key, partner=False, body=()):
             if v not in vary:
                 vary.append(v)
         b.update(bs)
+    b.update(bounds or {})
     nlimb = len(vary)
     vary += [v for v, _ in body]   # the body may give a little too (each with its own pull back)
     pref = [float(pose.get(k, (0, 0, 0))[ax]) for k, ax in vary]
@@ -312,45 +314,59 @@ def on_targets(pose, targets, prev, key, partner=False, body=()):
 # --------------------------------------------------------------------------------------------
 
 STAND = (0.0, LEDGE_Y, WALL_Z - 5.12)   # where the player stands at the end: on the top, clear of the drop
-CLIMB_LEN = 2.0
+CLIMB_LEN = 0.75
+
+#: The climb's arms bend only at the elbows (author, 2026-10-29: the first climb's arms "turned
+#: through themselves the other way"): the upper arm swings down in front, from overhead to the
+#: press, with no turn about itself or out to the side worth the name.
+CLIMB_ARMS = {('right_arm', 0): (-75, 172), ('right_arm', 1): (-12, 12), ('right_arm', 2): (-14, 24),
+              ('left_arm', 0): (-75, 172), ('left_arm', 1): (-12, 12), ('left_arm', 2): (-24, 14)}
 
 
 def ledge_climb_up():
-    """From both hands on the edge: a short gather, the pull-up (the right foot walks onto the wall
-    and pushes), the elbows go over the hands and press, the right knee comes onto the top, then
-    the left foot, and the player stands up on the top. The mechanic carries the player along
-    `root` (it follows the head, so the camera goes up with it), through the edge's corner."""
+    """A quick pull-up onto the edge, as short as a dodge (author, 2026-10-29: "just a quick
+    pull-up, the arms bend only at the elbows and do not turn through themselves, and the right leg
+    pulls over the corner too"). From both hands on the edge: the knees gather, the pull-up (the elbows fold,
+    the upper arms come down in front), the right heel goes up past the wall and hooks over the
+    corner beside the right hand, the body rolls up over it as the arms press down, the left foot
+    comes up, and the player stands on the top by 0.7 s. The mechanic carries the player along
+    `root` (up with the head, so the camera rises with it, and forward onto the top), through the
+    edge's corner."""
     hang = np.array(HANG2['body@p'])
     end = np.array(STAND)
     top = LEDGE_Y
     sz = STAND[2]
-    body_p = kit.keys((0.0, hang), (0.22, hang + (0, -0.8, -0.2)), (0.62, (0, 8.2, -1.6)),
-                      (0.92, (0, 14.5, -3.6)), (1.15, (0, 20.6, -5.8)), (1.45, (0, 26.0, -8.6)),
-                      (1.8, end), (CLIMB_LEN, end))
-    body_r = kit.keys((0.0, HANG2['body']), (0.22, (-6, 0, 0)), (0.62, (-6, 0, 0)), (0.92, (-30, 0, 0)),
-                      (1.15, (-38, 4, 3)), (1.45, (-20, 0, 0)), (1.8, (0, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
-    chest = kit.keys((0.0, HANG2['chest']), (0.62, (4, 0, 0)), (0.92, (-22, 0, 0)), (1.15, (-26, 0, 0)),
-                     (1.45, (-18, 0, 0)), (1.8, (-2, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
-    head = kit.keys((0.0, HANG2['head']), (0.4, (22, 0, 0)), (0.62, (18, 0, 0)), (0.92, (34, 0, 0)),
-                    (1.15, (36, 0, 0)), (1.45, (24, 0, 0)), (1.8, (4, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
-    # how much each target holds (0..1) and where
-    hands_w = kit.keys((0.0, 1), (1.22, 1), (1.36, 0))
-    rfoot_wall = kit.keys((0.0, 0), (0.34, 0), (0.48, 1), (0.92, 1), (1.0, 0))
-    rknee_top = kit.keys((0.0, 0), (1.06, 0), (1.2, 1), (1.5, 1), (1.62, 0))
-    lfoot_w = kit.keys((0.0, 0), (1.18, 0), (1.24, 1), (CLIMB_LEN, 1))
-    rfoot_w = kit.keys((0.0, 0), (1.5, 0), (1.56, 1), (CLIMB_LEN, 1))
-    lfoot_path = kit.keys((1.18, (-1.9, 20.0, WALL_Z + 1.5)), (1.32, (-1.9, top + 4.5, WALL_Z - 1.5)),
-                          (1.42, (-1.9, top, sz + 1.2)), (1.8, (-1.9, top, sz)), (CLIMB_LEN, (-1.9, top, sz)))
-    rfoot_path = kit.keys((1.5, (1.9, top + 1.0, WALL_Z - 1.0)), (1.62, (1.9, top + 3.5, sz + 1.0)),
-                          (1.72, (1.9, top, sz)), (CLIMB_LEN, (1.9, top, sz)))
-    # free arms after letting go: a little out for balance, then down
-    rarm_free = kit.keys((1.22, (40, 0, 10)), (1.5, (25, 0, 24)), (1.8, (0, 0, 4)), (CLIMB_LEN, (0, 0, 0)))
-    larm_free = kit.keys((1.22, (40, 0, -10)), (1.5, (30, 0, -20)), (1.8, (0, 0, -4)), (CLIMB_LEN, (0, 0, 0)))
-    fore_free = kit.keys((1.22, (30, 0, 0)), (1.5, (25, 0, 0)), (1.8, (4, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
-    legs_d = kit.keys((0.0, (5, 0, 1.5)), (0.22, (28, 0, 1.5)), (0.62, (40, 0, 2)), (0.92, (20, 0, 2)),
-                      (1.2, (10, 0, 0)), (1.8, (0, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
-    shins_d = kit.keys((0.0, (-10, 0, 0)), (0.22, (-45, 0, 0)), (0.62, (-70, 0, 0)), (0.92, (-55, 0, 0)),
-                       (1.2, (-40, 0, 0)), (1.8, (0, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
+    body_p = kit.keys((0.0, hang), (0.06, hang), (0.28, (0.6, 10.5, -2.6)),
+                      (0.42, (1.0, 17.5, -4.0)), (0.56, (0.4, 24.0, -8.4)), (0.7, end), (CLIMB_LEN, end))
+    body_r = kit.keys((0.0, HANG2['body']), (0.06, (-7, 0, 0)), (0.28, (-8, 0, 5)), (0.42, (-32, 0, 6)),
+                      (0.56, (-22, 0, 0)), (0.7, (0, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
+    chest = kit.keys((0.0, HANG2['chest']), (0.28, (-4, 0, 0)), (0.42, (-20, 0, 0)), (0.56, (-18, 0, 0)),
+                     (0.7, (-2, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
+    head = kit.keys((0.0, HANG2['head']), (0.2, (24, 0, 0)), (0.42, (36, 0, 0)), (0.56, (22, 0, 0)),
+                    (0.7, (4, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
+    # how much each target holds (0..1) and where (world)
+    hands_w = kit.keys((0.0, 1), (0.46, 1), (0.54, 0))
+    rfoot_w = kit.keys((0.0, 0), (0.12, 0), (0.24, 1), (CLIMB_LEN, 1))
+    lfoot_w = kit.keys((0.0, 0), (0.44, 0), (0.5, 1), (CLIMB_LEN, 1))
+    # the right foot: up in front of the wall, over the corner, onto the top beside the right hand
+    # (the heel hook), then in under the body; the left one follows once the body is over the top
+    rfoot_p = kit.keys((0.12, (3.0, 3.0, -1.0)), (0.2, (6.0, 12.0, -2.4)), (0.27, (10.0, 24.0, -2.6)),
+                       (0.32, (11.0, top + 2.4, -4.2)), (0.36, (11.0, top + 0.4, -7.4)), (0.5, (11.0, top + 0.4, -7.4)),
+                       (0.58, (5.0, top + 1.6, -9.0)), (0.66, (1.9, top, sz)), (CLIMB_LEN, (1.9, top, sz)))
+    lfoot_p = kit.keys((0.44, (-2.0, 20.0, -2.0)), (0.5, (-2.0, 26.0, -2.5)), (0.55, (-2.0, top + 2.5, -3.2)),
+                       (0.6, (-1.9, top + 1.5, -8.0)), (0.66, (-1.9, top, sz)), (CLIMB_LEN, (-1.9, top, sz)))
+    # what the limbs do when nothing holds them: the arms after letting go, the legs hanging
+    rarm_free = kit.keys((0.46, (30, 0, 12)), (0.6, (20, 0, 14)), (0.7, (4, 0, 4)), (CLIMB_LEN, (0, 0, 0)))
+    larm_free = kit.keys((0.46, (30, 0, -12)), (0.6, (24, 0, -12)), (0.7, (4, 0, -4)), (CLIMB_LEN, (0, 0, 0)))
+    fore_free = kit.keys((0.46, (35, 0, 0)), (0.6, (22, 0, 0)), (0.7, (5, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
+    rleg_d = kit.keys((0.0, (5, 0, 1.5)), (0.2, (30, 0, 30)), (0.35, (40, 0, 60)), (0.5, (30, 0, 30)),
+                      (0.66, (0, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
+    rshin_d = kit.keys((0.0, (-10, 0, 0)), (0.2, (-60, 0, 0)), (0.35, (-30, 0, 0)), (0.5, (-60, 0, 0)),
+                       (0.66, (0, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
+    lleg_d = kit.keys((0.0, HANG2['left_leg']), (0.06, (14, 0, -1.5)), (0.28, (24, 0, -3)), (0.44, (40, 0, -4)),
+                      (0.66, (0, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
+    lshin_d = kit.keys((0.0, HANG2['left_shin']), (0.06, (-34, 0, 0)), (0.28, (-46, 0, 0)), (0.44, (-50, 0, 0)),
+                       (0.66, (0, 0, 0)), (CLIMB_LEN, (0, 0, 0)))
     prev = {}
 
     def world(t):
@@ -360,31 +376,29 @@ def ledge_climb_up():
         p['chest'] = chest(t)
         p['head'] = head(t)
         held = prev.get('arms', (HANG2['right_arm'], HANG2['right_forearm'], HANG2['left_arm'], HANG2['left_forearm']))
-        f = kit.span(t, 1.22, 1.42)
+        f = kit.span(t, 0.46, 0.56)
         p['right_arm'] = kit.lerp(held[0], rarm_free(t), f)
         p['right_forearm'] = kit.lerp(held[1], fore_free(t), f)
         p['left_arm'] = kit.lerp(held[2], larm_free(t), f)
         p['left_forearm'] = kit.lerp(held[3], fore_free(t), f)
-        lg, sh = legs_d(t), shins_d(t)
+        p['right_leg'], p['right_shin'] = rleg_d(t), rshin_d(t)
         # the leg left hanging stays under the hip however far the body leans over the edge
-        lean = max(0.0, -p['body'][0] - p['chest'][0] * 0.3) * kit.span(t, 0.6, 0.9) * (1 - kit.span(t, 1.2, 1.45))
-        p['right_leg'], p['left_leg'] = lg, (lg[0] + 4 + 0.9 * lean, 0, -lg[2])
-        p['right_shin'], p['left_shin'] = sh, (sh[0] - 6 + 0.6 * lean, 0, 0)
-        tg = [('rhand', grip(6.5), hands_w(t)), ('lhand', grip(-6.5), hands_w(t)),
-              ('rtoe', (1.9, 13.0, WALL_Z - 0.05), rfoot_wall(t)),
-              ('rknee', (1.9, top + 0.05, -8.2), rknee_top(t))]
-        if t >= 1.18:
-            tg.append(('lfoot', lfoot_path(t), lfoot_w(t)))
-        if t >= 1.5:
-            tg.append(('rfoot', rfoot_path(t), rfoot_w(t)))
-        p = on_targets(p, tg, prev, 'climb')
+        lean = max(0.0, -p['body'][0] - 0.3 * p['chest'][0]) * (1 - kit.span(t, 0.44, 0.52))
+        ll, ls = lleg_d(t), lshin_d(t)
+        p['left_leg'], p['left_shin'] = (ll[0] + 0.9 * lean, ll[1], ll[2]), (ls[0] + 0.5 * lean, 0, 0)
+        tg = [('rhand', grip(6.5), hands_w(t)), ('lhand', grip(-6.5), hands_w(t))]
+        if t >= 0.12:
+            tg.append(('rfoot', rfoot_p(t), rfoot_w(t)))
+        if t >= 0.44:
+            tg.append(('lfoot', lfoot_p(t), lfoot_w(t)))
+        p = on_targets(p, tg, prev, 'climb', bounds=CLIMB_ARMS)
         if hands_w(t) > 0.999:
             prev['arms'] = (p['right_arm'], p['right_forearm'], p['left_arm'], p['left_forearm'])
         return p
 
     a = L.Anim('ledge_climb_up', CLIMB_LEN, 'once')
     a.tol_rot, a.tol_pos = 0.3, 0.06
-    a.root = carried(a, world, CLIMB_LEN, STAND, (0.75, 1.75))
+    a.root = carried(a, world, CLIMB_LEN, STAND, (0.3, 0.68))
     return a
 
 
