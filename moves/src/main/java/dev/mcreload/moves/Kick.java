@@ -15,15 +15,21 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
- * The vault with a kick (hop_on_kick; author, 2026-10-29): W held, Space and R with a mob of some
- * size in front. A cutscene: over the mob, a hang in the air turned to its back, a hard kick into
- * it that takes 1 heart and flings it away (however heavy it is), the turn back, the landing. The
- * mob stoops under the hand and is held still in the air time (it is "slowed" with the player's
- * perception, the client's side of the cutscene); nothing hurts the player until the landing.
+ * The vault with a kick (hop_on_kick; author, 2026-10-29, fourth message): W and Space down (held,
+ * or pressed a moment before; no timing), R near a mob of some size, from the ground or a jump. A
+ * cutscene: the vault over it as in hop_roll_dodge, the turn to face it (the camera with the
+ * player), a jump spinning a whole turn with the leg swung out, which meets its back (1 heart,
+ * flung away however heavy it is), the landing facing it ("after it he stays facing the mob, as
+ * after Slide + LMB"). The mob stoops under the hand as in the vault and is held still until the
+ * kick; nothing hurts the player until the landing.
  */
 public final class Kick {
-    /** Take-off (0.25 s), the kick (1.27 s) and the landing (1.95 s) of the animation, in ticks. */
-    public static final int TAKEOFF = 5, HIT = 25, LAND = 39;
+    /** Take-off (0.2 s) and the vault's landing (0.72 s), as in hop_roll_dodge; in ticks. */
+    public static final int TAKEOFF = Move.HOP_TAKEOFF, VAULT_LAND = Move.HOP_LAND;
+    /** The half turn to the mob (0.72-0.9 s), the spinning jump (0.95 s), the kick (1.31 s), the landing (1.46 s). */
+    public static final int TURN_FROM = 14, TURN_TO = 18, SPIN = 19, HIT = 26, LAND = 29;
+    /** The leg reaches this far from the player's middle to the mob's side. */
+    public static final double REACH = 2.4;
     /** The mob is held still from the take-off until it is kicked. */
     public static final int HOLD_FROM = TAKEOFF, HOLD_TO = HIT - 1;
     /** The mob a kick goes over: one the vault could go over. */
@@ -37,7 +43,7 @@ public final class Kick {
         s.kickDone = false;
         s.kickFrom = p.position();
         s.kickYaw = p.getYRot();
-        if (target instanceof LivingEntity le) MovesNet.stoop(target, TAKEOFF, HIT - TAKEOFF + 4, Hop.lean(le));
+        if (target instanceof LivingEntity le) MovesNet.stoop(target, TAKEOFF, Hop.STOOP_TICKS, Hop.lean(le));
     }
 
     /** Every server tick of a kick: no fall damage, the mob held still in the air time, the kick. */
@@ -52,7 +58,12 @@ public final class Kick {
             mob.hurtMarked = true;
             if (mob instanceof Mob m) m.getNavigation().stop();
         }
-        if (!s.kickDone && s.moveTick >= HIT) kick(p, s, mob);
+        if (!s.kickDone && s.moveTick >= HIT) {
+            // The leg meets the mob if it is still in reach (it was held still; a lagging client is let through).
+            double gap = mob.position().subtract(p.position()).horizontalDistance() - mob.getBbWidth() / 2;
+            if (gap <= REACH + 1.0) kick(p, s, mob);
+            else s.kickDone = true;
+        }
     }
 
     /**
@@ -62,8 +73,14 @@ public final class Kick {
      */
     static void kick(ServerPlayer p, Stamina s, LivingEntity mob) {
         s.kickDone = true;
-        float r = s.kickYaw * net.minecraft.util.Mth.DEG_TO_RAD;
-        Vec3 back = new Vec3(net.minecraft.util.Mth.sin(r), 0, -net.minecraft.util.Mth.cos(r));    // the way the player came
+        // Away from the player (who has turned to it), else back the way they came.
+        Vec3 away = mob.position().subtract(p.position());
+        away = new Vec3(away.x, 0, away.z);
+        if (away.lengthSqr() < 1.0E-4) {
+            float r = s.kickYaw * net.minecraft.util.Mth.DEG_TO_RAD;
+            away = new Vec3(net.minecraft.util.Mth.sin(r), 0, -net.minecraft.util.Mth.cos(r));
+        }
+        Vec3 back = away.normalize();
         mob.invulnerableTime = 0;
         mob.hurt(p.damageSources().playerAttack(p), MovesConfig.kickDamage());
         Strikes.shove(mob, back, MovesConfig.kickStrength());

@@ -13,6 +13,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 public final class MoveServer {
     /** A request this late after leaving the ground still counts as from the ground (lag). */
     private static final int GROUND_GRACE = 4;
+    /** W + Space + R: the kick or the dive may start this late in a jump (a vanilla jump is 12 ticks in the air). */
+    public static final int JUMP_GRACE = 14;
 
     /**
      * A player's client asks for a move. Returns whether it is done; if not, their client is told to
@@ -37,7 +39,7 @@ public final class MoveServer {
             sync(p, s, true);
             return false;
         }
-        s.spend(move.cost(), p);
+        s.spend(move.cost(s.move), p);
         Guard.lower(p, s);
         if (move.ledge() || move == Move.FALL_TUCK) p.stopUsingItem();
         s.start(p, move, held);
@@ -118,6 +120,11 @@ public final class MoveServer {
         if (move == Move.FALL_ROLL) return s.move == Move.FALL_TUCK;
         if (move.ledge()) return move != Move.LEDGE_DOWN || ground;
         if (move == Move.LEDGE_HELP) return ground;
+        // W + Space + R: the kick and the dive from the ground or a jump already begun, not out of a fall.
+        if (move == Move.KICK || move == Move.DIVE) {
+            int grace = JUMP_GRACE + (p.level().isClientSide ? 0 : GROUND_GRACE);
+            return p.fallDistance < Fall.TUCK_FROM && (ground || p.tickCount - lastGround(p) <= grace);
+        }
         // The moves of the left button: the dash with a sword, off a sprint; the finisher with a sword or an axe.
         if (move == Move.DASH && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER && !Strikes.finisherWeapon(p)) return false;
@@ -132,10 +139,19 @@ public final class MoveServer {
     /** The same for the client's own player (in a single player world both ends run in one game). */
     private static final java.util.Map<java.util.UUID, int[]> SEEN_CLIENT = new java.util.concurrent.ConcurrentHashMap<>();
     private static final java.util.Map<java.util.UUID, float[]> SENT = new java.util.concurrent.ConcurrentHashMap<>();
+    /** Where each player last stood (the edge just gone over: Ledge.justLeft), on each end. */
+    private static final java.util.Map<java.util.UUID, net.minecraft.world.phys.Vec3> GROUND_AT = new java.util.concurrent.ConcurrentHashMap<>(),
+            GROUND_AT_CLIENT = new java.util.concurrent.ConcurrentHashMap<>();
 
-    private static int lastGround(Player p) {
+    /** The tick the player was last on the ground. */
+    public static int lastGround(Player p) {
         int[] seen = (p.level().isClientSide ? SEEN_CLIENT : SEEN).get(p.getUUID());
         return seen == null ? Integer.MIN_VALUE / 2 : seen[0];
+    }
+
+    /** Where the player's feet last stood on the ground (null: not seen yet). */
+    public static net.minecraft.world.phys.Vec3 groundAt(Player p) {
+        return (p.level().isClientSide ? GROUND_AT_CLIENT : GROUND_AT).get(p.getUUID());
     }
 
     private static int lastSprint(Player p) {
@@ -156,7 +172,10 @@ public final class MoveServer {
     public static void seen(Player p) {
         java.util.Map<java.util.UUID, int[]> map = p.level().isClientSide ? SEEN_CLIENT : SEEN;
         int[] seen = map.computeIfAbsent(p.getUUID(), u -> new int[]{Integer.MIN_VALUE / 2, Integer.MIN_VALUE / 2});
-        if (p.onGround()) seen[0] = p.tickCount;
+        if (p.onGround()) {
+            seen[0] = p.tickCount;
+            (p.level().isClientSide ? GROUND_AT_CLIENT : GROUND_AT).put(p.getUUID(), p.position());
+        }
         if (p.isSprinting()) seen[1] = p.tickCount;
     }
 
@@ -181,6 +200,7 @@ public final class MoveServer {
     public static void loggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         SEEN.remove(event.getEntity().getUUID());
         SENT.remove(event.getEntity().getUUID());
+        GROUND_AT.remove(event.getEntity().getUUID());
     }
 
     /** A new player entity (respawn, other dimension): send the bars again. */

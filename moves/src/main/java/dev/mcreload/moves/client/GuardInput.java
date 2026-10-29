@@ -51,7 +51,8 @@ public final class GuardInput {
         boolean held = mc.options.keyUse.isDown() && mc.screen == null;
         if (!held) waitRelease = false;
         if (s.guard == Guard.Kind.NONE) {
-            if (click && held && !waitRelease && MovesClient.serverHasMod() && Guard.allowed(p, s)) raise(p, s);
+            if (click && held && !waitRelease && dev.mcreload.moves.HudConfig.Moves.GUARD.on() && MovesClient.serverHasMod()
+                    && Guard.allowed(p, s)) raise(p, s);
             return;
         }
         // Up: keep it while the button is held and the hands still allow it; a hit lowers it.

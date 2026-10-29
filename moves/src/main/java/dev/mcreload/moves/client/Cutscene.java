@@ -14,8 +14,9 @@ import net.minecraftforge.common.MinecraftForge;
 /**
  * The kick's cutscene on the player's own screen (author, 2026-10-29: "a cutscene with time and
  * perception slowed"): the camera goes behind the player for the move if it was in first person
- * (and back after), and the view narrows through the air time and the kick, as if time slowed,
- * opening again as the player comes down. The world is not slowed for anyone else.
+ * (and back after), and the view narrows from the vault over the mob to the kick, as if time
+ * slowed, opening again as the player lands. The world is not slowed for anyone else. Switched off
+ * in the settings (the moves' page).
  */
 public final class Cutscene {
     /** The camera before the cutscene took it, or null. */
@@ -41,7 +42,7 @@ public final class Cutscene {
     private static float slow(Stamina s, float partial) {
         if (s.move != Move.KICK) return 0f;
         float t = s.moveTick + partial;
-        float in = Mth.clamp((t - 8) / 6f, 0f, 1f), out = Mth.clamp((Kick.LAND - 2 - t) / 8f, 0f, 1f);
+        float in = Mth.clamp((t - Kick.TAKEOFF) / 10f, 0f, 1f), out = Mth.clamp((Kick.LAND + 2 - t) / 5f, 0f, 1f);
         float f = Math.min(in, out);
         return f * f * (3 - 2 * f);
     }

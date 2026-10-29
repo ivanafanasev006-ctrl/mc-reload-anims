@@ -24,7 +24,6 @@ import uuid
 import numpy as np
 from PIL import Image
 
-import combat
 import kit
 import landings
 import ledge
@@ -134,7 +133,9 @@ def main():
     model = copy.deepcopy(src)
     # slide_under_attack: made again for the author's second message (moves.py); the PC version
     # (combat.slide_under_attack, a slide then the turn and back) is kept there for reference.
-    made = [combat.hop_on_kick(), moves.slide_under_attack(), moves.fall_tuck(), moves.fall_roll(),
+    # hop_on_kick: made again for the author's fourth message (moves.py); the PC version
+    # (combat.hop_on_kick, a hang high over the mob) is kept there for reference.
+    made = [moves.hop_on_kick(), moves.slide_under_attack(), moves.fall_tuck(), moves.fall_roll(),
             landings.dive_roll(), landings.land_heavy()]
     uuids = L.bone_uuids(model)
     for a in made:
@@ -191,10 +192,8 @@ def main():
     print(f'wrote {DST_LEDGE}: ' + ', '.join(a.name for a in anims))
 
     # --- the mechanic's paths ---
-    kick_from = combat.KICK_Z(0.0)
-    data = moves.paths(c, down, pulled, helper, ledge.hop_path, combat.LIFT,
-                       lambda t: combat.KICK_Z(min(t, combat.KICK_HIT)) - kick_from, made[0].length)
-    # the dive: up and forward [default], for the mechanic once the author says how it starts
+    data = moves.paths(c, down, pulled, helper, ledge.hop_path)
+    # the dive (W + Space + R with no mob near): up and forward [default]
     data['dive_roll'] = [[round(landings.DIVE_LIFT(i / 20) * moves.PX, 4), round(landings.DIVE_FORWARD(i / 20), 4)]
                          for i in range(int(round(landings.DIVE_LEN * 20)) + 1)]
     moves.write_paths(data, os.path.normpath(DST_PATHS))

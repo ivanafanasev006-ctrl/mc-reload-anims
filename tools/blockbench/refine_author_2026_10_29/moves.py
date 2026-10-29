@@ -25,6 +25,7 @@ import os
 import numpy as np
 
 import kit
+import ledge
 import kinetrix_rig as kr
 from kit import L
 
@@ -115,6 +116,71 @@ def slide_under_attack():
 
 
 # --------------------------------------------------------------------------------------------
+# hop_on_kick, made again: the vault over the mob, the turn, a spinning kick, facing the mob
+# --------------------------------------------------------------------------------------------
+
+REF28B = os.path.join(kit.BB, 'refined', 'author_2026-10-28b.bbmodel')
+#: Author, 2026-10-29, fourth message: "at first like the hop_roll_dodge roll (R at a mob), then he
+#: turns round, kicks with a swing and spins a whole turn as he kicks, the landing; after it he
+#: stays facing the mob, as after Slide + LMB; a little shorter". The PC version (a jump 1.5 blocks
+#: up, a hang turned to the mob's back, the kick, the turn back) floated three metres over the mob
+#: in the game and is replaced. Times (s): the vault as hop_roll_dodge (take-off 0.2, landing
+#: VAULT_LAND); the mechanic turns the player half round to the mob (TURN_FROM-TURN_TO, the camera
+#: with it); a jump spinning a whole turn clockwise (SPIN_FROM-SPIN_TO), the right leg swung out at
+#: hip height meets the mob as it points at it, three quarters round (KICK_HIT); the landing
+#: (SPIN_TO) facing the mob, settled by KICK_LEN.
+VAULT_LAND, TURN_FROM, TURN_TO, SPIN_FROM, KICK_HIT, SPIN_TO, KICK_LEN = 0.72, 0.72, 0.9, 0.95, 1.31, 1.46, 2.0
+#: How high the spinning jump lifts the player (px of the model above the ground): low, at the
+#: height of a kick, not a flight.
+SPIN_LIFT = kit.keys((0.0, 0), (SPIN_FROM, 0), (1.2, 10), (SPIN_TO, 0), (KICK_LEN, 0))
+
+
+def hop_on_kick():
+    """The vault of hop_roll_dodge (its frames, as refined: the hand on the head, the roll over the
+    back, the landing), then: down into a crouch while the mechanic turns the player to the mob, the
+    arms up in the guard; the load (the shoulders wind up against the spin); a jump spinning one
+    turn clockwise, the left leg tucked, the right one swung out straight at hip height, round
+    through the mob's back at three quarters of the turn; the landing on both feet facing it, the
+    guard up, and the stance."""
+    vault = lambda t: _sampled(REF28B, 'hop_roll_dodge', t)  # noqa: E731
+    z = -360   # the vault ends one sideways turn round: the rest keeps it
+    guard = {'right_arm': (55, 0, 22), 'right_forearm': (70, 0, 0), 'left_arm': (60, 0, -22), 'left_forearm': (80, 0, 0)}
+    crouch = {'body': (0, 0, z), 'chest': (-18, 0, 0), 'head': (-6, 0, 0), **guard,
+              'right_leg': (58, 0, 6), 'right_shin': (-92, 0, 0), 'left_leg': (58, 0, -6), 'left_shin': (-92, 0, 0),
+              'right_item_sword': (0, 0, 0)}
+    load = {**crouch, 'torso': (0, 28, 0), 'chest': (-22, 0, 0), 'head': (-4, -20, 0),
+            'right_arm': (70, 0, -35), 'right_forearm': (95, 0, 0), 'left_arm': (40, 0, -55), 'left_forearm': (90, 0, 0),
+            'right_leg': (70, 0, 8), 'right_shin': (-110, 0, 0), 'left_leg': (66, 0, -6), 'left_shin': (-108, 0, 0)}
+    # in the air: the left leg tucked, the right one swung out to the side at hip height, straight
+    out = {'torso': (0, -8, 0), 'chest': (-8, 0, 0), 'head': (-6, 8, 0),
+           'right_arm': (35, 0, 70), 'right_forearm': (20, 0, 0), 'left_arm': (30, 0, -75), 'left_forearm': (25, 0, 0),
+           'right_leg': (18, 0, 78), 'right_shin': (-6, 0, 0), 'left_leg': (82, 0, -8), 'left_shin': (-118, 0, 0),
+           'right_item_sword': (0, 0, 0)}
+    chamber = {**out, 'right_leg': (70, 0, 40), 'right_shin': (-90, 0, 0), 'right_arm': (50, 0, 20), 'left_arm': (50, 0, -30),
+               'right_forearm': (60, 0, 0), 'left_forearm': (70, 0, 0)}
+    land = {**crouch, 'chest': (-14, 0, 0), 'right_leg': (50, 0, 8), 'right_shin': (-80, 0, 0),
+            'left_leg': (55, 0, -6), 'left_shin': (-85, 0, 0)}
+    keys = [(t, vault(t), 'linear') for t in kit.frames(0, 0.8) if t <= 0.8]
+    keys[0] = (0.0, keys[0][1], 'auto')
+    keys += [
+        (TURN_TO, crouch, 'inout'),
+        (SPIN_FROM, load, 'inout'),
+        (1.05, {**chamber, 'body': (0, -50, z)}, 'out'),
+        (1.15, {**out, 'body': (0, -140, z)}, 'linear'),
+        (1.25, {**out, 'body': (0, -228, z)}, 'linear'),
+        (KICK_HIT, {**out, 'body': (0, -272, z), 'chest': (-2, 0, 0)}, 'linear'),
+        (1.39, {**chamber, 'body': (0, -330, z)}, 'linear'),
+        (SPIN_TO, {**land, 'body': (0, -360, z)}, 'out'),
+        (1.7, {**land, 'body': (0, -360, z), 'chest': (-10, 0, 0), 'right_leg': (28, 0, 6), 'right_shin': (-40, 0, 0),
+               'left_leg': (30, 0, -6), 'left_shin': (-42, 0, 0)}, 'inout'),
+        (KICK_LEN, {'body': (0, -360, z), 'right_item_sword': (0, 0, 0)}, 'inout'),
+    ]
+    a = _bake('hop_on_kick', KICK_LEN, keys)
+    a.lift = SPIN_LIFT
+    return a
+
+
+# --------------------------------------------------------------------------------------------
 # fall_tuck and fall_roll
 # --------------------------------------------------------------------------------------------
 
@@ -137,26 +203,45 @@ def fall_tuck():
     return a
 
 
-#: fall_roll: the feet touch at 0, the roll over the shoulder 0.08-0.5 s (the mechanic carries the
-#: player ROLL_BLOCKS forward), up onto one knee by 0.6, stunned there to KNEEL_END, standing by FALL_END.
-ROLL_FROM, ROLL_TO, KNEEL_AT, KNEEL_END, FALL_END = 0.08, 0.5, 0.68, 1.5, 1.9
+#: fall_roll (author, 2026-10-29, fourth message: "the heavy landing merged with the roll of the R
+#: fall, a hybrid of them, and up 50 % faster"): the feet touch at 0, the roll over the shoulder
+#: 0.08-0.5 s (the mechanic carries the player ROLL_BLOCKS forward), out of it the heavy landing's
+#: kneel, the right knee and both hands down by HANDS_DOWN, a heavy breath, the left hand on the
+#: knee and the push up at PUSH (the stun ends: Fall.STAND), up bent over by UP_AT, straight by
+#: FALL_END. The kneel lasted 0.68-1.5 s and the getting up to 1.9; now 0.64-1.05 and 1.5.
+ROLL_FROM, ROLL_TO, HANDS_DOWN, PUSH, UP_AT, FALL_END = 0.08, 0.5, 0.64, 1.05, 1.2, 1.5
 ROLL_BLOCKS = 1.6
 
 
 def fall_roll():
     """The landing out of the tuck: the feet take it in a deep squat and the body goes on forward
-    into a roll over the shoulder (the refined forward roll: one turn, tucked), comes up onto the
-    right foot and the left knee (the volley's kneel), the head down and a hand on the knee, a
-    moment to breathe (the stun), then stands up."""
+    into a roll over the shoulder (the refined forward roll: one turn, tucked), and out of it the
+    heavy landing (land_heavy, made from the author's third message): the right knee and both hands
+    go down onto the ground in front, the head hangs, one heavy breath, the left hand onto the left
+    knee pushes the body up, up bent over, straight. The stand-up of land_heavy (1.25-3.0 s there)
+    in 0.45 s here: the roll took the fall, the player is shaken, not beaten."""
+    import landings
     roll = lambda t: _sampled(REF27, 'dodge_front', t)  # noqa: E731
     r20, r30, r45 = roll(0.2), roll(0.3), roll(0.45)
     for r in (r20, r30, r45):
         r.pop('body@p', None)
-    kneel = _sampled(REF27, 'bow_barrage', 0.5, bones=('right_leg', 'right_shin', 'left_leg', 'left_shin'))
-    stunned = {**kneel, 'body': (-360, 0, 0), 'chest': (-18, 0, 0), 'head': (24, 0, 0),
-               'right_arm': (42, 0, 12), 'right_forearm': (48, 0, 0), 'left_arm': (18, 0, -14), 'left_forearm': (22, 0, 0),
-               'right_item_sword': (0, 0, 0)}
-    breathe = {**stunned, 'chest': (-14, 0, 0), 'head': (20, 0, 0)}
+    turn = lambda pose: {**pose, 'body': (pose.get('body', (0, 0, 0))[0] - 360, 0, 0)}  # noqa: E731
+    # land_heavy's kneel: on the right knee, the left foot ahead, leaning from the hips so the
+    # straight arms reach the ground in front
+    kneel = {'body': (-29, 0, 0), 'chest': (-52, 0, 0), 'head': (-26, 0, 0),
+             'right_leg': (44, 0, 4), 'right_shin': (-112, 0, 0), 'left_leg': (112, 0, -6), 'left_shin': (-100, 0, 0),
+             'right_arm': (75, 0, 10), 'right_forearm': (8, 0, 0), 'left_arm': (75, 0, -10), 'left_forearm': (8, 0, 0),
+             'right_item_sword': (-40, 0, 0)}
+    on_knee = {**kneel, 'body': (-18, 0, 0), 'chest': (-38, 0, 0), 'head': (-24, 0, 0), 'right_leg': (33, 0, 4),
+               'left_leg': (101, 0, -6), 'left_arm': (35, 0, -12), 'left_forearm': (40, 0, 0), 'right_item_sword': (0, 0, 0)}
+    push = {'body': (-12, 0, 0), 'chest': (-34, 0, 0), 'head': (-20, 0, 0),
+            'right_leg': (62, 0, 4), 'right_shin': (-90, 0, 0), 'left_leg': (82, 0, -6), 'left_shin': (-82, 0, 0),
+            'right_arm': (40, 0, 14), 'right_forearm': (30, 0, 0), 'left_arm': (35, 0, -12), 'left_forearm': (40, 0, 0),
+            'right_item_sword': (0, 0, 0)}
+    bent = {'body': (-6, 0, 0), 'chest': (-26, 0, 0), 'head': (-10, 0, 0),
+            'right_leg': (20, 0, 3), 'right_shin': (-24, 0, 0), 'left_leg': (28, 0, -3), 'left_shin': (-30, 0, 0),
+            'right_arm': (8, 0, 10), 'right_forearm': (12, 0, 0), 'left_arm': (30, 0, -8), 'left_forearm': (34, 0, 0),
+            'right_item_sword': (0, 0, 0)}
     keys = [
         (0.0, {**TUCK, 'body': (-20, 0, 0), 'right_leg': (80, 0, 5), 'right_shin': (-118, 0, 0),
                'left_leg': (80, 0, -5), 'left_shin': (-118, 0, 0)}, 'auto'),
@@ -166,20 +251,49 @@ def fall_roll():
         (0.2, {**r20, 'body': (-110, 0, 0)}, 'linear'),
         (0.32, {**r30, 'body': (-200, 0, 0)}, 'linear'),
         (0.44, {**r45, 'body': (-290, 0, 0)}, 'linear'),
-        # out of the roll on both feet, still tucked (a deep squat), then the left knee goes down
+        # out of the roll on both feet, still tucked (a deep squat)...
         (ROLL_TO + 0.04, {**TUCK, 'body': (-338, 0, 0), 'chest': (-35, 0, 0), 'head': (-10, 0, 0),
                           'right_leg': (95, 0, 6), 'right_shin': (-120, 0, 0), 'left_leg': (88, 0, -6), 'left_shin': (-125, 0, 0),
                           'right_arm': (60, 0, 15), 'right_forearm': (40, 0, 0), 'left_arm': (50, 0, -15), 'left_forearm': (40, 0, 0),
                           'right_item_sword': (-40, 0, 0)}, 'out'),
-        (KNEEL_AT, stunned, 'out'),
-        (1.05, breathe, 'inout'),
-        (KNEEL_END, stunned, 'inout'),
-        (1.7, {'body': (-360, 0, 0), 'chest': (-14, 0, 0), 'head': (4, 0, 0), 'right_arm': (14, 0, 8), 'right_forearm': (16, 0, 0),
-               'left_arm': (10, 0, -8), 'left_forearm': (12, 0, 0), 'right_leg': (24, 0, 3), 'right_shin': (-30, 0, 0),
-               'left_leg': (16, 0, -3), 'left_shin': (-34, 0, 0), 'right_item_sword': (0, 0, 0)}, 'inout'),
+        # ...and it gives: the right knee and both hands down, the head hangs (land_heavy)
+        (HANDS_DOWN, turn(kneel), 'out'),
+        (0.86, turn(kneel), 'auto'),
+        (0.95, turn(on_knee), 'inout'),
+        (PUSH, turn(push), 'inout'),
+        (UP_AT, turn(bent), 'inout'),
         (FALL_END, {'body': (-360, 0, 0), 'right_item_sword': (0, 0, 0)}, 'inout'),
     ]
-    return _bake('fall_roll', FALL_END, keys)
+    d = L.Anim('fall_roll_design', FALL_END)
+    for t, pose, ease in keys:
+        d.key(t, pose, ease, whole=True)
+    # the hands on the ground from HANDS_DOWN (the left one goes to the knee at 0.9, the right one
+    # lets go for the push), the left hand on the left knee while it pushes
+    rhand_w = kit.keys((0.0, 0), (0.56, 0), (HANDS_DOWN, 1), (0.98, 1), (PUSH + 0.04, 0))
+    lhand_w = kit.keys((0.0, 0), (0.56, 0), (HANDS_DOWN, 1), (0.86, 1), (0.92, 0))
+    lknee_w = kit.keys((0.0, 0), (0.92, 0), (0.96, 1), (UP_AT, 1), (1.32, 0))
+    breath = lambda t: math.sin(2 * math.pi * (t - HANDS_DOWN) / 0.44) * (1 - kit.span(t, 0.8, 0.92)) if t > HANDS_DOWN else 0.0  # noqa: E731
+    a = L.Anim('fall_roll', FALL_END, 'once')
+    prev = {}
+    for t in kit.frames(0, FALL_END):
+        p = kit.design(d, t)
+        b = breath(t)
+        c = p['chest']
+        p['chest'] = (c[0] + 3.5 * b, c[1], c[2])
+        p = kit.grounded(p, bones=landings.NOT_ARMS if t >= HANDS_DOWN - 0.08 else None)
+        p['body'] = tuple(kit.continuous(prev.get('body'), p['body']))
+        prev['body'] = p['body']
+        if t >= HANDS_DOWN - 0.08:
+            W = kit.fk(p)
+            fr, fl = kit.pt(W, 'rshoulder'), kit.pt(W, 'lshoulder')
+            knee = kit.pt(W, 'lknee')
+            tg = [('rhand', (fr[0] + 0.5, 0.6, fr[2] - 1.5), rhand_w(t)),
+                  ('lhand', (fl[0] - 0.5, 0.6, fl[2] - 1.5), lhand_w(t)),
+                  ('lhand', (knee[0], knee[1] + 1.0, knee[2] + 0.5), lknee_w(t))]
+            p = ledge.on_targets(p, [x for x in tg if x[2] > 1e-3][:3], prev, 'fallroll')
+        a.key(t, p)
+    a.tol_rot, a.tol_pos = 0.4, 0.08
+    return a
 
 
 def roll_path(t):
@@ -240,11 +354,10 @@ def _root_path(root):
     return at
 
 
-def paths(climb, down, pulled, helper, hop_path, kick_lift, kick_forward, kick_len):
+def paths(climb, down, pulled, helper, hop_path):
     """Every path the mechanic carries the player along, a value a game tick (20 a second) from the
     move's start, in blocks: [up, forward] for climbs, along the edge for the ledge hop, back from
-    the edge for the friend, [up, forward] for the kick (forward to the mob at the scale of the
-    author's: the mob 2.34 blocks ahead), forward for the fall roll."""
+    the edge for the friend, up for the kick's spinning jump, forward for the fall roll."""
     hroot = sorted(helper.root)
     return {
         'ledge_climb_up': _per_tick(climb.length, _root_path(climb.root)),
@@ -254,7 +367,8 @@ def paths(climb, down, pulled, helper, hop_path, kick_lift, kick_forward, kick_l
         'ledge_help_pull': _per_tick(helper.length, lambda t: round(
             float(np.interp(t, hroot, [helper.root[x][2] for x in hroot])) * PX, 4)),
         'ledge_hop': _per_tick(1.85, lambda t: round(hop_path(t), 4)),
-        'hop_on_kick': _per_tick(kick_len, lambda t: [round(kick_lift(t) * PX, 4), round(kick_forward(t) * PX, 4)]),
+        # the kick: only the spinning jump's lift (the vault before it is the vault's mechanic)
+        'hop_on_kick': _per_tick(KICK_LEN, lambda t: round(SPIN_LIFT(t) * PX, 4)),
         'fall_roll': _per_tick(FALL_END, lambda t: round(roll_path(t), 4)),
     }
 

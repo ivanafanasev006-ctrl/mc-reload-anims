@@ -109,13 +109,21 @@ public enum Move {
 
     // ---- the author's second message of 2026-10-29
     /**
-     * W held, Space and R with a mob of some size in front: the vault with a kick (hop_on_kick),
-     * a cutscene (author: "slowed time and perception, a hard kick and a shove, the player comes
-     * back round"). Over the mob and a hang in the air turned to its back (0.7-1.27 s), the kick
-     * at 1.27 s (Kick.HIT: 1 heart, flung away), the turn back and the landing at 1.95 s. The mob
-     * is held still meanwhile and nothing hurts the player until the landing.
+     * W and Space held (or pressed), R at a mob of some size: the vault with a kick (hop_on_kick),
+     * a cutscene. The vault over it as in hop_roll_dodge (landing at 0.72 s), the half turn to face
+     * it (the camera with the player), a jump spinning a whole turn with the leg swung out, which
+     * meets its back at 1.31 s (Kick.HIT: 1 heart, flung away), the landing at 1.46 s facing it
+     * (author, 2026-10-29, fourth message), 2.0 s in all (was 2.45). The mob is held still until the
+     * kick and nothing hurts the player until the landing.
      */
-    KICK("hop_on_kick", 1f, 52, 0, Kick.LAND, -1, -1, Side.FRONT, MovesConfig::costKick),
+    KICK("hop_on_kick", 1f, 41, 0, Kick.LAND, -1, -1, Side.FRONT, MovesConfig::costKick),
+    /**
+     * W and Space held (or pressed), R with no mob to vault: the deep jump (dive_roll; author,
+     * 2026-10-29, fourth message): a dive stretched out like into water, 3 blocks forward, the hands
+     * take the ground at 0.62 s and a forward roll 1.5 blocks on (low and untouchable in it, as a
+     * roll), up by 1.35 s. Also from a jump already begun.
+     */
+    DIVE("dive_roll", 1f, 28, 12, 20, 12, 20, Side.FRONT, MovesConfig::costDive),
     /**
      * The left button while sliding, a sword or an axe in hand: a half turn clockwise with the blade
      * out to the right (slide_under_attack), a crit to everything it sweeps through at 0.3 s, and the
@@ -126,30 +134,41 @@ public enum Move {
     /** R held while falling: tucked until the landing (fall_tuck, looped). */
     FALL_TUCK("fall_tuck", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /**
-     * The landing out of the tuck: a roll forward (1.6 blocks, 0.08-0.5 s), then on one knee, stunned,
-     * until 1.5 s, and up by 1.9 s (fall_roll). The fall hurts 70 % less (Fall).
+     * The landing out of the tuck: a roll forward (1.6 blocks, 0.08-0.5 s), then the heavy landing
+     * on the right knee and both hands, a breath, the push up at 1.05 s (the stun ends: Fall.STAND),
+     * up by 1.5 s (fall_roll; author, 2026-10-29, fourth message: the heavy landing merged in, up 50 %
+     * faster: it was on the knee until 1.5 s, up by 1.9). The fall hurts 70 % less (Fall).
      */
-    FALL_ROLL("fall_roll", 1f, 41, -1, -1, 2, 10, Side.FRONT, () -> 0),
+    FALL_ROLL("fall_roll", 1f, 31, -1, -1, 2, 10, Side.FRONT, MovesConfig::costFallRoll),
 
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
-    LEDGE_HANG("ledge_hang", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    LEDGE_HANG("ledge_hang", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeGrab),
     /** A held: hand over hand along the edge to the left (0.59 block a second). */
     LEDGE_SHIMMY_LEFT("ledge_shimmy_left", 1f, Move.FOREVER, -1, -1, -1, -1, Side.LEFT, () -> 0),
     /** D held: the same to the right. */
     LEDGE_SHIMMY_RIGHT("ledge_shimmy_right", 1f, Move.FOREVER, -1, -1, -1, -1, Side.RIGHT, () -> 0),
-    /** In the hop mode (R), A: a hop a block along the edge to the left (carried 0.55-0.85 s). */
-    LEDGE_HOP_LEFT("ledge_hop_left", 1f, 40, -1, -1, -1, -1, Side.LEFT, MovesConfig::costLedgeHop),
+    /**
+     * In the hop mode (R), A: a hop a block along the edge to the left, played 1.4 times faster
+     * (carried 0.39-0.61 s); held, the next one starts as the second hand catches the edge (0.68 s):
+     * one after another, almost without a pause (author, 2026-10-29, fourth message).
+     */
+    LEDGE_HOP_LEFT("ledge_hop_left", Move.HOP_SPEED, 29, -1, -1, -1, -1, Side.LEFT, MovesConfig::costLedgeHop),
     /** In the hop mode, D: the same to the right. */
-    LEDGE_HOP_RIGHT("ledge_hop_right", 1f, 40, -1, -1, -1, -1, Side.RIGHT, MovesConfig::costLedgeHop),
+    LEDGE_HOP_RIGHT("ledge_hop_right", Move.HOP_SPEED, 29, -1, -1, -1, -1, Side.RIGHT, MovesConfig::costLedgeHop),
     /** W + Space: a quick pull-up onto the top (0.75 s; author, 2026-10-29: as short as a dodge). */
-    LEDGE_CLIMB("ledge_climb_up", 1f, 18, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    LEDGE_CLIMB("ledge_climb_up", 1f, 18, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeClimb),
     /** Ctrl + W + C at a drop: the player turns round and lowers themself over the edge into the hang (1.2 s). */
-    LEDGE_DOWN("ledge_climb_down", 1f, 27, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    LEDGE_DOWN("ledge_climb_down", 1f, 27, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeDown),
     /** Pulled up by a friend (the server starts it, when the friend takes their hand). */
     LEDGE_PULLED("ledge_pulled_up", 1f, 55, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** The friend: the right button on a player hanging below them; they kneel, take the hand and pull. */
-    LEDGE_HELP("ledge_help_pull", 1f, 55, -1, -1, -1, -1, Side.BACK, () -> 0);
+    LEDGE_HELP("ledge_help_pull", 1f, 55, -1, -1, -1, -1, Side.BACK, MovesConfig::costLedgeHelp);
+
+    /** The hops along the edge play this much faster than their animation (author: one after another). */
+    public static final float HOP_SPEED = 1.4f;
+    /** A held hop goes on into the next from this tick of it (the second hand on the edge, 0.95 s of the animation). */
+    public static final int HOP_CHAIN = 14;
 
     /** The length of a move that lasts until it is ended (a hang, a fall): never runs out. */
     public static final int FOREVER = 1 << 24;
@@ -159,6 +178,10 @@ public enum Move {
     public static final int HOP_TAKEOFF = 4, HOP_LAND = 14;
     /** The vault shoves the mob back as the foot kicks off its back (0.63 s of the animation). */
     public static final int HOP_SHOVE = 13;
+    /** The deep jump: the hands take the ground (0.62 s; its own jump ends there), out of the roll (1.1 s), moving breaks off the rest of the getting up. */
+    public static final int DIVE_TOUCH = 13, DIVE_UP = 22;
+    /** The climb: on the top (0.7 s), moving breaks off the rest (the player runs on, no stand-still). */
+    public static final int CLIMB_ON_TOP = 14;
     /** The attack out of a slide: up from its crouch (0.8 s), moving breaks off the rest of the getting up. */
     public static final int SLIDE_ATTACK_UP = 16;
     /** The vault lands this far beyond the mob it goes over. */
@@ -213,6 +236,12 @@ public enum Move {
 
     public float cost() {
         return (float) cost.getAsDouble();
+    }
+
+    /** What it costs after {@code was}: back to the hang on an edge already held (after a hop, the climb down) costs nothing. */
+    public float cost(Move was) {
+        if (this == LEDGE_HANG && was != null && was.ledge()) return 0f;
+        return cost();
     }
 
     public boolean untouchable(int tick) {
@@ -275,8 +304,11 @@ public enum Move {
         return switch (this) {
             case SLIDE_ATTACK -> now == SLIDE;
             case FALL_ROLL -> now == FALL_TUCK;
-            case LEDGE_HANG -> now == FALL_TUCK || now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT || now == LEDGE_DOWN;
-            case LEDGE_SHIMMY_LEFT, LEDGE_SHIMMY_RIGHT, LEDGE_HOP_LEFT, LEDGE_HOP_RIGHT, LEDGE_CLIMB, LEDGE_PULLED -> now.hanging();
+            // the edge caught out of a fall, a slide or a roll off a drop, or back to the hang on it
+            case LEDGE_HANG -> now == FALL_TUCK || now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT || now == LEDGE_DOWN
+                    || now == SLIDE || now == SLIDE_ATTACK || now.rolls() || now.sideDodge() || now == DIVE;
+            case LEDGE_HOP_LEFT, LEDGE_HOP_RIGHT -> now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT;
+            case LEDGE_SHIMMY_LEFT, LEDGE_SHIMMY_RIGHT, LEDGE_CLIMB, LEDGE_PULLED -> now.hanging();
             default -> false;
         };
     }
@@ -301,7 +333,9 @@ public enum Move {
             case DODGE_LEFT, DODGE_RIGHT, DODGE_BACK, DODGE_FRONT -> PUSH_TICK + push.length + 1;
             case HOP -> HOP_LAND + 1;
             case DASH -> Strikes.DASH_FREE;
-            case KICK -> Kick.LAND + 1;
+            case KICK -> Kick.LAND + 5;
+            case DIVE -> DIVE_UP;
+            case LEDGE_CLIMB -> CLIMB_ON_TOP;
             case SLIDE_ATTACK -> SLIDE_ATTACK_UP;
             case FALL_ROLL -> Fall.STAND;
             case FINISHER -> Strikes.FINISH_KILL + 1;

@@ -17,7 +17,8 @@ import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import java.util.Locale;
 
 /**
- * How the bars look: style, shield icon, which side is which, the arrow counter. Opened with
+ * How the bars look: style, shield icon, which side is which, the arrow counter; and the Moves...
+ * button to the page that switches moves on and off (MovesToggleScreen). Opened with
  * {@code /kinetrix_moves} or the Config button in the Mods list; shows the bars as they will be.
  */
 public final class MovesSettingsScreen extends Screen {
@@ -43,13 +44,13 @@ public final class MovesSettingsScreen extends Screen {
 
     @Override
     protected void init() {
-        // One column of four; in a small window (big GUI scale) two columns of two.
-        boolean twoColumns = height < 32 + 4 * (BUTTON_H + GAP) + 36;
+        // One column of five; in a small window (big GUI scale) two columns, the moves' button across both.
+        boolean twoColumns = height < 32 + 5 * (BUTTON_H + GAP) + 36;
         int w = twoColumns ? Math.min(200, (width - 24) / 2) : Math.min(260, width - 20);
         int x0 = twoColumns ? width / 2 - w - GAP / 2 : (width - w) / 2;
-        int y0 = twoColumns ? 32 : Math.max(32, height / 2 - 70);
-        int[][] at = new int[4][];
-        for (int i = 0; i < 4; i++) {
+        int y0 = twoColumns ? 32 : Math.max(32, height / 2 - 82);
+        int[][] at = new int[5][];
+        for (int i = 0; i < 5; i++) {
             at[i] = twoColumns ? new int[]{x0 + (i % 2) * (w + GAP), y0 + (i / 2) * (BUTTON_H + GAP)}
                     : new int[]{x0, y0 + i * (BUTTON_H + GAP)};
         }
@@ -74,9 +75,15 @@ public final class MovesSettingsScreen extends Screen {
                 .withTooltip(v -> Tooltip.create(Component.translatable("kinetrix_moves.settings.arrows.tip")))
                 .create(at[3][0], at[3][1], w, BUTTON_H, Component.translatable("kinetrix_moves.settings.arrows"),
                         (b, v) -> HudConfig.ARROWS.set(v)));
+        addRenderableWidget(Button.builder(Component.translatable("kinetrix_moves.settings.moves"), b -> {
+                    HudConfig.SPEC.save();
+                    minecraft.setScreen(new MovesToggleScreen(this));
+                })
+                .tooltip(Tooltip.create(Component.translatable("kinetrix_moves.settings.moves.tip")))
+                .bounds(at[4][0], at[4][1], twoColumns ? 2 * w + GAP : w, BUTTON_H).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose())
                 .bounds((width - 150) / 2, height - 28, 150, BUTTON_H).build());
-        int below = at[3][1] + BUTTON_H + 8;
+        int below = at[4][1] + BUTTON_H + 8;
         previewTop = below + 34 <= height - 32 ? below : -1;
     }
 

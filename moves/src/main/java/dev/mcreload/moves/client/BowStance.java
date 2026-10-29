@@ -105,7 +105,7 @@ public final class BowStance {
             if (bow && p.onGround() && (move != Move.BARRAGE || reached >= KNELT)) {
                 HOLDING.put(p, new HeldPose(Hold.KNEEL));
                 MoveAnimator.playKneel(p);
-                if (local && move == Move.BARRAGE) startMode(Mode.FLOW);
+                if (local && move == Move.BARRAGE && dev.mcreload.moves.HudConfig.Moves.FLOW.on()) startMode(Mode.FLOW);
             } else {
                 MoveAnimator.stop(p, 4);
             }
@@ -157,7 +157,7 @@ public final class BowStance {
 
     /** R: with the bow fully drawn it starts the Legolas stance (instead of a dodge). Returns whether R was taken. */
     static boolean dodgeKey(LocalPlayer p) {
-        if (mode == Mode.LEGOLAS || !Bow.fullyDrawn(p)) return false;
+        if (mode == Mode.LEGOLAS || !Bow.fullyDrawn(p) || !dev.mcreload.moves.HudConfig.Moves.LEGOLAS.on()) return false;
         startMode(Mode.LEGOLAS);
         return true;
     }

@@ -111,7 +111,12 @@ public final class Stamina {
     }
 
     public boolean canAfford(Move m, Player p) {
-        return free() || p.getAbilities().instabuild || energy >= m.cost();
+        return free() || p.getAbilities().instabuild || energy >= m.cost(move);
+    }
+
+    /** Some energy is left (the moves paid by the second, creeping along a ledge, go on while it lasts). */
+    public boolean hasEnergy(Player p) {
+        return free() || p.getAbilities().instabuild || energy > 0.01f;
     }
 
     public void spend(float amount, Player p) {

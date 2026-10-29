@@ -16,7 +16,8 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue MAX_ENERGY, REGEN, REGEN_BUSY, REGEN_STILL, REGEN_FED, EXHAUSTION,
             APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD, COOKED_FOOD,
             COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER,
-            COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP;
+            COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP, COST_DIVE, COST_FALL_ROLL, COST_LEDGE_GRAB, COST_LEDGE_CLIMB,
+            COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_SHIMMY;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
@@ -89,8 +90,26 @@ public final class MovesConfig {
                 .defineInRange("kick", 15.0, 0.0, 10000.0);
         COST_SLIDE_ATTACK = b.comment("The attack out of a slide: the left button while sliding with a sword or an axe. [default]")
                 .defineInRange("slideAttack", 10.0, 0.0, 10000.0);
-        COST_LEDGE_HOP = b.comment("A hop along a ledge (hanging, R for the hop mode, then A or D). [default]")
-                .defineInRange("ledgeHop", 5.0, 0.0, 10000.0);
+        // Renamed from ledgeHop (5) so worlds made before get the cheaper hop: the hops now go one after another.
+        COST_LEDGE_HOP = b.comment("Each hop along a ledge (hanging, R for the hop mode, then A or D held; the hops go one after",
+                        "another). [default]")
+                .defineInRange("ledgeHopEach", 2.5, 0.0, 10000.0);
+        // Author, 2026-10-29: "every move eats energy".
+        COST_DIVE = b.comment("The deep jump with a roll: W and Space held, R with no mob near. [default]")
+                .defineInRange("dive", 7.5, 0.0, 10000.0);
+        COST_FALL_ROLL = b.comment("The roll on landing from a fall with R held. [default]")
+                .defineInRange("fallRoll", 5.0, 0.0, 10000.0);
+        COST_LEDGE_GRAB = b.comment("Catching a ledge with the right button (the hang after a hop along it or the climb down onto it is free). [default]")
+                .defineInRange("ledgeGrab", 2.5, 0.0, 10000.0);
+        COST_LEDGE_CLIMB = b.comment("Climbing up from a ledge onto its top. [default]")
+                .defineInRange("ledgeClimb", 5.0, 0.0, 10000.0);
+        COST_LEDGE_DOWN = b.comment("Climbing down from the top onto the ledge below. [default]")
+                .defineInRange("ledgeDown", 2.5, 0.0, 10000.0);
+        COST_LEDGE_HELP = b.comment("Pulling up a friend hanging on the ledge. [default]")
+                .defineInRange("ledgeHelp", 2.5, 0.0, 10000.0);
+        COST_SHIMMY = b.comment("Each second of creeping along a ledge with A or D (more than a move's slow refill gives back);",
+                        "with no energy left the player only hangs. [default]")
+                .defineInRange("ledgeShimmyPerSecond", 3.0, 0.0, 10000.0);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -139,8 +158,10 @@ public final class MovesConfig {
         SLIDE_ATTACK_REACH = b.comment("The attack out of a slide: how far round the player the blade reaches (blocks; author: a normal",
                         "hitbox, not a tiny one). [default]")
                 .defineInRange("slideAttackReach", 3.0, 1.0, 8.0);
-        SLIDE_ATTACK_COOLDOWN = b.comment("The attack out of a slide: seconds before it can be made again (author: as the dash, 30).")
-                .defineInRange("slideAttackCooldownSeconds", 30, 0, 3600);
+        // Renamed from slideAttackCooldownSeconds (30) so worlds made before get the author's halved number.
+        SLIDE_ATTACK_COOLDOWN = b.comment("The attack out of a slide: seconds before it can be made again (author: as the dash, 30;",
+                        "then half of it, 15).")
+                .defineInRange("slideAttackCooldown", 15, 0, 3600);
         FINISH_HEALTH = b.comment("Finisher: a mob with this share of its health or less can be finished (author: 20 %).")
                 .defineInRange("finisherHealth", 0.2, 0.0, 1.0);
         // Renamed from finisherRange (1.5) so worlds made before get the shorter reach.
@@ -226,11 +247,18 @@ public final class MovesConfig {
     public static float finisherMaxHealth() { return f(FINISH_MAX_HEALTH, 100.0); }
     public static float costKick() { return f(COST_KICK, 15.0); }
     public static float costSlideAttack() { return f(COST_SLIDE_ATTACK, 10.0); }
-    public static float costLedgeHop() { return f(COST_LEDGE_HOP, 5.0); }
+    public static float costLedgeHop() { return f(COST_LEDGE_HOP, 2.5); }
+    public static float costDive() { return f(COST_DIVE, 7.5); }
+    public static float costFallRoll() { return f(COST_FALL_ROLL, 5.0); }
+    public static float costLedgeGrab() { return f(COST_LEDGE_GRAB, 2.5); }
+    public static float costLedgeClimb() { return f(COST_LEDGE_CLIMB, 5.0); }
+    public static float costLedgeDown() { return f(COST_LEDGE_DOWN, 2.5); }
+    public static float costLedgeHelp() { return f(COST_LEDGE_HELP, 2.5); }
+    public static float shimmyPerSecond() { return f(COST_SHIMMY, 3.0); }
     public static float dashWidth() { return f(DASH_WIDTH, 1.1); }
     public static float slideAttackCrit() { return f(SLIDE_ATTACK_CRIT, 1.5); }
     public static float slideAttackReach() { return f(SLIDE_ATTACK_REACH, 3.0); }
-    public static int slideAttackCooldownTicks() { return get(SLIDE_ATTACK_COOLDOWN, 30) * 20; }
+    public static int slideAttackCooldownTicks() { return get(SLIDE_ATTACK_COOLDOWN, 15) * 20; }
     public static float kickDamage() { return f(KICK_DAMAGE, 2.0); }
     public static float kickStrength() { return f(KICK_STRENGTH, 0.9); }
     public static float fallRollCut() { return f(FALL_CUT, 0.7); }

@@ -14,7 +14,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * The ledge (author, 2026-10-29): the right button held near a block higher than the player in a
- * jump, or falling past one, catches its edge with one hand; then the player hangs until they let
+ * jump, or falling past one, or just after going over a drop (a run, a slide or a roll off it;
+ * author's fourth message), catches its edge with one hand; then the player hangs until they let
  * go (S + R, C, S + Space or the left button), moves along it (A / D, or hops a block at a time in
  * the hop mode R toggles), climbs onto it (W + Space) or a friend standing above pulls them up (the
  * right button on them). Ctrl + W + C at a drop lowers the player over its edge into the hang.
@@ -46,6 +47,13 @@ public final class Ledge {
     public static final double AT_EDGE = 0.3;
     /** The server checks the client's catch with this much more room: it sees the player a tick or two late. */
     private static final double SLACK = 0.6;
+    /**
+     * The edge just gone over (a run, a slide or a roll off a drop) is caught up to this many ticks
+     * after leaving it and this far from where the player would hang (they are carried back to it).
+     * [default]
+     */
+    public static final int LEFT_TICKS = 14;
+    public static final double LEFT_REACH = 2.5;
     /** The friend stands this far from the edge (their middle), facing the drop (the animation's 0.49). */
     public static final double FRIEND = 8.4 * 0.9375 / 16;
 
@@ -91,6 +99,44 @@ public final class Ledge {
             Vec3 at = hangAt(c, d, face, top);
             if (!fits(p, at)) continue;
             return new Spot(d, top, at);
+        }
+        return null;
+    }
+
+    /**
+     * The edge the player has just gone over (author, 2026-10-29: sliding or rolling off a drop, the
+     * right button catches it): the edge of the block they last stood on ({@code ground}: where their
+     * feet were), the way they went from it, a drop of two blocks or more beyond it. They have come
+     * down past it ({@code strict}: the server, seeing the player late, does not ask) and are within
+     * {@code reach} of where they will hang, facing back at it, along the edge where they are now
+     * (else where they left it). Null: none.
+     */
+    public static Spot justLeft(Player p, Vec3 ground, double reach, boolean strict) {
+        Vec3 c = p.position();
+        Vec3 way = new Vec3(c.x - ground.x, 0, c.z - ground.z);
+        if (way.lengthSqr() < 1.0E-4 || (strict && c.y > ground.y - 0.05)) return null;
+        Direction d = Direction.getNearest(way.x, 0, way.z);
+        Level level = p.level();
+        double feet = ground.y;
+        int by = Mth.floor(feet - 0.01);
+        // the column under the feet then (the middle may already have been past the edge: one back)
+        int sx = Mth.floor(ground.x), sz = Mth.floor(ground.z);
+        if (Double.isNaN(topIn(level, sx, sz, feet - 0.05, feet + 0.05))) {
+            sx -= d.getStepX();
+            sz -= d.getStepZ();
+        }
+        for (int i = 0; i < 3; i++, sx += d.getStepX(), sz += d.getStepZ()) {
+            double top = topIn(level, sx, sz, feet - 0.05, feet + 0.05);
+            if (Double.isNaN(top)) return null;
+            int nx = sx + d.getStepX(), nz = sz + d.getStepZ();
+            if (!emptyAt(level, nx, by, nz) || !emptyAt(level, nx, by - 1, nz)) continue;
+            Direction wall = d.getOpposite();
+            double face = face(sx, sz, wall);
+            Vec3 at = hangAt(c, wall, face, top);
+            if (!holds(level, at, wall, top)) at = hangAt(ground, wall, face, top);
+            if (!holds(level, at, wall, top) || !fits(p, at)) return null;
+            if (new Vec3(at.x - c.x, 0, at.z - c.z).length() > reach || c.y < at.y - 1.2) return null;
+            return new Spot(wall, top, at);
         }
         return null;
     }
@@ -235,6 +281,11 @@ public final class Ledge {
                 if (spot != null) break;
             }
         }
+        // the edge just gone over (the client carries the player back to it)
+        Vec3 ground = MoveServer.groundAt(p);
+        if (spot == null && ground != null && p.tickCount - MoveServer.lastGround(p) <= LEFT_TICKS + 6) {
+            spot = justLeft(p, ground, LEFT_REACH + 1.0, false);
+        }
         if (spot == null) return false;
         remember(s, spot);
         return true;
@@ -254,6 +305,8 @@ public final class Ledge {
         if (s.move == null || (!s.move.ledge() && s.move != Move.LEDGE_HELP)) return;
         p.fallDistance = 0f;
         if (s.move.throughEdge()) p.noPhysics = true;
+        // creeping along costs energy by the second (author: every move eats energy)
+        if (s.move == Move.LEDGE_SHIMMY_LEFT || s.move == Move.LEDGE_SHIMMY_RIGHT) s.spend(MovesConfig.shimmyPerSecond() / 20f, p);
     }
 
     /**

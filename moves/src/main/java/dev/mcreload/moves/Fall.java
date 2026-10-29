@@ -6,12 +6,13 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
  * The tuck and the roll out of a fall (author, 2026-10-29): R held while falling, the player tucks
- * (fall_tuck), and landing rolls forward, stays on one knee in a half crouch a moment (stunned) and
- * stands up (fall_roll). The fall then hurts 70 % less.
+ * (fall_tuck), and landing rolls forward into the heavy landing's kneel (author's fourth message:
+ * "merge the heavy fall with the roll"), on the right knee and both hands a moment (stunned), and
+ * pushes up half again as quickly as before (fall_roll). The fall then hurts 70 % less.
  */
 public final class Fall {
-    /** The player may get up (moving breaks off the rest) from 1.5 s: the stun is over. */
-    public static final int STAND = 30;
+    /** The player may get up (moving breaks off the rest) from the push up at 1.05 s (it was 1.5 s): the stun is over. */
+    public static final int STAND = 21;
     /** The roll carries the player forward from 0.08 s to 0.5 s (Paths "fall_roll"). */
     public static final int ROLL_FROM = 2, ROLL_TO = 10;
     /** Falling this far (blocks) or more, R tucks: a jump or a step down does not. */

@@ -55,7 +55,7 @@ public final class StrikeInput {
             swallow(mc);
             return true;
         }
-        finisherTarget = s.move == null && MoveServer.allowed(p, s, Move.FINISHER)
+        finisherTarget = s.move == null && dev.mcreload.moves.HudConfig.Moves.FINISHER.on() && MoveServer.allowed(p, s, Move.FINISHER)
                 ? Strikes.finisherTarget(p, looked(mc), true) : null;
         if (finisherTarget != null && attackDown && (attackPressed || held >= HOLD_TICKS)) {
             if (MovesClient.start(p, s, Move.FINISHER, finisherTarget.getId())) {
@@ -63,7 +63,8 @@ public final class StrikeInput {
                 return true;
             }
         }
-        if (attackPressed && s.move == null && p.isSprinting() && mc.options.keyUp.isDown() && Strikes.sword(p)) {
+        if (attackPressed && s.move == null && dev.mcreload.moves.HudConfig.Moves.DASH.on() && p.isSprinting()
+                && mc.options.keyUp.isDown() && Strikes.sword(p)) {
             if (s.dashCooldown > 0) {
                 // Not yet: an ordinary blow, and a word above the hotbar of how long the dash still needs.
                 p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_moves.dash.cooldown",

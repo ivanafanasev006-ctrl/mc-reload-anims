@@ -610,7 +610,8 @@ public final class MovesGameTests {
 
     /**
      * The attack out of a slide: only while sliding, with a sword or an axe; a half turn, so the
-     * zombie behind (the one slid past) takes a crit, the one ahead nothing; then 30 s.
+     * zombie behind (the one slid past) takes a crit, the one ahead nothing; then 15 s (author: half
+     * the dash's 30).
      */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void slideAttackCrits(GameTestHelper h) {
@@ -637,8 +638,9 @@ public final class MovesGameTests {
         t.at(4 + Move.SLIDE_ATTACK.length, () -> {
             p.setSprinting(true);
             t.check(MoveServer.request(p, Move.SLIDE, false), "second slide refused");
-            t.check(!MoveServer.request(p, Move.SLIDE_ATTACK, false), "a second attack out of a slide within 30 s");
-            t.check(s.slideAttackCooldown > 20 * 25, "cooldown " + s.slideAttackCooldown + " ticks (want about 30 s)");
+            t.check(!MoveServer.request(p, Move.SLIDE_ATTACK, false), "a second attack out of a slide within 15 s");
+            int left = s.slideAttackCooldown;
+            t.check(left > 20 * 12 && left <= 20 * 15, "cooldown " + left + " ticks (want about 15 s)");
         }).run(5 + Move.SLIDE_ATTACK.length);
     }
 
@@ -658,8 +660,85 @@ public final class MovesGameTests {
             other.causeFallDamage(10f, 1f, other.damageSources().fall());
             t.close(other.getHealth(), 13f, "health after a 10-block fall untucked");
             t.close(p.getHealth(), 17f, "health after a 10-block fall tucked (7 damage less 70 %, rounded up)");
+            s.energy = 100f;
             t.check(MoveServer.request(p, Move.FALL_ROLL, false), "roll out of the tuck refused");
             t.check(s.move == Move.FALL_ROLL, "not rolling");
+            t.close(s.energy, 100f - MovesConfig.costFallRoll(), "energy after the roll (every move eats energy)");
+            // up half again as quickly as before (author: 50 % faster): the stun ends at the push up
+            t.check(Move.FALL_ROLL.recoverFrom() <= 21, "the stun lasts " + Move.FALL_ROLL.recoverFrom() + " ticks (was 30)");
+        }).run(3);
+    }
+
+    /**
+     * W + Space + R (author, 2026-10-29, fourth message): the kick and the deep jump start from the
+     * ground or a jump already begun, not out of a fall; the deep jump's energy, its low untouchable roll.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void kickAndDiveFromAJump(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            p.setOnGround(true);
+            MoveServer.seen(p);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.DIVE, false), "the deep jump refused from the ground");
+            t.close(s.energy, 100f - MovesConfig.costDive(), "energy after the deep jump");
+        });
+        t.at(2 + Move.DIVE_TOUCH + 1, () -> t.check(s.untouchable() && s.low(), "the deep jump's roll is not low and untouchable"));
+        t.at(4 + Move.DIVE.length, () -> {
+            // a jump already begun: off the ground a few ticks, rising
+            p.setOnGround(true);
+            MoveServer.seen(p);
+            p.setOnGround(false);
+            p.fallDistance = 0f;
+            t.check(MoveServer.request(p, Move.KICK, false, zombie.getId()), "the kick refused in a jump");
+            MoveServer.cancel(p, Move.KICK);
+            p.fallDistance = 4f;
+            t.check(!MoveServer.request(p, Move.DIVE, false), "the deep jump out of a fall");
+            p.fallDistance = 0f;
+        }).run(5 + Move.DIVE.length);
+    }
+
+    /**
+     * The edge just gone over (author, 2026-10-29: sliding off a drop the grab did not work): the
+     * player slid off the top of a two-block wall, two blocks out and below its top, catches the edge
+     * behind them; it costs energy, so do the hops along it, the hang after them does not; too far out, nothing.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void ledgeCaughtAfterSlidingOff(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        int south = dev.mcreload.moves.Ledge.id(net.minecraft.core.Direction.SOUTH);
+        t.at(2, () -> {
+            for (int x = 1; x <= 5; x++) {
+                for (int z = 5; z <= 6; z++) {
+                    for (int y = 2; y <= 3; y++) h.setBlock(x, y, z, net.minecraft.world.level.block.Blocks.STONE);
+                }
+            }
+            // on the top at its north edge, then slid off it northwards
+            Vec3 top = h.absoluteVec(new Vec3(3.5, 4.0, 5.3));
+            p.teleportTo(h.getLevel(), top.x, top.y, top.z, 180f, 0f);
+            p.setOnGround(true);
+            MoveServer.seen(p);
+            Vec3 far = h.absoluteVec(new Vec3(3.5, 3.0, 0.5));
+            p.teleportTo(far.x, far.y, far.z);
+            p.setOnGround(false);
+            t.check(!MoveServer.request(p, Move.LEDGE_HANG, false, south), "caught an edge 4 blocks away");
+            Vec3 off = h.absoluteVec(new Vec3(3.5, 3.5, 3.0));
+            p.teleportTo(off.x, off.y, off.z);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "the edge just slid off was not caught");
+            t.check(Math.abs(s.ledgeTop - top.y) < 0.01, "edge top " + s.ledgeTop + " (want " + top.y + ")");
+            t.close(s.energy, 100f - MovesConfig.costLedgeGrab(), "energy after catching the edge");
+            t.check(MoveServer.request(p, Move.LEDGE_HOP_LEFT, false, south), "a hop along the edge refused");
+            t.check(MoveServer.request(p, Move.LEDGE_HOP_LEFT, false, south), "the next hop refused while the first plays");
+            t.close(s.energy, 100f - MovesConfig.costLedgeGrab() - 2 * MovesConfig.costLedgeHop(), "energy after two hops");
+            t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "back to the hang refused");
+            t.close(s.energy, 100f - MovesConfig.costLedgeGrab() - 2 * MovesConfig.costLedgeHop(), "energy after hanging again (free)");
         }).run(3);
     }
 
@@ -687,7 +766,9 @@ public final class MovesGameTests {
             t.check(MoveServer.request(p, Move.LEDGE_SHIMMY_LEFT, false, south), "hand over hand refused");
             t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "back to the hang refused");
             t.check(!MoveServer.request(p, Move.DODGE_LEFT, false), "a dodge while hanging");
+            s.energy = 100f;
             t.check(MoveServer.request(p, Move.LEDGE_CLIMB, false, south), "the climb refused");
+            t.close(s.energy, 100f - MovesConfig.costLedgeClimb(), "energy after the climb");
         });
         t.at(4, () -> t.check(p.noPhysics, "the climb does not pass through the edge's corner"));
         t.at(4 + Move.LEDGE_CLIMB.length, () -> t.check(s.move == null && !p.noPhysics, "the climb did not end")).run(5 + Move.LEDGE_CLIMB.length);
