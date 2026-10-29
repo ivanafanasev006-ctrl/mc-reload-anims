@@ -425,6 +425,11 @@ public final class MovesGameTests {
         return Stamina.of(p);
     }
 
+    /** Zombies that do not burn in the test's daylight (their health is measured). */
+    private static void noSun(net.minecraft.world.entity.LivingEntity... mobs) {
+        for (var m : mobs) m.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 20 * 60, 0, false, false));
+    }
+
     // ------------------------------------------------------------------ the sword strikes
 
     /**
@@ -514,6 +519,7 @@ public final class MovesGameTests {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        noSun(zombie);
         Stamina s = Stamina.of(p);
         t.at(2, () -> {
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
@@ -548,6 +554,7 @@ public final class MovesGameTests {
         ServerPlayer p = t.player();
         Zombie aside = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 4, 2, 5);
         Zombie far = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 6, 2, 5);
+        noSun(aside, far);
         t.at(2, () -> {
             // 1.25 blocks to the side of the line: its side 0.95 from it (the old hitbox reached 0.7)
             aside.teleportTo(aside.getX() + 0.25, aside.getY(), aside.getZ());
@@ -572,6 +579,7 @@ public final class MovesGameTests {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        noSun(zombie);
         Stamina s = Stamina.of(p);
         t.at(2, () -> {
             zombie.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
@@ -586,8 +594,12 @@ public final class MovesGameTests {
             Vec3 beyond = h.absoluteVec(new Vec3(3.5, 2.0, 7.0));
             p.teleportTo(beyond.x, beyond.y, beyond.z);
         });
-        t.at(3 + dev.mcreload.moves.Kick.HIT, () -> {
-            float lost = 20f - zombie.getHealth();
+        // The kick lands in the player's tick of move tick HIT (script tick HIT + 2): its own damage,
+        // measured across that tick (the tests run side by side, a stray arrow may find the zombie).
+        float[] before = new float[1];
+        t.at(1 + dev.mcreload.moves.Kick.HIT, () -> before[0] = zombie.getHealth());
+        t.at(2 + dev.mcreload.moves.Kick.HIT, () -> {
+            float lost = before[0] - zombie.getHealth();
             t.check(lost >= 1.8f && lost <= 2.01f, "the kick took " + lost + " health (want 1 heart)");
         });
         t.at(16 + dev.mcreload.moves.Kick.HIT, () -> {
@@ -606,6 +618,7 @@ public final class MovesGameTests {
         ServerPlayer p = t.player();
         Zombie behind = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 1);
         Zombie ahead = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 6);
+        noSun(behind, ahead);
         Stamina s = Stamina.of(p);
         t.at(2, () -> {
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));

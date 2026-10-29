@@ -376,8 +376,11 @@ public final class MotionState {
         yawRate = Mth.wrapDegrees(player.yBodyRot - player.yBodyRotO);
 
         boolean ground = player.onGround();
+        // Another mod's move owns the whole body (Kinetrix Moves: the tuck and roll out of a fall,
+        // the vault, the ledge): none of our own landings, rolls or skids under it.
         boolean special = player.isInWater() || player.isFallFlying() || player.onClimbable()
-                || player.isPassenger() || player.getAbilities().flying || player.isVisuallyCrawling();
+                || player.isPassenger() || player.getAbilities().flying || player.isVisuallyCrawling()
+                || dev.mcreload.anim.api.KinetrixApi.wholeBody(player.getUUID());
         float tickSpeed = (float) Math.sqrt(vx * vx + vz * vz);
         if (ground && wasOnGround && !special && player.tickCount - lastSprintTick <= 3 && prevTickSpeed > 0.2f && tickSpeed < prevTickSpeed * 0.6f && Cfg.locomotion) {
             // Sprint released: skid to a stop.
