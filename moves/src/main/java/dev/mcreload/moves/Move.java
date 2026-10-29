@@ -142,10 +142,10 @@ public enum Move {
     LEDGE_HOP_LEFT("ledge_hop_left", 1f, 40, -1, -1, -1, -1, Side.LEFT, MovesConfig::costLedgeHop),
     /** In the hop mode, D: the same to the right. */
     LEDGE_HOP_RIGHT("ledge_hop_right", 1f, 40, -1, -1, -1, -1, Side.RIGHT, MovesConfig::costLedgeHop),
-    /** W + Space: up onto the top (2.0 s). */
-    LEDGE_CLIMB("ledge_climb_up", 1f, 43, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    /** Ctrl + W + C at a drop: the player turns round and lowers themself over the edge into the hang (1.55 s). */
-    LEDGE_DOWN("ledge_climb_down", 1f, 34, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** W + Space: a quick pull-up onto the top (0.75 s; author, 2026-10-29: as short as a dodge). */
+    LEDGE_CLIMB("ledge_climb_up", 1f, 18, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** Ctrl + W + C at a drop: the player turns round and lowers themself over the edge into the hang (1.2 s). */
+    LEDGE_DOWN("ledge_climb_down", 1f, 27, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** Pulled up by a friend (the server starts it, when the friend takes their hand). */
     LEDGE_PULLED("ledge_pulled_up", 1f, 55, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** The friend: the right button on a player hanging below them; they kneel, take the hand and pull. */
