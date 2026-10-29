@@ -297,7 +297,7 @@ public final class MovesClient {
     /**
      * The vault: the run goes on through the crouch (stopping short of the mob), then a jump over
      * its back, as high as that back is as it stoops (Hop.back: a pig needs less than a zombie),
-     * 13 ticks in the air whatever the height, landing {@link Move#HOP_BEYOND} blocks beyond it
+     * 15 ticks in the air whatever the height, landing {@link Move#HOP_BEYOND} blocks beyond it
      * and running on the way the player was going.
      */
     private static void hop(AbstractClientPlayer p, Stamina s, int t) {

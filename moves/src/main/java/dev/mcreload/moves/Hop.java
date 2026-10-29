@@ -21,15 +21,17 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 /**
  * The vault over a mob at point blank (docs/combat-spec.md, 5): R + W with a mob of some size right
  * in front (a zombie, a skeleton, a pig, a sheep; not a chicken nor anything as small). The player
- * rolls over its back: it stoops under the hand, its blow in the crouch (0-0.25 s) does not land,
- * and until the player lands beyond it it cannot hurt them; at 0.8 s it is shoved back 1-2 blocks
+ * rolls over its back: it stoops under the hand pressing its head, its blow in the crouch (0-0.25 s)
+ * does not land, and until the player lands beyond it it cannot hurt them; at 0.85 s the foot shoves
+ * it back 1-2 blocks
  * and the player runs on, with Speed I for 1 s.
  */
 public final class Hop {
     /** The mob stoops from the take-off until shortly after the landing. */
     public static final int STOOP_TICKS = Move.HOP_LAND - Move.HOP_TAKEOFF + 6;
-    /** How far the mob stoops under the hand (degrees, from its feet): a tall one deep, a low one hardly. */
-    public static final float LEAN_TALL = 40f, LEAN_LOW = 12f;
+    /** How far the mob stoops under the hand (degrees, from its feet): a tall one deep, a low one hardly
+     *  (author, 2026-10-29: the hand presses its head and body down under the player; was 40 and 12). */
+    public static final float LEAN_TALL = 50f, LEAN_LOW = 16f;
     /** Above this height a mob stoops deep (a zombie does, a pig or a sheep does not). */
     public static final float TALL = 1.4f;
     /** Room left between the rolling body and the mob's back (blocks). */

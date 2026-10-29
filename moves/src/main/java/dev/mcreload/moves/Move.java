@@ -33,11 +33,11 @@ public enum Move {
     /**
      * R + W at point blank to a mob of some size (a zombie, a skeleton, a pig, a sheep; not a
      * chicken): a vault over its back (hop_roll_dodge, docs/combat-spec.md, 5). Crouch until 0.25 s
-     * (its blow in this window is parried), take-off at 0.25 s, a sideways roll over it, which
-     * stoops under the hand, landing beyond it at 0.9 s and running on; at 0.8 s it is shoved back
-     * 1-2 blocks. It cannot hurt the player until the landing. See {@link #HOP_TAKEOFF}.
+     * (its blow in this window is parried), the hand on its head, take-off at 0.25 s pressing it
+     * down, a sideways roll over it, landing beyond it at 1.0 s and running on; at 0.85 s the foot
+     * shoves it back 1-2 blocks. It cannot hurt the player until the landing. See {@link #HOP_TAKEOFF}.
      */
-    HOP("hop_roll_dodge", 1f, 30, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop),
+    HOP("hop_roll_dodge", 1f, 32, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop),
     /**
      * The volley (docs/combat-spec.md, 6.2): a fully drawn bow, then the left button. A sharp step
      * back down onto a knee, sliding on into the kneel (1.85 blocks in 0.1-0.55 s; author: a block
@@ -105,10 +105,11 @@ public enum Move {
      */
     FINISHER("finisher_stab", 1f, 30, 0, Strikes.FINISH_KILL + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher);
 
-    /** The vault: take-off and landing ticks (0.25 s and 0.9 s of the animation). */
-    public static final int HOP_TAKEOFF = 5, HOP_LAND = 18;
-    /** The vault shoves the mob back as the player comes down beyond it (0.8 s of the animation). */
-    public static final int HOP_SHOVE = 16;
+    /** The vault: take-off and landing ticks (0.25 s and 1.0 s of the animation; author, 2026-10-29:
+     *  the push off the mob a fraction of a second longer, so the landing moved from 0.9 s). */
+    public static final int HOP_TAKEOFF = 5, HOP_LAND = 20;
+    /** The vault shoves the mob back as the foot kicks off its back (0.85 s of the animation). */
+    public static final int HOP_SHOVE = 17;
     /** The vault lands this far beyond the mob it goes over. */
     public static final float HOP_BEYOND = 1.4f;
     /** Side dodges knock an arrow aside with the weapon in these ticks (0-0.21 s, docs/moves.md). */
