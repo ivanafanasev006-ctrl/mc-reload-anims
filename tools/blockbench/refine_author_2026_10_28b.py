@@ -8,7 +8,7 @@ writes tools/blockbench/refined/author_2026-10-28b.bbmodel     (same model, refi
 
 The set: hop_roll_dodge (the new vault over a mob at point blank), cross_guard_flat (the new block
 with two swords), dash_strike (a lunge into the belly off a sprint) and finisher_stab (the finishing
-stab). The grey second figure (bones *2) is the author's opponent for reference: it stays as it was
+stab; made again on 2026-10-30 in refine_author_2026_10_29/round6.py, no longer written here). The grey second figure (bones *2) is the author's opponent for reference: it stays as it was
 and never reaches the game. Every change is a line below with its reason; docs/moves.md says what
 each move is for and which key drives which part of the mechanic.
 """
@@ -295,7 +295,10 @@ def finisher_stab(data):
 def build(names=None):
     src = ak.load_model(SRC)
     out = copy.deepcopy(src)
-    made = [hop_roll_dodge(src), cross_guard_flat(src), dash_strike(src), finisher_stab(src)]
+    # finisher_stab is made again for the author's message of 2026-10-30 (quick, as the axe's chop):
+    # refine_author_2026_10_29/round6.py, refined/author_2026-10-30.bbmodel. This version is kept
+    # above for reference.
+    made = [hop_roll_dodge(src), cross_guard_flat(src), dash_strike(src)]
     if names:
         made = [a for a in made if a.name in names]
     out["animations"] = []

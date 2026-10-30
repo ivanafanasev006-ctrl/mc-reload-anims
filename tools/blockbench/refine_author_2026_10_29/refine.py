@@ -7,9 +7,14 @@ reads  tools/blockbench/animations/author_2026-10-29.bbmodel  (never changed)
 writes tools/blockbench/refined/author_2026-10-29.bbmodel     (hop_on_kick, slide_under_attack, the falls, the dive)
        tools/blockbench/refined/author_2026-10-29b.bbmodel    (the fifth message: hop_roll_kick from
                                                               animations/author_2026-10-29b.bbmodel, the
-                                                              plunge, the axe whirlwind, celebrate made
-                                                              again to the author's music, the axe's
+                                                              plunge, the axe whirlwind, the axe's
                                                               finisher finisher_chop; round5.py)
+       tools/blockbench/refined/author_2026-10-30.bbmodel     (the message of 2026-10-30: the sword's turn
+                                                              on G, sword_spin, and the quick finisher_stab;
+                                                              round6.py, on animations/author_2026-10-30.bbmodel)
+       tools/blockbench/refined/kinetrix/emotes.bbmodel       (Kinetrix's own keyframe emotes: celebrate to
+                                                              the author's music, round5.py; author,
+                                                              2026-10-30: the emote belongs to Kinetrix)
        tools/blockbench/refined/ledge_2026-10-29.bbmodel      (the ledge set, with the ledge to see it by)
 
 The same round also changed hop_roll_dodge and finisher_stab (refine_author_2026_10_28b.py) and is
@@ -34,6 +39,7 @@ import landings
 import ledge
 import moves
 import round5
+import round6
 from kit import L
 
 DST = os.path.join(kit.BB, 'refined', 'author_2026-10-29.bbmodel')
@@ -41,6 +47,11 @@ DST = os.path.join(kit.BB, 'refined', 'author_2026-10-29.bbmodel')
 SRC_B = os.path.join(kit.BB, 'animations', 'author_2026-10-29b.bbmodel')
 DST_B = os.path.join(kit.BB, 'refined', 'author_2026-10-29b.bbmodel')
 DST_LEDGE = os.path.join(kit.BB, 'refined', 'ledge_2026-10-29.bbmodel')
+#: The author's file of 2026-10-30 (his whirlwind's try) is the model for the round's own set (round6.py).
+SRC_C = os.path.join(kit.BB, 'animations', 'author_2026-10-30.bbmodel')
+DST_C = os.path.join(kit.BB, 'refined', 'author_2026-10-30.bbmodel')
+#: Kinetrix's own keyframe emotes (the CI converts them into Kinetrix, namespace kinetrix).
+DST_KINETRIX = os.path.join(kit.BB, 'refined', 'kinetrix', 'emotes.bbmodel')
 #: The mechanic's paths (moves.paths), read by the mod.
 DST_PATHS = os.path.join(os.path.dirname(kit.BB), '..', 'moves', 'src', 'main', 'resources', 'kinetrix_moves_paths.json')
 
@@ -134,6 +145,19 @@ def to_json(a, uuids):
     return j
 
 
+def write_set(model, made, dst):
+    """The model with these animations (and no others) written to dst."""
+    uuids = L.bone_uuids(model)
+    for a in made:
+        no_bow(a)
+    model['animations'] = [to_json(a, uuids) for a in made]
+    model['animations'][0]['selected'] = True
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    with open(dst, 'w', encoding='utf-8', newline='\n') as f:
+        json.dump(model, f, separators=(',', ':'))
+    print(f'wrote {dst}: ' + ', '.join(a.name for a in made))
+
+
 def main():
     with open(kit.SRC, encoding='utf-8') as f:
         src = json.load(f)
@@ -158,16 +182,17 @@ def main():
     # --- the fifth message: the roll kick (the author's draft), the plunge, the whirlwind ---
     with open(SRC_B, encoding='utf-8') as f:
         mb = json.load(f)
-    made_b = [round5.hop_roll_kick(), round5.plunge_fall(), round5.plunge_land(), round5.axe_whirlwind(), round5.celebrate(),
-              round5.finisher_chop()]
-    uuids = L.bone_uuids(mb)
-    for a in made_b:
-        no_bow(a)
-    mb['animations'] = [to_json(a, uuids) for a in made_b]
-    mb['animations'][0]['selected'] = True
-    with open(DST_B, 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(mb, f, separators=(',', ':'))
-    print(f'wrote {DST_B}: ' + ', '.join(a.name for a in made_b))
+    made_b = [round5.hop_roll_kick(), round5.plunge_fall(), round5.plunge_land(), round5.axe_whirlwind(), round5.finisher_chop()]
+    write_set(mb, made_b, DST_B)
+
+    # --- the message of 2026-10-30: the sword's turn and the quick finisher; Kinetrix's emote ---
+    with open(SRC_C, encoding='utf-8') as f:
+        mc = json.load(f)
+    write_set(mc, [round6.sword_spin(), round6.finisher_stab()], DST_C)
+    with open(SRC_B, encoding='utf-8') as f:
+        mk = json.load(f)
+    mk['name'] = 'kinetrix_emotes'
+    write_set(mk, [round5.celebrate()], DST_KINETRIX)
 
     # --- the ledge set ---
     lm = copy.deepcopy(src)
