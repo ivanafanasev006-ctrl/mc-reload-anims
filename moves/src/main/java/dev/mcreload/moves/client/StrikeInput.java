@@ -5,6 +5,7 @@ import dev.mcreload.moves.Move;
 import dev.mcreload.moves.MoveServer;
 import dev.mcreload.moves.Stamina;
 import dev.mcreload.moves.Strikes;
+import dev.mcreload.moves.Spin;
 import dev.mcreload.moves.Whirl;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -23,9 +24,10 @@ import net.minecraft.world.phys.EntityHitResult;
  *   <li><b>Dash strike.</b> A sword in hand, the left and the right button held together (author,
  *   2026-10-30; whichever goes down second starts it): a lunge forward; then 30 s before the next one.</li>
  *   <li><b>The ability, G</b> (rebindable; author, 2026-10-30): with a sword the sword's quick turn
- *   on the spot (Spin), 20 s before the next one; with an axe the whirlwind, three turns carried
- *   forward (Whirl), G again stops it, 45 s before the next one. The tray at the bottom shows how
- *   long each still needs (MovesHud).</li>
+ *   (Spin), the keys walking the player meanwhile; held, up to 3 turns; 20 s before the next one.
+ *   With an axe the whirlwind, three turns carried forward the way the camera looks (Whirl); held,
+ *   up to 5; 45 s before the next one. Each turn more than those costs more energy. The tray at the
+ *   bottom shows how long each still needs (MovesHud).</li>
  * </ul>
  *
  * <p>They take the click: the button is let go of for vanilla and for Better Combat (whose
@@ -80,12 +82,21 @@ public final class StrikeInput {
         boolean lmbPressed = lmb && !attackWasDown, rmbPressed = rmb && !useWasDown;
         attackWasDown = lmb;
         useWasDown = rmb;
-        // The whirlwind and the sword's turn: the buttons swing and use nothing meanwhile; G again stops the whirlwind.
-        if (s.move == Move.WHIRL || s.move == Move.SWORD_SPIN) {
+        // G's turns: the buttons swing and use nothing meanwhile. G held, another turn (up to 3 with a sword,
+        // 5 with an axe, each for more energy); let go (or no energy for it), the ending in its place, a tick
+        // before the turn would end (author, 2026-10-30, after the video).
+        if (s.move != null && s.move.turning()) {
             finisherTarget = null;
             swallow(mc);
             LedgeInput.swallowUse(mc);
-            if (abilityPressed && s.move == Move.WHIRL && s.moveTick < Whirl.SPIN_TO) MovesClient.cancel(p, s, 4);
+            boolean sword = s.move == Move.SWORD_SPIN;
+            if ((sword && Spin.decides(s.moveTick)) || (s.move == Move.WHIRL && Whirl.decides(s.moveTick))) {
+                float extra = sword ? dev.mcreload.moves.MovesConfig.costSpinExtra() : dev.mcreload.moves.MovesConfig.costWhirlExtra();
+                boolean more = MovesClient.held(mc, MovesClient.ABILITY)
+                        && (s.free() || p.getAbilities().instabuild || s.energy >= extra);
+                if (more) s.spend(extra, p);    // as the server does (a tick later)
+                else MovesClient.start(p, s, sword ? Move.SPIN_END : Move.WHIRL_END, -1);
+            }
             return true;
         }
         // A strike going on: the button strikes nothing else until the blade is back.

@@ -11,20 +11,42 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The axe whirlwind (axe_whirlwind; author, 2026-10-29, fifth message: "an axe in the hands, LMB +
- * S held, then RMB held: three turns round, flying forward like a top, hurting everything round like
- * a berserker; not very fast, not sluggish; the turns go by themselves once the keys are down,
- * letting go of LMB or RMB stops it; 45 s before the next one"). The wind-up to 0.25 s, three turns
- * of 0.5 s (the client carries the player forward meanwhile, Whirl.SPEED), each turn the axe hits
- * every mob within reach once with its blow times MovesConfig.whirlDamage and throws it out.
+ * The axe whirlwind (axe_whirlwind; author, 2026-10-29, fifth message: "three turns round, flying
+ * forward like a top, hurting everything round like a berserker; not very fast, not sluggish; 45 s
+ * before the next one"; 2026-10-30: on G; after his video: "G held: up to 5 turns, and it goes where
+ * the camera looks, only forward, A, S, D do nothing"). The wind-up to 0.25 s, the first turn to
+ * 0.8 s, then 0.45 s a turn (the client carries the player forward meanwhile, Whirl.SPEED); each turn
+ * the axe hits every mob within reach once with its blow times MovesConfig.whirlDamage and throws it
+ * out. Three turns, then the ending (WHIRL_END) unless G is held; held, up to five, each more one
+ * for MovesConfig.costWhirlExtra.
  */
 public final class Whirl {
-    /** The turns: from 0.25 s to 1.75 s, half a second each. */
-    public static final int SPIN_FROM = 5, SPIN_TO = 35, TURN = 10;
-    /** Forward speed while turning, blocks a tick (3 a second: 4.5 blocks over the three turns). [default] */
+    /** The turns: the first from 0.25 s to 0.8 s, then 9 ticks each (0.45 s; round6.AXE). */
+    public static final int SPIN_FROM = 5;
+    public static final int[] TURN_ENDS = {16, 25, 34, 43, 52};
+    /** Turns before the ending without G held; turns at most with it. */
+    public static final int TURNS = 3, MAX_TURNS = 5;
+    /** The whirlwind's own ending (after the fifth turn) starts here; WHIRL_END is that ending alone. */
+    public static final int STOP = 51;
+    /** Forward speed while turning, blocks a tick (3 a second). [default] */
     public static final float SPEED = 0.15f;
     /** How hard each turn throws the mobs out from the player: a little, so the next turn still finds them. [default] */
     public static final double THROW = 0.2;
+
+    /** The turn (0-based) the whirlwind is in at this tick, -1 before the first or after the last. */
+    public static int turn(int tick) {
+        if (tick < SPIN_FROM) return -1;
+        for (int k = 0; k < TURN_ENDS.length; k++) if (tick < TURN_ENDS[k]) return k;
+        return -1;
+    }
+
+    /**
+     * The whirlwind goes on into another turn or ends (WHIRL_END in its place) at this tick, a tick
+     * before the turn would end: after the third and the fourth.
+     */
+    public static boolean decides(int tick) {
+        return tick == TURN_ENDS[TURNS - 1] - 1 || tick == TURN_ENDS[TURNS] - 1;
+    }
 
     static void started(ServerPlayer p, Stamina s) {
         s.whirlCooldown = MovesConfig.whirlCooldownTicks();
@@ -33,10 +55,14 @@ public final class Whirl {
 
     /** Every server tick of the whirlwind: the axe meets whoever is within reach, once a turn. */
     static void serverTick(ServerPlayer p, Stamina s) {
-        if (s.move != Move.WHIRL || s.moveTick < SPIN_FROM || s.moveTick >= SPIN_TO) return;
-        int turn = (s.moveTick - SPIN_FROM) / TURN;
+        if (s.move != Move.WHIRL) return;
+        int turn = turn(s.moveTick);
+        if (turn < 0) return;
         ServerLevel level = p.serverLevel();
-        if ((s.moveTick - SPIN_FROM) % TURN == 0) {
+        int from = turn == 0 ? SPIN_FROM : TURN_ENDS[turn - 1];
+        // a turn more than the three: G held, more energy (a tick into it: the client's ending may come that late)
+        if (turn >= TURNS && s.moveTick == from + 1) s.spend(MovesConfig.costWhirlExtra(), p);
+        if (s.moveTick == from) {
             level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1f, 0.7f + 0.1f * turn);
         }
         double reach = MovesConfig.whirlReach();

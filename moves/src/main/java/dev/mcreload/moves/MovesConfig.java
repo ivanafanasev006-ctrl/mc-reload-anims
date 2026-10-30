@@ -17,7 +17,8 @@ public final class MovesConfig {
             APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD, COOKED_FOOD,
             COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER,
             COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP, COST_DIVE, COST_FALL_ROLL, COST_LEDGE_GRAB, COST_LEDGE_CLIMB,
-            COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_SHIMMY, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL, COST_SWORD_SPIN;
+            COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_SHIMMY, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL, COST_SWORD_SPIN,
+            COST_SPIN_EXTRA, COST_WHIRL_EXTRA;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
@@ -123,6 +124,11 @@ public final class MovesConfig {
         // Author, 2026-10-30: G, a sword in hand.
         COST_SWORD_SPIN = b.comment("The sword's quick turn round on the spot: G with a sword. [default]")
                 .defineInRange("swordSpin", 10.0, 0.0, 10000.0);
+        // Author, 2026-10-30 (video): "G held: up to 3 turns (5 with an axe), and it eats more energy".
+        COST_SPIN_EXTRA = b.comment("Each turn of the sword's more than the first, while G is held (up to 3). [default]")
+                .defineInRange("swordSpinExtraTurn", 5.0, 0.0, 10000.0);
+        COST_WHIRL_EXTRA = b.comment("Each turn of the axe whirlwind's more than the three, while G is held (up to 5). [default]")
+                .defineInRange("whirlwindExtraTurn", 5.0, 0.0, 10000.0);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -321,6 +327,8 @@ public final class MovesConfig {
     public static float whirlReach() { return f(WHIRL_REACH, 2.6); }
     public static float fastRunBarPerSecond() { return f(FAST_RUN_COST, 0.01); }
     public static float costSwordSpin() { return f(COST_SWORD_SPIN, 10.0); }
+    public static float costSpinExtra() { return f(COST_SPIN_EXTRA, 5.0); }
+    public static float costWhirlExtra() { return f(COST_WHIRL_EXTRA, 5.0); }
     public static int swordSpinCooldownTicks() { return get(SPIN_COOLDOWN, 20) * 20; }
     public static float swordSpinDamage() { return f(SPIN_DAMAGE, 1.0); }
     public static float swordSpinReach() { return f(SPIN_REACH, 2.6); }

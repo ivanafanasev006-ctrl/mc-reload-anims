@@ -123,6 +123,9 @@ public final class MoveServer {
         // Falling with a sword or an axe: the blade held for the plunge, and driven in on landing.
         if (move == Move.PLUNGE_FALL) return Strikes.finisherWeapon(p) && p.fallDistance >= MovesConfig.plungeFrom() - (p.level().isClientSide ? 0f : 1f);
         if (move == Move.PLUNGE) return s.move == Move.PLUNGE_FALL;
+        // G let go: the turns end (in the air too: the keys walk the sword's turns, a step off an edge)
+        if (move == Move.SPIN_END) return s.move == Move.SWORD_SPIN;
+        if (move == Move.WHIRL_END) return s.move == Move.WHIRL;
         if (move.ledge()) return move != Move.LEDGE_DOWN || ground;
         if (move == Move.LEDGE_HELP) return ground;
         // W + Space + R: the kick and the dive from the ground or a jump already begun, not out of a fall.

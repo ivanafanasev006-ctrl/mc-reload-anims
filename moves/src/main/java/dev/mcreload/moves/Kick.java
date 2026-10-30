@@ -35,11 +35,11 @@ public final class Kick {
     /**
      * The roll kick (hop_roll_kick; author's draft, 2026-10-29, fifth message), in ticks: the take-off
      * (0.15 s), the half turn to the mob in the flip (0.4-0.68 s), the kick into its back (0.8 s), the
-     * landing facing it (0.95 s), the roll after it (1.05-1.45 s).
+     * landing facing it (0.95 s), the back roll after it, away from it (1.05-1.45 s).
      */
     public static final int RK_TAKEOFF = 3, RK_TURN_FROM = 8, RK_TURN_TO = 14, RK_HIT = 16, RK_LAND = 19,
             RK_ROLL_FROM = 21, RK_ROLL_TO = 29;
-    /** The roll kick lands this far beyond the mob (blocks) and rolls this far on after it. */
+    /** The roll kick lands this far beyond the mob (blocks) and rolls this far back from it after. */
     public static final float RK_BEYOND = 1.3f, RK_ROLL_BLOCKS = 1.5f;
 
     /** The tick the leg meets the mob, for either kick. */

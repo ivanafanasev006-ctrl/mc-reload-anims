@@ -186,12 +186,14 @@ public final class MovesSelfTest {
         diveOverBlock("78_dive_over_block");
         rollKick("79_roll_kick");
         plunge("99a_plunge", CameraType.THIRD_PERSON_BACK);
-        whirlwind("92a_whirlwind", CameraType.THIRD_PERSON_BACK);
-        whirlwind("92b_whirlwind_front", CameraType.THIRD_PERSON_FRONT);
+        whirlwind("92a_whirlwind", CameraType.THIRD_PERSON_BACK, false);
+        whirlwind("92b_whirlwind_front", CameraType.THIRD_PERSON_FRONT, false);
+        whirlwind("92c_whirlwind_held", CameraType.THIRD_PERSON_BACK, true);
         fastRun("16_fast_run");
         // the author's message of 2026-10-30: G (the sword's turn, the whirlwind), the tray, the splash
-        swordSpin("88_sword_spin", CameraType.THIRD_PERSON_BACK);
-        swordSpin("89_sword_spin_first_person", CameraType.FIRST_PERSON);
+        swordSpin("88_sword_spin", CameraType.THIRD_PERSON_BACK, false);
+        swordSpin("89_sword_spin_first_person", CameraType.FIRST_PERSON, false);
+        swordSpin("88b_sword_spin_held", CameraType.THIRD_PERSON_BACK, true);
         tray("17_tray");
         plungeSplash("99b_plunge_splash");
         // celebrate is Kinetrix's now: its emote (played as the emote menu plays it) and its music, then broken off
@@ -609,9 +611,12 @@ public final class MovesSelfTest {
         }, new int[]{6, 12, 15, 17, 19, 21, 23, 26, 29, 32, 36, 40}, camera != CameraType.FIRST_PERSON));
     }
 
-    /** An axe, G: the whirlwind among three zombies; its reach, its run, its cooldown. */
-    private static void whirlwind(String name, CameraType camera) {
-        SCENARIOS.add(new Scenario(name, 70, sp -> {
+    /**
+     * An axe, G: the whirlwind among three zombies; its reach, its run, its cooldown. {@code held}: G held,
+     * five turns, the camera turned to the right meanwhile (the run follows it) and A, S, D held (they do nothing).
+     */
+    private static void whirlwind(String name, CameraType camera, boolean held) {
+        SCENARIOS.add(new Scenario(name, held ? 90 : 70, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_AXE));
             Stamina.of(sp).whirlCooldown = 0;
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0, 2.2, 20f);
@@ -624,19 +629,34 @@ public final class MovesSelfTest {
                 startPos = mc.player.position();
                 KeyMapping.click(MovesClient.ABILITY.getKey());
             }
+            if (held) {
+                MovesClient.ABILITY.setDown(t >= 8 && t < 70);
+                mc.options.keyLeft.setDown(t >= 20 && t < 30);
+                mc.options.keyDown.setDown(t >= 30 && t < 40);
+                mc.options.keyRight.setDown(t >= 40 && t < 50);
+                // the camera turns 90 degrees to the right over the third and fourth turns
+                if (t >= 30 && t < 48) mc.player.setYRot(mc.player.getYRot() + 5f);
+            }
             if (t == 9) note(name + ": move " + Stamina.of(mc.player).move);
             if (t == 30) note(name + ": still turning " + Stamina.of(mc.player).move);
-            if (t == 54) {
-                note(String.format(Locale.ROOT, "%s: went %.2f blocks, cooldown %d s, %s", name,
-                        mc.player.position().subtract(startPos).horizontalDistance(), Stamina.of(mc.player).whirlCooldown / 20, Stamina.of(mc.player).move));
+            if (t == (held ? 80 : 54)) {
+                Vec3 d = mc.player.position().subtract(startPos);
+                note(String.format(Locale.ROOT, "%s: went %.2f blocks (x %.2f, z %.2f), cooldown %d s, energy %.1f, %s", name,
+                        d.horizontalDistance(), d.x, d.z, Stamina.of(mc.player).whirlCooldown / 20, Stamina.of(mc.player).energy,
+                        Stamina.of(mc.player).move));
                 dummyReport(mc, name, true);
             }
-        }, new int[]{8, 10, 12, 14, 16, 18, 20, 23, 26, 30, 34, 38, 42, 46, 50}, camera != CameraType.FIRST_PERSON));
+        }, held ? new int[]{10, 20, 30, 40, 50, 56, 60, 64, 68, 72} : new int[]{8, 10, 12, 14, 16, 18, 20, 23, 26, 30, 34, 38, 42, 46, 50},
+                camera != CameraType.FIRST_PERSON));
     }
 
-    /** A sword, G: the quick turn on the spot among three zombies (one behind); who it hits, that it stays put, its cooldown. */
-    private static void swordSpin(String name, CameraType camera) {
-        SCENARIOS.add(new Scenario(name, 40, sp -> {
+    /**
+     * A sword, G: the quick turn among three zombies (one behind), walking forward through it (no stun,
+     * author 2026-10-30); {@code held}: G held, three turns, walking to the left. Who it hits, how far the
+     * player went, the cooldown.
+     */
+    private static void swordSpin(String name, CameraType camera, boolean held) {
+        SCENARIOS.add(new Scenario(name, 50, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
             Stamina.of(sp).spinCooldown = 0;
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0, 2.0, 20f);
@@ -649,13 +669,18 @@ public final class MovesSelfTest {
                 startPos = mc.player.position();
                 KeyMapping.click(MovesClient.ABILITY.getKey());
             }
+            MovesClient.ABILITY.setDown(held && t >= 8 && t < 30);
+            (held ? mc.options.keyLeft : mc.options.keyUp).setDown(t >= 8 && t < 30);
             if (t == 9) note(name + ": move " + Stamina.of(mc.player).move);
-            if (t == 30) {
-                note(String.format(Locale.ROOT, "%s: moved %.2f blocks, cooldown %d s, %s", name,
-                        mc.player.position().subtract(startPos).horizontalDistance(), Stamina.of(mc.player).spinCooldown / 20, Stamina.of(mc.player).move));
+            if (t == 20) note(name + ": at 0.6 s " + Stamina.of(mc.player).move + " tick " + Stamina.of(mc.player).moveTick);
+            if (t == 40) {
+                note(String.format(Locale.ROOT, "%s: walked %.2f blocks meanwhile, cooldown %d s, energy %.1f, %s", name,
+                        mc.player.position().subtract(startPos).horizontalDistance(), Stamina.of(mc.player).spinCooldown / 20,
+                        Stamina.of(mc.player).energy, Stamina.of(mc.player).move));
                 dummyReport(mc, name, true);
             }
-        }, new int[]{8, 9, 10, 11, 12, 13, 14, 15, 17, 20, 26}, camera != CameraType.FIRST_PERSON));
+        }, held ? new int[]{9, 11, 13, 15, 17, 19, 21, 23, 26, 30, 34} : new int[]{8, 9, 10, 11, 12, 13, 14, 15, 17, 20, 26},
+                camera != CameraType.FIRST_PERSON));
     }
 
     /** The tray: a sword (the turn waiting, the dash waiting, the slide's attack ready), then an axe (the whirlwind ready), pressing G while it waits. */
@@ -715,6 +740,12 @@ public final class MovesSelfTest {
             if (t == 8) note(name + ": move " + Stamina.of(mc.player).move);
             if (t == 7 + dev.mcreload.moves.Kick.RK_TURN_TO + 1) note(String.format(Locale.ROOT, "%s: after the turn yaw %.0f (started 0)",
                     name, mc.player.getYRot()));
+            // the back roll after the landing: away from the mob (author, 2026-10-30)
+            if (t == 7 + dev.mcreload.moves.Kick.RK_ROLL_FROM || t == 7 + dev.mcreload.moves.Kick.RK_ROLL_TO + 2) {
+                net.minecraft.world.entity.Entity mob = nearestDummy(mc);
+                note(String.format(Locale.ROOT, "%s: %s the roll, %.2f blocks from the mob", name,
+                        t == 7 + dev.mcreload.moves.Kick.RK_ROLL_FROM ? "before" : "after", mob == null ? -1 : mob.distanceTo(mc.player)));
+            }
             if (t == 60) {
                 note(String.format(Locale.ROOT, "%s: %.2f up at most, went %.2f, facing yaw %.0f, health %.1f, %s", name, minHeight,
                         mc.player.position().subtract(startPos).horizontalDistance(), mc.player.getYRot(), mc.player.getHealth(),
@@ -1093,6 +1124,15 @@ public final class MovesSelfTest {
     }
 
     /** The test mob's health and place, from the server (and it goes away with {@code clear}). */
+    /** The nearest of the self-test's mobs to the player, on this client. */
+    private static net.minecraft.world.entity.Entity nearestDummy(Minecraft mc) {
+        net.minecraft.world.entity.Entity best = null;
+        for (var e : mc.level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, mc.player.getBoundingBox().inflate(12))) {
+            if (best == null || e.distanceTo(mc.player) < best.distanceTo(mc.player)) best = e;
+        }
+        return best;
+    }
+
     private static void dummyReport(Minecraft mc, String what, boolean clear) {
         IntegratedServer srv = mc.getSingleplayerServer();
         srv.execute(() -> {

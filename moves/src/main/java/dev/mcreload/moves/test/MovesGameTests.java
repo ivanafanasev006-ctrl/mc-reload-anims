@@ -832,11 +832,22 @@ public final class MovesGameTests {
     }
 
     /**
-     * The sword's turn (G with a sword; author, 2026-10-30): a sword only; one quick turn on the spot
-     * hitting every mob round once (in front, behind, at the side), not the one out of reach; then 20 s.
+     * The sword's turn (G with a sword; author, 2026-10-30): a sword only; G tapped (the ending asked for
+     * where the client asks for it with G up), one turn hitting every mob round once (in front, behind, at
+     * the side), not the one out of reach, the base energy; then 20 s.
      */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void swordSpinHitsAllRound(GameTestHelper h) {
+        spinTest(h, false);
+    }
+
+    /** G held (author, 2026-10-30, after the video): three turns, every mob round hit three times, the extra turns paid. */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void swordSpinHeldTurnsThrice(GameTestHelper h) {
+        spinTest(h, true);
+    }
+
+    private static void spinTest(GameTestHelper h, boolean held) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Zombie front = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
@@ -848,6 +859,9 @@ public final class MovesGameTests {
         Stamina s = Stamina.of(p);
         int[] hits = new int[3];
         float[] last = new float[3];
+        float[] spent = new float[2];    // the energy taken after the start (the bar refills meanwhile), and the bar last tick
+        int turns = held ? dev.mcreload.moves.Spin.MAX_TURNS : 1;
+        Vec3[] at = new Vec3[3];
         t.at(2, () -> {
             for (Zombie z : new Zombie[]{front, back, side, far}) {
                 z.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(200);
@@ -864,21 +878,37 @@ public final class MovesGameTests {
             s.energy = 100f;
             t.check(MoveServer.request(p, Move.SWORD_SPIN, false), "the sword's turn refused with a sword");
             t.close(s.energy, 100f - MovesConfig.costSwordSpin(), "energy after the sword's turn");
-            t.check(Move.SWORD_SPIN.length <= 20 && dev.mcreload.moves.Spin.SPIN_TO - dev.mcreload.moves.Spin.SPIN_FROM <= 8,
-                    "the turn takes " + (dev.mcreload.moves.Spin.SPIN_TO - dev.mcreload.moves.Spin.SPIN_FROM) + " ticks of " + Move.SWORD_SPIN.length + " (a quick one)");
-            for (int i = 0; i < 3; i++) last[i] = near[i].getHealth();
+            spent[1] = s.energy;
+            t.check(Move.SWORD_SPIN.recoverFrom() < 0 && Move.SPIN_END.length <= 10,
+                    "the turns are not broken off by walking (they walk), the ending is short: " + Move.SPIN_END.length);
+            for (int i = 0; i < 3; i++) {
+                last[i] = near[i].getHealth();
+                at[i] = near[i].position();
+            }
         });
         for (int i = 3; i < 4 + Move.SWORD_SPIN.length; i++) {
             t.at(i, () -> {
                 for (int k = 0; k < 3; k++) {
                     if (near[k].getHealth() < last[k]) hits[k]++;
                     last[k] = near[k].getHealth();
+                    // held where they stood, so each turn finds them again
+                    near[k].teleportTo(at[k].x, at[k].y, at[k].z);
+                }
+                spent[0] += Math.max(0f, spent[1] - s.energy);
+                spent[1] = s.energy;
+                // as the client does: G up, the ending in place of the next turn
+                if (!held && s.move == Move.SWORD_SPIN && dev.mcreload.moves.Spin.decides(s.moveTick)) {
+                    t.check(MoveServer.request(p, Move.SPIN_END, false), "the turn's ending refused");
                 }
             });
         }
         t.at(5 + Move.SWORD_SPIN.length, () -> {
-            t.check(hits[0] == 1 && hits[1] == 1 && hits[2] == 1, "hits: in front " + hits[0] + ", behind " + hits[1] + ", at the side " + hits[2] + " (want 1 each)");
+            t.check(hits[0] == turns && hits[1] == turns && hits[2] == turns, "hits: in front " + hits[0] + ", behind " + hits[1]
+                    + ", at the side " + hits[2] + " (want " + turns + " each)");
             t.close(far.getHealth(), 200f, "the zombie out of reach was hit");
+            // the bar refills a little in the very tick it pays
+            float want = (turns - 1) * MovesConfig.costSpinExtra();
+            t.check(Math.abs(spent[0] - want) < 0.5f, "energy for the turns more than one (" + turns + "): " + spent[0] + ", expected " + want);
             s.energy = 100f;
             t.check(!MoveServer.request(p, Move.SWORD_SPIN, false), "a second turn right after the first");
             t.check(s.spinCooldown > 20 * 15, "the turn's cooldown " + s.spinCooldown + " ticks (want 20 s)");
@@ -989,11 +1019,22 @@ public final class MovesGameTests {
     }
 
     /**
-     * The axe whirlwind (author, 2026-10-29, fifth message): an axe only; three turns, each hitting
-     * every mob round the player once (the one behind too), not the one out of reach; then 45 s.
+     * The axe whirlwind (author, 2026-10-29, fifth message; on G, 2026-10-30): an axe only; G tapped,
+     * three turns, each hitting every mob round the player once (the one behind too), not the one out
+     * of reach; then 45 s.
      */
     @GameTest(template = FLOOR, timeoutTicks = 240)
     public static void whirlwindHitsAllRound(GameTestHelper h) {
+        whirlTest(h, false);
+    }
+
+    /** G held (author, 2026-10-30, after the video): five turns, the two more paid for. */
+    @GameTest(template = FLOOR, timeoutTicks = 240)
+    public static void whirlwindHeldTurnsFive(GameTestHelper h) {
+        whirlTest(h, true);
+    }
+
+    private static void whirlTest(GameTestHelper h, boolean held) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Zombie front = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
@@ -1003,6 +1044,8 @@ public final class MovesGameTests {
         Stamina s = Stamina.of(p);
         int[] hits = new int[2];
         float[] last = new float[2];
+        float[] spent = new float[2];
+        int turns = held ? dev.mcreload.moves.Whirl.MAX_TURNS : dev.mcreload.moves.Whirl.TURNS;
         t.at(2, () -> {
             for (Zombie z : new Zombie[]{front, back, far}) {
                 z.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(200);
@@ -1015,6 +1058,7 @@ public final class MovesGameTests {
             s.energy = 100f;
             t.check(MoveServer.request(p, Move.WHIRL, false), "the whirlwind refused with an axe");
             t.close(s.energy, 100f - MovesConfig.costWhirl(), "energy after the whirlwind");
+            spent[1] = s.energy;
             last[0] = front.getHealth();
             last[1] = back.getHealth();
         });
@@ -1030,11 +1074,19 @@ public final class MovesGameTests {
                 back.teleportTo(bp.x, bp.y, bp.z);
                 Vec3 me = h.absoluteVec(new Vec3(3.5, 2, 3.5));
                 p.teleportTo(me.x, me.y, me.z);
+                spent[0] += Math.max(0f, spent[1] - s.energy);
+                spent[1] = s.energy;
+                // as the client does: G up, the ending in place of the fourth turn
+                if (!held && s.move == Move.WHIRL && dev.mcreload.moves.Whirl.decides(s.moveTick)) {
+                    t.check(MoveServer.request(p, Move.WHIRL_END, false), "the whirlwind's ending refused");
+                }
             });
         }
         t.at(5 + Move.WHIRL.length, () -> {
-            t.check(hits[0] == 3 && hits[1] == 3, "hits a turn: in front " + hits[0] + ", behind " + hits[1] + " (want 3 each)");
+            t.check(hits[0] == turns && hits[1] == turns, "hits a turn: in front " + hits[0] + ", behind " + hits[1] + " (want " + turns + " each)");
             t.close(far.getHealth(), 200f, "the zombie out of reach was hit");
+            float want = (turns - dev.mcreload.moves.Whirl.TURNS) * MovesConfig.costWhirlExtra();
+            t.check(Math.abs(spent[0] - want) < 0.5f, "energy for the turns more than three (" + turns + "): " + spent[0] + ", expected " + want);
             s.energy = 100f;
             t.check(!MoveServer.request(p, Move.WHIRL, false), "a second whirlwind right after the first");
             t.check(s.whirlCooldown > 20 * 40, "whirlwind cooldown " + s.whirlCooldown + " ticks (want 45 s)");

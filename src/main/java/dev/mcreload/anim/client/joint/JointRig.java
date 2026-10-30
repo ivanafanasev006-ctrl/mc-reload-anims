@@ -173,6 +173,12 @@ public final class JointRig {
             // the slashes) leave it as it is.
             if (dev.mcreload.anim.client.rig.Weapons.isBow(p.getMainHandItem())) itemTilt = 0f;
             if (dev.mcreload.anim.client.rig.Weapons.isBow(p.getOffhandItem())) itemTiltOff = 0f;
+            // Another mod's whole-body move (Kinetrix Moves) holds the weapon its own way: none of our
+            // turns of it on top (in a fall or a jump ours turned the blade across the face, floating).
+            if (dev.mcreload.anim.api.KinetrixApi.wholeBody(p.getUUID())) {
+                itemTilt = 0f;
+                itemTiltOff = 0f;
+            }
         }
     }
 

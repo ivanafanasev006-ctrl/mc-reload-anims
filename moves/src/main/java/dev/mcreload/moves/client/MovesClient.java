@@ -416,16 +416,12 @@ public final class MovesClient {
             rollKick(p, s, t);
             return;
         }
-        if (move == Move.WHIRL) {
-            whirl(p, t);
+        if (move == Move.WHIRL || move == Move.WHIRL_END) {
+            whirl(p, move, t);
             return;
         }
-        if (move == Move.SWORD_SPIN) {
-            // on the spot: the run it may start from is braked at once
-            Vec3 v = p.getDeltaMovement();
-            p.setDeltaMovement(v.x * 0.3, v.y, v.z * 0.3);
-            return;
-        }
+        // the sword's turns: no stun, the keys walk the player as ever (author, 2026-10-30, after the video)
+        if (move == Move.SWORD_SPIN || move == Move.SPIN_END) return;
         if (move == Move.PLUNGE_FALL) return;     // the little steering vanilla gives in the air stays
         if (move == Move.PLUNGE) {
             // down on the knee with the blade in the ground: no sliding on
@@ -636,7 +632,7 @@ public final class MovesClient {
      * The roll kick (hop_roll_kick): the run goes on into the take-off up to the mob, then a jump over
      * it, higher than the vault's (the flip, tucked, goes over its stooping back), landing
      * Kick.RK_BEYOND beyond it; the mechanic turns the player to it in the flip (kickTurn); after the
-     * landing the roll carries them on towards it, Kick.RK_ROLL_BLOCKS.
+     * landing the back roll carries them away from it, Kick.RK_ROLL_BLOCKS.
      */
     private static void rollKick(AbstractClientPlayer p, Stamina s, int t) {
         p.fallDistance = 0f;
@@ -671,27 +667,32 @@ public final class MovesClient {
         if (t <= Kick.RK_LAND + 1 && !p.onGround()) {
             p.setDeltaMovement(hopVelocity.x, v.y + 0.08 * (1 - hopGravity), hopVelocity.z);
         } else if (t >= Kick.RK_ROLL_FROM && t < Kick.RK_ROLL_TO) {
-            // the roll on after it, the way the player faces now (to the mob)
+            // the back roll after it, away from the mob the player faces now (author, 2026-10-30: not at it)
             float span = Kick.RK_ROLL_TO - Kick.RK_ROLL_FROM;
             float f0 = (t - Kick.RK_ROLL_FROM) / span, f1 = (t + 1 - Kick.RK_ROLL_FROM) / span;
             double speed = Kick.RK_ROLL_BLOCKS * (f1 * f1 * (3 - 2 * f1) - f0 * f0 * (3 - 2 * f0));
-            Vec3 dir = Move.ROLL_KICK.direction(p.getYRot());
+            Vec3 dir = Move.ROLL_KICK.direction(p.getYRot()).reverse();
             p.setDeltaMovement(dir.x * speed, v.y, dir.z * speed);
         } else {
             p.setDeltaMovement(v.x * 0.35, v.y, v.z * 0.35);
         }
     }
 
-    /** The axe whirlwind: carried forward the way the player faced at its start while it turns, like a top. */
-    private static void whirl(AbstractClientPlayer p, int t) {
+    /**
+     * The axe whirlwind: carried forward like a top while it turns, the way the camera looks now (author,
+     * 2026-10-30: "he looks and goes only forward; in first person looking the other way with the mouse,
+     * he turns there; A, S, D do nothing"), eased in over the first turn's quarter; its ending slows to a stop.
+     */
+    private static void whirl(AbstractClientPlayer p, Move move, int t) {
         Vec3 v = p.getDeltaMovement();
         float speed = 0f;
-        if (t >= dev.mcreload.moves.Whirl.SPIN_FROM && t < dev.mcreload.moves.Whirl.SPIN_TO) {
-            // eased in over the first turn's quarter and out over the last one's
-            int in = t - dev.mcreload.moves.Whirl.SPIN_FROM, out = dev.mcreload.moves.Whirl.SPIN_TO - t;
-            speed = dev.mcreload.moves.Whirl.SPEED * Math.min(1f, Math.min(in + 1, out) / 3f);
+        int from = dev.mcreload.moves.Whirl.SPIN_FROM, stop = dev.mcreload.moves.Whirl.STOP;
+        if (move == Move.WHIRL_END) {
+            speed = dev.mcreload.moves.Whirl.SPEED * Math.max(0f, 1f - (t + 1) / 3f);
+        } else if (t >= from && t < stop + 3) {
+            speed = dev.mcreload.moves.Whirl.SPEED * Math.min(1f, Math.min(t - from + 1, stop + 3 - t) / 3f);
         }
-        Vec3 dir = move(Move.WHIRL);
+        Vec3 dir = Move.WHIRL.direction(p.getYRot());
         p.setDeltaMovement(dir.x * speed, v.y, dir.z * speed);
     }
 
@@ -736,6 +737,7 @@ public final class MovesClient {
         if (s.move == null || s.moveTick >= s.move.length - 3) return;
         if (s.move == Move.SLIDE && s.moveTick < Move.PUSH_TICK) return;
         if (s.move == Move.FALL_TUCK || s.move == Move.PLUNGE_FALL) return;     // in the air: the little steering vanilla gives stays
+        if (s.move == Move.SWORD_SPIN || s.move == Move.SPIN_END) return;     // the sword's turns walk with the keys
         Input in = event.getInput();
         in.forwardImpulse = 0f;
         in.leftImpulse = 0f;
@@ -770,9 +772,9 @@ public final class MovesClient {
         } else if (move == Move.PLUNGE) {
             if (t == 1) step(p, ground, 0.9f);
         } else if (move == Move.WHIRL) {
-            if (t >= dev.mcreload.moves.Whirl.SPIN_FROM && t < dev.mcreload.moves.Whirl.SPIN_TO && t % 5 == 0) step(p, ground, 0.3f);
+            if (t >= dev.mcreload.moves.Whirl.SPIN_FROM && t < dev.mcreload.moves.Whirl.STOP && t % 5 == 0) step(p, ground, 0.3f);
         } else if (move == Move.SWORD_SPIN) {
-            if (t == dev.mcreload.moves.Spin.SPIN_FROM || t == dev.mcreload.moves.Spin.SPIN_TO) step(p, ground, 0.4f);
+            if (t == dev.mcreload.moves.Spin.SPIN_FROM) step(p, ground, 0.4f);
         } else if (move == Move.HOP || move == Move.KICK) {
             if (t == Move.HOP_LAND || (move == Move.KICK && t == Kick.LAND)) step(p, ground, 0.7f);
             if (move == Move.KICK && t == Kick.SPIN) sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 0.4f, 0.8f);

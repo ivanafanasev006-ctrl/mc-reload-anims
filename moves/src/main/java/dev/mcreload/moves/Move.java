@@ -140,7 +140,8 @@ public enum Move {
      * the author's draft of 2026-10-29, fifth message; the keys are a default): over it in a forward
      * flip, turned half round to its back in the air (the camera with the player), the kick into its
      * back at 0.8 s (Kick.RK_HIT, flung away as by hop_on_kick), the landing facing it at 0.95 s and a
-     * forward roll after it, 1.5 blocks; 1.9 s in all. Nothing hurts the player until the landing.
+     * back roll after it, away from it, 1.5 blocks (author, 2026-10-30: it rolled towards the mob); 1.9 s
+     * in all. Nothing hurts the player until the landing.
      */
     ROLL_KICK("hop_roll_kick", 1f, 38, 0, Kick.RK_LAND, Kick.RK_ROLL_FROM, Kick.RK_ROLL_TO, Side.FRONT, MovesConfig::costRollKick),
     /**
@@ -174,18 +175,28 @@ public enum Move {
     /**
      * G with an axe in hand (author, 2026-10-30; it was S and the left button held, then the right
      * one): the berserker's whirlwind (axe_whirlwind; author, 2026-10-29, fifth message): a wind-up,
-     * three turns round with the axe out, carried forward like a top, the blade hitting everything
-     * round once a turn (Whirl), then the axe back in front; 2.1 s. G again stops it. 45 s before
-     * the next one.
+     * turns round with the axe out, carried forward like a top the way the camera looks (A, S, D do
+     * nothing meanwhile), the blade hitting everything round once a turn (Whirl). Three turns (to
+     * 1.7 s); G held, up to five (to 2.6 s), each more one for more energy; then the turning slows to a
+     * stop facing ahead and the axe comes back in front (WHIRL_END, or the animation's own ending after
+     * the fifth). 45 s before the next one.
      */
-    WHIRL("axe_whirlwind", 1f, 42, -1, -1, -1, -1, Side.FRONT, MovesConfig::costWhirl),
+    WHIRL("axe_whirlwind", 1f, 60, -1, -1, -1, -1, Side.FRONT, MovesConfig::costWhirl),
+    /** The whirlwind's ending, in place of its next turn when G is up: the slow-down and the stance (0.45 s). */
+    WHIRL_END("axe_whirlwind_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /**
      * G with a sword in hand (author, 2026-10-30: "a quick turn round on the spot, the sword held out
-     * turned flat"): the sword's turn (sword_spin), a short wind-up, one turn to the left from 0.1 to
-     * 0.4 s with the blade out flat, cutting everything within reach as it passes (Spin), the stance
-     * again by 0.8 s. 20 s before the next one [default].
+     * turned flat"; and, after his video: "no stun: he just turns round and strikes in the moment; G
+     * held, he may move any way and makes up to 3 turns, for more energy"): the sword's turn
+     * (sword_spin), a short wind-up, a turn to the left from 0.1 to 0.4 s with the blade out flat,
+     * cutting everything within reach as it passes (Spin); G held, up to two more of 0.25 s each,
+     * each for more energy; then the turning slows to a stop facing ahead (SPIN_END, or the
+     * animation's own ending after the third). The keys walk the player meanwhile. 20 s before the
+     * next one [default].
      */
-    SWORD_SPIN("sword_spin", 1f, 16, -1, -1, -1, -1, Side.FRONT, MovesConfig::costSwordSpin),
+    SWORD_SPIN("sword_spin", 1f, 26, -1, -1, -1, -1, Side.FRONT, MovesConfig::costSwordSpin),
+    /** The sword's turn's ending, in place of its next turn when G is up: the slow-down and the stance (0.45 s). */
+    SPIN_END("sword_spin_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
 
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
@@ -327,7 +338,12 @@ public enum Move {
 
     /** A sword move started by the left button: while it plays the button strikes nothing else. */
     public boolean strike() {
-        return this == DASH || finisher() || this == SLIDE_ATTACK || this == WHIRL || this == SWORD_SPIN;
+        return this == DASH || finisher() || this == SLIDE_ATTACK || turning();
+    }
+
+    /** G's moves: the sword's turns, the whirlwind, and their endings. */
+    public boolean turning() {
+        return this == WHIRL || this == WHIRL_END || this == SWORD_SPIN || this == SPIN_END;
     }
 
     /** On the ledge: hanging, moving along it, climbing onto it or off it, being pulled up (not the friend pulling). */
@@ -362,6 +378,9 @@ public enum Move {
             // R while falling with the blade held for the plunge: the tuck instead; the plunge's landing
             case FALL_TUCK -> now == PLUNGE_FALL;
             case PLUNGE -> now == PLUNGE_FALL;
+            // G let go: the turns end with the next one's place
+            case SPIN_END -> now == SWORD_SPIN;
+            case WHIRL_END -> now == WHIRL;
             // the edge caught out of a fall, a slide or a roll off a drop, or back to the hang on it
             case LEDGE_HANG -> now == FALL_TUCK || now == PLUNGE_FALL || now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT || now == LEDGE_DOWN
                     || now == SLIDE || now == SLIDE_ATTACK || now.rolls() || now.sideDodge() || now == DIVE;
@@ -379,7 +398,7 @@ public enum Move {
     /** Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28). */
     public boolean firstPerson() {
         return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
-                || this == WHIRL || this == SWORD_SPIN || ledge();
+                || turning() || ledge();
     }
 
     /**
@@ -395,8 +414,8 @@ public enum Move {
             case KICK -> Kick.LAND + 5;
             case ROLL_KICK -> Kick.RK_ROLL_TO;
             case PLUNGE -> Plunge.STAND;
-            case WHIRL -> Whirl.SPIN_TO + 2;
-            case SWORD_SPIN -> Spin.SPIN_TO + 1;
+            // the turns go on (or end) as G says; their endings may be broken off once the turning has stopped
+            case WHIRL_END, SPIN_END -> 2;
             case DIVE -> DIVE_UP;
             case LEDGE_CLIMB -> CLIMB_ON_TOP;
             case SLIDE_ATTACK -> SLIDE_ATTACK_UP;
