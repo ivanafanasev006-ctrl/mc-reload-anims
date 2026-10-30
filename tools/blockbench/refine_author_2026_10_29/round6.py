@@ -2,7 +2,9 @@
 
 - sword_spin: "on G a sword turns once round on the spot, fast (the sword held out turned flat, as
   in the attack out of a slide or as the axe turns round)". No draft: made from the description, on
-  the author's axe_whirlwind (round5.py) with one turn instead of three, on the spot.
+  the author's axe_whirlwind (round5.py). After his video of 2026-10-30: up to three turns while G is
+  held, and the ending its own animation (sword_spin_end); axe_whirlwind made even and up to five
+  turns the same way (axe_whirlwind_end). See Turning below.
 - finisher_stab: "the axe's finisher is now shorter than the sword's, in speed and in all; let the
   sword's be the same, but with a stab into the belly, and quick, without a lead-up". Made again on
   the axe's finisher_chop (round5.py): the free hand on the mob's shoulder as the sword draws back to
@@ -26,99 +28,174 @@ from round5 import ITEM, LEGS, TIP_LOCAL, aimed, aimed_flat, held, item_continuo
 kit.POINTS.setdefault('swordtip', (ITEM, tuple(TIP_LOCAL)))
 
 # --------------------------------------------------------------------------------------------
-# sword_spin: one quick turn round on the spot, the blade out flat
+# G: the sword's turn and the axe's whirlwind, held for more turns (author, 2026-10-30, the video)
 # --------------------------------------------------------------------------------------------
+#
+# "G with a sword: no stun, he just turns round and strikes in the moment; G+, held: he may move any
+# way and makes up to 3 turns, for more energy. The axe's animation should be more even in the lean of
+# the body; G+ held: up to 5 turns." So each is two animations: the turns at an even speed, as many as
+# G may give (3 and 5), with their own ending after the last; and the ending alone (*_end), which the
+# mechanic starts in place of the next turn when G is up: it slows the turn down over its last 0.1 s
+# (one tick's worth of the turn: it starts a tick before the turn would end) to face ahead again, and
+# brings the stance back. The body stays upright (it leant into the turn and bobbed: it rocked), the
+# feet step round under it.
 
-#: Times (s): the wind-up to SS_FROM, one turn to the left to SS_TO (Spin.SPIN_FROM, SPIN_TO: 0.1 and
-#: 0.4 s, 0.3 s a turn: "fast"), the sword back in front by SS_GUARD, the stance by SS_LEN.
-SS_FROM, SS_TO, SS_GUARD, SS_LEN = 0.1, 0.4, 0.58, 0.8
-#: The wind-up turns the body this far to the right (degrees); the turn makes up for it (Spin.BLADE_FROM).
+
+class Turning:
+    """A weapon turned round with the body: the wind-up to FROM, turns of TURN seconds at an even speed
+    (the first, from the wind-up, of FIRST seconds with a ramp), up to TURNS of them; the ending (END_LEN:
+    a 0.1 s slow-down, the weapon back in front by GUARD after it, the stance) after the last."""
+
+    def __init__(self, name, frm, first, turn, turns, guard, end_len, wind, spin, guard_pose, step, item_up):
+        self.name, self.FROM, self.FIRST, self.TURN, self.TURNS = name, frm, first, turn, turns
+        self.GUARD, self.END_LEN = guard, end_len
+        self.wind, self.spin, self.guard, self.step, self.item_up = wind, spin, guard_pose, step, item_up
+        self.V = 360.0 / turn
+        # the first turn makes up the wind-up's 40 degrees too, from a standstill: its ramp
+        self.RAMP = 2 * (self.FIRST - 400.0 / self.V)
+        self.SWITCH = self.turn_end(turns) - 0.05     # the last turn's ending starts here
+        self.LEN = self.SWITCH + end_len
+
+    def turn_end(self, k):
+        return self.FROM + self.FIRST + (k - 1) * self.TURN
+
+    def yaw(self, t):
+        """The body's turn (degrees, to the left) at t."""
+        if t <= self.FROM:
+            return -SS_WIND * kit.smooth(t / self.FROM)
+        x = t - self.FROM
+        if x < self.RAMP:
+            d = self.V * x * x / (2 * self.RAMP)
+        else:
+            d = self.V * (x - self.RAMP / 2)
+        if t > self.SWITCH:
+            # the slow-down: from full speed to a stop in 0.1 s, square at a whole turn
+            y = min(t, self.SWITCH + 0.1) - self.SWITCH
+            d = self.V * (self.SWITCH - self.FROM - self.RAMP / 2) + self.V * (y - y * y / 0.2)
+        return -SS_WIND + d
+
+    def frames(self, times, item=(0.0, 0.0, 0.0), out_rot=None, prev_item=None, prev_body=None, shift=0.0):
+        """Poses at these times of the whole animation; the body's turn less `shift` degrees."""
+        keys = [(0.0, {}, 'auto'), (self.FROM, self.wind, 'inout'), (self.FROM + 0.06, self.spin, 'out'),
+                (self.SWITCH, self.spin, 'linear'), (self.SWITCH + 0.1 + self.GUARD, self.guard, 'inout'),
+                (self.LEN, {}, 'inout')]
+        d = L.Anim(self.name + '_design', self.LEN)
+        for t, pose, ease in keys:
+            d.key(t, pose, ease, whole=True)
+        stop = self.SWITCH + 0.1
+        out = []
+        for t in times:
+            p = kit.design(d, t)
+            yaw = self.yaw(t)
+            # the feet step round under the body, a step a half turn; the body upright
+            inspin = kit.span(t, self.FROM - 0.03, self.FROM + 0.06) * (1 - kit.span(t, stop - 0.05, stop + 0.05))
+            phase = math.radians(yaw) * 2
+            rl, ll = p['right_leg'], p['left_leg']
+            p['right_leg'] = (rl[0] + self.step * inspin * max(0.0, math.sin(phase)), rl[1], rl[2])
+            p['left_leg'] = (ll[0] + self.step * inspin * max(0.0, -math.sin(phase)), ll[1], ll[2])
+            rs, ls = p['right_shin'], p['left_shin']
+            p['right_shin'] = (rs[0] - 1.5 * self.step * inspin * max(0.0, math.sin(phase)), 0, 0)
+            p['left_shin'] = (ls[0] - 1.5 * self.step * inspin * max(0.0, -math.sin(phase)), 0, 0)
+            p['body'] = (0.0, yaw - shift, 0.0)
+            p = kit.grounded(p, bones=LEGS)
+            p['body'] = tuple(kit.continuous(prev_body, p['body']))
+            prev_body = p['body']
+            # the weapon out along the arm, a little up, flat, its edge leading into the turn; the wrist
+            # turns it so over the wind-up and back once the turn stops, the shortest way in the fist
+            r = math.radians(yaw)
+            outward = np.array((math.cos(r), self.item_up, -math.sin(r)))
+            lead = np.array((-math.sin(r), 0.0, -math.cos(r)))
+            if t <= stop:
+                q = aimed_flat(p, outward, lead, start=item)
+                item = item_continuous(item, q[ITEM])
+                out_rot = item
+                f = kit.smooth(t / (self.FROM - 0.02))
+                p = held(p, item if f >= 1.0 else turned_between((0.0, 0.0, 0.0), item, f, prev_item))
+            else:
+                f = kit.smooth(min(1.0, (t - stop) / self.GUARD))
+                p = held(p, turned_between(out_rot, (0.0, 0.0, 0.0), f, prev_item))
+            prev_item = p[ITEM]
+            out.append((t, p))
+        return out, (item, out_rot, prev_item, prev_body)
+
+    def whole(self):
+        a = L.Anim(self.name, self.LEN, 'once')
+        poses, _ = self.frames(kit.frames(0, self.LEN))
+        for t, p in poses:
+            a.key(t, p)
+        a.tol_rot, a.tol_pos = 0.4, 0.08
+        return a
+
+    def ending(self):
+        """The ending alone: from 0.05 s before a turn would end (full speed, a whole turn short of
+        square less one tick's worth), the slow-down and the stance."""
+        n = int(round(self.END_LEN * 24))
+        times = [round(self.SWITCH + i / 24, 6) for i in range(n + 1)]
+        # the weapon's grip as the turns hold it, from the frame just before
+        _, state = self.frames(kit.frames(0, self.SWITCH))
+        poses, _ = self.frames(times, item=state[0], out_rot=state[1], prev_item=state[2],
+                               shift=360.0 * self.TURNS)
+        a = L.Anim(self.name + '_end', self.END_LEN, 'once')
+        for t, p in poses:
+            a.key(round(t - self.SWITCH, 6), p)
+        a.tol_rot, a.tol_pos = 0.4, 0.08
+        return a
+
+
+#: The wind-up turns the body this far to the right (degrees); the first turn makes up for it (Spin.BLADE_FROM).
 SS_WIND = 40.0
 
+#: The sword (Spin): the wind-up to 0.1 s, the first turn to 0.4 s (0.3 s), then 0.25 s a turn, up to 3;
+#: the ending 0.45 s (stopped 0.1 s in, the sword in front 0.18 s after, the stance).
+SWORD = Turning('sword_spin', frm=0.1, first=0.3, turn=0.25, turns=3, guard=0.18, end_len=0.45,
+                wind={'torso': (0, -24, 0), 'chest': (-6, 0, 0), 'head': (-4, 20, 0),
+                      'right_leg': (14, 0, 10), 'right_shin': (-26, 0, 0), 'left_leg': (10, 0, -10), 'left_shin': (-22, 0, 0),
+                      'right_arm': (-20, 0, 74), 'right_forearm': (8, 0, 0), 'left_arm': (30, 0, -30), 'left_forearm': (36, 0, 0)},
+                spin={'torso': (0, 0, 0), 'chest': (-3, 0, 0), 'head': (-2, 0, 0),
+                      'right_leg': (10, 0, 8), 'right_shin': (-18, 0, 0), 'left_leg': (10, 0, -8), 'left_shin': (-18, 0, 0),
+                      'right_arm': (6, 0, 88), 'right_forearm': (2, 0, 0), 'left_arm': (6, 0, -78), 'left_forearm': (10, 0, 0)},
+                guard_pose={'torso': (0, 6, 0), 'chest': (-4, 0, 0), 'head': (0, -4, 0),
+                            'right_leg': (8, 0, 4), 'right_shin': (-14, 0, 0), 'left_leg': (8, 0, -4), 'left_shin': (-14, 0, 0),
+                            'right_arm': (42, 0, 12), 'right_forearm': (34, 0, 0), 'left_arm': (18, 0, -12), 'left_forearm': (28, 0, 0)},
+                step=8.0, item_up=0.12)
 
-def _spin_yaw(t):
-    """The body's turn (degrees, to the left) at t: wound up to the right, then a whole turn and the wind-up
-    back at an even speed with short ramps, so it ends square."""
-    if t <= SS_FROM:
-        return -SS_WIND * kit.smooth(t / SS_FROM)
-    if t >= SS_TO:
-        return 360.0
-    total = 360.0 + SS_WIND
-    ramp = 0.06
-    span = SS_TO - SS_FROM
-    v = total / (span - ramp)
-    x = t - SS_FROM
-    if x < ramp:
-        d = v * x * x / (2 * ramp)
-    elif x > span - ramp:
-        y = span - x
-        d = total - v * y * y / (2 * ramp)
-    else:
-        d = v * (x - ramp / 2)
-    return -SS_WIND + d
+#: The axe (Whirl): the wind-up to 0.25 s, the first turn to 0.8 s (0.55 s), then 0.45 s a turn, up to
+#: 5 (3 if G is let go); the ending 0.45 s. "Not very fast, but not sluggish", as it was (0.5 s a turn).
+AXE = Turning('axe_whirlwind', frm=0.25, first=0.55, turn=0.45, turns=5, guard=0.15, end_len=0.45,
+              wind={'body': (0, 0, 0), 'torso': (0, -30, 0), 'chest': (-8, 0, 0), 'head': (-4, 25, 0),
+                    'right_leg': (18, 0, 12), 'right_shin': (-34, 0, 0), 'left_leg': (12, 0, -12), 'left_shin': (-28, 0, 0),
+                    'right_arm': (-25, 0, 70), 'right_forearm': (10, 0, 0), 'left_arm': (35, 0, -35), 'left_forearm': (40, 0, 0)},
+              spin={'torso': (0, 0, 0), 'chest': (-3, 0, 0), 'head': (-2, 0, 0),
+                    'right_leg': (10, 0, 10), 'right_shin': (-20, 0, 0), 'left_leg': (10, 0, -10), 'left_shin': (-20, 0, 0),
+                    'right_arm': (8, 0, 86), 'right_forearm': (4, 0, 0), 'left_arm': (8, 0, -80), 'left_forearm': (10, 0, 0)},
+              guard_pose={'torso': (0, 0, 0), 'chest': (-4, 0, 0), 'head': (0, 0, 0),
+                          'right_leg': (8, 0, 4), 'right_shin': (-14, 0, 0), 'left_leg': (8, 0, -4), 'left_shin': (-14, 0, 0),
+                          'right_arm': (40, 0, 10), 'right_forearm': (35, 0, 0), 'left_arm': (20, 0, -12), 'left_forearm': (30, 0, 0)},
+              step=10.0, item_up=0.18)
 
 
 def sword_spin():
     """The wind-up: down a little on the knees, the chest turned away to the right, the sword arm
-    drawn back out to the side; the turn: the whole body round to the left on the spot, the sword arm
+    drawn back out to the side; the turns: the whole body round to the left, upright, the sword arm
     straight out at shoulder height with the blade out along it, flat, its edge leading, the free arm
-    out for balance, leaning into the turn, the feet stepping round under it; then the blade swings in
-    front and the stance comes back."""
-    wind = {'torso': (0, -24, 0), 'chest': (-8, 0, 0), 'head': (-4, 20, 0),
-            'right_leg': (16, 0, 10), 'right_shin': (-30, 0, 0), 'left_leg': (10, 0, -10), 'left_shin': (-24, 0, 0),
-            'right_arm': (-20, 0, 74), 'right_forearm': (8, 0, 0), 'left_arm': (30, 0, -30), 'left_forearm': (36, 0, 0)}
-    spin = {'torso': (0, 0, 0), 'chest': (-6, 0, 0), 'head': (-6, 0, 0),
-            'right_leg': (12, 0, 10), 'right_shin': (-24, 0, 0), 'left_leg': (12, 0, -10), 'left_shin': (-24, 0, 0),
-            'right_arm': (6, 0, 88), 'right_forearm': (2, 0, 0), 'left_arm': (6, 0, -78), 'left_forearm': (10, 0, 0)}
-    guard = {'torso': (0, 6, 0), 'chest': (-4, 0, 0), 'head': (0, -4, 0),
-             'right_leg': (8, 0, 4), 'right_shin': (-14, 0, 0), 'left_leg': (8, 0, -4), 'left_shin': (-14, 0, 0),
-             'right_arm': (42, 0, 12), 'right_forearm': (34, 0, 0), 'left_arm': (18, 0, -12), 'left_forearm': (28, 0, 0)}
-    keys = [(0.0, {}, 'auto'), (SS_FROM, wind, 'inout'), (SS_FROM + 0.06, spin, 'out'),
-            (SS_TO - 0.04, spin, 'linear'), (SS_GUARD, guard, 'inout'), (SS_LEN, {}, 'inout')]
-    d = L.Anim('spin_design', SS_LEN)
-    for t, pose, ease in keys:
-        d.key(t, pose, ease, whole=True)
-    a = L.Anim('sword_spin', SS_LEN, 'once')
-    item = (0.0, 0.0, 0.0)
-    out_rot = None
-    prev_item = None
-    prev_body = None
-    for t in kit.frames(0, SS_LEN):
-        p = kit.design(d, t)
-        yaw = _spin_yaw(t)
-        # leaning into the turn (to the left, the way it goes), the feet stepping round: a step a half turn
-        inspin = kit.span(t, SS_FROM - 0.03, SS_FROM + 0.05) * (1 - kit.span(t, SS_TO - 0.05, SS_TO + 0.04))
-        phase = math.radians(yaw) * 2
-        lean = 8.0 * inspin
-        rl, ll = p['right_leg'], p['left_leg']
-        p['right_leg'] = (rl[0] + 12 * inspin * max(0.0, math.sin(phase)), rl[1], rl[2])
-        p['left_leg'] = (ll[0] + 12 * inspin * max(0.0, -math.sin(phase)), ll[1], ll[2])
-        rs, ls = p['right_shin'], p['left_shin']
-        p['right_shin'] = (rs[0] - 18 * inspin * max(0.0, math.sin(phase)), 0, 0)
-        p['left_shin'] = (ls[0] - 18 * inspin * max(0.0, -math.sin(phase)), 0, 0)
-        p['body'] = (0.0, yaw, -lean)
-        p = kit.grounded(p, bones=LEGS)
-        p['body'] = tuple(kit.continuous(prev_body, p['body']))
-        prev_body = p['body']
-        # the sword (author: "held out turned flat"): in the turn the blade out along the arm, a little
-        # up, flat to the ground, the edge leading into the turn; the wrist turns it so over the wind-up
-        # and back as the sword comes in front, along the shortest turn in the fist
-        r = math.radians(yaw)
-        out = np.array((math.cos(r), 0.12, -math.sin(r)))     # the body's right, turned with it
-        lead = np.array((-math.sin(r), 0.0, -math.cos(r)))    # the way that hand goes as the body turns
-        if t <= SS_TO:
-            q = aimed_flat(p, out, lead, start=item)
-            item = item_continuous(item, q[ITEM])
-            out_rot = item
-            f = kit.smooth(t / (SS_FROM - 0.02))
-            p = held(p, item if f >= 1.0 else turned_between((0.0, 0.0, 0.0), item, f, prev_item))
-        else:
-            f = kit.smooth(min(1.0, (t - SS_TO) / (SS_GUARD - SS_TO)))
-            p = held(p, turned_between(out_rot, (0.0, 0.0, 0.0), f, prev_item))
-        prev_item = p[ITEM]
-        a.key(t, p)
-    a.tol_rot, a.tol_pos = 0.4, 0.08
-    return a
+    out for balance, the feet stepping round under it; the ending: the turn slows to a stop facing
+    ahead, the blade swings in front and the stance comes back."""
+    return SWORD.whole()
+
+
+def sword_spin_end():
+    return SWORD.ending()
+
+
+def axe_whirlwind():
+    """As round5's (the author's design of 2026-10-29, the axe flat of 2026-10-30), made even: the body
+    upright through the turns (it leant 7 degrees into the turn and bobbed, and as it turned the lean
+    rocked it), the steps a little smaller; up to five turns, the ending its own animation too."""
+    return AXE.whole()
+
+
+def axe_whirlwind_end():
+    return AXE.ending()
 
 
 # --------------------------------------------------------------------------------------------

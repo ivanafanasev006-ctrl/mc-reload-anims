@@ -392,10 +392,12 @@ def hop_roll_kick():
     them (his 0.75-1.08 s), tucked tight upside down over the mob (his 1.42 s: the twist he drew is
     the mechanic's half turn now), opening out of it with the right leg chambered, the kick
     straight out into the mob's back as the body leans away from it (his 2.0-2.25 s), the landing
-    on both feet facing it, and the forward roll after it, tucked (his 3.5-3.92 s), up into the
-    guard."""
+    on both feet facing it, and a roll after it, tucked (his 3.5-3.92 s), up into the guard. The
+    author, 2026-10-30 (video): "at the end it rolls towards the mob, it should be the other way: a
+    roll backwards" - the roll is now a back roll, away from the mob (the mechanic carries the player
+    back too; it was the forward roll of dodge_front, now that of dodge_back)."""
     import moves
-    roll = lambda t: moves._sampled(moves.REF27, 'dodge_front', t)  # noqa: E731
+    roll = lambda t: moves._sampled(moves.REF27, 'dodge_back', t)  # noqa: E731
     r20, r30, r45 = roll(0.2), roll(0.3), roll(0.45)
     for r in (r20, r30, r45):
         r.pop('body@p', None)
@@ -425,10 +427,11 @@ def hop_roll_kick():
     land = {'body': (-366, 0, 0), 'chest': (-16, 0, 0), 'head': (2, 0, 0),
             'right_arm': (50, 0, 20), 'right_forearm': (65, 0, 0), 'left_arm': (55, 0, -20), 'left_forearm': (75, 0, 0),
             'right_leg': (60, 0, 6), 'right_shin': (-92, 0, 0), 'left_leg': (56, 0, -6), 'left_shin': (-90, 0, 0)}
-    squat = {'body': (-720, 0, 0), 'chest': (-28, 0, 0), 'head': (-4, 0, 0),
+    # out of the back roll: on the balls of the feet, crouched, facing the mob still
+    squat = {'body': (0, 0, 0), 'chest': (-28, 0, 0), 'head': (-4, 0, 0),
              'right_leg': (92, 0, 6), 'right_shin': (-120, 0, 0), 'left_leg': (88, 0, -6), 'left_shin': (-122, 0, 0),
              'right_arm': (58, 0, 15), 'right_forearm': (40, 0, 0), 'left_arm': (55, 0, -15), 'left_forearm': (40, 0, 0)}
-    guard = {'body': (-720, 0, 0), 'chest': (-8, 0, 0), 'head': (0, 0, 0),
+    guard = {'body': (0, 0, 0), 'chest': (-8, 0, 0), 'head': (0, 0, 0),
              'right_leg': (14, 0, 4), 'right_shin': (-22, 0, 0), 'left_leg': (16, 0, -4), 'left_shin': (-24, 0, 0),
              'right_arm': (30, 0, 12), 'right_forearm': (40, 0, 0), 'left_arm': (35, 0, -12), 'left_forearm': (55, 0, 0)}
     keys = [
@@ -441,15 +444,16 @@ def hop_roll_kick():
         (RK_HIT, kick, 'hit'),
         (0.88, {**chamber, 'body': (-352, 0, 0), 'right_leg': (60, 0, 4), 'right_shin': (-80, 0, 0)}, 'out'),
         (RK_LAND, land, 'in'),
-        (RK_ROLL_FROM, {**land, 'body': (-405, 0, 0), 'chest': (-35, 0, 0), 'head': (-28, 0, 0),
+        # sitting back from the landing's crouch, the chin tucked, the arms forward: the back roll
+        (RK_ROLL_FROM, {**land, 'body': (-330, 0, 0), 'chest': (-35, 0, 0), 'head': (-28, 0, 0),
                         'right_arm': (95, 0, 15), 'right_forearm': (55, 0, 0), 'left_arm': (95, 0, -15), 'left_forearm': (55, 0, 0)}, 'in'),
-        (1.15, turned(r20, -360 - 110 - r20.get('body', (0, 0, 0))[0]), 'linear'),
-        (1.25, turned(r30, -360 - 200 - r30.get('body', (0, 0, 0))[0]), 'linear'),
-        (1.35, turned(r45, -360 - 290 - r45.get('body', (0, 0, 0))[0]), 'linear'),
-        (RK_ROLL_TO, {**squat, 'body': (-698, 0, 0)}, 'out'),
+        (1.15, turned(r20, -360), 'linear'),
+        (1.25, turned(r30, -360), 'linear'),
+        (1.35, turned(r45, -360), 'linear'),
+        (RK_ROLL_TO, {**squat, 'body': (-14, 0, 0)}, 'out'),
         (1.62, squat, 'inout'),
         (1.78, guard, 'inout'),
-        (RK_LEN, {'body': (-720, 0, 0)}, 'inout'),
+        (RK_LEN, {'body': (0, 0, 0)}, 'inout'),
     ]
     d = L.Anim('roll_kick_design', RK_LEN)
     for t, pose, ease in keys:

@@ -7,11 +7,13 @@ reads  tools/blockbench/animations/author_2026-10-29.bbmodel  (never changed)
 writes tools/blockbench/refined/author_2026-10-29.bbmodel     (hop_on_kick, slide_under_attack, the falls, the dive)
        tools/blockbench/refined/author_2026-10-29b.bbmodel    (the fifth message: hop_roll_kick from
                                                               animations/author_2026-10-29b.bbmodel, the
-                                                              plunge, the axe whirlwind, the axe's
-                                                              finisher finisher_chop; round5.py)
+                                                              plunge, the axe's finisher finisher_chop;
+                                                              round5.py)
        tools/blockbench/refined/author_2026-10-30.bbmodel     (the message of 2026-10-30: the sword's turn
                                                               on G, sword_spin, and the quick finisher_stab;
-                                                              round6.py, on animations/author_2026-10-30.bbmodel)
+                                                              after the video of 2026-10-30 the turns held
+                                                              on G, their endings, the axe whirlwind made
+                                                              even; round6.py, on animations/author_2026-10-30.bbmodel)
        tools/blockbench/refined/kinetrix/emotes.bbmodel       (Kinetrix's own keyframe emotes: celebrate to
                                                               the author's music, round5.py; author,
                                                               2026-10-30: the emote belongs to Kinetrix)
@@ -182,13 +184,15 @@ def main():
     # --- the fifth message: the roll kick (the author's draft), the plunge, the whirlwind ---
     with open(SRC_B, encoding='utf-8') as f:
         mb = json.load(f)
-    made_b = [round5.hop_roll_kick(), round5.plunge_fall(), round5.plunge_land(), round5.axe_whirlwind(), round5.finisher_chop()]
+    # axe_whirlwind: made again (even, up to five turns, its ending apart) in round6, with the sword's turn
+    made_b = [round5.hop_roll_kick(), round5.plunge_fall(), round5.plunge_land(), round5.finisher_chop()]
     write_set(mb, made_b, DST_B)
 
     # --- the message of 2026-10-30: the sword's turn and the quick finisher; Kinetrix's emote ---
     with open(SRC_C, encoding='utf-8') as f:
         mc = json.load(f)
-    write_set(mc, [round6.sword_spin(), round6.finisher_stab()], DST_C)
+    write_set(mc, [round6.sword_spin(), round6.sword_spin_end(), round6.axe_whirlwind(), round6.axe_whirlwind_end(),
+                   round6.finisher_stab()], DST_C)
     with open(SRC_B, encoding='utf-8') as f:
         mk = json.load(f)
     mk['name'] = 'kinetrix_emotes'
