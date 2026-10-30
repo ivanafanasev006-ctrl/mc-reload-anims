@@ -818,7 +818,7 @@ public final class MovesGameTests {
         }).run(3);
     }
 
-    /** The celebrate emote: free, 8 s, nothing else starts over it; moving (a cancel) ends it early. */
+    /** The celebrate emote: free, 9 s, nothing else starts over it; moving (a cancel) ends it early. */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void celebrateEmote(GameTestHelper h) {
         Script t = new Script(h).settle();
@@ -830,7 +830,7 @@ public final class MovesGameTests {
             s.energy = 10f;
             t.check(MoveServer.request(p, Move.CELEBRATE, false), "the emote refused on the ground");
             t.close(s.energy, 10f, "energy after the emote (it is free)");
-            t.check(Move.CELEBRATE.length >= 160, "the emote lasts " + Move.CELEBRATE.length + " ticks (author: 8 s)");
+            t.check(Move.CELEBRATE.length >= 180, "the emote lasts " + Move.CELEBRATE.length + " ticks (author: hanging to 8 s, then the fall)");
             t.check(!MoveServer.request(p, Move.DODGE_LEFT, false), "a dodge over the emote (it must be broken off first)");
         });
         t.at(20, () -> {

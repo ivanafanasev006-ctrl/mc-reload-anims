@@ -10,9 +10,10 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * The celebrate emote (author, 2026-10-29: "a squat held to 3.5-4 seconds, then the body unfolds
- * upwards, smoother; 8 seconds; the music I attached plays in the background, as from a record,
- * when the emote is used"). The music is the author's clip (assets/kinetrix_moves/sounds/celebrate.ogg,
+ * The celebrate emote (author, 2026-10-29: "the music I attached plays in the background, as from a
+ * record, when the emote is used"; 2026-10-30: "squat, wait until 3.6-4.1 seconds, then fly up fast
+ * into a jump, hang in the air until the 8th second, then fall back"; Move.CELEBRATE, 9 s: the music
+ * ends as the fall begins). The music is the author's clip (assets/kinetrix_moves/sounds/celebrate.ogg,
  * mono so it comes from the player and fades with distance, as a jukebox does), on the Jukebox/Note
  * Blocks volume. It follows the player and everyone near hears it; breaking the emote off (moving,
  * a hit) stops it.

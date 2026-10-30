@@ -172,12 +172,14 @@ public enum Move {
     WHIRL("axe_whirlwind", 1f, 42, -1, -1, -1, -1, Side.FRONT, MovesConfig::costWhirl),
 
     /**
-     * The celebrate emote (G; author, 2026-10-29): down into a squat, held to the music's drop at
-     * 3.4 s, the body unfolding upwards to the sky by 4.3 s, the arms wide, held, back to the stance
-     * by 8 s; the author's music plays from the player meanwhile (Celebrate). Moving or a hit breaks
-     * it off (and the music). It costs nothing.
+     * The celebrate emote (G; author, 2026-10-30): down into a squat, waiting to the music's drop;
+     * the leap at 3.71 s, the figure 1.4 blocks up by 4.0 s, hanging in the air with the music
+     * until it stops (8.0 s), the fall, the landing at 8.29 s, the stance by 9 s. Only the figure
+     * leaves the ground: the player stays on it, as in the author's Roblox reference. The author's
+     * music plays from the player meanwhile (Celebrate). Moving or a hit breaks it off (and the
+     * music). It costs nothing.
      */
-    CELEBRATE("celebrate", 1f, 161, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    CELEBRATE("celebrate", 1f, 181, -1, -1, -1, -1, Side.FRONT, () -> 0),
 
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */

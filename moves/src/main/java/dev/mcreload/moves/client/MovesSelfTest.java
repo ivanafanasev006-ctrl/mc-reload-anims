@@ -189,15 +189,16 @@ public final class MovesSelfTest {
         whirlwind("92a_whirlwind", CameraType.THIRD_PERSON_BACK);
         whirlwind("92b_whirlwind_front", CameraType.THIRD_PERSON_FRONT);
         fastRun("16_fast_run");
-        SCENARIOS.add(new Scenario("45_celebrate", 175, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
+        // the shots: the squat, waiting, deeper on the riser, the leap, the top, the scream, the hang, the fall, the landing, the stance
+        SCENARIOS.add(new Scenario("45_celebrate", 205, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_FRONT);
             if (t == 4) KeyMapping.click(MovesClient.CELEBRATE.getKey());
             if (t == 6) note("celebrate: move " + Stamina.of(mc.player).move + "; its music in the sounds: "
                     + (mc.getSoundManager().getSoundEvent(dev.mcreload.moves.Celebrate.MUSIC_ID) != null));
-            if (t == 100) note("celebrate: still " + Stamina.of(mc.player).move + " at 4.7 s");
-            if (t == 100) note("celebrate: the music playing " + musicPlaying(mc));
-            if (t == 170) note("celebrate: after 8.3 s " + Stamina.of(mc.player).move + ", the music playing " + musicPlaying(mc));
-        }, new int[]{4, 12, 30, 60, 72, 76, 80, 86, 95, 120, 145, 158, 166}, false));
+            if (t == 125) note("celebrate: still " + Stamina.of(mc.player).move + " at 6 s (hanging), the music playing " + musicPlaying(mc));
+            if (t == 175) note("celebrate: landing at 8.5 s, still " + Stamina.of(mc.player).move);
+            if (t == 197) note("celebrate: after 9.6 s " + Stamina.of(mc.player).move + ", the music playing " + musicPlaying(mc));
+        }, new int[]{4, 14, 45, 77, 80, 83, 86, 101, 125, 155, 168, 172, 175, 182, 192}, false));
         // broken off by walking at 2 s: the emote and its music stop
         SCENARIOS.add(new Scenario("46_celebrate_broken_off", 70, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
