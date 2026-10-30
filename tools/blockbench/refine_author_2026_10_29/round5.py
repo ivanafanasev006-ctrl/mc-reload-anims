@@ -407,67 +407,141 @@ def hop_roll_kick():
 
 
 # --------------------------------------------------------------------------------------------
-# celebrate: the emote, made again to the author's music (2026-10-29, after the fifth message)
+# celebrate: the emote to the author's music (made again: author, 2026-10-30)
 # --------------------------------------------------------------------------------------------
 
-#: Author: "at the start he squats and sits until 3.5-4 seconds, then unfolds the body upwards as
-#: now, only smoother; 8 seconds in all; the music I attached plays in the background, as from a
-#: record, when the emote is used". His clip: a quiet start with two hits (1.4-1.8 s, 2.2 s), the
-#: drop at 3.4-3.7 s, the music full to 8.0 s. So: down into the squat by SQUAT, held (the hits a
-#: nod each) to RISE_FROM, unfolded on the drop by RISE_TO (it was a 0.18 s leap), the arms wide
-#: and the chest to the sky held over the music, back to the stance by CEL_LEN.
-SQUAT, RISE_FROM, RISE_MID, RISE_TO, HOLD_TO, CEL_LEN = 0.65, 3.4, 3.75, 4.3, 7.2, 8.0
-#: The music's strong beats in the held pose (s): the arms give a little pump on each.
-PUMPS = (4.9, 5.7, 6.6, 7.0)
+#: Author, 2026-10-30: "at the start the emote squats, waits until 3.6-4.1 seconds, then flies up
+#: fast into a jump and hangs in the air until the 8th second, then simply falls back"; his own
+#: celebrate (animations/author_2026-10-27.bbmodel) is "the example of how": the squat with the arms
+#: swept back, then a burst up into a pose leant back, the knees bent and the head back. His
+#: references: Shidou's goal in Blue Lock (the squat with the arms spread back like wings; then in
+#: the air, the chest out, the head thrown back in a scream, the knees bent one above the other, the
+#: arms spread down at the sides) and a Roblox emote of it (the leap on the music's drop, the hang
+#: over the music; the figure leaves the ground, the player stays on it).
+#: The music (art/author/sounds, 8.05 s of sound): hits at 1.33-1.85 and 1.97-2.25 s, silence from
+#: 2.7 s, the riser from 3.37, full from 3.65, its loudest hit at 4.75, then a beat every 0.43 s
+#: (139 a minute), cut off at 8.05.
+SQUAT_IN = 0.46                                # down in the squat
+NODS = ((1.33, 0.6), (1.97, 1.0), (2.11, 0.5))  # the hits while he waits: (time, strength)
+LOAD_FROM, LOAD_TO = 3.375, 3.58                # the riser: down deeper, the arms further back
+TAKEOFF = 3.71                                 # the feet leave the floor (the music full at 3.65)
+APEX = 4.0                                     # at the top: 0.29 s up, slowing like a jump
+SCREAM = 4.75                                  # the loudest hit: the scream
+BEAT = 0.43                                    # the music's beat while he hangs
+PULSES = (5.61, 6.47, 7.33)                    # every other beat after the scream
+FALL = 8.0                                     # the music stops (8.05): he drops
+LAND = 8.29                                    # 1.4 blocks under the game's gravity
+CEL_LEN = 9.0
+#: How high the figure hangs: its lowest point 24 px over the floor (1.4 blocks; a jump is 1.25).
+LIFT = 24.0
+
+
+def _pulse(t, t0, rise, fall):
+    """0 -> 1 in `rise` seconds from t0, back to 0 over `fall`."""
+    return kit.span(t, t0, t0 + rise) * (1 - kit.span(t, t0 + rise, t0 + rise + fall))
+
+
+def cel_height(t):
+    """The figure's lowest point over the floor (px): on it until the take-off; a jump's slowing rise
+    to LIFT; floating there, one slow bob a bar (four beats), a push up on the scream; from FALL a
+    fall under gravity (the height lost grows with the square of the time)."""
+    if t <= TAKEOFF or t >= LAND:
+        return 0.0
+    if t < APEX:
+        f = (t - TAKEOFF) / (APEX - TAKEOFF)
+        return LIFT * (1 - (1 - f) ** 2)
+
+    def floating(u):
+        bob = 1.2 * math.sin(2 * math.pi * (u - SCREAM) / (4 * BEAT)) * kit.span(u, APEX, APEX + 0.6)
+        return LIFT + bob + 1.5 * _pulse(u, SCREAM, 0.08, 0.6)
+    if t < FALL:
+        return floating(t)
+    f = (t - FALL) / (LAND - FALL)
+    return floating(FALL) * (1 - f * f)
 
 
 def celebrate():
-    """The squat of the old celebrate (the chest folded over the knees, the arms swept back and
-    out), held with a breath and a nod on each hit of the music; on the drop the legs push, the
-    chest unfolds and opens to the sky, the head goes back and the arms sweep out and up into a V,
-    over 0.9 s (it was a leap of 0.18 s); held with the music, a pump of the arms on its strong
-    beats; and back down into the stance."""
-    # the squat of the old celebrate (refined 2026-10-27, its held part)
+    """The author's squat (the chest over the knees, the head down, the arms swept back), held while
+    the music is quiet, a nod on each of its hits and the breath held in its silence; on the riser
+    down deeper, the arms further back; on the drop the legs push and the figure flies up 1.4 blocks
+    in 0.29 s, the arms flung out, into the hang of the references: leant back, the chest out, the
+    head back to the sky, the arms spread down at the sides, the knees bent, the right one higher.
+    It hangs with the music, floating a little, a scream on its loudest hit, a pulse on every other
+    beat; as the music stops it drops, the legs reaching down, lands on bent knees and stands up."""
+    # the author's squat (his celebrate, the held part)
     squat = {'body': (0.6, 0, 0), 'chest': (-70, 0, 0), 'head': (-12.5, 0, 0),
              'right_arm': (-63.4, 21.6, 21.3), 'right_forearm': (15, 0, 0), 'left_arm': (-63.4, -21.6, -21.3), 'left_forearm': (15, 0, 0),
              'right_leg': (33.7, -14.3, 10.3), 'right_shin': (-77.5, 0, 0), 'left_leg': (33.7, 14.3, -10.3), 'left_shin': (-77.5, 0, 0)}
-    nod = {**squat, 'chest': (-74, 0, 0), 'head': (-20, 0, 0)}
-    mid = {'body': (2, 0, 0), 'chest': (-26, 0, 0), 'head': (6, 0, 0),
-           'right_leg': (22, -6, 8), 'right_shin': (-40, 0, 0), 'left_leg': (22, 6, -8), 'left_shin': (-40, 0, 0),
-           'right_arm': (-30, 10, 70), 'right_forearm': (25, 0, 0), 'left_arm': (-30, -10, -70), 'left_forearm': (25, 0, 0)}
-    top = {'body': (6, 0, 0), 'chest': (16, 0, 0), 'head': (26, 0, 0),
-           'right_leg': (-2, 0, 6), 'right_shin': (-3, 0, 0), 'left_leg': (-2, 0, -6), 'left_shin': (-3, 0, 0),
-           'right_arm': (-16, 0, 136), 'right_forearm': (12, 0, 0), 'left_arm': (-16, 0, -136), 'left_forearm': (12, 0, 0)}
+    load = {**squat, 'chest': (-76, 0, 0), 'head': (-17, 0, 0),
+            'right_arm': (-74, 21.6, 24), 'left_arm': (-74, -21.6, -24),
+            'right_leg': (40, -14.3, 10.3), 'right_shin': (-88, 0, 0), 'left_leg': (40, 14.3, -10.3), 'left_shin': (-88, 0, 0)}
+    push = {'body': (-6, 0, 0), 'chest': (-14, 0, 0), 'head': (4, 0, 0),
+            'right_arm': (-48, 6, 62), 'right_forearm': (12, 0, 0), 'left_arm': (-48, -6, -62), 'left_forearm': (12, 0, 0),
+            'right_leg': (6, -4, 4), 'right_shin': (-8, 0, 0), 'left_leg': (6, 4, -4), 'left_shin': (-8, 0, 0)}
+    # the hang: the author's pose (leant back 62 degrees, the right knee up, the left leg down) with the
+    # references' arch: the chest out and back, the head back to the sky, the arms spread down
+    hang = {'body': (21, 0, 0), 'chest': (17, 0, 0), 'head': (36, 0, 0),
+            'right_arm': (-58, 6, 55), 'right_forearm': (20, 0, 0), 'left_arm': (-58, -6, -55), 'left_forearm': (20, 0, 0),
+            'right_leg': (52, -10, 8), 'right_shin': (-100, 0, 0), 'left_leg': (-12, 10, -8), 'left_shin': (-62, 0, 0)}
+    reach = {'body': (4, 0, 0), 'chest': (-4, 0, 0), 'head': (-4, 0, 0),
+             'right_arm': (-14, 0, 58), 'right_forearm': (14, 0, 0), 'left_arm': (-14, 0, -58), 'left_forearm': (14, 0, 0),
+             'right_leg': (12, -4, 5), 'right_shin': (-20, 0, 0), 'left_leg': (12, 4, -5), 'left_shin': (-20, 0, 0)}
+    absorb = {'body': (4, 0, 0), 'chest': (-30, 0, 0), 'head': (14, 0, 0),
+              'right_arm': (10, 0, 32), 'right_forearm': (26, 0, 0), 'left_arm': (10, 0, -32), 'left_forearm': (26, 0, 0),
+              'right_leg': (50, -8, 6), 'right_shin': (-96, 0, 0), 'left_leg': (50, 8, -6), 'left_shin': (-96, 0, 0)}
+    rise = {'body': (2, 0, 0), 'chest': (-10, 0, 0), 'head': (2, 0, 0),
+            'right_arm': (4, 0, 14), 'right_forearm': (16, 0, 0), 'left_arm': (4, 0, -14), 'left_forearm': (16, 0, 0),
+            'right_leg': (18, -3, 3), 'right_shin': (-34, 0, 0), 'left_leg': (18, 3, -3), 'left_shin': (-34, 0, 0)}
     keys = [(0.0, {}, 'auto'),
-            (SQUAT, squat, 'inout'),
-            (1.35, squat, 'auto'), (1.48, nod, 'out'), (1.75, squat, 'inout'),
-            (2.15, squat, 'auto'), (2.27, nod, 'out'), (2.6, squat, 'inout'),
-            (RISE_FROM, squat, 'auto'),
-            (RISE_MID, mid, 'in'),
-            (RISE_TO, top, 'out'),
-            (HOLD_TO, top, 'auto'),
-            (7.6, {**mid, 'chest': (-6, 0, 0), 'head': (0, 0, 0), 'right_leg': (8, 0, 4), 'right_shin': (-14, 0, 0),
-                   'left_leg': (8, 0, -4), 'left_shin': (-14, 0, 0), 'right_arm': (8, 0, 22), 'left_arm': (8, 0, -22),
-                   'right_forearm': (18, 0, 0), 'left_forearm': (18, 0, 0)}, 'inout'),
+            (SQUAT_IN, squat, 'inout'),
+            (LOAD_FROM, squat, 'auto'),
+            (LOAD_TO, load, 'inout'),
+            (TAKEOFF, push, 'in'),
+            (APEX + 0.08, hang, 'out'),
+            (FALL, hang, 'auto'),
+            (LAND - 0.02, reach, 'inout'),
+            (8.42, absorb, 'out'),
+            (8.72, rise, 'inout'),
             (CEL_LEN, {}, 'inout')]
     d = L.Anim('celebrate_design', CEL_LEN)
     for t, pose, ease in keys:
         d.key(t, pose, ease, whole=True)
+
+    def add(p, bone, dx=0.0, dz=0.0):
+        r = p.get(bone, (0, 0, 0))
+        p[bone] = (r[0] + dx, r[1], r[2] + dz)
+
     a = L.Anim('celebrate', CEL_LEN, 'once')
     for t in kit.frames(0, CEL_LEN):
         p = kit.design(d, t)
-        # breathing: slow while squatting, deep in the held pose
-        held_w = kit.span(t, RISE_TO - 0.1, RISE_TO + 0.3) * (1 - kit.span(t, HOLD_TO, HOLD_TO + 0.3))
-        sq_w = kit.span(t, SQUAT - 0.1, SQUAT + 0.2) * (1 - kit.span(t, RISE_FROM, RISE_FROM + 0.1))
-        breath = math.sin(2 * math.pi * t / 1.6)
-        c = p.get('chest', (0, 0, 0))
-        p['chest'] = (c[0] + 2.5 * breath * held_w + 1.5 * breath * sq_w, c[1], c[2])
-        # a pump of the arms on the music's strong beats
-        pump = sum(math.exp(-((t - b) / 0.09) ** 2) for b in PUMPS) * held_w
-        for side, s in (('right_arm', 1), ('left_arm', -1)):
-            r = p.get(side, (0, 0, 0))
-            p[side] = (r[0], r[1], r[2] + s * 10 * pump)
-        p = kit.grounded(p)
+        # waiting in the squat: a slow breath, held in the music's silence before the riser; a nod on each hit
+        sq_w = kit.span(t, SQUAT_IN - 0.1, SQUAT_IN + 0.3) * (1 - kit.span(t, LOAD_FROM, LOAD_FROM + 0.1))
+        held = 1 - 0.75 * kit.span(t, 2.6, 2.9)
+        add(p, 'chest', 1.2 * math.sin(2 * math.pi * (t - SQUAT_IN) / 2.0) * sq_w * held)
+        nod = sum(s * _pulse(t, t0, 0.07, 0.35) for t0, s in NODS) * sq_w
+        add(p, 'chest', -3 * nod)
+        add(p, 'head', -7 * nod)
+        # hanging: a breath with the bob, the shins swaying, the scream, a pulse on every other beat
+        hang_w = kit.span(t, APEX - 0.05, APEX + 0.4) * (1 - kit.span(t, FALL - 0.02, FALL + 0.12))
+        phase = 2 * math.pi * (t - SCREAM) / (4 * BEAT)
+        add(p, 'chest', 1.5 * math.sin(phase) * hang_w)
+        add(p, 'right_shin', 3 * math.sin(phase + 0.8) * hang_w)
+        add(p, 'left_shin', 3 * math.sin(phase + 2.0) * hang_w)
+        scream = _pulse(t, SCREAM, 0.06, 0.55) * hang_w
+        beat = sum(_pulse(t, b, 0.05, 0.3) for b in PULSES) * hang_w
+        add(p, 'body', 3 * scream)
+        add(p, 'chest', 4 * scream + 3 * beat)
+        add(p, 'head', 10 * scream + 3 * beat)
+        add(p, 'right_forearm', 12 * scream)
+        add(p, 'left_forearm', 12 * scream)
+        add(p, 'right_arm', dz=14 * scream + 7 * beat)
+        add(p, 'left_arm', dz=-14 * scream - 7 * beat)
+        add(p, 'right_leg', 5 * scream)
+        # the legs turn fast in the push and the landing: the feet a hair over the floor there, so the
+        # game's ticks between these keys do not dip them into it
+        hair = 0.6 * (kit.span(t, LOAD_TO, TAKEOFF - 0.04) * (1 - kit.span(t, TAKEOFF, TAKEOFF + 0.1))
+                      + kit.span(t, LAND - 0.05, LAND) * (1 - kit.span(t, LAND + 0.08, LAND + 0.2)))
+        p = kit.grounded(p, clearance=cel_height(t) + hair, bones=LEGS)
         a.key(t, p)
     a.tol_rot, a.tol_pos = 0.4, 0.08
     return a
