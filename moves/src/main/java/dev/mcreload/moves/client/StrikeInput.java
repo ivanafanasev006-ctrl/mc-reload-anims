@@ -26,8 +26,8 @@ import net.minecraft.world.phys.EntityHitResult;
  *   <li><b>The ability, G</b> (rebindable; author, 2026-10-30): with a sword the sword's quick turn
  *   (Spin), the keys walking the player meanwhile; held, up to 3 turns; 20 s before the next one.
  *   With an axe the whirlwind, three turns carried forward the way the camera looks (Whirl); held,
- *   up to 5; 45 s before the next one. Each turn more than those costs more energy. The tray at the
- *   bottom shows how long each still needs (MovesHud).</li>
+ *   up to 5; 45 s before the next one. Each turn more than those costs more energy. With a bow the
+ *   volley and the hail (BowVolley). The tray at the bottom shows how long each still needs (MovesHud).</li>
  * </ul>
  *
  * <p>They take the click: the button is let go of for vanilla and for Better Combat (whose
@@ -58,6 +58,8 @@ public final class StrikeInput {
     public static Move ability(LocalPlayer p) {
         if (Strikes.sword(p)) return HudConfig.Moves.SWORD_SPIN.on() ? Move.SWORD_SPIN : null;
         if (Strikes.axe(p)) return HudConfig.Moves.WHIRL.on() ? Move.WHIRL : null;
+        // the bow's: the volley, held the hail (BowVolley makes them)
+        if (dev.mcreload.moves.Bow.isBow(p.getMainHandItem())) return HudConfig.Moves.VOLLEY.on() ? Move.BARRAGE : null;
         return null;
     }
 
@@ -68,6 +70,8 @@ public final class StrikeInput {
             case WHIRL -> s.whirlCooldown;
             case SWORD_SPIN -> s.spinCooldown;
             case SLIDE_ATTACK -> s.slideAttackCooldown;
+            // the volley at the marked, in the tray by its first step
+            case MARKED_SPIN_LEFT -> s.markedCooldown;
             default -> 0;
         };
     }
@@ -108,7 +112,7 @@ public final class StrikeInput {
         // G: the sword's turn with a sword, the whirlwind with an axe
         if (abilityPressed && s.move == null) {
             Move move = ability(p);
-            if (move != null && begin(mc, p, s, move)) return true;
+            if (move != null && !move.volley() && begin(mc, p, s, move)) return true;
         }
         // the finisher: the stab with a sword, the chop with an axe (author, 2026-10-30); not with the
         // right button down too (that is the dash)
@@ -153,6 +157,7 @@ public final class StrikeInput {
             case WHIRL -> HudConfig.Moves.WHIRL.key;
             case SWORD_SPIN -> HudConfig.Moves.SWORD_SPIN.key;
             case SLIDE_ATTACK -> HudConfig.Moves.SLIDE_ATTACK.key;
+            case MARKED_SPIN_LEFT -> HudConfig.Moves.MARKS.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }

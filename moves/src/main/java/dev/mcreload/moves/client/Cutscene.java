@@ -17,25 +17,44 @@ import net.minecraftforge.common.MinecraftForge;
  * (and back after), and the view narrows from the vault over the mob to the kick, as if time
  * slowed, opening again as the player lands. The world is not slowed for anyone else. Switched off
  * in the settings (the moves' page).
+ *
+ * <p>The attacks too (author, 2026-10-30, 23:01: "in first person the 3D animations vanish, the
+ * weapon just twitches in the hand and you do not see what the attack does, only its effects"): in
+ * first person the camera sees nothing of a move but the arms, and those only where they are in
+ * front of it (G turns the body right round, the arms are behind it half the time; with some shader
+ * packs not even those). So for an attack (Move.cameraBehind) the camera goes behind the player and
+ * comes back a few ticks after it, unless switched off (HudConfig.attackCamera; the arms are drawn in
+ * first person then, as before).</p>
  */
 public final class Cutscene {
     /** The camera before the cutscene took it, or null. */
     private static CameraType before;
+    /** Ticks the camera stays behind after the move (an attack straight after another keeps it there). */
+    private static final int LINGER = 4;
+    private static int linger;
 
     static void init() {
         MinecraftForge.EVENT_BUS.addListener(Cutscene::fov);
     }
 
-    /** Every client tick: the camera taken for the kick and given back when it ends. */
+    /** Every client tick: the camera taken for the kick or an attack and given back when it ends. */
     static void tick(Minecraft mc, LocalPlayer p, Stamina s) {
         boolean kicking = p != null && (s.move == Move.KICK || s.move == Move.ROLL_KICK) && s.moveTick < Kick.land(s.move);
-        if (kicking && before == null && HudConfig.kickCutscene() && mc.options.getCameraType() == CameraType.FIRST_PERSON) {
+        boolean behind = kicking ? HudConfig.kickCutscene() : p != null && s.move != null && s.move.cameraBehind() && HudConfig.attackCamera();
+        if (behind) linger = LINGER;
+        else if (linger > 0) linger--;
+        if (behind && before == null && mc.options.getCameraType() == CameraType.FIRST_PERSON) {
             before = mc.options.getCameraType();
             mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-        } else if (!kicking && before != null) {
+        } else if (!behind && linger == 0 && before != null) {
             if (mc.options.getCameraType() == CameraType.THIRD_PERSON_BACK) mc.options.setCameraType(before);
             before = null;
         }
+    }
+
+    /** The camera is behind the player for a move now, taken from first person. */
+    public static boolean taken() {
+        return before != null;
     }
 
     /** How narrow the view is this far into the kick: 0 none, 1 the narrowest. */

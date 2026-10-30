@@ -40,13 +40,26 @@ public enum Move {
      */
     HOP("hop_roll_dodge", 1f, 22, -1, -1, -1, -1, Side.FRONT, MovesConfig::costHop),
     /**
-     * The volley (docs/combat-spec.md, 6.2): a fully drawn bow, then the left button. A sharp step
-     * back down onto a knee, sliding on into the kneel (1.85 blocks in 0.1-0.55 s; author: a block
-     * more than the 0.85 it was), and three arrows at the animation's releases, 0.54, 0.79 and
-     * 1.04 s (Bow.VOLLEY_SHOTS).
+     * G with a bow, tapped: the volley (docs/combat-spec.md, 6.2; author, 2026-10-30, 23:01: "the bow's
+     * ability is on G now, a hail of arrows: by default he slides back and looses 3 arrows; the 3 arrows
+     * of G a fraction of a second slower, one after another: now they are so quick the hit does not
+     * register, the arrow bounces off or pushes the mob and there is no time to aim a little higher").
+     * A sharp step back down onto a knee, sliding on into the kneel (1.85 blocks in 0.1-0.55 s), and
+     * three arrows 0.55 s apart (Bow.VOLLEY_SHOTS; the draws between them played slower,
+     * MoveAnimator.pace), each at a marked mob in turn if there are any in sight (Marks). It was the
+     * full draw and the left button, which marks mobs now.
      */
-    BARRAGE("bow_barrage", 1f, 24, -1, -1, -1, -1, Side.BACK, MovesConfig::costBarrage,
+    BARRAGE("bow_barrage", 1f, 36, -1, -1, -1, -1, Side.BACK, MovesConfig::costBarrage,
             0.30f, 0.28f, 0.26f, 0.23f, 0.20f, 0.17f, 0.14f, 0.11f, 0.09f, 0.07f),
+    /**
+     * G held: the hail (author: "on G+, 5 to 10 arrows the way he looks, with a spread, not all to the
+     * middle, and the slide back a block further"; "as quick as the volley"). 2.85 blocks back, then an
+     * arrow every 4 ticks from 0.55 s (Bow.HAIL_FROM, HAIL_EVERY): five at least, on while G is held, ten
+     * at most, each after the third for MovesConfig.costHailExtra; spread up to 8 degrees about the look,
+     * or at the marked mobs in turn.
+     */
+    HAIL("bow_barrage", 1f, 53, -1, -1, -1, -1, Side.BACK, MovesConfig::costBarrage,
+            0.40f, 0.38f, 0.35f, 0.32f, 0.29f, 0.26f, 0.23f, 0.20f, 0.17f, 0.14f, 0.11f),
 
     // ---- the bow's combat flow (docs/combat-spec.md, 6.3): after the volley, the right button
     // held, each left click is a dodge by the keys held then (a spin almost in place with none),
@@ -86,6 +99,33 @@ public enum Move {
     /** D: the spin back to the right (the second half). */
     LEGOLAS_RIGHT("bow_walk_around", Bow.shot(20, 40, -1, 17), 20, 2, 6, -1, -1, Side.RIGHT, MovesConfig::costBowDodge,
             0.62f, 0.52f, 0.40f, 0.26f),
+
+    // ---- the volley at the marked mobs (Marks; author, 2026-10-30, 23:01): the right button let go at
+    // the full draw with marked mobs in sight, once in 25 s: an arrow at each in turn, the flow's turns
+    // and poses played very fast, the player turned to each. W, A, S, D: a spin forward, a roll to that
+    // side, a hop back that way; none: a spin and a pose in turn, almost in place. The arrow leaves at
+    // the step's release, aimed at its mob by the server; the next step may start a tick after it.
+    /** A spin to the left (bow_flow_turn_left, twice as fast). */
+    MARKED_SPIN_LEFT("bow_flow_turn_left", 2f, Bow.shot(0, 13, 6, 7), 8, 1, 4, -1, -1, Side.FRONT, () -> 0,
+            0.30f, 0.25f, 0.15f, 0.08f),
+    /** A spin to the right. */
+    MARKED_SPIN_RIGHT("bow_flow_turn_right", 2f, Bow.shot(0, 13, 6, 7), 8, 1, 4, -1, -1, Side.FRONT, () -> 0,
+            0.30f, 0.25f, 0.15f, 0.08f),
+    /** A: a roll to the left, low. */
+    MARKED_ROLL_LEFT("bow_flow_roll_left_shot", 2f, Bow.shot(0, 11, 5, 6), 7, 1, 5, 1, 5, Side.LEFT, () -> 0,
+            0.50f, 0.45f, 0.35f, 0.25f, 0.15f),
+    /** D: a roll to the right. */
+    MARKED_ROLL_RIGHT("bow_flow_roll_right_shot", 2f, Bow.shot(0, 11, 5, 6), 7, 1, 5, 1, 5, Side.RIGHT, () -> 0,
+            0.50f, 0.45f, 0.35f, 0.25f, 0.15f),
+    /** S: a hop back. */
+    MARKED_BACKSTEP("bow_flow_backstep_shot", 2f, Bow.shot(0, 10, 5, 6), 7, 1, 3, -1, -1, Side.BACK, () -> 0,
+            0.35f, 0.30f, 0.20f, 0.10f),
+    /** The flow's poses, twice as fast: crouched side-on. */
+    MARKED_CROUCH("bow_flow_crouch_shot", 2f, Bow.shot(3, -1, 5, 6), 7, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** Standing side-on. */
+    MARKED_STAND("bow_flow_stand_shot", 2f, Bow.shot(3, -1, 5, 6), 7, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** Down onto one knee. */
+    MARKED_KNEEL("bow_barrage", 2f, Bow.shot(8, -1, 2, 3), 4, -1, -1, -1, -1, Side.FRONT, () -> 0),
 
     // ---- sword moves (author, 2026-10-28)
     /**
@@ -201,18 +241,23 @@ public enum Move {
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
     LEDGE_HANG("ledge_hang", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeGrab),
-    /** A held: hand over hand along the edge to the left (0.59 block a second). */
-    LEDGE_SHIMMY_LEFT("ledge_shimmy_left", 1f, Move.FOREVER, -1, -1, -1, -1, Side.LEFT, () -> 0),
-    /** D held: the same to the right. */
-    LEDGE_SHIMMY_RIGHT("ledge_shimmy_right", 1f, Move.FOREVER, -1, -1, -1, -1, Side.RIGHT, () -> 0),
     /**
-     * In the hop mode (R), A: a hop a block along the edge to the left, played 1.4 times faster
-     * (carried 0.39-0.61 s); held, the next one starts as the second hand catches the edge (0.68 s):
-     * one after another, almost without a pause (author, 2026-10-29, fourth message).
+     * Hanging, A held: a hop a block along the edge to the left, played 1.4 times faster (carried
+     * 0.39-0.61 s); held, the next one starts as the second hand catches the edge (0.68 s): one after
+     * another, almost without a pause (author, 2026-10-29, fourth message). The only way along the
+     * edge (author, 2026-10-30, 23:01: "keep only the mode that was on R, so he only hops and does not
+     * creep along the edge").
      */
     LEDGE_HOP_LEFT("ledge_hop_left", Move.HOP_SPEED, 29, -1, -1, -1, -1, Side.LEFT, MovesConfig::costLedgeHop),
-    /** In the hop mode, D: the same to the right. */
+    /** D held: the same to the right. */
     LEDGE_HOP_RIGHT("ledge_hop_right", Move.HOP_SPEED, 29, -1, -1, -1, -1, Side.RIGHT, MovesConfig::costLedgeHop),
+    /**
+     * Space while hanging, another edge looked at and within reach (author, 2026-10-30, 23:01: "if it is
+     * far, aim by looking at it, it lights up green or red, then Space and he leaps there"): the leap
+     * there (0.85 s; the mechanic carries the player along an arc from 0.22 s to 0.5 s, turning them to
+     * its wall), into the hang on it.
+     */
+    LEDGE_LEAP("ledge_leap", 1f, 17, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeLeap),
     /** W + Space: a quick pull-up onto the top (0.75 s; author, 2026-10-29: as short as a dodge). */
     LEDGE_CLIMB("ledge_climb_up", 1f, 18, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeClimb),
     /** Ctrl + W + C at a drop: the player turns round and lowers themself over the edge into the hang (1.2 s). */
@@ -319,7 +364,18 @@ public enum Move {
 
     /** A move of the drawn bow (the flow, the Legolas stance): the bow stays drawn through it. */
     public boolean drawnBow() {
-        return shot != null;
+        return shot != null && !marked();
+    }
+
+    /** A step of the volley at the marked mobs: its arrow is the server's, at the step's mob. */
+    public boolean marked() {
+        return this == MARKED_SPIN_LEFT || this == MARKED_SPIN_RIGHT || this == MARKED_ROLL_LEFT || this == MARKED_ROLL_RIGHT
+                || this == MARKED_BACKSTEP || this == MARKED_CROUCH || this == MARKED_STAND || this == MARKED_KNEEL;
+    }
+
+    /** G with a bow: the volley or the hail; the bow need not be drawn, the move takes it over. */
+    public boolean volley() {
+        return this == BARRAGE || this == HAIL;
     }
 
     public boolean legolas() {
@@ -348,13 +404,13 @@ public enum Move {
 
     /** On the ledge: hanging, moving along it, climbing onto it or off it, being pulled up (not the friend pulling). */
     public boolean ledge() {
-        return this == LEDGE_HANG || this == LEDGE_SHIMMY_LEFT || this == LEDGE_SHIMMY_RIGHT || this == LEDGE_HOP_LEFT
-                || this == LEDGE_HOP_RIGHT || this == LEDGE_CLIMB || this == LEDGE_DOWN || this == LEDGE_PULLED;
+        return this == LEDGE_HANG || this == LEDGE_HOP_LEFT || this == LEDGE_HOP_RIGHT || this == LEDGE_LEAP
+                || this == LEDGE_CLIMB || this == LEDGE_DOWN || this == LEDGE_PULLED;
     }
 
     /** Hanging on the ledge by the hands, as a friend can pull them up and the keys can let go. */
     public boolean hanging() {
-        return this == LEDGE_HANG || this == LEDGE_SHIMMY_LEFT || this == LEDGE_SHIMMY_RIGHT;
+        return this == LEDGE_HANG;
     }
 
     /**
@@ -363,7 +419,8 @@ public enum Move {
      * the wall at the corner and put the player back.
      */
     public boolean throughEdge() {
-        return this == LEDGE_CLIMB || this == LEDGE_DOWN || this == LEDGE_PULLED || this == LEDGE_HOP_LEFT || this == LEDGE_HOP_RIGHT;
+        return this == LEDGE_CLIMB || this == LEDGE_DOWN || this == LEDGE_PULLED || this == LEDGE_HOP_LEFT || this == LEDGE_HOP_RIGHT
+                || this == LEDGE_LEAP;
     }
 
     /**
@@ -382,10 +439,14 @@ public enum Move {
             case SPIN_END -> now == SWORD_SPIN;
             case WHIRL_END -> now == WHIRL;
             // the edge caught out of a fall, a slide or a roll off a drop, or back to the hang on it
-            case LEDGE_HANG -> now == FALL_TUCK || now == PLUNGE_FALL || now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT || now == LEDGE_DOWN
+            case LEDGE_HANG -> now == FALL_TUCK || now == PLUNGE_FALL || now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT
+                    || now == LEDGE_LEAP || now == LEDGE_DOWN
                     || now == SLIDE || now == SLIDE_ATTACK || now.rolls() || now.sideDodge() || now == DIVE;
             case LEDGE_HOP_LEFT, LEDGE_HOP_RIGHT -> now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT;
-            case LEDGE_SHIMMY_LEFT, LEDGE_SHIMMY_RIGHT, LEDGE_CLIMB, LEDGE_PULLED -> now.hanging();
+            case LEDGE_LEAP, LEDGE_CLIMB, LEDGE_PULLED -> now.hanging();
+            // the volley at the marked: each step from the one before (the arrow left at its release)
+            case MARKED_SPIN_LEFT, MARKED_SPIN_RIGHT, MARKED_ROLL_LEFT, MARKED_ROLL_RIGHT, MARKED_BACKSTEP, MARKED_CROUCH,
+                 MARKED_STAND, MARKED_KNEEL -> now.marked();
             default -> false;
         };
     }
@@ -395,10 +456,19 @@ public enum Move {
         return this == LEDGE_PULLED;
     }
 
+    /**
+     * An attack: from first person the camera goes behind the player while it plays (Cutscene;
+     * author, 2026-10-30: in first person "you do not see what the attack does"). The kicks have
+     * their own cutscene. Not the bow's G: its arrows are aimed by the player.
+     */
+    public boolean cameraBehind() {
+        return this == DASH || finisher() || this == SLIDE_ATTACK || this == PLUNGE || turning() || marked();
+    }
+
     /** Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28). */
     public boolean firstPerson() {
         return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
-                || turning() || ledge();
+                || turning() || ledge() || volley() || marked();
     }
 
     /**

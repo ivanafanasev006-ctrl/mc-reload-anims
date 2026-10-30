@@ -68,6 +68,8 @@ public final class MoveAnimator {
             return;
         }
         layer.speed.speed = move.animSpeed;
+        // The hail: the volley's draw and release over and over (MoveAnimator.pace sets the pace).
+        if (move == Move.HAIL) anim = hailLoop(anim);
         // Bow moves may play a part of their animation (a half of bow_walk_around) and hold its last frame.
         int from = move.shot != null ? move.shot.animStart() : 0;
         if (move == Move.LEDGE_HANG && was != null && was.ledge()) from = HANG_LOOP;
@@ -79,6 +81,40 @@ public final class MoveAnimator {
         int fade = move.ledge() && was != null && was.ledge() ? 4 : 2;
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(fade, Ease.INOUTSINE), unwound(layer, anim, from, played));
         KinetrixBridge.wholeBody(p.getUUID(), move.length * 50L + 100L);
+    }
+
+    /** bow_barrage looped over its draw and release from Bow.HAIL_LOOP_FROM to HAIL_LOOP_TO, made once. */
+    private static KeyframeAnimation hailLoop, hailOf;
+
+    private static KeyframeAnimation hailLoop(KeyframeAnimation anim) {
+        if (hailOf != anim) {
+            KeyframeAnimation.AnimationBuilder b = anim.mutableCopy();
+            b.isLooped = true;
+            b.returnTick = dev.mcreload.moves.Bow.HAIL_LOOP_FROM;
+            b.endTick = dev.mcreload.moves.Bow.HAIL_LOOP_TO;
+            b.stopTick = dev.mcreload.moves.Bow.HAIL_LOOP_TO + 1;
+            hailLoop = b.build();
+            hailOf = anim;
+        }
+        return hailLoop;
+    }
+
+    /**
+     * Every tick, every player: the pace of G's animations. The volley's draws between its arrows are
+     * played slower, so the arrows leave 0.55 s apart on the animation's releases (Bow.VOLLEY_PACE);
+     * the hail's looped draw and release a quarter faster, an arrow every 4 ticks (Bow.HAIL_PACE).
+     */
+    static void pace(AbstractClientPlayer p, dev.mcreload.moves.Stamina s) {
+        if (s.move != Move.BARRAGE && s.move != Move.HAIL) return;
+        MoveLayer layer = layer(p);
+        if (layer == null) return;
+        int t = s.moveTick, from = dev.mcreload.moves.Bow.VOLLEY_SHOTS[0];
+        if (s.move == Move.BARRAGE) {
+            int last = dev.mcreload.moves.Bow.VOLLEY_SHOTS[dev.mcreload.moves.Bow.VOLLEY_SHOTS.length - 1];
+            layer.speed.speed = t >= from && t < last ? dev.mcreload.moves.Bow.VOLLEY_PACE : 1f;
+        } else {
+            layer.speed.speed = t >= from ? dev.mcreload.moves.Bow.HAIL_PACE : 1f;
+        }
     }
 
     /**

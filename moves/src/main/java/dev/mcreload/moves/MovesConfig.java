@@ -17,8 +17,8 @@ public final class MovesConfig {
             APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD, COOKED_FOOD,
             COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER,
             COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP, COST_DIVE, COST_FALL_ROLL, COST_LEDGE_GRAB, COST_LEDGE_CLIMB,
-            COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_SHIMMY, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL, COST_SWORD_SPIN,
-            COST_SPIN_EXTRA, COST_WHIRL_EXTRA;
+            COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_LEDGE_LEAP, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL, COST_SWORD_SPIN,
+            COST_SPIN_EXTRA, COST_WHIRL_EXTRA, COST_HAIL_EXTRA, COST_MARKED, COST_MARKED_EACH;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
@@ -29,9 +29,12 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue DASH_WIDTH, SLIDE_ATTACK_CRIT, SLIDE_ATTACK_REACH, KICK_DAMAGE, KICK_STRENGTH,
             FALL_CUT;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
+    private static final ForgeConfigSpec.DoubleValue LEAP_REACH, LEAP_UP, LEAP_DOWN;
     private static final ForgeConfigSpec.DoubleValue FAST_RUN_SPEED, FAST_RUN_COST, PLUNGE_CUT, PLUNGE_FROM, WHIRL_DAMAGE, WHIRL_REACH,
             SPIN_DAMAGE, SPIN_REACH, PLUNGE_SPLASH;
-    private static final ForgeConfigSpec.IntValue WHIRL_COOLDOWN, SPIN_COOLDOWN, PLUNGE_SPLASH_RADIUS;
+    private static final ForgeConfigSpec.IntValue WHIRL_COOLDOWN, SPIN_COOLDOWN, PLUNGE_SPLASH_RADIUS, MARKS_MAX, MARK_SECONDS,
+            MARKED_COOLDOWN;
+    private static final ForgeConfigSpec.DoubleValue MARK_RANGE;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -82,7 +85,7 @@ public final class MovesConfig {
         COST_ROLL = b.comment("Roll back or forward, R + S / R + W (was 20). [default]").defineInRange("roll", 10.0, 0.0, 10000.0);
         COST_SLIDE = b.comment("Slide, sprint + C (was 20). [default]").defineInRange("slide", 10.0, 0.0, 10000.0);
         COST_HOP = b.comment("Vault over a mob at point blank, R + W (was 25). [default]").defineInRange("hop", 12.5, 0.0, 10000.0);
-        COST_BARRAGE = b.comment("Bow volley: full draw, then the left button (was 20). [default]").defineInRange("volley", 10.0, 0.0, 10000.0);
+        COST_BARRAGE = b.comment("Bow volley: G with a bow (was the full draw and the left button; was 20). [default]").defineInRange("volley", 10.0, 0.0, 10000.0);
         COST_BOW_DODGE = b.comment("A dodge with a shot: in the Legolas stance and the bow's combat flow (was 10). [default]")
                 .defineInRange("bowDodge", 5.0, 0.0, 10000.0);
         // Renamed from dashStrike (7.5) so worlds made before get the author's number.
@@ -95,8 +98,7 @@ public final class MovesConfig {
         COST_SLIDE_ATTACK = b.comment("The attack out of a slide: the left button while sliding with a sword or an axe. [default]")
                 .defineInRange("slideAttack", 10.0, 0.0, 10000.0);
         // Renamed from ledgeHop (5) so worlds made before get the cheaper hop: the hops now go one after another.
-        COST_LEDGE_HOP = b.comment("Each hop along a ledge (hanging, R for the hop mode, then A or D held; the hops go one after",
-                        "another). [default]")
+        COST_LEDGE_HOP = b.comment("Each hop along a ledge (hanging, A or D held; the hops go one after another). [default]")
                 .defineInRange("ledgeHopEach", 2.5, 0.0, 10000.0);
         // Author, 2026-10-29: "every move eats energy".
         COST_DIVE = b.comment("The deep jump with a roll: W and Space held, R with no mob near. [default]")
@@ -111,9 +113,9 @@ public final class MovesConfig {
                 .defineInRange("ledgeDown", 2.5, 0.0, 10000.0);
         COST_LEDGE_HELP = b.comment("Pulling up a friend hanging on the ledge. [default]")
                 .defineInRange("ledgeHelp", 2.5, 0.0, 10000.0);
-        COST_SHIMMY = b.comment("Each second of creeping along a ledge with A or D (more than a move's slow refill gives back);",
-                        "with no energy left the player only hangs. [default]")
-                .defineInRange("ledgeShimmyPerSecond", 3.0, 0.0, 10000.0);
+        // Author, 2026-10-30, 23:01: the creeping along a ledge is gone; the leap to an edge looked at is new.
+        COST_LEDGE_LEAP = b.comment("The leap from a ledge to another edge looked at (Space while hanging). [default]")
+                .defineInRange("ledgeLeap", 5.0, 0.0, 10000.0);
         // Author, 2026-10-29, fifth message.
         COST_ROLL_KICK = b.comment("The roll kick: Ctrl (the fast run), W and Space down, R at a mob. [default]")
                 .defineInRange("rollKick", 15.0, 0.0, 10000.0);
@@ -129,6 +131,13 @@ public final class MovesConfig {
                 .defineInRange("swordSpinExtraTurn", 5.0, 0.0, 10000.0);
         COST_WHIRL_EXTRA = b.comment("Each turn of the axe whirlwind's more than the three, while G is held (up to 5). [default]")
                 .defineInRange("whirlwindExtraTurn", 5.0, 0.0, 10000.0);
+        // Author, 2026-10-30, 23:01: "the energy, decide yourself".
+        COST_HAIL_EXTRA = b.comment("Each arrow of the hail (G held with a bow, 5 to 10 arrows) after the third. [default]")
+                .defineInRange("hailExtraArrow", 2.5, 0.0, 10000.0);
+        COST_MARKED = b.comment("The volley at the marked mobs (the right button let go at the full draw): to start it. [default]")
+                .defineInRange("markedVolley", 10.0, 0.0, 10000.0);
+        COST_MARKED_EACH = b.comment("... and for each mob it shoots at. [default]")
+                .defineInRange("markedVolleyEach", 2.5, 0.0, 10000.0);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -232,6 +241,13 @@ public final class MovesConfig {
         LEDGE_GRAB = b.comment("The right button in a jump or a fall catches a ledge (author: before the sword block, placing",
                         "blocks and the rest of the right button).")
                 .define("ledgeGrab", true);
+        LEAP_REACH = b.comment("How far the leap from a ledge reaches to another edge, across (blocks; author, 2026-10-30: a far",
+                        "edge is aimed at and leapt to). [default]")
+                .defineInRange("ledgeLeapReach", 4.0, 1.0, 16.0);
+        LEAP_UP = b.comment("How much higher the edge the leap reaches may be (blocks). [default]")
+                .defineInRange("ledgeLeapUp", 2.0, 0.0, 8.0);
+        LEAP_DOWN = b.comment("How much lower (blocks). [default]")
+                .defineInRange("ledgeLeapDown", 4.0, 0.0, 16.0);
         b.pop();
 
         b.comment("Knocking an arrow aside: R (a side dodge) with a sword or a bow in hand as it comes.").push("deflect");
@@ -252,6 +268,15 @@ public final class MovesConfig {
         KNEEL_MOVE = b.comment("After the volley, with the right button still held, the player stays on one knee and aims:",
                         "walking speed as a share of the drawn bow's, as when sneaking (author: \"at a snail's pace\"). [default]")
                 .defineInRange("kneelMoveFactor", 0.3, 0.0, 1.0);
+        // Author, 2026-10-30, 23:01.
+        MARKS_MAX = b.comment("Mobs marked at once (the right button held, the left one on a mob; author: 8). Another one takes the",
+                        "place of the first marked.")
+                .defineInRange("marksAtOnce", 8, 1, 32);
+        MARK_SECONDS = b.comment("Seconds a mark lasts (author: a minute).").defineInRange("markSeconds", 60, 1, 3600);
+        MARK_RANGE = b.comment("How far off a mob may be marked and shot at by the volley at the marked (blocks). [default]")
+                .defineInRange("markRange", 64.0, 8.0, 256.0);
+        MARKED_COOLDOWN = b.comment("The volley at the marked: seconds before it can be made again (author: 25).")
+                .defineInRange("markedVolleyCooldown", 25, 0, 3600);
         b.pop();
         SPEC = b.build();
     }
@@ -307,7 +332,10 @@ public final class MovesConfig {
     public static float costLedgeClimb() { return f(COST_LEDGE_CLIMB, 5.0); }
     public static float costLedgeDown() { return f(COST_LEDGE_DOWN, 2.5); }
     public static float costLedgeHelp() { return f(COST_LEDGE_HELP, 2.5); }
-    public static float shimmyPerSecond() { return f(COST_SHIMMY, 3.0); }
+    public static float costLedgeLeap() { return f(COST_LEDGE_LEAP, 5.0); }
+    public static float ledgeLeapReach() { return f(LEAP_REACH, 4.0); }
+    public static float ledgeLeapUp() { return f(LEAP_UP, 2.0); }
+    public static float ledgeLeapDown() { return f(LEAP_DOWN, 4.0); }
     public static float dashWidth() { return f(DASH_WIDTH, 1.1); }
     public static float slideAttackCrit() { return f(SLIDE_ATTACK_CRIT, 1.5); }
     public static float slideAttackReach() { return f(SLIDE_ATTACK_REACH, 3.0); }
@@ -330,6 +358,13 @@ public final class MovesConfig {
     public static float costSpinExtra() { return f(COST_SPIN_EXTRA, 5.0); }
     public static float costWhirlExtra() { return f(COST_WHIRL_EXTRA, 5.0); }
     public static int swordSpinCooldownTicks() { return get(SPIN_COOLDOWN, 20) * 20; }
+    public static float costHailExtra() { return f(COST_HAIL_EXTRA, 2.5); }
+    public static float costMarked() { return f(COST_MARKED, 10.0); }
+    public static float costMarkedEach() { return f(COST_MARKED_EACH, 2.5); }
+    public static int marksMax() { return get(MARKS_MAX, 8); }
+    public static int markTicks() { return get(MARK_SECONDS, 60) * 20; }
+    public static double markRange() { return get(MARK_RANGE, 64.0); }
+    public static int markedCooldownTicks() { return get(MARKED_COOLDOWN, 25) * 20; }
     public static float swordSpinDamage() { return f(SPIN_DAMAGE, 1.0); }
     public static float swordSpinReach() { return f(SPIN_REACH, 2.6); }
     public static float plungeSplash() { return f(PLUNGE_SPLASH, 1.0); }

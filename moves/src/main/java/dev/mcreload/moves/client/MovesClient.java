@@ -104,6 +104,9 @@ public final class MovesClient {
         GuardInput.init();
         StoopFx.init();
         Cutscene.init();
+        LedgeAim.init();
+        MarkRender.init();
+        BowVolley.init();
                 if (MovesSelfTest.enabled()) MovesSelfTest.init();
     }
 
@@ -144,6 +147,7 @@ public final class MovesClient {
             dodgeWait = 0;
             StrikeInput.reset();
             LedgeInput.reset();
+            BowVolley.reset();
             if (p != null) Cutscene.tick(mc, p, Stamina.of(p));
             return;
         }
@@ -242,18 +246,17 @@ public final class MovesClient {
         // ---- the strikes: the finisher, the dash strike (they take the click), the ability on G
         if (StrikeInput.tick(mc, p, s, attackDown, attackPressed, abilityPressed)) attackPressed = false;
 
-        // ---- the bow: the flow and the Legolas stance (their arrows, poses and dodges), then the
-        // volley: a fully drawn bow and the left button (which in the flow is the flow's next step)
+        // ---- the bow: the marks (the right button held, the left one on a mob), the volley at the
+        // marked (the right button let go), G's volley and hail (BowVolley); the flow and the Legolas
+        // stance (their arrows, poses and dodges; in the flow the left button off a mob is its next step)
+        boolean marking = BowVolley.tickLocal(mc, p, s, attackPressed, abilityPressed);
         BowStance.tickLocal(p, s);
-        if (attackPressed && !BowStance.attackKey(p, s) && s.move == null && HudConfig.Moves.VOLLEY.on()
-                && dev.mcreload.moves.Bow.volleyReady(p)) {
-            start(p, s, Move.BARRAGE, false, -1);
-            if (s.move == Move.BARRAGE) p.stopUsingItem();    // the volley takes over the drawn bow
-        }
-        // The left button is the bow's while the volley plays and in the flow and the Legolas stance
-        // (on one knee between two arrows the bow is not drawn): it swings nothing, not even Better
-        // Combat's blow, which comes before Forge's interaction event that stops vanilla's.
-        if (s.move == Move.BARRAGE || BowStance.active(p) || BowStance.kneeling(p)) StrikeInput.swallow(mc);
+        if (attackPressed && !marking) BowStance.attackKey(p, s);
+        // The left button is the bow's while the bow's moves play, the bow is drawn, in the flow and the
+        // Legolas stance (on one knee between two arrows the bow is not drawn): it swings nothing, not even
+        // Better Combat's blow, which comes before Forge's interaction event that stops vanilla's.
+        if ((s.move != null && (s.move.volley() || s.move.marked())) || BowStance.active(p) || BowStance.kneeling(p)
+                || dev.mcreload.moves.Bow.drawing(p)) StrikeInput.swallow(mc);
 
         // ---- dodges and rolls: R and a direction (R with the bow fully drawn: the Legolas stance)
         if (dodgePressed && BowStance.dodgeKey(p)) dodgePressed = false;
@@ -331,6 +334,13 @@ public final class MovesClient {
         return true;
     }
 
+    /** Starts a move made at a mob and pushed the way {@code dir} says (a step of the volley at the marked). */
+    static boolean start(LocalPlayer p, Stamina s, Move move, int target, Vec3 dir) {
+        if (!start(p, s, move, false, target)) return false;
+        pushDir = dir;
+        return true;
+    }
+
     /** Starts a move made at a mob (the vault, the finisher), a friend, or on a ledge (target: its wall's way). Returns whether it started. */
     static boolean start(LocalPlayer p, Stamina s, Move move, int target) {
         return start(p, s, move, false, target);
@@ -395,6 +405,7 @@ public final class MovesClient {
                 p.yBodyRot = p.getYRot();     // the turn is the player's own, the body goes with it at once
             }
             cues(p, s);
+            MoveAnimator.pace(p, s);
             return;
         }
         if (p != Minecraft.getInstance().player || s.move == null) return;
@@ -724,7 +735,8 @@ public final class MovesClient {
         LocalPlayer p = Minecraft.getInstance().player;
         Stamina s = p == null ? null : Stamina.of(p);
         boolean striking = s != null && s.move != null && s.move.strike() && s.moveTick < s.move.recoverFrom();
-        if (p != null && (s.move == Move.BARRAGE || striking || (event.isAttack() && BowStance.active(p)))) {
+        boolean bow = s != null && s.move != null && (s.move.volley() || s.move.marked());
+        if (p != null && (bow || striking || (event.isAttack() && BowStance.active(p)))) {
             event.setCanceled(true);
             event.setSwingHand(false);
         }
@@ -868,6 +880,7 @@ public final class MovesClient {
         s.whirlCooldown = m.cooldowns()[1];
         s.spinCooldown = m.cooldowns()[2];
         s.slideAttackCooldown = m.cooldowns()[3];
+        s.markedCooldown = m.cooldowns()[4];
         maxEnergy = m.maxEnergy();
         maxShields = m.maxShields();
     }

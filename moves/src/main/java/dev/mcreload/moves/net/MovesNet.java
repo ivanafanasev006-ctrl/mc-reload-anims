@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "5";
+    public static final String VERSION = "6";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -43,6 +43,7 @@ public final class MovesNet {
         CHANNEL.registerMessage(id++, GuardState.class, GuardState::write, GuardState::read, GuardState::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, Stoop.class, Stoop::write, Stoop::read, Stoop::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, Run.class, Run::write, Run::read, Run::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++, Mark.class, Mark::write, Mark::read, Mark::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
     // ------------------------------------------------------------------ server -> clients
@@ -86,7 +87,8 @@ public final class MovesNet {
     public static void stamina(ServerPlayer p, Stamina s) {
         if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p),
                 new Bars(s.energy, s.shields, dev.mcreload.moves.MovesConfig.maxEnergy(), dev.mcreload.moves.MovesConfig.maxShields(),
-                        s.freeTicks, s.freeTotal, new int[]{s.dashCooldown, s.whirlCooldown, s.spinCooldown, s.slideAttackCooldown}));
+                        s.freeTicks, s.freeTotal, new int[]{s.dashCooldown, s.whirlCooldown, s.spinCooldown, s.slideAttackCooldown,
+                        s.markedCooldown}));
     }
 
     /** A real player whose client has the mod (fake players and test players have no client). */
@@ -148,9 +150,12 @@ public final class MovesNet {
     }
 
     /** Server -> client: the player's own bars. */
-    /** The bars, and the ticks left of the cooldowns (the tray): the dash, the whirlwind, the sword's turn, the attack out of a slide. */
+    /**
+     * The bars, and the ticks left of the cooldowns (the tray): the dash, the whirlwind, the sword's
+     * turn, the attack out of a slide, the volley at the marked.
+     */
     public record Bars(float energy, float shields, float maxEnergy, float maxShields, int freeTicks, int freeTotal, int[] cooldowns) {
-        public static final int COOLDOWNS = 4;
+        public static final int COOLDOWNS = 5;
 
         static void write(Bars m, FriendlyByteBuf b) {
             b.writeFloat(m.energy);
@@ -171,6 +176,25 @@ public final class MovesNet {
         static void handle(Bars m, Supplier<NetworkEvent.Context> ctx) {
             ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> dev.mcreload.moves.client.MovesClient.bars(m)));
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Client -> server: the mark on this mob made or taken off (Marks.toggle); -1: all of them taken off. */
+    public record Mark(int entity) {
+        static void write(Mark m, FriendlyByteBuf b) { b.writeVarInt(m.entity + 1); }
+        static Mark read(FriendlyByteBuf b) { return new Mark(b.readVarInt() - 1); }
+        static void handle(Mark m, Supplier<NetworkEvent.Context> ctx) {
+            ServerPlayer p = ctx.get().getSender();
+            if (p != null) ctx.get().enqueueWork(() -> {
+                dev.mcreload.moves.Stamina s = dev.mcreload.moves.Stamina.of(p);
+                if (m.entity < 0) {
+                    s.marks.clear();
+                    return;
+                }
+                net.minecraft.world.entity.Entity e = p.level().getEntity(m.entity);
+                if (e != null && dev.mcreload.moves.Marks.markable(p, e)) dev.mcreload.moves.Marks.toggle(p, s, e);
+            });
             ctx.get().setPacketHandled(true);
         }
     }

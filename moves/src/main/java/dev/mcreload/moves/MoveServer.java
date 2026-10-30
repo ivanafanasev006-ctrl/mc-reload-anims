@@ -30,9 +30,9 @@ public final class MoveServer {
      */
     public static boolean request(ServerPlayer p, Move move, boolean held, int target) {
         Stamina s = Stamina.of(p);
-        net.minecraft.world.entity.Entity enemy = move.targeted() ? p.level().getEntity(target) : null;
+        net.minecraft.world.entity.Entity enemy = move.targeted() || move.marked() ? p.level().getEntity(target) : null;
         boolean ok = !move.serverStarted() && allowed(p, s, move) && validTarget(p, move, enemy)
-                && (!move.ledge() || Ledge.valid(p, s, move, target));
+                && (!move.ledge() || Ledge.valid(p, s, move, target)) && (!move.marked() || Bow.markedTarget(p, s, enemy));
         if (ok && move == Move.LEDGE_HELP) ok = Ledge.help(p, enemy);
         if (!ok) {
             MovesNet.deny(p, move);
@@ -40,6 +40,18 @@ public final class MoveServer {
             return false;
         }
         s.spend(move.cost(s.move), p);
+        if (move.marked()) {
+            // the volley at the marked: the step before shoots its arrow if the client went on before
+            // this end got to its release; the first step starts the cooldown and pays for the start
+            if (s.move != null && s.move.marked()) {
+                Bow.markedShot(p, s);
+            } else {
+                s.markedCooldown = MovesConfig.markedCooldownTicks();
+                s.markedShot.clear();
+                s.spend(MovesConfig.costMarked(), p);
+            }
+            s.spend(MovesConfig.costMarkedEach(), p);
+        }
         Guard.lower(p, s);
         if (move.ledge() || move == Move.FALL_TUCK) p.stopUsingItem();
         s.start(p, move, held);
@@ -58,7 +70,11 @@ public final class MoveServer {
         }
         // Caught by the edge: the fall so far does not hurt (the tuck's own fall does, less: Fall).
         if (move.ledge()) p.fallDistance = 0f;
-        if (move == Move.BARRAGE) p.stopUsingItem();     // the volley takes over the drawn bow
+        if (move.volley() || move.marked()) p.stopUsingItem();     // the volleys take over the drawn bow (no arrow of its own)
+        if (move.marked()) {
+            s.target = target;
+            s.stepShot = false;
+        }
         MovesNet.play(p, move, move.ledge() ? s.ledgeDir : -1);
         sync(p, s, true);
         return true;
@@ -104,8 +120,11 @@ public final class MoveServer {
         // Using an item (eating, drawing a bow) rules moves out, except the volley, which needs a full
         // draw, and the moves of the flow and the Legolas stance, made with the bow drawn.
         // The ledge and the fall take the hands from whatever they were doing.
+        // The bow's G and the volley at the marked take the bow over, drawn or not.
         boolean hands = move.ledge() || move == Move.FALL_TUCK || move == Move.FALL_ROLL || move == Move.PLUNGE_FALL || move == Move.PLUNGE;
-        if (!hands && (move == Move.BARRAGE ? !Bow.volleyReady(p) : move.drawnBow() ? !Bow.drawing(p) : p.isUsingItem())) return false;
+        boolean bow = move.volley() || move.marked();
+        if (bow && !Bow.volleyReady(p)) return false;
+        if (!hands && !bow && (move.drawnBow() ? !Bow.drawing(p) : p.isUsingItem())) return false;
         // One move at a time; the next may start once this one has played out (its fade aside), or at
         // once if it follows from it (the attack out of a slide, the moves on a ledge...).
         if (s.move != null && s.moveTick < s.move.freeFrom() && !move.follows(s.move)) return false;
@@ -141,6 +160,11 @@ public final class MoveServer {
         if (move == Move.SWORD_SPIN && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER_AXE && !Strikes.axe(p)) return false;
+        // The volley at the marked: its first step waits out the cooldown and wants the energy for the start.
+        if (move.marked() && (s.move == null || !s.move.marked())) {
+            if (s.markedCooldown > (p.level().isClientSide ? 0 : 5)) return false;
+            if (!s.free() && !p.getAbilities().instabuild && s.energy < MovesConfig.costMarked() + MovesConfig.costMarkedEach()) return false;
+        }
         // They wait out their cooldowns (the server lets a client a few ticks ahead of it through).
         if (move == Move.DASH) return ground && s.dashCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.WHIRL) return ground && s.whirlCooldown <= (p.level().isClientSide ? 0 : 5);

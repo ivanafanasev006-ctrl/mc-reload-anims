@@ -1123,8 +1123,8 @@ public final class MovesGameTests {
     }
 
     /**
-     * The ledge: a two-block wall in front; caught (the edge's top remembered), hand over hand along
-     * it, up onto it, the climb passing through the edge's corner; nothing to catch in the open.
+     * The ledge: a two-block wall in front; caught (the edge's top remembered), a hop along it, up
+     * onto it, the climb passing through the edge's corner; nothing to catch in the open.
      */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void ledgeCatchAndClimb(GameTestHelper h) {
@@ -1143,7 +1143,8 @@ public final class MovesGameTests {
             t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "the edge of a two-block wall was not caught");
             t.check(Math.abs(s.ledgeTop - h.absoluteVec(new Vec3(0, 4.0, 0)).y) < 0.01, "edge top " + s.ledgeTop);
             t.check(p.fallDistance == 0f, "the fall before the catch still counts");
-            t.check(MoveServer.request(p, Move.LEDGE_SHIMMY_LEFT, false, south), "hand over hand refused");
+            t.check(MoveServer.request(p, Move.LEDGE_HOP_LEFT, false, dev.mcreload.moves.Ledge.hopTarget(net.minecraft.core.Direction.SOUTH, 0)),
+                    "the hop along refused");
             t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "back to the hang refused");
             t.check(!MoveServer.request(p, Move.DODGE_LEFT, false), "a dodge while hanging");
             s.energy = 100f;
@@ -1152,6 +1153,63 @@ public final class MovesGameTests {
         });
         t.at(4, () -> t.check(p.noPhysics, "the climb does not pass through the edge's corner"));
         t.at(4 + Move.LEDGE_CLIMB.length, () -> t.check(s.move == null && !p.noPhysics, "the climb did not end")).run(5 + Move.LEDGE_CLIMB.length);
+    }
+
+    /**
+     * The ledge (author, 2026-10-30, 23:01): a carpet on the top is no hindrance to the hand, and the
+     * pull-up ends standing on it; another edge looked at, a block higher across a gap, is found and
+     * within the leap's reach, and the leap there is taken; one too far is not.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void ledgeCarpetAndLeap(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        net.minecraft.core.Direction south = net.minecraft.core.Direction.SOUTH;
+        t.at(2, () -> {
+            for (int y = 2; y <= 3; y++) {
+                for (int x = 0; x <= 2; x++) h.setBlock(x, y, 5, net.minecraft.world.level.block.Blocks.STONE);
+            }
+            for (int y = 2; y <= 4; y++) {
+                for (int x = 5; x <= 6; x++) h.setBlock(x, y, 5, net.minecraft.world.level.block.Blocks.STONE);
+            }
+            h.setBlock(1, 4, 5, net.minecraft.world.level.block.Blocks.WHITE_CARPET);
+            Vec3 hang = h.absoluteVec(new Vec3(1.5, 4.0 - dev.mcreload.moves.Ledge.HANG, 5.0 - 0.301));
+            p.teleportTo(hang.x, hang.y, hang.z);
+            p.setYRot(0f);
+            t.check(MoveServer.request(p, Move.LEDGE_HANG, false, dev.mcreload.moves.Ledge.id(south)), "the edge under a carpet was not caught");
+            double top = s.ledgeTop;
+            Vec3 up = dev.mcreload.moves.Ledge.onTop(p.level(), p.position(), south, top);
+            t.check(Math.abs(up.y - (top + 1 / 16.0)) < 1e-3, "the pull-up ends at " + (up.y - top) + " over the top, not on the carpet");
+            t.check(dev.mcreload.moves.Ledge.fits(p, up), "no room on the carpet");
+            // look at the higher wall's edge across the gap
+            Vec3 edge = h.absoluteVec(new Vec3(5.4, 4.85, 5.0));
+            Vec3 d = edge.subtract(p.getEyePosition());
+            float[] look = dev.mcreload.moves.Marks.look(d);
+            p.setYRot(look[0]);
+            p.setXRot(look[1]);
+            p.setYHeadRot(look[0]);
+            dev.mcreload.moves.Ledge.Target aim = dev.mcreload.moves.Ledge.aimed(p, p.position(), south, top);
+            if (aim == null) {
+                net.minecraft.world.phys.BlockHitResult hit = p.level().clip(new net.minecraft.world.level.ClipContext(p.getEyePosition(),
+                        p.getEyePosition().add(p.getViewVector(1f).scale(10)), net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                        net.minecraft.world.level.ClipContext.Fluid.NONE, p));
+                t.check(false, "the edge looked at was not found: the eyes at " + h.relativeVec(p.getEyePosition()) + " see "
+                        + hit.getType() + " " + h.relativePos(hit.getBlockPos()) + " " + hit.getDirection() + " at " + h.relativeVec(hit.getLocation()));
+            }
+            t.check(Math.abs(aim.spot().top() - (top + 1)) < 1e-3 && aim.spot().dir() == south, "found " + aim.spot());
+            t.check(aim.reachable(), "the edge 4 blocks across, a block up, out of reach");
+            Vec3 mid = dev.mcreload.moves.Ledge.leapAt(p.position(), aim.spot().at(), 0.5f);
+            t.check(mid.y > aim.spot().at().y, "the leap does not go up over its end");
+            t.check(dev.mcreload.moves.Ledge.leapAt(p.position(), aim.spot().at(), 1f).distanceTo(aim.spot().at()) < 1e-6, "the leap ends off its edge");
+            Vec3 far = p.position().add(MovesConfig.ledgeLeapReach() + 1, 0, 0);
+            t.check(!dev.mcreload.moves.Ledge.reaches(p, p.position(), new dev.mcreload.moves.Ledge.Spot(south, top, far)), "a leap past the reach");
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.LEDGE_LEAP, false, dev.mcreload.moves.Ledge.leapTarget(south, 1.0)), "the leap refused");
+            t.check(Math.abs(s.ledgeTop - (top + 1)) < 1e-3, "the edge after the leap: " + s.ledgeTop);
+            t.close(s.energy, 100f - MovesConfig.costLedgeLeap(), "energy after the leap");
+            t.check(!MoveServer.request(p, Move.LEDGE_LEAP, false, dev.mcreload.moves.Ledge.leapTarget(south, 1.0)), "a leap out of a leap");
+        }).run(3);
     }
 
     /**
@@ -1295,33 +1353,198 @@ public final class MovesGameTests {
     }
 
     /**
-     * The volley: from a full draw, three arrows at the animation's releases, as many as there are
-     * (two here), each wearing the bow; 20 energy.
+     * G with a bow: the volley, the bow need not be drawn, not without arrows; its arrows 0.55 s apart
+     * (author, 2026-10-30, 23:01: "a fraction of a second slower"), each wearing the bow; its energy.
      */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void bowVolley(GameTestHelper h) {
-        Script t = new Script(h);
+        Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Stamina s = Stamina.of(p);
         t.at(1, () -> {
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            p.setXRot(55f);     // into the floor close by, not into the other tests' mobs
+            t.check(!MoveServer.request(p, Move.BARRAGE, false), "G with a bow and no arrows");
             p.getInventory().add(new ItemStack(Items.ARROW, 2));
-            p.startUsingItem(InteractionHand.MAIN_HAND);
-        });
-        t.at(8, () -> t.check(!MoveServer.request(p, Move.BARRAGE, false), "volley from a half draw"));
-        t.at(24, () -> {
             s.energy = 100f;
-            t.check(MoveServer.request(p, Move.BARRAGE, false), "volley refused from a full draw");
-            t.check(!p.isUsingItem(), "the bow is still drawn after the volley started");
+            t.check(MoveServer.request(p, Move.BARRAGE, false), "G with a bow refused");
             t.close(s.energy, 100f - MovesConfig.costBarrage(), "energy after a volley");
         });
-        t.at(24 + Move.BARRAGE.length, () -> {
-            // Only this player's: the other tests of the batch shoot arrows nearby too.
-            int arrows = h.getLevel().getEntitiesOfClass(Arrow.class, p.getBoundingBox().inflate(64), a -> a.getOwner() == p).size();
-            t.check(arrows == 2, "arrows flying: " + arrows);
-            t.check(p.getInventory().countItem(Items.ARROW) == 0, "arrows left: " + p.getInventory().countItem(Items.ARROW));
-            t.check(p.getMainHandItem().getDamageValue() == 2, "bow wear: " + p.getMainHandItem().getDamageValue());
-        }).run(25 + Move.BARRAGE.length);
+        // counted by the bow's wear (the player picks up the arrows that land at their feet)
+        int[] shots = dev.mcreload.moves.Bow.VOLLEY_SHOTS;
+        t.at(1 + shots[0], () -> t.check(p.getMainHandItem().getDamageValue() == 1, "the first arrow did not leave"));
+        t.at(shots[1], () -> t.check(p.getMainHandItem().getDamageValue() == 1, "the second arrow came early"));
+        t.at(1 + shots[1], () -> t.check(p.getMainHandItem().getDamageValue() == 2, "the second arrow did not leave"))
+                .run(2 + shots[1]);
+    }
+
+    /** This player's arrows (the other tests of the batch shoot nearby too). */
+    private static List<Arrow> arrows(GameTestHelper h, ServerPlayer p) {
+        return h.getLevel().getEntitiesOfClass(Arrow.class, p.getBoundingBox().inflate(96), a -> a.getOwner() == p);
+    }
+
+    /**
+     * G held: the hail (author: "5 to 10 arrows the way he looks, with a spread"): five arrows 4 ticks
+     * apart, spread about the look; G let go after the fifth, no more; each after the third costs more.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void bowHail(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        int fifth = 1 + dev.mcreload.moves.Bow.HAIL_FROM + 4 * dev.mcreload.moves.Bow.HAIL_EVERY;
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            p.getInventory().add(new ItemStack(Items.ARROW, 20));
+            p.setXRot(55f);     // into the floor close by, not into the other tests' mobs
+            p.getFoodData().setFoodLevel(0);     // no refill: the energy spent counts exactly
+            p.getFoodData().setSaturation(0f);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.HAIL, false), "the hail refused");
+        });
+        // each arrow's way as it leaves (they land at the player's feet, who picks them up: counted by the bow's wear)
+        List<Float> yaws = new ArrayList<>();
+        java.util.Set<Integer> seen = new java.util.HashSet<>();
+        for (int k = 0; k < 5; k++) {
+            t.at(1 + dev.mcreload.moves.Bow.HAIL_FROM + k * dev.mcreload.moves.Bow.HAIL_EVERY, () -> {
+                for (Arrow a : arrows(h, p)) if (seen.add(a.getId())) yaws.add(a.getYRot());
+            });
+        }
+        t.at(fifth, () -> {
+            t.check(p.getMainHandItem().getDamageValue() == 5, "arrows by the fifth: " + p.getMainHandItem().getDamageValue());
+            double lo = 1e9, hi = -1e9;
+            for (float yaw : yaws) {
+                lo = Math.min(lo, yaw);
+                hi = Math.max(hi, yaw);
+            }
+            t.check(yaws.size() == 5 && hi - lo > 2.0 && hi - lo < 2 * dev.mcreload.moves.Bow.HAIL_SPREAD + 1,
+                    yaws.size() + " arrows spread over " + (hi - lo) + " degrees");
+            t.close(s.energy, 100f - MovesConfig.costBarrage() - 2 * MovesConfig.costHailExtra(), "energy after five");
+            MoveServer.cancel(p, Move.HAIL);
+        });
+        t.at(fifth + 2 * dev.mcreload.moves.Bow.HAIL_EVERY, () -> t.check(p.getMainHandItem().getDamageValue() == 5,
+                        "arrows after G was let go: " + p.getMainHandItem().getDamageValue()))
+                .run(fifth + 2 * dev.mcreload.moves.Bow.HAIL_EVERY + 1);
+    }
+
+    /**
+     * The marks: G at two marked mobs shoots at them in turn (1 into the first, 2 into the second, 3
+     * into the first again); the hail at one, 4 ticks apart, hurts it with each arrow (they used to
+     * bounce off it after the first).
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 300)
+    public static void bowMarksInTurn(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie a = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 6), b = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 6);
+        java.util.Set<Integer> seen = new java.util.HashSet<>();
+        int[] shots = dev.mcreload.moves.Bow.VOLLEY_SHOTS;
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            p.getInventory().add(new ItemStack(Items.ARROW, 30));
+            dev.mcreload.moves.Marks.toggle(p, s, a);
+            dev.mcreload.moves.Marks.toggle(p, s, b);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.BARRAGE, false), "G refused");
+        });
+        Zombie[] want = {a, b, a};
+        for (int k = 0; k < 3; k++) {
+            int kk = k;
+            t.at(1 + shots[k], () -> {
+                Arrow fresh = null;
+                for (Arrow x : arrows(h, p)) if (seen.add(x.getId())) fresh = x;
+                t.check(fresh != null, "no arrow " + kk);
+                Vec3 to = want[kk].position().add(0, 1, 0).subtract(fresh.position());
+                double angle = Math.toDegrees(Math.acos(fresh.getDeltaMovement().normalize().dot(to.normalize())));
+                t.check(angle < 12, "arrow " + kk + " goes " + Math.round(angle) + " degrees off its mob");
+            });
+        }
+        // the hail at one marked mob: every arrow hurts it, 4 ticks apart
+        int hail = 4 + Move.BARRAGE.length;
+        t.at(hail, () -> {
+            dev.mcreload.moves.Marks.toggle(p, s, b);
+            a.setHealth(a.getMaxHealth());
+            a.invulnerableTime = 0;
+            Vec3 ahead = h.absoluteVec(new Vec3(3.5, 2, 6.5));
+            a.teleportTo(ahead.x, ahead.y, ahead.z);
+            a.setDeltaMovement(Vec3.ZERO);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.HAIL, false), "the hail refused");
+        });
+        t.at(hail + dev.mcreload.moves.Bow.HAIL_FROM + 2 * dev.mcreload.moves.Bow.HAIL_EVERY + 3, () -> {
+            float lost = a.getMaxHealth() - a.getHealth();
+            t.check(lost >= 12f || !a.isAlive(), "three arrows 4 ticks apart took " + lost + " health (they bounce off?)");
+        }).run(hail + dev.mcreload.moves.Bow.HAIL_FROM + 2 * dev.mcreload.moves.Bow.HAIL_EVERY + 4);
+    }
+
+    /** The marks: on and off again, 8 at most (another one takes the first's place), gone after a minute. */
+    @GameTest(template = FLOOR, timeoutTicks = 100)
+    public static void bowMarkRules(GameTestHelper h) {
+        Script t = new Script(h);
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        List<Zombie> mobs = new ArrayList<>();
+        for (int i = 0; i < 9; i++) mobs.add(h.spawnWithNoFreeWill(EntityType.ZOMBIE, 1 + 2 * (i % 3), 2, 6 + i / 3));
+        t.at(1, () -> {
+            dev.mcreload.moves.Marks.toggle(p, s, mobs.get(0));
+            dev.mcreload.moves.Marks.toggle(p, s, mobs.get(0));
+            t.check(s.marks.isEmpty(), "the mark was not taken off");
+            for (Zombie z : mobs) dev.mcreload.moves.Marks.toggle(p, s, z);
+            t.check(s.marks.size() == MovesConfig.marksMax(), "marks: " + s.marks.size());
+            t.check(!s.marks.containsKey(mobs.get(0).getId()) && s.marks.containsKey(mobs.get(8).getId()), "the ninth did not take the first's place");
+            t.check(!dev.mcreload.moves.Marks.markable(p, p), "the player marks themself");
+            long left = s.marks.get(mobs.get(8).getId()) - p.level().getGameTime();
+            t.check(left == MovesConfig.markTicks(), "a mark lasts " + left + " ticks");
+            s.marks.replaceAll((id, until) -> p.level().getGameTime());
+            dev.mcreload.moves.Marks.prune(p, s);
+            t.check(s.marks.isEmpty(), "the marks outlived their minute");
+        }).run(2);
+    }
+
+    /**
+     * The volley at the marked: a step at each marked mob in sight, one arrow each; not at one behind a
+     * wall, not twice at the same; the first step pays and starts the 25 s, a new volley waits them out.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 300)
+    public static void bowMarkedVolley(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie a = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 6), b = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 6),
+                hidden = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 6);
+        Move first = Move.MARKED_SPIN_LEFT, second = Move.MARKED_STAND;
+        int next = 1 + first.freeFrom();
+        java.util.Set<Integer> shot = new java.util.HashSet<>();
+        t.at(1, () -> {
+            // a pillar between the player and the middle one
+            for (int y = 2; y <= 4; y++) h.setBlock(3, y, 5, net.minecraft.world.level.block.Blocks.STONE);
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            p.getInventory().add(new ItemStack(Items.ARROW, 10));
+            for (Zombie z : List.of(a, b, hidden)) dev.mcreload.moves.Marks.toggle(p, s, z);
+            t.check(dev.mcreload.moves.Marks.inSight(p, s).size() == 2, "in sight: " + dev.mcreload.moves.Marks.inSight(p, s).size());
+            s.energy = 100f;
+            t.check(!MoveServer.request(p, first, false, hidden.getId()), "a step at the one behind the wall");
+            t.check(MoveServer.request(p, first, false, a.getId()), "the first step refused");
+            t.check(s.markedCooldown == MovesConfig.markedCooldownTicks(), "cooldown " + s.markedCooldown);
+            t.close(s.energy, 100f - MovesConfig.costMarked() - MovesConfig.costMarkedEach(), "energy after the first step");
+        });
+        t.at(1 + first.shot.release(), () -> {
+            arrows(h, p).forEach(x -> shot.add(x.getId()));
+            t.check(shot.size() == 1, "arrows after the first step: " + shot.size());
+        });
+        t.at(next, () -> {
+            t.check(!MoveServer.request(p, second, false, a.getId()), "the same mob twice in one volley");
+            t.check(MoveServer.request(p, second, false, b.getId()), "the second step refused");
+        });
+        t.at(next + second.shot.release(), () -> {
+            arrows(h, p).forEach(x -> shot.add(x.getId()));
+            t.check(shot.size() == 2, "arrows after the second step: " + shot.size());
+        });
+        t.at(next + second.length + 1, () -> {
+            t.check(s.move == null, "the volley did not end: " + s.move);
+            t.check(!MoveServer.request(p, first, false, a.getId()), "a new volley before its 25 s");
+        }).run(next + second.length + 2);
     }
 
     /**

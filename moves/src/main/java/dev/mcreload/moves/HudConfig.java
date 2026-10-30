@@ -17,7 +17,7 @@ public final class HudConfig {
 
     public static final ForgeConfigSpec.EnumValue<Style> STYLE;
     public static final ForgeConfigSpec.EnumValue<Shape> SHAPE;
-    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS, TRAY, KICK_CUTSCENE;
+    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS, TRAY, KICK_CUTSCENE, ATTACK_CAMERA;
 
     /** The moves the player may switch off, in the order of the settings' page. */
     public enum Moves {
@@ -39,8 +39,9 @@ public final class HudConfig {
         PLUNGE("plunge", "The blade driven into the ground on landing from a fall, a sword or an axe in hand."),
         LEDGE_GRAB("ledgeGrab", "Catching a ledge: the right button in a jump or a fall."),
         AUTO_HANG("autoHang", "Down onto a ledge: Ctrl + W + C at a drop."),
-        LEDGE_HOPS("ledgeHops", "The hops along a ledge: R while hanging."),
-        VOLLEY("bowVolley", "The bow volley: a full draw, then the left button."),
+        LEDGE_HOPS("ledgeHops", "The hops along a ledge (A / D while hanging) and the leap to another edge looked at (Space)."),
+        VOLLEY("bowVolley", "G with a bow: the volley, three arrows (held: the hail, 5 to 10 spread out)."),
+        MARKS("bowMarks", "The bow's marks (the right button held, the left one on a mob) and the volley at the marked (the right button let go)."),
         FLOW("bowFlow", "The bow's combat flow after the volley: the left button dodges and shoots."),
         LEGOLAS("legolas", "The Legolas stance: R with the bow fully drawn.");
 
@@ -83,6 +84,10 @@ public final class HudConfig {
         KICK_CUTSCENE = b.comment("The vault with a kick is a cutscene: the camera goes behind the player from first person and the",
                         "view narrows as time seems to slow (author, 2026-10-29).")
                 .define("kickCutscene", true);
+        ATTACK_CAMERA = b.comment("In first person the camera goes behind the player for an attack (the dash, the finishers, G, the attack out",
+                        "of a slide, the blade into the ground) and comes back after it, so the move is seen (author, 2026-10-30).",
+                        "false: the camera stays, the arms are drawn in front of it.")
+                .define("attackCamera", true);
         b.pop();
         SPEC = b.build();
     }
@@ -93,6 +98,7 @@ public final class HudConfig {
     public static boolean arrows() { return get(ARROWS, true); }
     public static boolean tray() { return get(TRAY, true); }
     public static boolean kickCutscene() { return get(KICK_CUTSCENE, true); }
+    public static boolean attackCamera() { return get(ATTACK_CAMERA, true); }
 
     private static <T> T get(ForgeConfigSpec.ConfigValue<T> value, T fallback) {
         try {

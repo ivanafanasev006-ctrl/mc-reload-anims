@@ -83,6 +83,13 @@ public final class Stamina {
     public final java.util.Map<Integer, Integer> whirlHits = new java.util.HashMap<>();
     /** Ticks before the next sword's turn (G with a sword; both ends, as the dash's). */
     public int spinCooldown;
+    /** The bow's marks (Marks; both ends): the marked mob's entity id to the game time the mark ends, in the order made. */
+    public final java.util.LinkedHashMap<Integer, Long> marks = new java.util.LinkedHashMap<>();
+    /** Ticks before the next volley at the marked (both ends, as the dash's). */
+    public int markedCooldown;
+    /** The volley at the marked (server): the mobs shot at in it so far, and whether the step going on has shot its arrow. */
+    public final java.util.Set<Integer> markedShot = new java.util.HashSet<>();
+    public boolean stepShot;
     /** Ticks before the next attack out of a slide (both ends, as the dash's). */
     public int slideAttackCooldown;
     /** The facing when the attack out of a slide started (both ends): it ends half a turn round from it. */
@@ -178,6 +185,8 @@ public final class Stamina {
         if (slideAttackCooldown > 0) slideAttackCooldown--;
         if (whirlCooldown > 0) whirlCooldown--;
         if (spinCooldown > 0) spinCooldown--;
+        if (markedCooldown > 0) markedCooldown--;
+        if (!marks.isEmpty() && p.tickCount % 10 == 0) Marks.prune(p, this);
         if (move == null) return;
         boolean wasLow = low();
         moveTick++;

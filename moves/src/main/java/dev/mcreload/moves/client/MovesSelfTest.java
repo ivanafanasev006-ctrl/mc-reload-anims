@@ -69,6 +69,10 @@ public final class MovesSelfTest {
                             int[] shots, boolean panel) {}
 
     private static Phase phase = Phase.BOOT;
+    /** The move at the last look (a scenario's own record). */
+    private static Move lastMove;
+    /** The arrows left at the last look (a scenario's own count). */
+    private static int arrowsWere = -1;
     private static int timer, index, tick;
     private static final List<Scenario> SCENARIOS = new ArrayList<>();
     private static final List<String> REPORT = new ArrayList<>();
@@ -147,6 +151,12 @@ public final class MovesSelfTest {
                 camera(mc, CameraType.THIRD_PERSON_BACK);
                 if (t == 8) MoveAnimator.play(mc.player, Move.DODGE_BACK);
             }, java.util.stream.IntStream.rangeClosed(8, 26).toArray(), true));
+            // The forward roll with an axe, seen from the front (the author's video of 2026-10-30, 23:01).
+            SCENARIOS.add(new Scenario("42_frames_roll_axe", 32, sp -> place(sp, 0, new ItemStack(Items.IRON_AXE)), (mc, t) -> {
+                camera(mc, CameraType.THIRD_PERSON_FRONT);
+                if (t == 8) press(mc, MovesClient.DODGE, mc.options.keyUp);
+                if (t == 10) release(mc);
+            }, java.util.stream.IntStream.rangeClosed(8, 26).toArray(), true));
         }
         dodge("23_dodge_front", Move.DODGE_FRONT, mc -> mc.options.keyUp);
         slide("30_slide_tap", false, false);
@@ -215,7 +225,7 @@ public final class MovesSelfTest {
         slideAttack("96_slide_attack", CameraType.THIRD_PERSON_BACK);
         slideAttack("97_slide_attack_first_person", CameraType.FIRST_PERSON);
         fallRoll("98_fall_roll", CameraType.THIRD_PERSON_BACK);
-        ledgeJump("80_ledge_jump_catch_shimmy_climb", CameraType.THIRD_PERSON_BACK);
+        ledgeJump("80_ledge_jump_hops_leap_climb", CameraType.THIRD_PERSON_BACK);
         ledgeJump("84_ledge_first_person", CameraType.FIRST_PERSON);
         ledgeFall("81_ledge_catch_falling");
         ledgeDown("82_ledge_auto_hang_and_hops");
@@ -254,7 +264,8 @@ public final class MovesSelfTest {
             }
         }, new int[]{8, 10, 12, 16}, true));
 
-        // ---- the bow: a full draw, then the left button (the volley); the right button stays held
+        // ---- the bow: G (the volley; author, 2026-10-30, 23:01: on G now, its arrows 0.55 s apart); the
+        // right button stays held from before it
         SCENARIOS.add(new Scenario("80_bow_volley", 70, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
             sp.getInventory().add(new ItemStack(Items.ARROW, 10));
@@ -267,11 +278,13 @@ public final class MovesSelfTest {
             if (t == 26) {
                 startPos = mc.player.position();
                 note("volley: drawn " + mc.player.getTicksUsingItem() + " ticks");
-                mc.options.keyAttack.setDown(true);
+                KeyMapping.click(MovesClient.ABILITY.getKey());
             }
-            if (t == 27) {
-                mc.options.keyAttack.setDown(false);
-                note("volley: move " + Stamina.of(mc.player).move);
+            if (t == 28) note("volley: move " + Stamina.of(mc.player).move + " (G tapped)");
+            if (t >= 28 && t <= 66) {
+                int left = mc.player.getInventory().countItem(Items.ARROW);
+                if (left != arrowsWere && arrowsWere >= 0) note("volley: an arrow left at tick " + (t - 28) + " of the volley");
+                arrowsWere = left;
             }
             if (t == 55) {
                 Vec3 d = mc.player.position().subtract(startPos);
@@ -279,7 +292,7 @@ public final class MovesSelfTest {
                         -d.z, mc.player.getInventory().countItem(Items.ARROW), mc.player.isUsingItem()));
             }
             if (t == 66) mc.options.keyUse.setDown(false);
-        }, new int[]{26, 29, 33, 37, 41, 46, 52, 60}, true));
+        }, new int[]{26, 29, 33, 39, 44, 50, 55, 60}, true));
 
         // ---- after the volley, the right button still held: on one knee, creeping and aiming; then
         // the flow: each left click a dodge (none: a spin in place; A: a roll to the left; S: a hop
@@ -294,9 +307,10 @@ public final class MovesSelfTest {
                 mc.options.keyUse.setDown(true);
                 KeyMapping.click(mc.options.keyUse.getKey());
             }
-            if (t == 26 || t == 80 || t == 125 || t == 170 || t == 201 || t == 246) mc.options.keyAttack.setDown(true);
-            if (t == 27 || t == 81 || t == 126 || t == 171 || t == 202 || t == 247) mc.options.keyAttack.setDown(false);
-            if (t == 56) {
+            if (t == 26) KeyMapping.click(MovesClient.ABILITY.getKey());
+            if (t == 80 || t == 125 || t == 170 || t == 201 || t == 246) mc.options.keyAttack.setDown(true);
+            if (t == 81 || t == 126 || t == 171 || t == 202 || t == 247) mc.options.keyAttack.setDown(false);
+            if (t == 68) {
                 note("flow: kneeling " + BowStance.kneeling(mc.player) + ", drawing " + mc.player.isUsingItem() + ", in the flow " + BowStance.inFlow());
                 startPos = mc.player.position();
             }
@@ -367,6 +381,105 @@ public final class MovesSelfTest {
 
         // ---- the bow in close combat: three blows at a husk (with Better Combat its strikes: from the
         // side, overhead, a thrust; without it vanilla's swing)
+        // ---- G held: the hail, five to ten arrows spread about the look, the slide a block longer
+        SCENARIOS.add(new Scenario("85_bow_hail", 70, sp -> {
+            place(sp, 0, new ItemStack(Items.BOW));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 20));
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 6) {
+                startPos = mc.player.position();
+                KeyMapping.click(MovesClient.ABILITY.getKey());
+            }
+            MovesClient.ABILITY.setDown(t >= 6 && t < 44);
+            if (t == 12) note("hail: move " + Stamina.of(mc.player).move + " (G held)");
+            if (t == 66) note(String.format(Locale.ROOT, "hail: G held 1.9 s, %d arrows, slid back %.2f blocks (the volley: 1.85)",
+                    20 - mc.player.getInventory().countItem(Items.ARROW), -mc.player.position().subtract(startPos).z));
+        }, new int[]{10, 14, 18, 24, 30, 38, 46, 56}, true));
+
+        // ---- the marks (the right button held, the left one on a mob), then the right button let go: the
+        // volley at the marked; three zombies, the middle one behind a pillar
+        SCENARIOS.add(new Scenario("86_bow_marks_volley", 100, sp -> {
+            place(sp, 0, new ItemStack(Items.BOW));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 20));
+            Stamina.of(sp).markedCooldown = 0;
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -4, 9, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0, 11, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 5, 8, 20f);
+            for (int y = Y + 1; y <= Y + 3; y++) sp.serverLevel().setBlock(BlockPos.containing(sp.getX(), y, sp.getZ() + 8), Blocks.STONE_BRICKS.defaultBlockState(), 2);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            LocalPlayer p = mc.player;
+            if (t == 1) Stamina.of(p).markedCooldown = 0;
+            if (t == 2) {
+                mc.options.keyUse.setDown(true);
+                KeyMapping.click(mc.options.keyUse.getKey());
+            }
+            List<net.minecraft.world.entity.Entity> mobs = dummies(mc);
+            for (int k = 0; k < 3; k++) {
+                if (k < mobs.size() && t == 8 + 6 * k) lookAt(p, mobs.get(k).position().add(0, 1.0, 0));
+                if (k < mobs.size() && t == 10 + 6 * k) mc.options.keyAttack.setDown(true);
+                if (t == 11 + 6 * k) mc.options.keyAttack.setDown(false);
+            }
+            if (t == 27) {
+                lookAt(p, p.getEyePosition().add(0, 0, 10));
+                note(String.format(Locale.ROOT, "marks: %d marked, %d of them in sight, the bow drawn %d ticks", Stamina.of(p).marks.size(),
+                        dev.mcreload.moves.Marks.inSight(p, Stamina.of(p)).size(), p.getTicksUsingItem()));
+                arrowsWere = p.getInventory().countItem(Items.ARROW);
+            }
+            if (t == 30) mc.options.keyUse.setDown(false);
+            if (t == 32) note("marked volley: " + Stamina.of(p).move + ", the volley's wait " + Stamina.of(p).markedCooldown / 20 + " s");
+            if (t >= 30 && t <= 50) {
+                Stamina st = Stamina.of(p);
+                if (st.move != lastMove) note("marked volley t=" + t + ": " + st.move + (st.move == null ? "" : " at tick " + st.moveTick)
+                        + ", yaw " + Math.round(p.getYRot()));
+                lastMove = st.move;
+            }
+            if (t == 70) {
+                StringBuilder hurt = new StringBuilder();
+                for (net.minecraft.world.entity.Entity e : dummies(mc)) {
+                    hurt.append(String.format(Locale.ROOT, " %.0f", ((net.minecraft.world.entity.LivingEntity) e).getHealth()));
+                }
+                note(String.format(Locale.ROOT, "marked volley: %d arrows, the zombies' health (left, middle behind the pillar, right):%s",
+                        arrowsWere - p.getInventory().countItem(Items.ARROW), hurt));
+                dummyReport(mc, "marked volley", true);
+            }
+        }, new int[]{20, 26, 31, 33, 35, 37, 39, 41, 44, 60}, true));
+
+        // ---- G at two marked mobs: the volley's arrows at them in turn, the player turned to each
+        SCENARIOS.add(new Scenario("87_bow_g_marked", 70, sp -> {
+            place(sp, 0, new ItemStack(Items.BOW));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 20));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -4, 9, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 5, 8, 20f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            LocalPlayer p = mc.player;
+            if (t == 2) {
+                mc.options.keyUse.setDown(true);
+                KeyMapping.click(mc.options.keyUse.getKey());
+            }
+            List<net.minecraft.world.entity.Entity> mobs = dummies(mc);
+            for (int k = 0; k < 2; k++) {
+                if (k < mobs.size() && t == 6 + 4 * k) lookAt(p, mobs.get(k).position().add(0, 1.0, 0));
+                if (k < mobs.size() && t == 8 + 4 * k) mc.options.keyAttack.setDown(true);
+                if (t == 9 + 4 * k) mc.options.keyAttack.setDown(false);
+            }
+            if (t == 16) {
+                mc.options.keyUse.setDown(false);
+                lookAt(p, p.getEyePosition().add(0, 0, 10));
+            }
+            if (t == 18) KeyMapping.click(MovesClient.ABILITY.getKey());
+            if (t == 66) {
+                StringBuilder hurt = new StringBuilder();
+                for (net.minecraft.world.entity.Entity e : dummies(mc)) {
+                    hurt.append(String.format(Locale.ROOT, " %.0f", ((net.minecraft.world.entity.LivingEntity) e).getHealth()));
+                }
+                note("G at two marked: the zombies' health (left, right):" + hurt + " (1 and 3 into the first, 2 into the second)");
+                dummyReport(mc, "G at the marked", true);
+            }
+        }, new int[]{12, 30, 40, 52}, true));
+
         SCENARIOS.add(new Scenario("84_bow_strikes", 56, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
             net.minecraft.world.entity.monster.Husk z = net.minecraft.world.entity.EntityType.HUSK.create(sp.serverLevel());
@@ -663,7 +776,9 @@ public final class MovesSelfTest {
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.8, 0.4, 20f);
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -0.6, -1.8, 20f);
         }, (mc, t) -> {
-            camera(mc, camera);
+            // first person only at the start: the attack takes the camera behind (Cutscene) and gives it back
+            if (t <= 1) camera(mc, camera);
+            if (t == 12 || t == 40) note(name + ": the camera at tick " + t + ": " + mc.options.getCameraType());
             if (t == 1) Stamina.of(mc.player).spinCooldown = 0;
             if (t == 8) {
                 startPos = mc.player.position();
@@ -885,11 +1000,24 @@ public final class MovesSelfTest {
         }
     }
 
-    /** Running at the wall, a jump with the right button: caught; D along it; R and D: a hop; W + Space: up. */
+    /**
+     * Running at the wall, a jump with the right button: caught; D held: the hops one after another
+     * along it; a pillar a block higher across a gap looked at (green), Space: the leap
+     * onto its edge; a pillar too far looked at (red); W + Space: up onto the pillar, a carpet on its top
+     * (author, 2026-10-30, 23:01).
+     */
     private static void ledgeJump(String name, CameraType camera) {
-        SCENARIOS.add(new Scenario(name, 160, sp -> {
+        SCENARIOS.add(new Scenario(name, 150, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
             ledgeWall(sp);
+            ServerLevel level = sp.serverLevel();
+            for (int y = Y + 1; y <= Y + 4; y++) {
+                for (int z = 3; z <= 4; z++) {
+                    level.setBlock(new BlockPos(LEDGE_X - 5, y, z), Blocks.STONE_BRICKS.defaultBlockState(), 2);
+                    level.setBlock(new BlockPos(LEDGE_X - 14, y, z), Blocks.STONE_BRICKS.defaultBlockState(), 2);
+                }
+            }
+            level.setBlock(new BlockPos(LEDGE_X - 5, Y + 5, 3), Blocks.WHITE_CARPET.defaultBlockState(), 2);
             // a short run-up: the jump starts half a block from the wall (the hand reaches only the edge right in front)
             sp.teleportTo(sp.serverLevel(), LEDGE_X + 0.5, Y + 1, 2.0, 0f, 0f);
         }, (mc, t) -> {
@@ -907,34 +1035,60 @@ public final class MovesSelfTest {
                         Stamina.of(p).move, Y + 4 - p.getY(), 3 - (p.getZ() + 0.3)));
                 startPos = p.position();
             }
-            // D: along the edge by hand, then (in the hop mode) the hops one after another (two blocks of wall are left)
-            mc.options.keyRight.setDown((t >= 20 && t < 40) || (t >= 48 && t < 74));
-            if (t == 30) note(name + ": along the edge " + Stamina.of(p).move);
-            if (t == 44) note(String.format(Locale.ROOT, "%s: went %.2f blocks along the edge in 1 s, still %s", name,
-                    p.position().subtract(startPos).horizontalDistance(), Stamina.of(p).move));
-            if (t == 46) KeyMapping.click(MovesClient.DODGE.getKey());
-            if (t == 48) {
-                note(name + ": " + Stamina.of(p).move + " after R (the hop mode)");
+            // D held: the hops one after another (no creeping along the edge any more)
+            mc.options.keyRight.setDown(t >= 18 && t < 44);
+            if (t == 24) note(name + ": D held: " + Stamina.of(p).move);
+            if (t == 58) note(String.format(Locale.ROOT, "%s: D held 1.3 s, the hops went %.2f blocks, now %s at x %.2f", name,
+                    p.position().subtract(startPos).horizontalDistance(), Stamina.of(p).move, p.getX()));
+            // the pillar's edge across the gap: looked at, lit green; Space: the leap
+            if (t >= 60 && t < 70) lookAt(p, new Vec3(LEDGE_X - 4.6, Y + 4.85, 3.0));
+            if (t == 66) note(name + ": the pillar's edge looked at: " + aimNote());
+            if (t == 70) {
                 startPos = p.position();
-            }
-            if (t == 52) note(name + ": hop " + Stamina.of(p).move);
-            if (t == 92) note(String.format(Locale.ROOT, "%s: D held 1.3 s, the hops went %.2f blocks, now %s", name,
-                    p.position().subtract(startPos).horizontalDistance(), Stamina.of(p).move));
-            if (t == 94) {
-                mc.options.keyUp.setDown(true);
+                KeyMapping.click(mc.options.keyJump.getKey());
                 mc.options.keyJump.setDown(true);
             }
-            if (t == 96) {
+            if (t == 71) {
+                mc.options.keyJump.setDown(false);
+                note(name + ": Space: " + Stamina.of(p).move);
+            }
+            if (t == 92) note(String.format(Locale.ROOT, "%s: after the leap %s, %.2f blocks across, the edge %.2f higher, feet %.2f below it",
+                    name, Stamina.of(p).move, p.position().subtract(startPos).horizontalDistance(), Stamina.of(p).ledgeTop - (Y + 4),
+                    Stamina.of(p).ledgeTop - p.getY()));
+            // a pillar too far: lit red
+            if (t >= 94 && t < 102) lookAt(p, new Vec3(LEDGE_X - 13.5, Y + 4.85, 3.0));
+            if (t == 100) note(name + ": the far pillar looked at: " + aimNote());
+            if (t == 102) p.setYRot(0f);
+            if (t == 106) {
+                mc.options.keyUp.setDown(true);
+                mc.options.keyJump.setDown(true);
+                minHeight = p.getHealth();
+            }
+            if (t == 108) {
                 mc.options.keyUp.setDown(false);
                 mc.options.keyJump.setDown(false);
                 note(name + ": climbing " + Stamina.of(p).move);
             }
-            if (t == 94) minHeight = p.getHealth();
-            if (t > 94 && t < 150) minHeight = Math.min(minHeight, p.getHealth());
-            if (t == 150) note(String.format(Locale.ROOT, "%s: lowest health on the climb %.1f", name, minHeight));
-            if (t == 150) note(String.format(Locale.ROOT, "%s: after the climb feet %.2f above the top, %.2f onto it, on the ground %s, %s",
-                    name, p.getY() - (Y + 4), p.getZ() - 3, p.onGround(), Stamina.of(p).move));
-        }, new int[]{8, 12, 16, 24, 30, 36, 52, 58, 64, 70, 76, 80, 100, 104, 108, 112, 118, 130}, camera != CameraType.FIRST_PERSON));
+            if (t > 106 && t < 145) minHeight = Math.min(minHeight, p.getHealth());
+            if (t == 145) note(String.format(Locale.ROOT, "%s: lowest health on the climb %.1f; after it feet %.3f above the pillar's top "
+                    + "(the carpet: 0.062), on the ground %s, %s", name, minHeight, p.getY() - (Y + 5), p.onGround(), Stamina.of(p).move));
+        }, new int[]{8, 12, 16, 22, 28, 34, 40, 50, 66, 72, 74, 76, 78, 82, 92, 100, 110, 114, 118, 122, 130}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /** The player looking at a point (the camera with them). */
+    private static void lookAt(LocalPlayer p, Vec3 at) {
+        float[] look = dev.mcreload.moves.Marks.look(at.subtract(p.getEyePosition()));
+        p.setYRot(look[0]);
+        p.setXRot(look[1]);
+        p.setYHeadRot(look[0]);
+    }
+
+    /** What the edge looked at from the hang is: none, or green (in reach) or red, where. */
+    private static String aimNote() {
+        dev.mcreload.moves.Ledge.Target aim = LedgeInput.aim;
+        if (aim == null) return "none";
+        return String.format(Locale.ROOT, "%s, the edge's top %.2f, x %.2f", aim.reachable() ? "green (in reach)" : "red (too far)",
+                aim.spot().top(), aim.spot().at().x);
     }
 
     /**
@@ -1125,6 +1279,14 @@ public final class MovesSelfTest {
 
     /** The test mob's health and place, from the server (and it goes away with {@code clear}). */
     /** The nearest of the self-test's mobs to the player, on this client. */
+    /** The self-test's mobs on this client, from the player's left to their right (facing +Z: from +X to -X). */
+    private static List<net.minecraft.world.entity.Entity> dummies(Minecraft mc) {
+        List<net.minecraft.world.entity.Entity> out = new ArrayList<>(mc.level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class,
+                mc.player.getBoundingBox().inflate(16)));
+        out.sort((a, b) -> Double.compare(b.getX(), a.getX()));
+        return out;
+    }
+
     private static net.minecraft.world.entity.Entity nearestDummy(Minecraft mc) {
         net.minecraft.world.entity.Entity best = null;
         for (var e : mc.level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, mc.player.getBoundingBox().inflate(12))) {

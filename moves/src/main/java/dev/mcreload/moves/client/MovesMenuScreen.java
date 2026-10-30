@@ -30,7 +30,7 @@ public final class MovesMenuScreen extends Screen {
     /** The attacks, then the moves and the rest, as the menu lists them. */
     private static final HudConfig.Moves[] ATTACKS = {HudConfig.Moves.SWORD_SPIN, HudConfig.Moves.WHIRL, HudConfig.Moves.DASH,
             HudConfig.Moves.FINISHER, HudConfig.Moves.SLIDE_ATTACK, HudConfig.Moves.KICK, HudConfig.Moves.ROLL_KICK,
-            HudConfig.Moves.PLUNGE, HudConfig.Moves.VOLLEY, HudConfig.Moves.FLOW, HudConfig.Moves.LEGOLAS};
+            HudConfig.Moves.PLUNGE, HudConfig.Moves.VOLLEY, HudConfig.Moves.MARKS, HudConfig.Moves.FLOW, HudConfig.Moves.LEGOLAS};
     private static final HudConfig.Moves[] MOVES = {HudConfig.Moves.DODGES, HudConfig.Moves.ROLLS, HudConfig.Moves.FAST_RUN,
             HudConfig.Moves.SLIDE, HudConfig.Moves.VAULT, HudConfig.Moves.DIVE, HudConfig.Moves.GUARD, HudConfig.Moves.FALL_ROLL,
             HudConfig.Moves.LEDGE_GRAB, HudConfig.Moves.AUTO_HANG, HudConfig.Moves.LEDGE_HOPS};
@@ -63,6 +63,7 @@ public final class MovesMenuScreen extends Screen {
         for (HudConfig.Moves m : MOVES) rows.move(m);
         rows.header("kinetrix_moves.menu.view");
         rows.toggle("kinetrix_moves.settings.move.kickCutscene", HudConfig.kickCutscene(), HudConfig.KICK_CUTSCENE::set);
+        rows.toggle("kinetrix_moves.settings.move.attackCamera", HudConfig.attackCamera(), HudConfig.ATTACK_CAMERA::set);
         addWidget(rows);
         int bw = Math.min(150, (width - 30) / 2);
         addRenderableWidget(Button.builder(Component.translatable("kinetrix_moves.menu.look"), b -> {

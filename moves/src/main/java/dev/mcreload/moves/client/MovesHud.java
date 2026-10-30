@@ -218,6 +218,8 @@ public final class MovesHud {
         if (ability != null) out.add(ability);
         if (Strikes.sword(p) && HudConfig.Moves.DASH.on()) out.add(Move.DASH);
         if (Strikes.finisherWeapon(p) && HudConfig.Moves.SLIDE_ATTACK.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_ATTACK);
+        // the volley at the marked (by its first step)
+        if (dev.mcreload.moves.Bow.isBow(p.getMainHandItem()) && HudConfig.Moves.MARKS.on()) out.add(Move.MARKED_SPIN_LEFT);
         return out;
     }
 
@@ -228,6 +230,7 @@ public final class MovesHud {
             case WHIRL -> MovesConfig.whirlCooldownTicks();
             case SWORD_SPIN -> MovesConfig.swordSpinCooldownTicks();
             case SLIDE_ATTACK -> MovesConfig.slideAttackCooldownTicks();
+            case MARKED_SPIN_LEFT -> MovesConfig.markedCooldownTicks();
             default -> 0;
         };
     }
@@ -314,6 +317,7 @@ public final class MovesHud {
         return switch (move) {
             case DASH -> shortKey(mc.options.keyAttack) + "+" + shortKey(mc.options.keyUse);
             case SLIDE_ATTACK -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
+            case MARKED_SPIN_LEFT -> "↑" + shortKey(mc.options.keyUse);
             default -> shortKey(MovesClient.ABILITY);
         };
     }

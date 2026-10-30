@@ -20,7 +20,7 @@ import java.util.WeakHashMap;
 /**
  * The drawn bow's moves on the player's side (docs/combat-spec.md, 6.2-6.4).
  *
- * <p><b>The flow.</b> After the volley, with the right button still held, the player stays on one
+ * <p><b>The flow.</b> After the volley (G), with the right button held, the player stays on one
  * knee, draws the next arrow at once and creeps along (6.2). Each left click then is a dodge by the
  * keys held (A / D a roll to that side, S a hop back, none a spin almost in place, W a spin
  * forward) and straight after it the round's next pose: crouched, standing, on one knee, and
@@ -101,14 +101,17 @@ public final class BowStance {
         Minecraft mc = Minecraft.getInstance();
         boolean local = p == mc.player;
         boolean bow = Bow.isBow(p.getMainHandItem()) && (!local || mc.options.keyUse.isDown());
-        if (move == Move.BARRAGE || move == Move.FLOW_KNEEL) {
-            if (bow && p.onGround() && (move != Move.BARRAGE || reached >= KNELT)) {
+        if (move.volley() || move == Move.FLOW_KNEEL) {
+            if (bow && p.onGround() && (!move.volley() || reached >= KNELT)) {
                 HOLDING.put(p, new HeldPose(Hold.KNEEL));
                 MoveAnimator.playKneel(p);
-                if (local && move == Move.BARRAGE && dev.mcreload.moves.HudConfig.Moves.FLOW.on()) startMode(Mode.FLOW);
+                if (local && move.volley() && dev.mcreload.moves.HudConfig.Moves.FLOW.on()) startMode(Mode.FLOW);
             } else {
                 MoveAnimator.stop(p, 4);
             }
+        } else if (move.marked()) {
+            // the volley at the marked is over: its last step's frame is not held
+            MoveAnimator.stop(p, 4);
         } else if (move.legolas()) {
             // The spin's last frame is held (the animation stops there by itself) until the next one.
             if (bow) HOLDING.put(p, new HeldPose(Hold.SIDE));
@@ -225,7 +228,7 @@ public final class BowStance {
      * Which way a dodge with the bow goes: the way the movement keys point (S + A: back and to the
      * left), unit length and horizontal; zero with none (almost in place).
      */
-    private static Vec3 keys(Minecraft mc) {
+    static Vec3 keys(Minecraft mc) {
         float r = mc.player.getYRot() * Mth.DEG_TO_RAD;
         // Minecraft's own strafe maths (Entity.moveRelative): forward = (-sin, cos), left = (cos, sin).
         Vec3 forward = new Vec3(-Mth.sin(r), 0, Mth.cos(r)), left = new Vec3(Mth.cos(r), 0, Mth.sin(r));

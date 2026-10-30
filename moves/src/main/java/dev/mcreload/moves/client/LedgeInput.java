@@ -28,9 +28,11 @@ import net.minecraft.world.phys.Vec3;
  *   carried back to it): one hand catches it. Then the button can be let go. It goes before
  *   everything else the right button does (author: the sword block, placing a block, stripping a
  *   log...), in the air.</li>
- *   <li><b>Hanging.</b> A / D: hand over hand along the edge, as far as it goes, while there is
- *   energy. R: the hop mode, in which A / D held hop a block at a time, one hop after another
- *   (R again: back). W + Space: a quick pull-up onto the top, running on from it.</li>
+ *   <li><b>Hanging.</b> A / D held: hops a block at a time, one after another, round the block's
+ *   corners and onto the next block a step up or down (author, 2026-10-30, 23:01: only the hops, no
+ *   creeping along the edge). Another edge looked at lights up, green within the leap's reach, red
+ *   out of it (LedgeAim); Space: the leap there. W + Space: a quick pull-up onto the top, running on
+ *   from it.</li>
  *   <li><b>Letting go.</b> S + R, C, S + Space or the left button.</li>
  *   <li><b>A friend.</b> The right button on a player hanging below the edge one stands on: they are
  *   pulled up.</li>
@@ -48,9 +50,12 @@ public final class LedgeInput {
     /** Where the move started from (the friend pulling, the climb down's walk to the edge) and the facing then. */
     private static Vec3 from;
     private static float fromYaw;
-    /** The hop mode (R while hanging): A / D hop instead of going hand over hand. */
-    private static boolean hopMode;
     private static boolean useWasDown;
+    /** The edge looked at while hanging (LedgeAim draws it), null: none. */
+    static Ledge.Target aim;
+    /** The leap going on: from where, to where, the turn on the way. */
+    private static Vec3 leapFrom, leapTo;
+    private static float leapYawFrom, leapYawTo, leapYawWas;
     /** The edge caught behind (just gone over): where the player was and their facing, carried back to the hang over CATCH ticks. */
     private static Vec3 catchFrom;
     private static float catchYaw;
@@ -60,7 +65,7 @@ public final class LedgeInput {
     private static float hopYawFrom, hopYawTo, hopYawWas;
 
     static void reset() {
-        hopMode = false;
+        aim = null;
     }
 
     /**
@@ -73,6 +78,7 @@ public final class LedgeInput {
         boolean usePressed = useDown && !useWasDown;
         useWasDown = useDown;
         Move m = s.move;
+        aim = m != null && m.hanging() && HudConfig.Moves.LEDGE_HOPS.on() ? Ledge.aimed(p, p.position(), Ledge.dir(s.ledgeDir), s.ledgeTop) : null;
         if (m != null && m.ledge()) {
             onLedge(mc, p, s, dodgePressed, jumpPressed, slidePressed, attackPressed);
             swallowUse(mc);
@@ -157,9 +163,16 @@ public final class LedgeInput {
                 letGo(p, s);
                 return;
             }
+            // Space: the leap to the edge looked at (W + Space onto the top, if there is room there)
+            Vec3 top = Ledge.onTop(p.level(), p.position(), d, s.ledgeTop);
+            boolean climb = up && Ledge.fits(p, top);
+            if (jumpPressed && !climb && aim != null) {
+                if (aim.reachable() && HudConfig.Moves.LEDGE_HOPS.on()) leap(p, s, d, aim.spot());
+                else p.displayClientMessage(Component.translatable("kinetrix_moves.ledge.too_far"), true);
+                return;
+            }
             if (up && jumpPressed) {
-                Vec3 top = Ledge.onTop(p.position(), d, s.ledgeTop);
-                if (Ledge.fits(p, top)) {
+                if (climb) {
                     hangAt = p.position();
                     MovesClient.start(p, s, Move.LEDGE_CLIMB, s.ledgeDir);
                 } else {
@@ -167,34 +180,14 @@ public final class LedgeInput {
                 }
                 return;
             }
-            if (dodgePressed && !back && HudConfig.Moves.LEDGE_HOPS.on()) {
-                if (left != right) {
-                    hop(p, s, d, left, true);
-                } else {
-                    hopMode = !hopMode;
-                    p.displayClientMessage(Component.translatable(hopMode ? "kinetrix_moves.ledge.hops" : "kinetrix_moves.ledge.shimmy"), true);
-                }
-                return;
-            }
-            if (left != right && hopMode) {
-                hop(p, s, d, left, true);
-                return;
-            }
-            // creeping along costs energy by the second: with none left the player only hangs
-            Move want = left == right || !s.hasEnergy(p) ? Move.LEDGE_HANG : left ? Move.LEDGE_SHIMMY_LEFT : Move.LEDGE_SHIMMY_RIGHT;
-            if (want != Move.LEDGE_HANG && !Ledge.holds(p.level(), p.position().add(side(d, want == Move.LEDGE_SHIMMY_LEFT).scale(0.32)), d, s.ledgeTop)) {
-                // the edge ends there: round the block's corner, into the wall at the side, or onto the
-                // next block a step up or down, if there is one (a hop); else the hands stay
-                if (HudConfig.Moves.LEDGE_HOPS.on() && hop(p, s, d, left, false)) return;
-                want = Move.LEDGE_HANG;
-            }
-            if (want != m) MovesClient.start(p, s, want, s.ledgeDir);
+            // A / D: hops along the edge (and round its corners, onto the next block a step up or down)
+            if (left != right && HudConfig.Moves.LEDGE_HOPS.on() && s.hasEnergy(p)) hop(p, s, d, left, true);
             return;
         }
-        // In the hop mode, A or D held: the next hop as the second hand takes the edge (author: one
-        // after another, almost without a pause); the way the keys say, so it can turn back too.
+        // A or D held: the next hop as the second hand takes the edge (author: one after another,
+        // almost without a pause); the way the keys say, so it can turn back too.
         boolean hopping = m == Move.LEDGE_HOP_LEFT || m == Move.LEDGE_HOP_RIGHT;
-        if (hopping && hopMode && left != right && s.moveTick >= Move.HOP_CHAIN) {
+        if (hopping && left != right && s.moveTick >= Move.HOP_CHAIN) {
             hop(p, s, d, left, true);
             if (s.move != m || s.moveTick == 0) return;
         }
@@ -203,8 +196,8 @@ public final class LedgeInput {
             MovesClient.cancel(p, s, 3);
             return;
         }
-        // A move on the edge that ends in the hang: the hop and the climb down hand over to it before they run out.
-        if ((hopping || m == Move.LEDGE_DOWN) && s.moveTick >= m.length - 4) {
+        // A move on the edge that ends in the hang: the hop, the leap and the climb down hand over to it before they run out.
+        if ((hopping || m == Move.LEDGE_LEAP || m == Move.LEDGE_DOWN) && s.moveTick >= m.length - 4) {
             MovesClient.start(p, s, Move.LEDGE_HANG, s.ledgeDir);
         }
     }
@@ -237,6 +230,23 @@ public final class LedgeInput {
         return false;
     }
 
+    /** The leap to another edge (Space, the edge looked at within reach): the player is carried there and turned to its wall. */
+    private static void leap(LocalPlayer p, Stamina s, Direction d, Ledge.Spot to) {
+        int dirWas = s.ledgeDir;
+        double topWas = s.ledgeTop;
+        s.ledgeDir = Ledge.id(to.dir());
+        s.ledgeTop = to.top();
+        leapFrom = p.position();
+        leapTo = to.at();
+        leapYawFrom = d.toYRot();
+        leapYawTo = to.yaw();
+        leapYawWas = leapYawFrom;
+        if (MovesClient.start(p, s, Move.LEDGE_LEAP, Ledge.leapTarget(to.dir(), to.top() - topWas))) return;
+        s.ledgeDir = dirWas;
+        s.ledgeTop = topWas;
+        leapFrom = null;
+    }
+
     /** Where the hop has carried the player at {@code f} of its way (0-1): straight, or round the corner's point. */
     private static Vec3 hopAt(float f) {
         if (hopVia == null) return hopFrom.add(hopTo.subtract(hopFrom).scale(f));
@@ -253,7 +263,6 @@ public final class LedgeInput {
     }
 
     private static void letGo(LocalPlayer p, Stamina s) {
-        hopMode = false;
         MovesClient.cancel(p, s, 4);
         // a little away from the wall, so the fall does not scrape it
         Direction d = Ledge.dir(s.ledgeDir);
@@ -264,7 +273,6 @@ public final class LedgeInput {
         if (!MoveServer.allowed(p, s, move)) return false;
         s.ledgeDir = Ledge.id(spot.dir());
         s.ledgeTop = spot.top();
-        hopMode = false;
         if (move == Move.LEDGE_HANG) {
             if (catchFrom == null) p.setPos(spot.at());     // caught behind: place() carries the player back to it
             p.setDeltaMovement(Vec3.ZERO);
@@ -295,7 +303,6 @@ public final class LedgeInput {
     /** Our own player was pulled up by a friend (the server says so): it hangs where it is. */
     static void pulled(LocalPlayer p, Stamina s) {
         hangAt = p.position();
-        hopMode = false;
     }
 
     // ------------------------------------------------------------------ carrying the player
@@ -303,6 +310,7 @@ public final class LedgeInput {
     /** A move on the edge has started: one that ends a carry (a hop, the climb down) hangs from where it got to. */
     static void started(LocalPlayer p, Move move, Move was) {
         if (move != Move.LEDGE_HOP_LEFT && move != Move.LEDGE_HOP_RIGHT) hopFrom = null;
+        if (move != Move.LEDGE_LEAP) leapFrom = null;
         if (move == Move.LEDGE_HANG && was != null && was.ledge() && !was.hanging()) hangAt = p.position();
         // only a fresh catch behind is carried back (not the hang after a hop or the climb down)
         if (move != Move.LEDGE_HANG || (was != null && was.ledge())) catchFrom = null;
@@ -331,12 +339,22 @@ public final class LedgeInput {
         if (hangAt == null) hangAt = p.position();
         Vec3 at;
         switch (m) {
-            case LEDGE_SHIMMY_LEFT, LEDGE_SHIMMY_RIGHT -> {
-                Vec3 step = side(d, m == Move.LEDGE_SHIMMY_LEFT);
-                Vec3 next = hangAt.add(step.scale(Ledge.SHIMMY_SPEED));
-                // as far as the edge goes (the hand ahead still on it) and there is room
-                if (Ledge.holds(p.level(), next.add(step.scale(0.3)), d, s.ledgeTop) && Ledge.fits(p, next)) hangAt = next;
-                at = hangAt;
+            case LEDGE_LEAP -> {
+                if (leapFrom == null) {
+                    at = hangAt;
+                    break;
+                }
+                float f = Mth.clamp((t + 1 - Ledge.LEAP_PUSH) / (float) (Ledge.LEAP_CATCH - Ledge.LEAP_PUSH), 0f, 1f);
+                at = Ledge.leapAt(leapFrom, leapTo, f);
+                // turned to the other edge's wall on the way, the camera too
+                float yaw = Mth.rotLerp(f, leapYawFrom, leapYawTo);
+                p.setYRot(p.getYRot() + Mth.wrapDegrees(yaw - leapYawWas));
+                leapYawWas = yaw;
+                p.setPos(at);
+                p.setDeltaMovement(Vec3.ZERO);
+                p.fallDistance = 0f;
+                p.yBodyRot = yaw;
+                return;
             }
             case LEDGE_HOP_LEFT, LEDGE_HOP_RIGHT -> {
                 float f = Paths.lerp("ledge_hop", t * Move.HOP_SPEED, 0);
@@ -422,7 +440,11 @@ public final class LedgeInput {
      * player for stuck in the block and pushes them out, over the edge.
      */
     private static Vec3 onTop(Vec3 at, Stamina s) {
-        return at.y > s.ledgeTop - 0.02 ? new Vec3(at.x, s.ledgeTop + 1.0E-4, at.z) : at;
+        if (at.y <= s.ledgeTop - 0.02) return at;
+        // on a carpet or a snow layer there, if any (the hand took the edge under it)
+        Minecraft mc = Minecraft.getInstance();
+        double layer = mc.level == null ? 0 : Ledge.layer(mc.level, at, s.ledgeTop);
+        return new Vec3(at.x, s.ledgeTop + Math.max(1.0E-4, layer), at.z);
     }
 
     /** The climb's path from where the player hung: up, and forward onto the top. */
@@ -433,8 +455,8 @@ public final class LedgeInput {
     /** The bodies of other players on an edge face its wall (their heads may look round). */
     static void faceWall(AbstractClientPlayer p, Stamina s) {
         if (s.move == null || !s.move.ledge() || s.ledgeDir < 0) return;
-        // a hop may go round a corner: the body turns with the player meanwhile
-        if (s.move == Move.LEDGE_HOP_LEFT || s.move == Move.LEDGE_HOP_RIGHT) return;
+        // a hop may go round a corner, a leap to another wall: the body turns with the player meanwhile
+        if (s.move == Move.LEDGE_HOP_LEFT || s.move == Move.LEDGE_HOP_RIGHT || s.move == Move.LEDGE_LEAP) return;
         float yaw = Ledge.dir(s.ledgeDir).toYRot();
         p.yBodyRot = yaw;
         p.yBodyRotO = yaw;

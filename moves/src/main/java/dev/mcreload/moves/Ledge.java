@@ -16,9 +16,15 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * The ledge (author, 2026-10-29): the right button held near a block higher than the player in a
  * jump, or falling past one, or just after going over a drop (a run, a slide or a roll off it;
  * author's fourth message), catches its edge with one hand; then the player hangs until they let
- * go (S + R, C, S + Space or the left button), moves along it (A / D, or hops a block at a time in
- * the hop mode R toggles), climbs onto it (W + Space) or a friend standing above pulls them up (the
- * right button on them). Ctrl + W + C at a drop lowers the player over its edge into the hang.
+ * go (S + R, C, S + Space or the left button), hops along it a block at a time (A / D; round its
+ * corners and onto the next block a step up or down), leaps to another edge they look at (Space;
+ * {@link #aimed}), climbs onto it (W + Space) or a friend standing above pulls them up (the right
+ * button on them). Ctrl + W + C at a drop lowers the player over its edge into the hang.
+ *
+ * <p>The author, 2026-10-30, 23:01: "it must ignore a carpet or a snow layer under half a block; it
+ * can climb onto the block above or below or the next one if it is close, and if it is far, aim by
+ * looking at it, it lights up green or red, then Space and he leaps there; keep only the mode that
+ * was on R, so he only hops and does not creep along the edge".</p>
  *
  * <p>Where the edge is (the animations were made to it, tools/blockbench/refined/ledge_2026-10-29):
  * its top {@link #HANG} blocks above the hanging player's feet, its face against the front of their
@@ -33,8 +39,6 @@ public final class Ledge {
     public static final double HANG = 31 * 0.9375 / 16;
     /** Half the player's width: the hitbox's front is on the wall's face. */
     public static final double HALF = 0.3;
-    /** Hand over hand along the edge: the animation's 10 px a second at 15/16, a tick. */
-    public static final double SHIMMY_SPEED = 10 * 0.9375 / 16 / 20;
     /**
      * How far from the wall (between it and the front of the hitbox) the hand still reaches its
      * edge (author, 2026-10-29: only right at the edge; from the far side of a block the hand does
@@ -153,7 +157,7 @@ public final class Ledge {
      * every side of a block): into a wall at the side, turning to it (an inner corner); a block along
      * the same edge; onto the next block's edge a step up or down (half a block or a block); round the
      * end of the block to its side (an outer corner). Null: nowhere to go. {@code straight}: the
-     * plain hop along the same edge counts too (the shimmy asks only for the others).
+     * plain hop along the same edge counts too (at the end of an edge only the others are asked for).
      */
     public static Step next(Player p, Vec3 at, Direction d, double top, boolean left, boolean straight) {
         Level level = p.level();
@@ -227,7 +231,8 @@ public final class Ledge {
     /**
      * The top of an edge in column (bx, bz) between lo and hi: a block with something to stand on
      * (its collision at least half a block high) and room above it for a hand (nothing solid in the
-     * block above). NaN: none.
+     * block above; a carpet or a snow layer lower than half a block on it does not count, the hand
+     * takes the edge under it: author, 2026-10-30). NaN: none.
      */
     static double topIn(Level level, int bx, int bz, double lo, double hi) {
         for (int by = Mth.floor(hi); by >= Mth.floor(lo) - 1; by--) {
@@ -239,11 +244,20 @@ public final class Ledge {
             if (h < 0.5 || top < lo || top > hi) continue;
             BlockPos up = pos.above();
             VoxelShape above = level.getBlockState(up).getCollisionShape(level, up);
-            if (!above.isEmpty() && above.min(Direction.Axis.Y) < 0.6) continue;
+            if (!above.isEmpty() && above.min(Direction.Axis.Y) < 0.6 && above.max(Direction.Axis.Y) >= 0.5) continue;
             if (h > 1.0) continue;   // a fence or a wall: nothing to hold on its top
             return top;
         }
         return Double.NaN;
+    }
+
+    /** How high a thin layer (a carpet, snow under half a block) lies on the top of an edge at {@code top}, at {@code at}: 0 for none. */
+    public static double layer(Level level, Vec3 at, double top) {
+        BlockPos pos = BlockPos.containing(at.x, top + 1.0E-3, at.z);
+        VoxelShape shape = level.getBlockState(pos).getCollisionShape(level, pos);
+        if (shape.isEmpty()) return 0.0;
+        double h = shape.max(Direction.Axis.Y);
+        return h < 0.5 && shape.min(Direction.Axis.Y) < 1.0E-3 ? h : 0.0;
     }
 
     /** The player's hitbox has room at {@code at}. */
@@ -252,9 +266,10 @@ public final class Ledge {
         return p.level().noCollision(p, box);
     }
 
-    /** Where the climb onto the edge ends (on the top, 0.3 block from its edge), and whether there is room. */
-    public static Vec3 onTop(Vec3 hang, Direction d, double top) {
-        return new Vec3(hang.x + d.getStepX() * 0.6, top, hang.z + d.getStepZ() * 0.6);
+    /** Where the climb onto the edge ends (on the top, 0.3 block from its edge; on a carpet or a snow layer there, if any). */
+    public static Vec3 onTop(Level level, Vec3 hang, Direction d, double top) {
+        Vec3 at = new Vec3(hang.x + d.getStepX() * 0.6, top, hang.z + d.getStepZ() * 0.6);
+        return at.add(0, layer(level, at, top), 0);
     }
 
     /**
@@ -305,6 +320,111 @@ public final class Ledge {
         return id(d) | ((int) Math.round(rise * 2) + 4) << 2;
     }
 
+    /** A leap's target in the request: the way of the edge it goes to and how many half blocks higher it is (as a hop's, wider). */
+    public static int leapTarget(Direction d, double rise) {
+        return id(d) | ((int) Math.round(rise * 2) + LEAP_OFF) << 2;
+    }
+
+    private static final int LEAP_OFF = 40;
+
+    // ------------------------------------------------------------------ the leap (Space, an edge looked at)
+
+    /** An edge looked at from the hang: where the player would hang from it, and whether the leap reaches it. */
+    public record Target(Spot spot, boolean reachable) {}
+
+    /** How far the eyes look for an edge to leap to (blocks). */
+    public static final double LOOK = 10.0;
+    /** The leap: when the feet push off the wall and when the hands take the other edge (the animation's 0.22 s and 0.5 s). */
+    public static final int LEAP_PUSH = 4, LEAP_CATCH = 10;
+
+    /**
+     * The edge the player hanging at {@code hang} (from the wall that way, {@code top} high) looks at:
+     * the top edge of the face of a block looked at, or of the side of a block's top facing the player
+     * (the one nearest the point looked at). Null: no edge there (no room above it to hold, nor in
+     * front of it to hang, or the edge held now). Reachable: within MovesConfig's reach and no block on
+     * the way.
+     */
+    public static Target aimed(Player p, Vec3 hang, Direction d, double top) {
+        Level level = p.level();
+        Vec3 eye = p.getEyePosition();
+        Vec3 end = eye.add(Vec3.directionFromRotation(p.getXRot(), p.getYRot()).scale(LOOK));
+        net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(eye, end,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, p));
+        if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return null;
+        BlockPos b = hit.getBlockPos();
+        Vec3 at = hit.getLocation();
+        Direction wall;
+        if (hit.getDirection().getAxis().isHorizontal()) {
+            wall = hit.getDirection().getOpposite();
+        } else if (hit.getDirection() == Direction.UP) {
+            // the top looked at: its edge on the side nearest the point looked at, the drop beyond it
+            double fx = at.x - b.getX(), fz = at.z - b.getZ();
+            double[] gaps = {fz, 1 - fx, 1 - fz, fx};   // to the north, east, south, west sides
+            Direction[] sides = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
+            int best = -1;
+            for (int i = 0; i < 4; i++) {
+                BlockPos out = b.relative(sides[i]);
+                if (!level.getBlockState(out).getCollisionShape(level, out).isEmpty()) continue;
+                if (best < 0 || gaps[i] < gaps[best]) best = i;
+            }
+            if (best < 0) return null;
+            wall = sides[best].getOpposite();
+        } else {
+            return null;
+        }
+        double t = topIn(level, b.getX(), b.getZ(), b.getY() - 0.05, b.getY() + 1.05);
+        if (Double.isNaN(t)) return null;
+        // where along the edge: the point looked at, a hitbox's half in from the block's ends if it is narrow
+        Vec3 along = new Vec3(Mth.clamp(at.x, b.getX() + HALF, b.getX() + 1 - HALF), 0, Mth.clamp(at.z, b.getZ() + HALF, b.getZ() + 1 - HALF));
+        Vec3 there = hangAt(along, wall, face(b.getX(), b.getZ(), wall), t);
+        if (!holds(level, there, wall, t) || !fits(p, there)) return null;
+        if (there.distanceTo(hang) < 0.5 && wall == d) return null;
+        Spot spot = new Spot(wall, t, there);
+        return new Target(spot, reaches(p, hang, spot));
+    }
+
+    /** The strip along the top of the edge the hands take (a block long, its face's side of the top), for the aim's outline. */
+    public static AABB edgeBox(Spot s) {
+        Direction d = s.dir();
+        Vec3 probe = s.at().add(d.getStepX() * (HALF + 0.02), 0, d.getStepZ() * (HALF + 0.02));
+        int bx = Mth.floor(probe.x), bz = Mth.floor(probe.z);
+        double w = 0.14, lo = s.top() - 0.07, hi = s.top() + 0.07;
+        return switch (d) {
+            case EAST -> new AABB(bx, lo, bz, bx + w, hi, bz + 1);
+            case WEST -> new AABB(bx + 1 - w, lo, bz, bx + 1, hi, bz + 1);
+            case SOUTH -> new AABB(bx, lo, bz, bx + 1, hi, bz + w);
+            default -> new AABB(bx, lo, bz + 1 - w, bx + 1, hi, bz + 1);
+        };
+    }
+
+    /** The leap from the hang at {@code hang} gets to {@code to}: near enough, and nothing in its way. */
+    public static boolean reaches(Player p, Vec3 hang, Spot to) {
+        double across = new Vec3(to.at().x - hang.x, 0, to.at().z - hang.z).length(), rise = to.at().y - hang.y;
+        if (across > MovesConfig.ledgeLeapReach() || rise > MovesConfig.ledgeLeapUp() + 0.01 || -rise > MovesConfig.ledgeLeapDown() + 0.01) return false;
+        // the body clears the way (the first and last stretch along the walls are the hang's own room)
+        for (float f = 0.2f; f < 0.85f; f += 0.15f) {
+            if (!fits(p, leapAt(hang, to.at(), f))) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Where the leap from {@code from} to {@code to} has carried the player at {@code f} (0-1) of its
+     * flight: an even way across, up over an arc a little above the higher end (half a block, more
+     * for a longer leap). [default]
+     */
+    public static Vec3 leapAt(Vec3 from, Vec3 to, float f) {
+        double across = new Vec3(to.x - from.x, 0, to.z - from.z).length();
+        double over = Math.max(0.0, to.y - from.y) + 0.35 + 0.08 * across;
+        double y0 = from.y, y1 = to.y;
+        // a parabola through both ends whose highest point is `over` above the start
+        double a = over, b = y1 - y0;
+        double k = Math.sqrt(a * Math.max(a - b, 1.0E-6));
+        double h = (a + k) > 1.0E-6 ? 2 * (a + k) : 0;   // y(f) = y0 + h f - (h - b) f^2 has its top a above y0
+        double y = y0 + h * f - (h - b) * f * f;
+        return new Vec3(from.x + (to.x - from.x) * f, y, from.z + (to.z - from.z) * f);
+    }
+
     /** The direction (0-3, Direction's 2D value) as it travels in packets, and back. */
     public static int id(Direction d) {
         return d.get2DDataValue();
@@ -334,6 +454,12 @@ public final class Ledge {
             if (move == Move.LEDGE_HOP_LEFT || move == Move.LEDGE_HOP_RIGHT) {
                 int step = (dirId >> 2) - 4;
                 if (Math.abs(step) > 2) return false;
+                s.ledgeDir = dirId & 3;
+                s.ledgeTop += step * 0.5;
+            }
+            if (move == Move.LEDGE_LEAP) {
+                int step = (dirId >> 2) - LEAP_OFF;
+                if (step > Math.round(MovesConfig.ledgeLeapUp() * 2) + 1 || step < -Math.round(MovesConfig.ledgeLeapDown() * 2) - 1) return false;
                 s.ledgeDir = dirId & 3;
                 s.ledgeTop += step * 0.5;
             }
@@ -371,8 +497,6 @@ public final class Ledge {
         if (s.move == null || (!s.move.ledge() && s.move != Move.LEDGE_HELP)) return;
         p.fallDistance = 0f;
         if (s.move.throughEdge()) p.noPhysics = true;
-        // creeping along costs energy by the second (author: every move eats energy)
-        if (s.move == Move.LEDGE_SHIMMY_LEFT || s.move == Move.LEDGE_SHIMMY_RIGHT) s.spend(MovesConfig.shimmyPerSecond() / 20f, p);
     }
 
     /**
