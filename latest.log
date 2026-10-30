@@ -1,0 +1,789 @@
+[18:53:17] [main/INFO]: ModLauncher running: args [--launchTarget, forgeclient, --fml.forgeVersion, 47.4.20, --fml.mcVersion, 1.20.1, --fml.forgeGroup, net.minecraftforge, --fml.mcpVersion, 20230612.114412, --username, Tester, --version, forge-1.20.1-47.4.20, --gameDir, /home/runner/work/mc-reload-anims/mc-reload-anims/mc, --assetsDir, /home/runner/work/mc-reload-anims/mc-reload-anims/mc/assets, --assetIndex, 5, --uuid, f3d28cb072253cb1baeb2dadd2be89ae, --accessToken, ❄❄❄❄❄❄❄❄, --clientId, , --xuid, , --userType, , --versionType, release, --width, 960, --height, 540]
+[18:53:17] [main/INFO]: ModLauncher 10.0.9+10.0.9+main.dcd20f30 starting: java version 17.0.21 by Eclipse Adoptium; OS Linux arch amd64 version 7.0.0-1017-azure
+[18:53:17] [main/WARN]: Configuration file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/config/fml.toml is not correct. Correcting
+[18:53:17] [main/INFO]: Incorrect key [earlyWindowSkipGLVersions] was corrected from null to []
+[18:53:17] [main/INFO]: Incorrect key [earlyWindowLogHelpMessage] was corrected from null to true
+[18:53:17] [main/INFO]: Incorrect key [earlyWindowSquir] was corrected from null to false
+[18:53:17] [main/INFO]: Incorrect key [earlyWindowShowCPU] was corrected from null to false
+[18:53:17] [main/INFO]: Loading ImmediateWindowProvider fmlearlywindow
+[18:53:17] [main/INFO]: Trying GL version 4.6
+[18:53:17] [main/INFO]: If this message is the only thing at the bottom of your log before a crash, you probably have a driver issue.
+
+Possible solutions:
+A) Make sure Minecraft is set to prefer high performance graphics in the OS and/or driver control panel
+B) Check for driver updates on the graphics brand's website
+C) Try reinstalling your graphics drivers
+D) If still not working after trying all of the above, ask for further help on the Forge forums or Discord
+
+You can safely ignore this message if the game starts up successfully.
+[18:53:20] [main/INFO]: Requested GL version 4.6 got version 4.6
+[18:53:20] [main/INFO]: SpongePowered MIXIN Subsystem Version=0.8.5 Source=union:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/spongepowered/mixin/0.8.5/mixin-0.8.5.jar%2388!/ Service=ModLauncher Env=CLIENT
+[18:53:20] [pool-2-thread-1/INFO]: GL info: llvmpipe (LLVM 20.1.2, 256 bits) GL version 4.6 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.4, Mesa
+[18:53:20] [main/INFO]: Found mod file entity_model_features_forge_1.20.1-2.2.jar of type MOD with provider {mods folder locator at /home/runner/work/mc-reload-anims/mc-reload-anims/mc/mods}
+[18:53:20] [main/INFO]: Found mod file entity_texture_features_forge_1.20.1-6.2.9.jar of type MOD with provider {mods folder locator at /home/runner/work/mc-reload-anims/mc-reload-anims/mc/mods}
+[18:53:20] [main/INFO]: Found mod file kinetrix-1.20.1-1.1.1-beta.jar of type MOD with provider {mods folder locator at /home/runner/work/mc-reload-anims/mc-reload-anims/mc/mods}
+[18:53:20] [main/INFO]: Found mod file oculus-mc1.20.1-1.8.0.jar of type MOD with provider {mods folder locator at /home/runner/work/mc-reload-anims/mc-reload-anims/mc/mods}
+[18:53:20] [main/INFO]: Found mod file player-animation-lib-forge-1.0.2-rc1+1.20.jar of type MOD with provider {mods folder locator at /home/runner/work/mc-reload-anims/mc-reload-anims/mc/mods}
+[18:53:20] [main/INFO]: Found mod file skinlayers3d-forge-1.11.1-mc1.20.1.jar of type MOD with provider {mods folder locator at /home/runner/work/mc-reload-anims/mc-reload-anims/mc/mods}
+[18:53:20] [main/INFO]: Found mod file xenon-0.3.31%2bmc1.20.1.jar of type MOD with provider {mods folder locator at /home/runner/work/mc-reload-anims/mc-reload-anims/mc/mods}
+[18:53:20] [main/WARN]: Mod file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/fmlcore/1.20.1-47.4.20/fmlcore-1.20.1-47.4.20.jar is missing mods.toml file
+[18:53:20] [main/WARN]: Mod file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/javafmllanguage/1.20.1-47.4.20/javafmllanguage-1.20.1-47.4.20.jar is missing mods.toml file
+[18:53:20] [main/WARN]: Mod file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/lowcodelanguage/1.20.1-47.4.20/lowcodelanguage-1.20.1-47.4.20.jar is missing mods.toml file
+[18:53:20] [main/WARN]: Mod file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/mclanguage/1.20.1-47.4.20/mclanguage-1.20.1-47.4.20.jar is missing mods.toml file
+[18:53:20] [main/INFO]: Found mod file fmlcore-1.20.1-47.4.20.jar of type LIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@61a5b4ae
+[18:53:20] [main/INFO]: Found mod file javafmllanguage-1.20.1-47.4.20.jar of type LANGPROVIDER with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@61a5b4ae
+[18:53:20] [main/INFO]: Found mod file lowcodelanguage-1.20.1-47.4.20.jar of type LANGPROVIDER with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@61a5b4ae
+[18:53:20] [main/INFO]: Found mod file mclanguage-1.20.1-47.4.20.jar of type LANGPROVIDER with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@61a5b4ae
+[18:53:20] [main/INFO]: Found mod file client-1.20.1-20230612.114412-srg.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@61a5b4ae
+[18:53:20] [main/INFO]: Found mod file forge-1.20.1-47.4.20-universal.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@61a5b4ae
+[18:53:20] [main/INFO]: Found 6 dependencies adding them to mods collection
+[18:53:20] [main/INFO]: Found mod file mixinextras-forge-0.4.1.jar of type GAMELIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@312afbc7
+[18:53:20] [main/INFO]: Found mod file TRender-1.0.12-1.20.1-forge-SNAPSHOT.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@312afbc7
+[18:53:20] [main/INFO]: Found mod file TRansition-1.0.17-1.20.1-forge-SNAPSHOT.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@312afbc7
+[18:53:20] [main/INFO]: Found mod file jcpp-1.4.14.jar of type GAMELIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@312afbc7
+[18:53:20] [main/INFO]: Found mod file httpmime-4.5.10.jar of type GAMELIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@312afbc7
+[18:53:20] [main/INFO]: Found mod file MixinExtras-0.4.1.jar of type GAMELIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@312afbc7
+[18:53:22] [main/INFO]: Compatibility level set to JAVA_17
+[18:53:22] [main/ERROR]: Mixin config entity_model_features.mixins.json does not specify "minVersion" property
+[18:53:22] [main/INFO]: Launching target 'forgeclient' with arguments [--version, forge-1.20.1-47.4.20, --gameDir, /home/runner/work/mc-reload-anims/mc-reload-anims/mc, --assetsDir, /home/runner/work/mc-reload-anims/mc-reload-anims/mc/assets, --uuid, f3d28cb072253cb1baeb2dadd2be89ae, --username, Tester, --assetIndex, 5, --accessToken, ❄❄❄❄❄❄❄❄, --clientId, , --xuid, , --userType, , --versionType, release, --width, 960, --height, 540]
+[18:53:22] [main/INFO]: Loaded configuration file for Xenon: 67 options available, 3 override(s) found
+[18:53:22] [main/INFO]: Searching for graphics cards...
+[18:53:22] [main/WARN]: No graphics cards were found. Either you have no hardware devices supporting 3D acceleration, or something has gone terribly wrong!
+[18:53:22] [main/WARN]: Unable to determine desktop session type because the environment variable XDG_SESSION_TYPE is not set! Your user session may not be configured correctly.
+[18:53:23] [main/WARN]: Error loading class: net/raphimc/immediatelyfast/feature/core/BatchableBufferSource (java.lang.ClassNotFoundException: net.raphimc.immediatelyfast.feature.core.BatchableBufferSource)
+[18:53:23] [main/WARN]: Error loading class: mekanism/client/render/entity/RenderFlame (java.lang.ClassNotFoundException: mekanism.client.render.entity.RenderFlame)
+[18:53:23] [main/WARN]: Error loading class: mekanism/client/render/armor/MekaSuitArmor (java.lang.ClassNotFoundException: mekanism.client.render.armor.MekaSuitArmor)
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.world.sky.WorldRendererMixin' as rule 'mixin.features.render.world.sky' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.world.sky.ClientWorldMixin' as rule 'mixin.features.render.world.sky' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.world.sky.BackgroundRendererMixin' as rule 'mixin.features.render.world.sky' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.gui.font.GlyphRendererMixin' as rule 'mixin.features.render.gui.font' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.gui.font.FontSetMixin' as rule 'mixin.features.render.gui.font' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.entity.shadows.EntityRenderDispatcherMixin' as rule 'mixin.features.render.entity' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.entity.remove_streams.ModelPartMixin' as rule 'mixin.features.render.entity' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.entity.remove_streams.HierarchicalModelMixin' as rule 'mixin.features.render.entity' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.entity.fast_render.ModelPartMixin' as rule 'mixin.features.render.entity' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.entity.fast_render.CuboidMixin' as rule 'mixin.features.render.entity' (added by mods [oculus]) disables it and children
+[18:53:23] [main/WARN]: Force-disabling mixin 'features.render.entity.cull.EntityRendererMixin' as rule 'mixin.features.render.entity' (added by mods [oculus]) disables it and children
+[18:53:23] [main/INFO]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.4.1).
+[18:53:28] [Datafixer Bootstrap/INFO]: 188 Datafixer optimizations took 251 milliseconds
+[18:53:29] [main/WARN]: Unrecognized user type: 
+[18:53:30] [Render thread/WARN]: Assets URL 'union:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraft/client/1.20.1-20230612.114412/client-1.20.1-20230612.114412-srg.jar%23160!/assets/.mcassetsroot' uses unexpected schema
+[18:53:30] [Render thread/WARN]: Assets URL 'union:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraft/client/1.20.1-20230612.114412/client-1.20.1-20230612.114412-srg.jar%23160!/data/.mcassetsroot' uses unexpected schema
+[18:53:30] [Render thread/INFO]: Environment: authHost='https://authserver.mojang.com', accountsHost='https://api.mojang.com', sessionHost='https://sessionserver.mojang.com', servicesHost='https://api.minecraftservices.com', name='PROD'
+[18:53:30] [Render thread/ERROR]: Failed to verify authentication
+com.mojang.authlib.exceptions.InvalidCredentialsException: Status: 401
+	at com.mojang.authlib.exceptions.MinecraftClientHttpException.toAuthenticationException(MinecraftClientHttpException.java:56) ~[authlib-4.0.43.jar%2399!/:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:156) ~[authlib-4.0.43.jar%2399!/:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.<init>(YggdrasilUserApiService.java:55) ~[authlib-4.0.43.jar%2399!/:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService.createUserApiService(YggdrasilAuthenticationService.java:124) ~[authlib-4.0.43.jar%2399!/:?]
+	at net.minecraft.client.Minecraft.m_193585_(Minecraft.java:649) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.<init>(Minecraft.java:413) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.main.Main.main(Main.java:182) ~[forge-1.20.1-47.4.20.jar:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?]
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?]
+Caused by: com.mojang.authlib.exceptions.MinecraftClientHttpException: Status: 401
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:85) ~[authlib-4.0.43.jar%2399!/:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:48) ~[authlib-4.0.43.jar%2399!/:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:129) ~[authlib-4.0.43.jar%2399!/:?]
+	... 20 more
+[18:53:30] [Render thread/INFO]: Setting user: Tester
+[18:53:30] [Render thread/INFO]: Backend library: LWJGL version 3.3.1 build 7
+[18:53:30] [Render thread/INFO]: OpenGL Vendor: Mesa
+[18:53:30] [Render thread/INFO]: OpenGL Renderer: llvmpipe (LLVM 20.1.2, 256 bits)
+[18:53:30] [Render thread/INFO]: OpenGL Version: 4.6 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.4
+[18:53:30] [Render thread/WARN]: Loading xenon++Config
+[18:53:30] [Render thread/WARN]: Configuration file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/config/xenon++.toml is not correct. Correcting
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.general was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.general.fullscreen was corrected from null to its default, WINDOWED. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.general.fpsDisplay was corrected from null to its default, FRAMETIME. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.general.fpsDisplayGravity was corrected from null to its default, LEFT. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.general.fpsDisplaySystem was corrected from null to its default, OFF. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.general.fpsDisplayMargin was corrected from null to its default, 12. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.general.fpsDisplayShadow was corrected from null to its default, false. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.fog was corrected from null to its default, true. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.cloudsHeight was corrected from null to its default, 192. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.chunkFadeSpeed was corrected from null to its default, SLOW. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.mode was corrected from null to its default, OFF. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.enableOnOverworld was corrected from null to its default, true. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.enableOnNether was corrected from null to its default, false. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.netherFogBright was corrected from null to its default, 0.5. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.enableOnEnd was corrected from null to its default, false. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.endFogBright was corrected from null to its default, 0.5. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.valueByDefault was corrected from null to its default, false. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.dimensionWhitelist was corrected from null to its default, []. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.enableOnNoSkyLight was corrected from null to its default, false. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.enableBlockLightOnly was corrected from null to its default, false. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.affectedByMoonPhase was corrected from null to its default, true. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.fullMoonBright was corrected from null to its default, 0.25. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.quality.darkness.newMoonBright was corrected from null to its default, 0.0. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.hideJREI was corrected from null to its default, false. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.fontShadows was corrected from null to its default, true. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.tileEntities was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.tileEntities.enable was corrected from null to its default, true. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.tileEntities.cullingMaxDistanceX was corrected from null to its default, 4096. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.tileEntities.cullingMaxDistanceY was corrected from null to its default, 32. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.tileEntities.whitelist was corrected from null to its default, [waterframes:*]. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.entities was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.entities.enable was corrected from null to its default, true. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.entities.cullingMaxDistanceX was corrected from null to its default, 4096. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.entities.cullingMaxDistanceY was corrected from null to its default, 32. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.entities.hostileEntityModifier was corrected from null to its default, 100. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.performance.distanceCulling.entities.whitelist was corrected from null to its default, [minecraft:ghast, minecraft:ender_dragon, iceandfire:*, create:*]. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.others was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:30] [Render thread/WARN]: Incorrect key xenonextras.others.borderlessAttachModeOnF11 was corrected from null to its default, ATTACH. 
+[18:53:30] [Render thread/WARN]: Updating config cache
+[18:53:30] [Render thread/WARN]: Cache updated successfully
+[18:53:30] [Render thread/INFO]: Debug functionality is disabled.
+[18:53:30] [Render thread/INFO]: OpenGL 4.5 detected, enabling DSA.
+[18:53:31] [Render thread/WARN]: Found flag CUSTOM_IMAGES
+[18:53:31] [Render thread/WARN]: Found flag SSBO
+[18:53:31] [Render thread/WARN]: Found flag BLOCK_EMISSION_ATTRIBUTE
+[18:53:31] [Render thread/INFO]: Profile: HIGH (+0 options changed by user)
+[18:53:32] [Render thread/INFO]: Using shaderpack: ComplementaryUnbound_r5.7.1.zip
+[18:53:32] [modloading-worker-0/INFO]: Loading Entity Model Features, the ETA is a lie.
+[18:53:32] [modloading-worker-0/INFO]: Loading Entity Texture Features, 0% Opti, 100% Fine.
+[18:53:32] [modloading-worker-0/INFO]: Forge mod loading, version 47.4.20, for MC 1.20.1 with MCP 20230612.114412
+[18:53:32] [modloading-worker-0/INFO]: MinecraftForge v47.4.20 Initialized
+[18:53:32] [modloading-worker-0/WARN]: Static binding violation: PRIVATE @Overwrite method m_109501_ in xenon.mixins.json:core.render.world.WorldRendererMixin cannot reduce visibiliy of PUBLIC target method, visibility will be upgraded.
+[18:53:33] [modloading-worker-0/INFO]: [ETF]: 6 new ETF Random Properties registered by entity_model_features.
+[18:53:33] [modloading-worker-0/INFO]: [kinetrix] self-test: 6 scenarios match '^(00_stand|60_armor_walk|61_armor_flex|70_crawl|71_sit_1|99_)'
+[18:53:33] [modloading-worker-0/INFO]: [kinetrix] SELF-TEST MODE
+[18:53:33] [modloading-worker-0/INFO]: [kinetrix] Player animations registered with playerAnimator.
+[18:53:34] [Render thread/INFO]: Hardware information:
+[18:53:34] [Render thread/INFO]: CPU: 4x AMD EPYC 9V74 80-Core Processor
+[18:53:34] [Render thread/INFO]: GPU: llvmpipe (LLVM 20.1.2, 256 bits) (Supports OpenGL 4.6 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.4)
+[18:53:34] [Render thread/INFO]: OS: Linux (7.0.0-1017-azure)
+[18:53:34] [Render thread/ERROR]: Error while loading the narrator
+com.mojang.text2speech.Narrator$InitializeException: Failed to load library flite
+	at com.mojang.text2speech.NarratorLinux$FliteLibrary.loadNative(NarratorLinux.java:69) ~[text2speech-1.17.9.jar%23105!/:?]
+	at com.mojang.text2speech.NarratorLinux.<init>(NarratorLinux.java:18) ~[text2speech-1.17.9.jar%23105!/:?]
+	at com.mojang.text2speech.Narrator.getNarrator(Narrator.java:41) ~[text2speech-1.17.9.jar%23105!/:?]
+	at net.minecraft.client.GameNarrator.<init>(GameNarrator.java:19) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.<init>(Minecraft.java:553) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.main.Main.main(Main.java:182) ~[forge-1.20.1-47.4.20.jar:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?]
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?]
+Caused by: java.lang.UnsatisfiedLinkError: Unable to load library 'flite':
+libflite.so: cannot open shared object file: No such file or directory
+libflite.so: cannot open shared object file: No such file or directory
+Native library (linux-x86-64/libflite.so) not found in resource path (/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/cpw/mods/securejarhandler/2.1.10/securejarhandler-2.1.10.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm/9.9.1/asm-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm-commons/9.9.1/asm-commons-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm-tree/9.9.1/asm-tree-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm-util/9.9.1/asm-util-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm-analysis/9.9.1/asm-analysis-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/accesstransformers/8.0.4/accesstransformers-8.0.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/antlr/antlr4-runtime/4.9.1/antlr4-runtime-4.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/eventbus/6.2.33/eventbus-6.2.33.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/forgespi/7.0.1/forgespi-7.0.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/coremods/5.2.4/coremods-5.2.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/cpw/mods/modlauncher/10.0.9/modlauncher-10.0.9.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/unsafe/0.2.0/unsafe-0.2.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/mergetool/1.1.5/mergetool-1.1.5-api.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/electronwill/night-config/core/3.6.4/core-3.6.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/electronwill/night-config/toml/3.6.4/toml-3.6.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/maven/maven-artifact/3.8.5/maven-artifact-3.8.5.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/jodah/typetools/0.6.3/typetools-0.6.3.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecrell/terminalconsoleappender/1.2.0/terminalconsoleappender-1.2.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/jline/jline-reader/3.12.1/jline-reader-3.12.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/jline/jline-terminal/3.12.1/jline-terminal-3.12.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/spongepowered/mixin/0.8.5/mixin-0.8.5.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/openjdk/nashorn/nashorn-core/15.4/nashorn-core-15.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/JarJarSelector/0.3.19/JarJarSelector-0.3.19.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/JarJarMetadata/0.3.19/JarJarMetadata-0.3.19.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/cpw/mods/bootstraplauncher/1.1.2/bootstraplauncher-1.1.2.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/JarJarFileSystems/0.3.19/JarJarFileSystems-0.3.19.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/fmlloader/1.20.1-47.4.20/fmlloader-1.20.1-47.4.20.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/fmlearlydisplay/1.20.1-47.4.20/fmlearlydisplay-1.20.1-47.4.20.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/github/oshi/oshi-core/6.2.2/oshi-core-6.2.2.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/google/code/gson/gson/2.10/gson-2.10.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/google/guava/guava/31.1-jre/guava-31.1-jre.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/ibm/icu/icu4j/71.1/icu4j-71.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/authlib/4.0.43/authlib-4.0.43.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/blocklist/1.0.10/blocklist-1.0.10.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/brigadier/1.1.8/brigadier-1.1.8.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/datafixerupper/6.0.8/datafixerupper-6.0.8.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/logging/1.1.1/logging-1.1.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/patchy/2.2.10/patchy-2.2.10.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/text2speech/1.17.9/text2speech-1.17.9.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/commons-codec/commons-codec/1.15/commons-codec-1.15.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/commons-io/commons-io/2.11.0/commons-io-2.11.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/commons-logging/commons-logging/1.2/commons-logging-1.2.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-buffer/4.1.82.Final/netty-buffer-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-codec/4.1.82.Final/netty-codec-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-common/4.1.82.Final/netty-common-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-handler/4.1.82.Final/netty-handler-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-resolver/4.1.82.Final/netty-resolver-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport-classes-epoll/4.1.82.Final/netty-transport-classes-epoll-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport-native-epoll/4.1.82.Final/netty-transport-native-epoll-4.1.82.Final-linux-aarch_64.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport-native-epoll/4.1.82.Final/netty-transport-native-epoll-4.1.82.Final-linux-x86_64.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport-native-unix-common/4.1.82.Final/netty-transport-native-unix-common-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport/4.1.82.Final/netty-transport-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/it/unimi/dsi/fastutil/8.5.9/fastutil-8.5.9.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/java/dev/jna/jna-platform/5.12.1/jna-platform-5.12.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/httpcomponents/httpclient/4.5.13/httpclient-4.5.13.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/httpcomponents/httpcore/4.4.15/httpcore-4.4.15.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/logging/log4j/log4j-api/2.19.0/log4j-api-2.19.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/logging/log4j/log4j-core/2.19.0/log4j-core-2.19.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/logging/log4j/log4j-slf4j2-impl/2.19.0/log4j-slf4j2-impl-2.19.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/joml/joml/1.10.5/joml-1.10.5.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-glfw/3.3.1/lwjgl-glfw-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-glfw/3.3.1/lwjgl-glfw-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-jemalloc/3.3.1/lwjgl-jemalloc-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-jemalloc/3.3.1/lwjgl-jemalloc-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-openal/3.3.1/lwjgl-openal-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-openal/3.3.1/lwjgl-openal-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-opengl/3.3.1/lwjgl-opengl-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-opengl/3.3.1/lwjgl-opengl-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-stb/3.3.1/lwjgl-stb-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-stb/3.3.1/lwjgl-stb-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-tinyfd/3.3.1/lwjgl-tinyfd-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-tinyfd/3.3.1/lwjgl-tinyfd-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl/3.3.1/lwjgl-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl/3.3.1/lwjgl-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/slf4j/slf4j-api/2.0.1/slf4j-api-2.0.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/versions/forge-1.20.1-47.4.20/forge-1.20.1-47.4.20.jar)
+	at com.sun.jna.NativeLibrary.loadLibrary(NativeLibrary.java:307) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+	at com.sun.jna.NativeLibrary.getInstance(NativeLibrary.java:467) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+	at com.sun.jna.NativeLibrary.getInstance(NativeLibrary.java:409) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+	at com.mojang.text2speech.NarratorLinux$FliteLibrary.loadNative(NarratorLinux.java:67) ~[text2speech-1.17.9.jar%23105!/:?]
+	... 20 more
+	Suppressed: java.lang.UnsatisfiedLinkError: libflite.so: cannot open shared object file: No such file or directory
+		at com.sun.jna.Native.open(Native Method) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.sun.jna.NativeLibrary.loadLibrary(NativeLibrary.java:197) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.sun.jna.NativeLibrary.getInstance(NativeLibrary.java:467) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.sun.jna.NativeLibrary.getInstance(NativeLibrary.java:409) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.mojang.text2speech.NarratorLinux$FliteLibrary.loadNative(NarratorLinux.java:67) ~[text2speech-1.17.9.jar%23105!/:?]
+		at com.mojang.text2speech.NarratorLinux.<init>(NarratorLinux.java:18) ~[text2speech-1.17.9.jar%23105!/:?]
+		at com.mojang.text2speech.Narrator.getNarrator(Narrator.java:41) ~[text2speech-1.17.9.jar%23105!/:?]
+		at net.minecraft.client.GameNarrator.<init>(GameNarrator.java:19) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+		at net.minecraft.client.Minecraft.<init>(Minecraft.java:553) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+		at net.minecraft.client.main.Main.main(Main.java:182) ~[forge-1.20.1-47.4.20.jar:?]
+		at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
+		at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?]
+		at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?]
+		at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?]
+		at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?]
+		at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?]
+		at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?]
+		at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?]
+	Suppressed: java.lang.UnsatisfiedLinkError: libflite.so: cannot open shared object file: No such file or directory
+		at com.sun.jna.Native.open(Native Method) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.sun.jna.NativeLibrary.loadLibrary(NativeLibrary.java:210) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.sun.jna.NativeLibrary.getInstance(NativeLibrary.java:467) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.sun.jna.NativeLibrary.getInstance(NativeLibrary.java:409) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.mojang.text2speech.NarratorLinux$FliteLibrary.loadNative(NarratorLinux.java:67) ~[text2speech-1.17.9.jar%23105!/:?]
+		at com.mojang.text2speech.NarratorLinux.<init>(NarratorLinux.java:18) ~[text2speech-1.17.9.jar%23105!/:?]
+		at com.mojang.text2speech.Narrator.getNarrator(Narrator.java:41) ~[text2speech-1.17.9.jar%23105!/:?]
+		at net.minecraft.client.GameNarrator.<init>(GameNarrator.java:19) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+		at net.minecraft.client.Minecraft.<init>(Minecraft.java:553) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+		at net.minecraft.client.main.Main.main(Main.java:182) ~[forge-1.20.1-47.4.20.jar:?]
+		at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
+		at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?]
+		at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?]
+		at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?]
+		at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?]
+		at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?]
+		at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?]
+		at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?]
+	Suppressed: java.io.IOException: Native library (linux-x86-64/libflite.so) not found in resource path (/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/cpw/mods/securejarhandler/2.1.10/securejarhandler-2.1.10.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm/9.9.1/asm-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm-commons/9.9.1/asm-commons-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm-tree/9.9.1/asm-tree-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm-util/9.9.1/asm-util-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/ow2/asm/asm-analysis/9.9.1/asm-analysis-9.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/accesstransformers/8.0.4/accesstransformers-8.0.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/antlr/antlr4-runtime/4.9.1/antlr4-runtime-4.9.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/eventbus/6.2.33/eventbus-6.2.33.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/forgespi/7.0.1/forgespi-7.0.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/coremods/5.2.4/coremods-5.2.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/cpw/mods/modlauncher/10.0.9/modlauncher-10.0.9.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/unsafe/0.2.0/unsafe-0.2.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/mergetool/1.1.5/mergetool-1.1.5-api.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/electronwill/night-config/core/3.6.4/core-3.6.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/electronwill/night-config/toml/3.6.4/toml-3.6.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/maven/maven-artifact/3.8.5/maven-artifact-3.8.5.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/jodah/typetools/0.6.3/typetools-0.6.3.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecrell/terminalconsoleappender/1.2.0/terminalconsoleappender-1.2.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/jline/jline-reader/3.12.1/jline-reader-3.12.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/jline/jline-terminal/3.12.1/jline-terminal-3.12.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/spongepowered/mixin/0.8.5/mixin-0.8.5.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/openjdk/nashorn/nashorn-core/15.4/nashorn-core-15.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/JarJarSelector/0.3.19/JarJarSelector-0.3.19.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/JarJarMetadata/0.3.19/JarJarMetadata-0.3.19.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/cpw/mods/bootstraplauncher/1.1.2/bootstraplauncher-1.1.2.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/JarJarFileSystems/0.3.19/JarJarFileSystems-0.3.19.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/fmlloader/1.20.1-47.4.20/fmlloader-1.20.1-47.4.20.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/minecraftforge/fmlearlydisplay/1.20.1-47.4.20/fmlearlydisplay-1.20.1-47.4.20.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/github/oshi/oshi-core/6.2.2/oshi-core-6.2.2.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/google/code/gson/gson/2.10/gson-2.10.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/google/guava/guava/31.1-jre/guava-31.1-jre.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/ibm/icu/icu4j/71.1/icu4j-71.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/authlib/4.0.43/authlib-4.0.43.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/blocklist/1.0.10/blocklist-1.0.10.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/brigadier/1.1.8/brigadier-1.1.8.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/datafixerupper/6.0.8/datafixerupper-6.0.8.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/logging/1.1.1/logging-1.1.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/patchy/2.2.10/patchy-2.2.10.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/com/mojang/text2speech/1.17.9/text2speech-1.17.9.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/commons-codec/commons-codec/1.15/commons-codec-1.15.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/commons-io/commons-io/2.11.0/commons-io-2.11.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/commons-logging/commons-logging/1.2/commons-logging-1.2.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-buffer/4.1.82.Final/netty-buffer-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-codec/4.1.82.Final/netty-codec-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-common/4.1.82.Final/netty-common-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-handler/4.1.82.Final/netty-handler-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-resolver/4.1.82.Final/netty-resolver-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport-classes-epoll/4.1.82.Final/netty-transport-classes-epoll-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport-native-epoll/4.1.82.Final/netty-transport-native-epoll-4.1.82.Final-linux-aarch_64.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport-native-epoll/4.1.82.Final/netty-transport-native-epoll-4.1.82.Final-linux-x86_64.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport-native-unix-common/4.1.82.Final/netty-transport-native-unix-common-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/io/netty/netty-transport/4.1.82.Final/netty-transport-4.1.82.Final.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/it/unimi/dsi/fastutil/8.5.9/fastutil-8.5.9.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/java/dev/jna/jna-platform/5.12.1/jna-platform-5.12.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/httpcomponents/httpclient/4.5.13/httpclient-4.5.13.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/httpcomponents/httpcore/4.4.15/httpcore-4.4.15.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/logging/log4j/log4j-api/2.19.0/log4j-api-2.19.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/logging/log4j/log4j-core/2.19.0/log4j-core-2.19.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/apache/logging/log4j/log4j-slf4j2-impl/2.19.0/log4j-slf4j2-impl-2.19.0.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/joml/joml/1.10.5/joml-1.10.5.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-glfw/3.3.1/lwjgl-glfw-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-glfw/3.3.1/lwjgl-glfw-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-jemalloc/3.3.1/lwjgl-jemalloc-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-jemalloc/3.3.1/lwjgl-jemalloc-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-openal/3.3.1/lwjgl-openal-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-openal/3.3.1/lwjgl-openal-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-opengl/3.3.1/lwjgl-opengl-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-opengl/3.3.1/lwjgl-opengl-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-stb/3.3.1/lwjgl-stb-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-stb/3.3.1/lwjgl-stb-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-tinyfd/3.3.1/lwjgl-tinyfd-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl-tinyfd/3.3.1/lwjgl-tinyfd-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl/3.3.1/lwjgl-3.3.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/lwjgl/lwjgl/3.3.1/lwjgl-3.3.1-natives-linux.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/libraries/org/slf4j/slf4j-api/2.0.1/slf4j-api-2.0.1.jar:/home/runner/work/mc-reload-anims/mc-reload-anims/mc/versions/forge-1.20.1-47.4.20/forge-1.20.1-47.4.20.jar)
+		at com.sun.jna.Native.extractFromResourcePath(Native.java:1145) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.sun.jna.NativeLibrary.loadLibrary(NativeLibrary.java:281) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.sun.jna.NativeLibrary.getInstance(NativeLibrary.java:467) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.sun.jna.NativeLibrary.getInstance(NativeLibrary.java:409) ~[jna-5.12.1.jar%23121!/:5.12.1 (b0)]
+		at com.mojang.text2speech.NarratorLinux$FliteLibrary.loadNative(NarratorLinux.java:67) ~[text2speech-1.17.9.jar%23105!/:?]
+		at com.mojang.text2speech.NarratorLinux.<init>(NarratorLinux.java:18) ~[text2speech-1.17.9.jar%23105!/:?]
+		at com.mojang.text2speech.Narrator.getNarrator(Narrator.java:41) ~[text2speech-1.17.9.jar%23105!/:?]
+		at net.minecraft.client.GameNarrator.<init>(GameNarrator.java:19) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+		at net.minecraft.client.Minecraft.<init>(Minecraft.java:553) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+		at net.minecraft.client.main.Main.main(Main.java:182) ~[forge-1.20.1-47.4.20.jar:?]
+		at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
+		at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?]
+		at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?]
+		at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?]
+		at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?]
+		at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?]
+		at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?]
+		at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?]
+		at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?]
+[18:53:34] [Render thread/INFO]: Reloading ResourceManager: vanilla, mod_resources, file/FreshMoves.zip, file/kinetrix-testskin
+[18:53:34] [modloading-worker-0/WARN]: Configuration file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/config/kinetrix-client.toml is not correct. Correcting
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key general was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key general.enabled was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key general.animateOtherPlayers was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key general.intensity was corrected from null to its default, 1.0. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key general.liveliness was corrected from null to its default, 0.6. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.locomotion was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.idle was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.idleActions was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.twoHandedSwords was corrected from null to its default, false. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.airborne was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.landing was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.water was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.climbing was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.combat was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.reactions was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key modules.postures was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key controls was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key controls.toggleSit was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key trails was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key trails.enabled was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key trails.lifetimeSeconds was corrected from null to its default, 0.22. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key trails.opacity was corrected from null to its default, 0.75. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key trails.color was corrected from null to its default, FFFFFF. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.harmonizer was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.fadeInSeconds was corrected from null to its default, 0.1. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.fadeOutSeconds was corrected from null to its default, 0.22. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.yieldStrength was corrected from null to its default, 0.85. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.keepLegsWhileMoving was corrected from null to its default, 0.85. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.keepHeadLook was corrected from null to its default, 0.0. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.ironsSpellsStance was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.ownMovesFirst was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.priorityOverMods was corrected from null to its default, [vintage_animations, vintageanimations]. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.wideMounts was corrected from null to its default, [dragnlivestock]. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.playerOverEmf was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.bendSkinLayers was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key compat.syncWithOtherPlayers was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key debug was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key debug.invertKnees was corrected from null to its default, false. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key debug.invertElbows was corrected from null to its default, false. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key debug.invertTorsoBend was corrected from null to its default, false. 
+[18:53:34] [modloading-worker-0/WARN]: Configuration file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/config/forge-client.toml is not correct. Correcting
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key client was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key client.alwaysSetupTerrainOffThread was corrected from null to its default, false. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key client.experimentalForgeLightPipelineEnabled was corrected from null to its default, false. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key client.showLoadWarnings was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key client.useCombinedDepthStencilAttachment was corrected from null to its default, false. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key client.compressLanIPv6Addresses was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key client.calculateAllNormals was corrected from null to its default, false. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key client.stabilizeDirectionGetNearest was corrected from null to its default, true. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key client.allowMipmapLowering was corrected from null to its default, false. 
+[18:53:34] [modloading-worker-0/WARN]: Configuration file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/config/kinetrix-common.toml is not correct. Correcting
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key riding was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:34] [modloading-worker-0/WARN]: Incorrect key riding.twoRiders was corrected from null to its default, true. 
+[18:53:34] [Worker-Main-1/INFO]: Found unifont_all_no_pua-15.0.06.hex, loading
+[18:53:36] [Render thread/INFO]: [kinetrix] Joints: drawing elbows, knees and waist ourselves
+[18:53:36] [Render thread/INFO]: [kinetrix] Skin Layers 3D detected: the 3D skin layer bends with elbows, knees and waist.
+[18:53:36] [Forge Version Check/INFO]: [forge] Starting version check at https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json
+[18:53:36] [Forge Version Check/INFO]: [forge] Found status: OUTDATED Current: 47.4.20 Target: 47.4.28
+[18:53:38] [Render thread/WARN]: Missing sound for event: minecraft:item.goat_horn.play
+[18:53:38] [Render thread/WARN]: Missing sound for event: minecraft:entity.goat.screaming.horn_break
+[18:53:38] [Render thread/ERROR]: Error starting SoundSystem. Turning off sounds & music
+java.lang.IllegalStateException: Failed to open OpenAL device
+	at com.mojang.blaze3d.audio.Library.m_193472_(Library.java:283) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at com.mojang.blaze3d.audio.Library.m_231084_(Library.java:153) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.sounds.SoundEngine.m_120323_(SoundEngine.java:104) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.sounds.SoundEngine.m_120239_(SoundEngine.java:96) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.sounds.SoundManager.m_5787_(SoundManager.java:125) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.sounds.SoundManager.m_5787_(SoundManager.java:40) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.server.packs.resources.SimplePreparableReloadListener.m_10789_(SimplePreparableReloadListener.java:13) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at java.util.concurrent.CompletableFuture$UniAccept.tryFire(CompletableFuture.java:718) ~[?:?]
+	at java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:482) ~[?:?]
+	at net.minecraft.server.packs.resources.SimpleReloadInstance.m_143940_(SimpleReloadInstance.java:69) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.BlockableEventLoop.m_6367_(BlockableEventLoop.java:156) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.ReentrantBlockableEventLoop.m_6367_(ReentrantBlockableEventLoop.java:23) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.BlockableEventLoop.m_7245_(BlockableEventLoop.java:130) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.BlockableEventLoop.m_18699_(BlockableEventLoop.java:115) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1106) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.main.Main.main(Main.java:218) ~[forge-1.20.1-47.4.20.jar:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?]
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?]
+[18:53:39] [Render thread/INFO]: Created: 1024x512x4 minecraft:textures/atlas/blocks.png-atlas
+[18:53:39] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/signs.png-atlas
+[18:53:39] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/shield_patterns.png-atlas
+[18:53:39] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/banner_patterns.png-atlas
+[18:53:39] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/armor_trims.png-atlas
+[18:53:39] [Render thread/INFO]: Created: 128x64x4 minecraft:textures/atlas/decorated_pot.png-atlas
+[18:53:39] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/chest.png-atlas
+[18:53:39] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/shulker_boxes.png-atlas
+[18:53:39] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/beds.png-atlas
+[18:53:40] [Render thread/INFO]: [kinetrix] EMF: keeping the vanilla player model (player) so Kinetrix can animate it (set compat.playerOverEmf = false to let resource packs like Fresh Moves take it).
+[18:53:40] [Render thread/WARN]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+[18:53:40] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/particles.png-atlas
+[18:53:40] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/paintings.png-atlas
+[18:53:40] [Render thread/INFO]: Created: 128x128x0 minecraft:textures/atlas/mob_effects.png-atlas
+[18:53:40] [Render thread/INFO]: [ETF]: reloading ETF data.
+[18:53:40] [Render thread/INFO]: [ETF]: emissive suffixes loaded: {_e}.
+[18:53:40] [Render thread/INFO]: [ETF]: emissive suffixes loaded: {_e}.
+[18:53:40] [Render thread/INFO]: Creating pipeline for dimension NamespacedId{namespace='minecraft', name='overworld'}
+[18:53:40] [Render thread/INFO]: Starting custom uniform resolving
+[18:53:40] [Render thread/WARN]: Failed to resolve uniform inPaleGarden, reason: Unknown variable: BIOME_PALE_GARDEN ( = FunctionCall{smooth {[Number{54}, FunctionCall{if {[FunctionCall{in {[Id{biome}, Id{BIOME_PALE_GARDEN}]} }, Number{1}, Number{0}]} }, Number{15}, Number{15}]} })
+java.lang.RuntimeException: Unknown variable: BIOME_PALE_GARDEN
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpressionInternal(ExpressionResolver.java:220) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpressionInternal(ExpressionResolver.java:81) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpression(ExpressionResolver.java:140) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpressionInternal(ExpressionResolver.java:194) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpressionInternal(ExpressionResolver.java:81) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpression(ExpressionResolver.java:140) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpression(ExpressionResolver.java:127) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpressionInternal(ExpressionResolver.java:194) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpressionInternal(ExpressionResolver.java:81) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpression(ExpressionResolver.java:140) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpressionInternal(ExpressionResolver.java:194) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpression(ExpressionResolver.java:50) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.uniforms.custom.CustomUniforms.<init>(CustomUniforms.java:62) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.uniforms.custom.CustomUniforms$Builder.build(CustomUniforms.java:334) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.uniforms.custom.CustomUniforms$Builder.build(CustomUniforms.java:345) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.pipeline.IrisRenderingPipeline.<init>(IrisRenderingPipeline.java:263) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.Iris.createPipeline(Iris.java:623) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.pipeline.PipelineManager.preparePipeline(PipelineManager.java:33) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.Iris.onLoadingComplete(Iris.java:181) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.minecraft.client.gui.screens.TitleScreen.handler$zmf000$iris$firstInit(TitleScreen.java:523) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.gui.screens.TitleScreen.m_7856_(TitleScreen.java:155) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.gui.screens.Screen.m_6575_(Screen.java:321) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91152_(Minecraft.java:1007) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_278684_(Minecraft.java:603) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.lambda$new$4(Minecraft.java:583) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.Util.m_137521_(Util.java:421) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.lambda$new$5(Minecraft.java:564) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraftforge.client.loading.ForgeLoadingOverlay.m_88315_(ForgeLoadingOverlay.java:146) ~[forge-1.20.1-47.4.20-universal.jar%23165!/:?]
+	at net.minecraft.client.renderer.GameRenderer.m_109093_(GameRenderer.java:954) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1146) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.main.Main.main(Main.java:218) ~[forge-1.20.1-47.4.20.jar:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?]
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?]
+[18:53:40] [Realms Notification Availability checker #1/INFO]: Could not authorize you against Realms server: javax.ws.rs.BadRequestException: Invalid session
+[18:53:43] [Render thread/INFO]: OpenGL debug message: id=1, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:419(15): warning: `lmCoord' used uninitialized'
+[18:53:43] [Render thread/INFO]: OpenGL debug message: id=2, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:427(15): warning: `lmCoord' used uninitialized'
+[18:53:43] [Render thread/INFO]: OpenGL debug message: id=3, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:435(15): warning: `lmCoord' used uninitialized'
+[18:53:43] [Render thread/INFO]: OpenGL debug message: id=4, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:459(22): warning: `glColorRaw' used uninitialized'
+[18:53:43] [Render thread/INFO]: OpenGL debug message: id=5, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:419(15): warning: `lmCoord' used uninitialized'
+[18:53:43] [Render thread/INFO]: OpenGL debug message: id=6, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:427(15): warning: `lmCoord' used uninitialized'
+[18:53:43] [Render thread/INFO]: OpenGL debug message: id=7, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:435(15): warning: `lmCoord' used uninitialized'
+[18:53:43] [Render thread/INFO]: OpenGL debug message: id=8, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:459(22): warning: `glColorRaw' used uninitialized'
+[18:53:43] [Render thread/INFO]: OpenGL debug message: id=9, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:419(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=10, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:411(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=11, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:419(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=12, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:427(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=13, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:413(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=14, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:421(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=15, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:429(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=16, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:410(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=17, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:418(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=18, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:426(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=19, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:407(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=20, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:415(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=21, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:423(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=22, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:408(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=23, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:416(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=24, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:424(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=25, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:408(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=26, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:416(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=27, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:424(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=28, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:409(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=29, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:417(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=30, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:425(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=31, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:410(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=32, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:418(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=33, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:426(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=34, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:410(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=35, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:418(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=36, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:426(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=37, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:409(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=38, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:417(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=39, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:425(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=40, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:408(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=41, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:416(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=42, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:424(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=43, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:410(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=44, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:418(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=45, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:426(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=46, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:410(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=47, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:418(15): warning: `lmCoord' used uninitialized'
+[18:53:48] [Render thread/INFO]: OpenGL debug message: id=48, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:426(15): warning: `lmCoord' used uninitialized'
+[18:53:49] [Render thread/INFO]: OpenGL debug message: id=49, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:408(15): warning: `lmCoord' used uninitialized'
+[18:53:49] [Render thread/INFO]: OpenGL debug message: id=50, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:416(15): warning: `lmCoord' used uninitialized'
+[18:53:49] [Render thread/INFO]: OpenGL debug message: id=51, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:424(15): warning: `lmCoord' used uninitialized'
+[18:53:49] [Render thread/WARN]: Error while parsing the block ID map entry for "block.10104":
+[18:53:49] [Render thread/WARN]: - The block minecraft:stone_slab has no property with the name variant, ignoring!
+[18:53:52] [Render thread/INFO]: Loaded 7 recipes
+[18:53:52] [Render thread/INFO]: Loaded 1271 advancements
+[18:53:53] [Render thread/INFO]: [ETF]: emissive suffixes loaded: {_e}.
+[18:53:53] [Server thread/INFO]: Starting integrated minecraft server version 1.20.1
+[18:53:53] [Server thread/INFO]: Generating keypair
+[18:53:53] [Server thread/WARN]: Configuration file /home/runner/work/mc-reload-anims/mc-reload-anims/mc/saves/New World/serverconfig/forge-server.toml is not correct. Correcting
+[18:53:53] [Server thread/WARN]: Incorrect key server was corrected from null to its default, SimpleCommentedConfig:{}. 
+[18:53:53] [Server thread/WARN]: Incorrect key server.removeErroringBlockEntities was corrected from null to its default, false. 
+[18:53:53] [Server thread/WARN]: Incorrect key server.removeErroringEntities was corrected from null to its default, false. 
+[18:53:53] [Server thread/WARN]: Incorrect key server.fullBoundingBoxLadders was corrected from null to its default, false. 
+[18:53:53] [Server thread/WARN]: Incorrect key server.zombieBaseSummonChance was corrected from null to its default, 0.1. 
+[18:53:53] [Server thread/WARN]: Incorrect key server.zombieBabyChance was corrected from null to its default, 0.05. 
+[18:53:53] [Server thread/WARN]: Incorrect key server.permissionHandler was corrected from null to its default, forge:default_handler. 
+[18:53:53] [Server thread/WARN]: Incorrect key server.advertiseDedicatedServerToLan was corrected from null to its default, true. 
+[18:53:53] [Server thread/WARN]: Incorrect key server.useItemWithDurationZero was corrected from null to its default, false. 
+[18:54:00] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
+[18:54:01] [Render thread/INFO]: Preparing spawn area: 0%
+[18:54:01] [Render thread/INFO]: Preparing spawn area: 0%
+[18:54:01] [Render thread/INFO]: Preparing spawn area: 0%
+[18:54:02] [Render thread/INFO]: Preparing spawn area: 0%
+[18:54:02] [Render thread/INFO]: Preparing spawn area: 0%
+[18:54:03] [Render thread/INFO]: Preparing spawn area: 0%
+[18:54:03] [Render thread/INFO]: Preparing spawn area: 0%
+[18:54:04] [Render thread/INFO]: Preparing spawn area: 1%
+[18:54:04] [Render thread/INFO]: Preparing spawn area: 2%
+[18:54:05] [Render thread/INFO]: Preparing spawn area: 2%
+[18:54:05] [Render thread/INFO]: Preparing spawn area: 4%
+[18:54:06] [Render thread/INFO]: Preparing spawn area: 5%
+[18:54:06] [Render thread/INFO]: Preparing spawn area: 6%
+[18:54:07] [Render thread/INFO]: Preparing spawn area: 8%
+[18:54:07] [Render thread/INFO]: Preparing spawn area: 9%
+[18:54:08] [Render thread/INFO]: Preparing spawn area: 10%
+[18:54:08] [Render thread/INFO]: Preparing spawn area: 11%
+[18:54:09] [Render thread/INFO]: Preparing spawn area: 11%
+[18:54:09] [Render thread/INFO]: Preparing spawn area: 13%
+[18:54:10] [Render thread/INFO]: Preparing spawn area: 15%
+[18:54:10] [Render thread/INFO]: Preparing spawn area: 16%
+[18:54:11] [Render thread/INFO]: Preparing spawn area: 17%
+[18:54:11] [Render thread/INFO]: Preparing spawn area: 20%
+[18:54:12] [Render thread/INFO]: Preparing spawn area: 22%
+[18:54:12] [Render thread/INFO]: Preparing spawn area: 24%
+[18:54:13] [Render thread/INFO]: Preparing spawn area: 25%
+[18:54:13] [Render thread/INFO]: Preparing spawn area: 27%
+[18:54:14] [Render thread/INFO]: Preparing spawn area: 28%
+[18:54:14] [Render thread/INFO]: Preparing spawn area: 29%
+[18:54:15] [Render thread/INFO]: Preparing spawn area: 31%
+[18:54:15] [Render thread/INFO]: Preparing spawn area: 33%
+[18:54:16] [Render thread/INFO]: Preparing spawn area: 34%
+[18:54:16] [Render thread/INFO]: Preparing spawn area: 37%
+[18:54:17] [Render thread/INFO]: Preparing spawn area: 40%
+[18:54:17] [Render thread/INFO]: Preparing spawn area: 42%
+[18:54:18] [Render thread/INFO]: Preparing spawn area: 44%
+[18:54:18] [Render thread/INFO]: Preparing spawn area: 45%
+[18:54:19] [Render thread/INFO]: Preparing spawn area: 48%
+[18:54:19] [Render thread/INFO]: Preparing spawn area: 51%
+[18:54:20] [Render thread/INFO]: Preparing spawn area: 53%
+[18:54:20] [Render thread/INFO]: Preparing spawn area: 55%
+[18:54:21] [Render thread/INFO]: Preparing spawn area: 57%
+[18:54:21] [Render thread/INFO]: Preparing spawn area: 60%
+[18:54:22] [Render thread/INFO]: Preparing spawn area: 62%
+[18:54:22] [Render thread/INFO]: Preparing spawn area: 64%
+[18:54:23] [Render thread/INFO]: Preparing spawn area: 66%
+[18:54:23] [Render thread/INFO]: Preparing spawn area: 68%
+[18:54:24] [Render thread/INFO]: Preparing spawn area: 70%
+[18:54:24] [Render thread/INFO]: Preparing spawn area: 72%
+[18:54:25] [Render thread/INFO]: Preparing spawn area: 75%
+[18:54:25] [Render thread/INFO]: Preparing spawn area: 77%
+[18:54:26] [Render thread/INFO]: Preparing spawn area: 80%
+[18:54:26] [Render thread/INFO]: Preparing spawn area: 83%
+[18:54:27] [Render thread/INFO]: Preparing spawn area: 84%
+[18:54:27] [Render thread/INFO]: Preparing spawn area: 86%
+[18:54:28] [Render thread/INFO]: Preparing spawn area: 88%
+[18:54:28] [Render thread/INFO]: Preparing spawn area: 91%
+[18:54:29] [Render thread/INFO]: Preparing spawn area: 93%
+[18:54:30] [Render thread/INFO]: Preparing spawn area: 95%
+[18:54:30] [Render thread/INFO]: Preparing spawn area: 95%
+[18:54:30] [Render thread/INFO]: Preparing spawn area: 96%
+[18:54:31] [Render thread/INFO]: Preparing spawn area: 99%
+[18:54:31] [Server thread/INFO]: Successfully initialized permission handler forge:default_handler
+[18:54:31] [Render thread/INFO]: Time elapsed: 30583 ms
+[18:54:31] [Server thread/INFO]: Changing view distance to 4, from 10
+[18:54:31] [Server thread/INFO]: Changing simulation distance to 5, from 0
+[18:54:31] [Render thread/WARN]: Unable to parse the boolean system property 'java.net.preferIPv6Addresses':system - using the default value: false
+[18:54:32] [Netty Local Client IO #0/INFO]: Connected to a modded server.
+[18:54:32] [Server thread/INFO]: Tester[local:E:16225221] logged in with entity id 73 at (-91.5, 76.0, -184.5)
+[18:54:32] [Server thread/INFO]: Tester joined the game
+[18:54:32] [Render thread/INFO]: Reloading pipeline on dimension change: NamespacedId{namespace='minecraft', name='overworld'} => NamespacedId{namespace='minecraft', name='overworld'}
+[18:54:32] [Render thread/INFO]: Destroying pipeline NamespacedId{namespace='minecraft', name='overworld'}
+[18:54:32] [Render thread/INFO]: Creating pipeline for dimension NamespacedId{namespace='minecraft', name='overworld'}
+[18:54:32] [Render thread/INFO]: Starting custom uniform resolving
+[18:54:32] [Render thread/WARN]: Failed to resolve uniform inPaleGarden, reason: Unknown variable: BIOME_PALE_GARDEN ( = FunctionCall{smooth {[Number{54}, FunctionCall{if {[FunctionCall{in {[Id{biome}, Id{BIOME_PALE_GARDEN}]} }, Number{1}, Number{0}]} }, Number{15}, Number{15}]} })
+java.lang.RuntimeException: Unknown variable: BIOME_PALE_GARDEN
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpressionInternal(ExpressionResolver.java:220) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpressionInternal(ExpressionResolver.java:81) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpression(ExpressionResolver.java:140) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpressionInternal(ExpressionResolver.java:194) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpressionInternal(ExpressionResolver.java:81) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpression(ExpressionResolver.java:140) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpression(ExpressionResolver.java:127) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpressionInternal(ExpressionResolver.java:194) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpressionInternal(ExpressionResolver.java:81) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveCallExpression(ExpressionResolver.java:140) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpressionInternal(ExpressionResolver.java:194) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at kroppeb.stareval.resolver.ExpressionResolver.resolveExpression(ExpressionResolver.java:50) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.uniforms.custom.CustomUniforms.<init>(CustomUniforms.java:62) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.uniforms.custom.CustomUniforms$Builder.build(CustomUniforms.java:334) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.uniforms.custom.CustomUniforms$Builder.build(CustomUniforms.java:345) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.pipeline.IrisRenderingPipeline.<init>(IrisRenderingPipeline.java:263) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.Iris.createPipeline(Iris.java:623) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.irisshaders.iris.pipeline.PipelineManager.preparePipeline(PipelineManager.java:33) ~[oculus-mc1.20.1-1.8.0.jar%23156!/:?]
+	at net.minecraft.client.Minecraft.handler$zlj000$iris$resetPipeline(Minecraft.java:7464) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91324_(Minecraft.java) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91156_(Minecraft.java:2078) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.multiplayer.ClientPacketListener.m_5998_(ClientPacketListener.java:404) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.network.protocol.game.ClientboundLoginPacket.m_5797_(ClientboundLoginPacket.java:95) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.network.protocol.game.ClientboundLoginPacket.m_5797_(ClientboundLoginPacket.java:25) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.network.protocol.PacketUtils.m_263899_(PacketUtils.java:22) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.BlockableEventLoop.m_6367_(BlockableEventLoop.java:156) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.ReentrantBlockableEventLoop.m_6367_(ReentrantBlockableEventLoop.java:23) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.BlockableEventLoop.m_7245_(BlockableEventLoop.java:130) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.BlockableEventLoop.m_18699_(BlockableEventLoop.java:115) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1106) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.main.Main.main(Main.java:218) ~[forge-1.20.1-47.4.20.jar:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?]
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?]
+[18:54:36] [Render thread/WARN]: Error while parsing the block ID map entry for "block.10104":
+[18:54:36] [Render thread/WARN]: - The block minecraft:stone_slab has no property with the name variant, ignoring!
+[18:54:36] [Render thread/WARN]: Error loading class: net/fabricmc/fabric/api/blockview/v2/FabricBlockView (java.lang.ClassNotFoundException: net.fabricmc.fabric.api.blockview.v2.FabricBlockView)
+[18:54:36] [Render thread/WARN]: Error loading class: net/fabricmc/fabric/api/rendering/data/v1/RenderAttachedBlockView (java.lang.ClassNotFoundException: net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView)
+[18:54:36] [Render thread/INFO]: Started 1 worker threads
+[18:54:37] [Render thread/INFO]: Loaded 2 advancements
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=52, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:429(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=53, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:437(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=54, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:445(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/WARN]: Shader compilation log for iris:sodium-terrain-shadow.vsh: 0:429(15): warning: `lmCoord' used uninitialized
+0:437(15): warning: `lmCoord' used uninitialized
+0:445(15): warning: `lmCoord' used uninitialized
+
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=55, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:429(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=56, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:437(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=57, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:445(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=58, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:437(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=59, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:445(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=60, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:453(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=61, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:477(22): warning: `glColorRaw' used uninitialized'
+[18:54:37] [Render thread/WARN]: Shader compilation log for iris:sodium-terrain-gbuffer_solid.vsh: 0:437(15): warning: `lmCoord' used uninitialized
+0:445(15): warning: `lmCoord' used uninitialized
+0:453(15): warning: `lmCoord' used uninitialized
+0:477(22): warning: `glColorRaw' used uninitialized
+
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=62, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:437(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=63, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:445(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=64, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:453(15): warning: `lmCoord' used uninitialized'
+[18:54:37] [Render thread/INFO]: OpenGL debug message: id=65, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:477(22): warning: `glColorRaw' used uninitialized'
+[18:54:38] [Render thread/INFO]: OpenGL debug message: id=66, source=SHADER COMPILER, type=OTHER, severity=HIGH, message='0:437(15): warning: `lmCoord' used uninitialized'
+[18:54:38] [Render thread/WARN]: Shader compilation log for iris:sodium-terrain-gbuffer_translucent.vsh: 0:437(15): warning: `lmCoord' used uninitialized
+
+[18:54:42] [Render thread/WARN]: Shader clouds could not find uniform named ModelViewMat in the specified shader program.
+[18:54:42] [Render thread/WARN]: Shader clouds could not find uniform named ProjMat in the specified shader program.
+[18:54:42] [Render thread/WARN]: Shader clouds could not find uniform named ColorModulator in the specified shader program.
+[18:54:42] [Render thread/WARN]: Shader clouds could not find uniform named FogStart in the specified shader program.
+[18:54:42] [Render thread/WARN]: Shader clouds could not find uniform named FogEnd in the specified shader program.
+[18:54:42] [Render thread/WARN]: Shader clouds could not find uniform named FogColor in the specified shader program.
+[18:55:11] [Render thread/INFO]: [kinetrix] self-test 00_stand t=19 fps=2 pos=(2.50, 119.92, 0.50) ground=false sprint=false speed=0.000 sprintW=0.00 airW=0.70 walkSpeed=0.00
+[18:55:12] [Server thread/INFO]: Tester has made the advancement [Cover Me with Diamonds]
+[18:55:12] [Render thread/INFO]: [System] [CHAT] Tester has made the advancement [Cover Me with Diamonds]
+[18:55:12] [Render thread/INFO]: Loaded 9 advancements
+[18:55:12] [Render thread/INFO]: [kinetrix] self-test 60_armor_walk t=8 fps=2 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.27 walkSpeed=0.00
+[18:55:14] [Render thread/INFO]: [kinetrix] self-test 60_armor_walk t=28 fps=2 pos=(5.91, 120.00, 0.50) ground=true sprint=false speed=0.155 sprintW=0.00 airW=0.02 walkSpeed=0.86
+[18:55:15] [Render thread/INFO]: [kinetrix] self-test 60_armor_walk t=48 fps=1 pos=(8.76, 120.00, 0.50) ground=true sprint=false speed=0.101 sprintW=0.00 airW=0.00 walkSpeed=0.04
+[18:55:17] [Render thread/INFO]: [kinetrix] self-test 61_armor_flex t=3 fps=2 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.025 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:18] [Render thread/INFO]: [kinetrix] self-test 61_armor_flex t=23 fps=1 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.006 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:18] [Render thread/INFO]: [kinetrix] self-test 61_armor_flex t=43 fps=3 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.002 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:22] [Render thread/INFO]: [kinetrix] self-test 61_armor_flex t=63 fps=1 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:23] [Render thread/INFO]: [kinetrix] self-test 70_crawl t=2 fps=1 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:24] [Render thread/INFO]: [kinetrix] self-test 70_crawl t=22 fps=3 pos=(1.50, 120.00, -5.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:25] [Render thread/INFO]: [kinetrix] self-test 70_crawl t=42 fps=3 pos=(2.13, 120.00, -5.50) ground=true sprint=false speed=0.043 sprintW=0.00 airW=0.00 walkSpeed=0.26
+[18:55:26] [Render thread/INFO]: [kinetrix] self-test 70_crawl t=62 fps=3 pos=(3.43, 120.00, -5.50) ground=true sprint=false speed=0.062 sprintW=0.00 airW=0.00 walkSpeed=0.26
+[18:55:27] [Render thread/INFO]: [kinetrix] self-test 70_crawl t=82 fps=3 pos=(4.72, 120.00, -5.50) ground=true sprint=false speed=0.064 sprintW=0.00 airW=0.00 walkSpeed=0.26
+[18:55:28] [Render thread/INFO]: [kinetrix] self-test 70_crawl t=102 fps=3 pos=(5.95, 120.00, -5.50) ground=true sprint=false speed=0.065 sprintW=0.00 airW=0.00 walkSpeed=0.16
+[18:55:29] [Render thread/INFO]: [kinetrix] self-test 70_crawl t=122 fps=3 pos=(5.96, 120.00, -5.50) ground=true sprint=false speed=0.008 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:30] [Render thread/INFO]: [kinetrix] self-test 71_sit_1 t=16 fps=4 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.001 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:31] [Render thread/INFO]: [kinetrix] self-test 71_sit_1 t=36 fps=3 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:32] [Render thread/INFO]: [kinetrix] self-test 71_sit_1 t=56 fps=3 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:33] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=5 fps=4 pos=(2.65, 120.00, 0.50) ground=true sprint=false speed=0.158 sprintW=0.00 airW=0.00 walkSpeed=0.49
+[18:55:33] [Render thread/INFO]: [EMF (Entity Model Features)]: Clearing data for reload.
+[18:55:33] [Render thread/INFO]: Reloading ResourceManager: vanilla, mod_resources, file/FreshMoves.zip, file/kinetrix-testskin
+[18:55:33] [Worker-Main-3/INFO]: Found unifont_all_no_pua-15.0.06.hex, loading
+[18:55:34] [Server thread/INFO]: Saving and pausing game...
+[18:55:34] [Server thread/INFO]: Saving chunks for level 'ServerLevel[New World]'/minecraft:overworld
+[18:55:34] [Server thread/INFO]: Saving chunks for level 'ServerLevel[New World]'/minecraft:the_end
+[18:55:34] [Server thread/INFO]: Saving chunks for level 'ServerLevel[New World]'/minecraft:the_nether
+[18:55:35] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=7 fps=2 pos=(2.75, 120.00, 0.50) ground=true sprint=false speed=0.040 sprintW=0.00 airW=0.00 walkSpeed=0.12
+[18:55:35] [Render thread/WARN]: Missing sound for event: minecraft:item.goat_horn.play
+[18:55:35] [Render thread/WARN]: Missing sound for event: minecraft:entity.goat.screaming.horn_break
+[18:55:35] [Render thread/ERROR]: Error starting SoundSystem. Turning off sounds & music
+java.lang.IllegalStateException: Failed to open OpenAL device
+	at com.mojang.blaze3d.audio.Library.m_193472_(Library.java:283) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at com.mojang.blaze3d.audio.Library.m_231084_(Library.java:153) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.sounds.SoundEngine.m_120323_(SoundEngine.java:104) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.sounds.SoundEngine.m_120239_(SoundEngine.java:96) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.sounds.SoundManager.m_5787_(SoundManager.java:125) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.sounds.SoundManager.m_5787_(SoundManager.java:40) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.server.packs.resources.SimplePreparableReloadListener.m_10789_(SimplePreparableReloadListener.java:13) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at java.util.concurrent.CompletableFuture$UniAccept.tryFire(CompletableFuture.java:718) ~[?:?]
+	at java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:482) ~[?:?]
+	at net.minecraft.server.packs.resources.SimpleReloadInstance.m_143940_(SimpleReloadInstance.java:69) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.BlockableEventLoop.m_6367_(BlockableEventLoop.java:156) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.ReentrantBlockableEventLoop.m_6367_(ReentrantBlockableEventLoop.java:23) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.BlockableEventLoop.m_7245_(BlockableEventLoop.java:130) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.util.thread.BlockableEventLoop.m_18699_(BlockableEventLoop.java:115) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91383_(Minecraft.java:1106) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.Minecraft.m_91374_(Minecraft.java:718) ~[client-1.20.1-20230612.114412-srg.jar%23160!/:?]
+	at net.minecraft.client.main.Main.main(Main.java:218) ~[forge-1.20.1-47.4.20.jar:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?]
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?]
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25) ~[fmlloader-1.20.1-47.4.20.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:108) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:78) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) ~[modlauncher-10.0.9.jar:?]
+	at cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141) ~[bootstraplauncher-1.1.2.jar:?]
+[18:55:35] [Render thread/INFO]: Created: 1024x512x4 minecraft:textures/atlas/blocks.png-atlas
+[18:55:35] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/signs.png-atlas
+[18:55:35] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/shield_patterns.png-atlas
+[18:55:35] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/banner_patterns.png-atlas
+[18:55:35] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/armor_trims.png-atlas
+[18:55:35] [Render thread/INFO]: Created: 128x64x4 minecraft:textures/atlas/decorated_pot.png-atlas
+[18:55:35] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/chest.png-atlas
+[18:55:35] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/shulker_boxes.png-atlas
+[18:55:35] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/beds.png-atlas
+[18:55:36] [Render thread/WARN]: [kinetrix] A model is made of another mod's parts (traben.entity_model_features.models.parts.EMFModelPartVanilla); it will not get jointed elbows/knees. With Entity Model Features, enable compat.playerOverEmf.
+[18:55:36] [Render thread/WARN]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+[18:55:36] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/particles.png-atlas
+[18:55:36] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/paintings.png-atlas
+[18:55:36] [Render thread/INFO]: Created: 128x128x0 minecraft:textures/atlas/mob_effects.png-atlas
+[18:55:36] [Render thread/INFO]: Stopping worker threads
+[18:55:36] [Render thread/INFO]: Started 1 worker threads
+[18:55:36] [Render thread/INFO]: [ETF]: reloading ETF data.
+[18:55:36] [Render thread/INFO]: [ETF]: emissive suffixes loaded: {_e}.
+[18:55:36] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=7 fps=2 pos=(2.75, 120.00, 0.50) ground=true sprint=false speed=0.024 sprintW=0.00 airW=0.00 walkSpeed=0.12
+[18:55:43] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=10 fps=0 pos=(2.75, 120.00, 0.50) ground=true sprint=false speed=0.024 sprintW=0.00 airW=0.00 walkSpeed=0.02
+[18:55:44] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=30 fps=2 pos=(2.75, 120.00, 0.50) ground=true sprint=false speed=0.006 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:45] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=50 fps=3 pos=(2.75, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:46] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=70 fps=4 pos=(2.75, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:47] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=90 fps=3 pos=(2.75, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[18:55:48] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=110 fps=4 pos=(6.60, 120.00, 0.50) ground=true sprint=false speed=0.181 sprintW=0.00 airW=0.00 walkSpeed=0.86
+[18:55:49] [Render thread/INFO]: [kinetrix] self-test 99_emf_player t=130 fps=3 pos=(9.01, 120.00, 0.50) ground=true sprint=false speed=0.116 sprintW=0.00 airW=0.00 walkSpeed=0.02
+[18:55:52] [Render thread/INFO]: [kinetrix] SELF-TEST FINISHED
+[18:55:52] [Render thread/INFO]: Stopping!
+[18:55:52] [Server thread/INFO]: Tester lost connection: Disconnected
+[18:55:52] [Server thread/INFO]: Tester left the game
+[18:55:52] [Server thread/INFO]: Stopping singleplayer server as player logged out
+[18:55:52] [Server thread/INFO]: Stopping server
+[18:55:52] [Server thread/INFO]: Saving players
+[18:55:52] [Server thread/INFO]: Saving worlds
+[18:55:53] [Server thread/INFO]: Saving chunks for level 'ServerLevel[New World]'/minecraft:overworld
+[18:55:53] [Server thread/INFO]: Saving chunks for level 'ServerLevel[New World]'/minecraft:the_end
+[18:55:53] [Server thread/INFO]: Saving chunks for level 'ServerLevel[New World]'/minecraft:the_nether
+[18:55:53] [Server thread/INFO]: ThreadedAnvilChunkStorage (New World): All chunks are saved
+[18:55:53] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[18:55:53] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[18:55:53] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[18:55:54] [Render thread/INFO]: Stopping worker threads
+[18:55:54] [Render thread/INFO]: [ETF]: emissive suffixes loaded: {_e}.
