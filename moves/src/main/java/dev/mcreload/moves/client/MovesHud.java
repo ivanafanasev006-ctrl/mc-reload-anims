@@ -3,7 +3,10 @@ package dev.mcreload.moves.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.mcreload.moves.HudConfig;
 import dev.mcreload.moves.KinetrixMoves;
+import dev.mcreload.moves.Move;
+import dev.mcreload.moves.MovesConfig;
 import dev.mcreload.moves.Stamina;
+import dev.mcreload.moves.Strikes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -23,7 +26,9 @@ import java.util.Locale;
 /**
  * The bars (docs/combat-spec.md, 9): shields as a row of grey icons on the left above armour,
  * energy as a bar with a lightning icon on the right above hunger, coloured in the chosen style
- * (sides swap in the settings), and an arrow counter left of the hotbar while a bow is in hand.
+ * (sides swap in the settings), an arrow counter left of the hotbar while a bow is in hand, and the
+ * tray of cooldowns in the bottom right corner (author, 2026-10-30: "the weapon's icon, the key G
+ * and a bar beside it that fills while the attack is not there and is full when it is").
  *
  * <p>Rows take their place through Forge's shared row count ({@code leftHeight} / {@code
  * rightHeight}), so other mods' rows (thirst, extra hearts...) stack above or below ours instead of
@@ -40,6 +45,7 @@ public final class MovesHud {
         event.registerAbove(VanillaGuiOverlay.FOOD_LEVEL.id(), "right_bar", MovesHud::right);
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "arrows", MovesHud::arrows);
         event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "finisher_hint", MovesHud::finisherHint);
+        event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "cooldown_tray", MovesHud::tray);
     }
 
     /** How visible the finisher hint is, 0..1 (it fades in and out instead of blinking). */
@@ -185,6 +191,140 @@ public final class MovesHud {
         String text = count > 9999 ? "9999+" : String.format(Locale.ROOT, "%d", count);
         int color = count == 0 ? 0xFF5555 : 0xFFFFFF;
         g.drawString(mc.font, text, x + 8 - mc.font.width(text) / 2, height - 11, color, true);
+    }
+
+    // ------------------------------------------------------------------ the tray
+
+    /** A row of the tray: the slot (as the hotbar's), a gap, the key over the bar. */
+    private static final int SLOT = 22, TRAY_BAR = 48, TRAY_W = SLOT + 3 + TRAY_BAR, TRAY_ROW = 24, EDGE = 4;
+    private static final ResourceLocation WIDGETS = new ResourceLocation("textures/gui/widgets.png");
+    /** The strike a key was pressed for while it still waited (its bar flashes), and until when (ms). */
+    private static Move refused;
+    private static long refusedUntil;
+    /** When each strike last came back (its slot glints), and its cooldown the frame before. */
+    private static final java.util.Map<Move, Long> READY_AT = new java.util.EnumMap<>(Move.class);
+    private static final java.util.Map<Move, Integer> WAS = new java.util.EnumMap<>(Move.class);
+
+    /** The key of a strike was pressed while it waited: its bar flashes red for a moment. */
+    static void refused(Move move) {
+        refused = move;
+        refusedUntil = net.minecraft.Util.getMillis() + 450;
+    }
+
+    /** The strikes with a cooldown the weapon in hand makes, the ability (G) first. */
+    static java.util.List<Move> traySlots(LocalPlayer p) {
+        java.util.List<Move> out = new java.util.ArrayList<>();
+        Move ability = StrikeInput.ability(p);
+        if (ability != null) out.add(ability);
+        if (Strikes.sword(p) && HudConfig.Moves.DASH.on()) out.add(Move.DASH);
+        if (Strikes.finisherWeapon(p) && HudConfig.Moves.SLIDE_ATTACK.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_ATTACK);
+        return out;
+    }
+
+    /** The whole cooldown of a strike, ticks. */
+    static int cooldownTotal(Move move) {
+        return switch (move) {
+            case DASH -> MovesConfig.dashCooldownTicks();
+            case WHIRL -> MovesConfig.whirlCooldownTicks();
+            case SWORD_SPIN -> MovesConfig.swordSpinCooldownTicks();
+            case SLIDE_ATTACK -> MovesConfig.slideAttackCooldownTicks();
+            default -> 0;
+        };
+    }
+
+    /**
+     * The tray in the bottom right corner: a row for each strike with a cooldown the weapon in hand
+     * makes, the ability on G at the bottom. The slot shows the weapon (greyed over by vanilla's
+     * cooldown shade, the seconds left in its corner, as a stack's count), beside it the keys and
+     * the bar, which fills as the strike comes back and is full and bright when it is there.
+     */
+    private static void tray(ForgeGui gui, GuiGraphics g, float partialTick, int width, int height) {
+        Minecraft mc = gui.getMinecraft();
+        LocalPlayer p = mc.player;
+        if (!HudConfig.tray() || p == null || mc.options.hideGui || p.isSpectator() || !MovesClient.serverHasMod()) return;
+        java.util.List<Move> slots = traySlots(p);
+        if (slots.isEmpty()) return;
+        Stamina s = Stamina.of(p);
+        long now = net.minecraft.Util.getMillis();
+        int x = width - EDGE - TRAY_W, y = height - EDGE - SLOT;
+        for (Move move : slots) {
+            int left = StrikeInput.cooldown(s, move);
+            Integer was = WAS.put(move, left);
+            if (was != null && was > 0 && left == 0) READY_AT.put(move, now);
+            long ready = READY_AT.getOrDefault(move, 0L);
+            float glint = Mth.clamp(1f - (now - ready) / 400f, 0f, 1f);
+            boolean flash = refused == move && now < refusedUntil && (now / 75) % 2 == 0;
+            trayRow(g, mc.font, x, y, p.getMainHandItem(), trayKeys(mc, move), left, cooldownTotal(move), glint, flash);
+            y -= TRAY_ROW;
+        }
+    }
+
+    /** The tray as it will look (the settings screen): the sword's turn waiting, the dash ready, side by side round {@code cx}. */
+    static void trayPreview(GuiGraphics g, int cx, int top) {
+        Minecraft mc = Minecraft.getInstance();
+        ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+        g.fill(cx - 96, top - 4, cx + 96, top + SLOT + 4, 0xFF6F6F6F);
+        g.fill(cx - 95, top - 3, cx + 95, top + SLOT + 3, 0xF0141414);
+        int total = MovesConfig.swordSpinCooldownTicks();
+        trayRow(g, mc.font, cx - TRAY_W - 6, top, sword, trayKeys(mc, Move.SWORD_SPIN), Math.round(total * 0.4f), total, 0f, false);
+        trayRow(g, mc.font, cx + 6, top, sword, trayKeys(mc, Move.DASH), 0, MovesConfig.dashCooldownTicks(), 0f, false);
+    }
+
+    /** One row of the tray at (x, y); {@code left} of {@code total} ticks still to wait. */
+    static void trayRow(GuiGraphics g, net.minecraft.client.gui.Font font, int x, int y, ItemStack weapon, String keys,
+                        int left, int total, float glint, boolean flash) {
+        RenderSystem.enableBlend();
+        g.blit(WIDGETS, x, y, 0, 0, SLOT - 1, SLOT);
+        g.blit(WIDGETS, x + SLOT - 1, y, 181, 0, 1, SLOT);
+        g.renderItem(weapon, x + 3, y + 3);
+        float share = total > 0 ? Mth.clamp(left / (float) total, 0f, 1f) : 0f;
+        boolean waiting = left > 0;
+        if (waiting) {
+            // vanilla's cooldown shade over the item (as on an ender pearl just thrown)
+            int top = y + 3 + Mth.floor(16f * (1f - share));
+            g.fill(net.minecraft.client.renderer.RenderType.guiOverlay(), x + 3, top, x + 19, top + Mth.ceil(16f * share), Integer.MAX_VALUE);
+            String sec = Integer.toString((left + 19) / 20);
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 200);
+            g.drawString(font, sec, x + 20 - font.width(sec), y + 12, 0xFFFFFF, true);
+            g.pose().popPose();
+        }
+        if (glint > 0f) g.fill(x + 1, y + 1, x + SLOT - 1, y + SLOT - 1, (Math.round(0x90 * glint) << 24) | 0xFFFFFF);
+        int tx = x + SLOT + 3;
+        g.drawString(font, font.plainSubstrByWidth(keys, TRAY_BAR), tx, y + 3, waiting ? 0xA0A0A0 : 0xFFFFFF, true);
+        int by = y + 14;
+        if (flash) g.setColor(1f, 0.45f, 0.45f, 1f);
+        shortBar(g, tex("energy_bar_bg"), tx, by, TRAY_BAR);
+        int fill = Math.round(TRAY_BAR * (1f - share));
+        if (waiting && !flash) g.setColor(0.6f, 0.6f, 0.6f, 1f);
+        if (fill >= TRAY_BAR) shortBar(g, tex("energy_bar_fill"), tx, by, TRAY_BAR);
+        else if (fill > 0) g.blit(tex("energy_bar_fill"), tx, by, 0, 0, fill, BAR_H, BAR_W, BAR_H);
+        g.setColor(1f, 1f, 1f, 1f);
+        RenderSystem.disableBlend();
+    }
+
+    /** A bar texture made {@code w} wide: its left part and its right edge. */
+    private static void shortBar(GuiGraphics g, ResourceLocation tex, int x, int y, int w) {
+        g.blit(tex, x, y, 0, 0, w - 1, BAR_H, BAR_W, BAR_H);
+        g.blit(tex, x + w - 1, y, BAR_W - 1, 0, 1, BAR_H, BAR_W, BAR_H);
+    }
+
+    /** The keys of a strike, short: "G", "LMB+RMB", "C+LMB" (as they are bound). */
+    static String trayKeys(Minecraft mc, Move move) {
+        return switch (move) {
+            case DASH -> shortKey(mc.options.keyAttack) + "+" + shortKey(mc.options.keyUse);
+            case SLIDE_ATTACK -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
+            default -> shortKey(MovesClient.ABILITY);
+        };
+    }
+
+    /** A key's name, the mouse buttons as LMB, RMB, MMB. */
+    static String shortKey(net.minecraft.client.KeyMapping key) {
+        com.mojang.blaze3d.platform.InputConstants.Key k = key.getKey();
+        if (k.getType() == com.mojang.blaze3d.platform.InputConstants.Type.MOUSE && k.getValue() >= 0 && k.getValue() <= 2) {
+            return net.minecraft.network.chat.Component.translatable("kinetrix_moves.key.mouse" + k.getValue()).getString();
+        }
+        return key.getTranslatedKeyMessage().getString();
     }
 
     /** Energy bar textures, in the chosen style. */

@@ -17,7 +17,7 @@ public final class HudConfig {
 
     public static final ForgeConfigSpec.EnumValue<Style> STYLE;
     public static final ForgeConfigSpec.EnumValue<Shape> SHAPE;
-    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS, KICK_CUTSCENE;
+    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS, TRAY, KICK_CUTSCENE;
 
     /** The moves the player may switch off, in the order of the settings' page. */
     public enum Moves {
@@ -30,8 +30,9 @@ public final class HudConfig {
         KICK("kick", "The vault with a kick: W and Space down, R at a mob."),
         ROLL_KICK("rollKick", "The roll kick: Ctrl (the fast run), W and Space down, R at a mob."),
         DIVE("dive", "The deep jump: W and Space down, R with no mob near."),
-        DASH("dash", "The dash strike: S and the left button held with a sword, then the right button once."),
-        WHIRL("whirlwind", "The axe whirlwind: S and the left button held with an axe, then the right button held."),
+        DASH("dash", "The dash strike: the left and the right button held together with a sword."),
+        SWORD_SPIN("swordSpin", "The sword's quick turn round on the spot: G with a sword."),
+        WHIRL("whirlwind", "The axe whirlwind: G with an axe (G again stops it)."),
         FINISHER("finisher", "The finisher: the left button at point blank to a weakened mob."),
         GUARD("guard", "The sword block: the right button with a sword."),
         FALL_ROLL("fallRoll", "The tuck and the roll: R held while falling."),
@@ -73,6 +74,9 @@ public final class HudConfig {
         SWAP_SIDES = b.comment("Shields on the right above hunger and energy on the left above armour (normally the other way round).")
                 .define("swapSides", false);
         ARROWS = b.comment("Arrow counter left of the hotbar while a bow is in hand.").define("arrowCounter", true);
+        TRAY = b.comment("The tray in the bottom right corner: the strikes with a cooldown that the weapon in hand can make (G, the",
+                        "dash, the attack out of a slide), each with its key and a bar that fills as it comes back (author, 2026-10-30).")
+                .define("cooldownTray", true);
         b.pop();
         b.comment("Which moves this player's keys make (false: the keys do what they do without the mod).").push("moves");
         for (Moves m : Moves.values()) m.value = b.comment(m.comment).define(m.key, true);
@@ -87,6 +91,7 @@ public final class HudConfig {
     public static Shape shape() { return get(SHAPE, Shape.HEATER); }
     public static boolean swapSides() { return get(SWAP_SIDES, false); }
     public static boolean arrows() { return get(ARROWS, true); }
+    public static boolean tray() { return get(TRAY, true); }
     public static boolean kickCutscene() { return get(KICK_CUTSCENE, true); }
 
     private static <T> T get(ForgeConfigSpec.ConfigValue<T> value, T fallback) {

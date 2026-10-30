@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "4";
+    public static final String VERSION = "5";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -86,7 +86,7 @@ public final class MovesNet {
     public static void stamina(ServerPlayer p, Stamina s) {
         if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p),
                 new Bars(s.energy, s.shields, dev.mcreload.moves.MovesConfig.maxEnergy(), dev.mcreload.moves.MovesConfig.maxShields(),
-                        s.freeTicks, s.freeTotal));
+                        s.freeTicks, s.freeTotal, new int[]{s.dashCooldown, s.whirlCooldown, s.spinCooldown, s.slideAttackCooldown}));
     }
 
     /** A real player whose client has the mod (fake players and test players have no client). */
@@ -148,7 +148,10 @@ public final class MovesNet {
     }
 
     /** Server -> client: the player's own bars. */
-    public record Bars(float energy, float shields, float maxEnergy, float maxShields, int freeTicks, int freeTotal) {
+    /** The bars, and the ticks left of the cooldowns (the tray): the dash, the whirlwind, the sword's turn, the attack out of a slide. */
+    public record Bars(float energy, float shields, float maxEnergy, float maxShields, int freeTicks, int freeTotal, int[] cooldowns) {
+        public static final int COOLDOWNS = 4;
+
         static void write(Bars m, FriendlyByteBuf b) {
             b.writeFloat(m.energy);
             b.writeFloat(m.shields);
@@ -156,9 +159,14 @@ public final class MovesNet {
             b.writeFloat(m.maxShields);
             b.writeVarInt(m.freeTicks);
             b.writeVarInt(m.freeTotal);
+            for (int i = 0; i < COOLDOWNS; i++) b.writeVarInt(Math.max(0, m.cooldowns[i]));
         }
         static Bars read(FriendlyByteBuf b) {
-            return new Bars(b.readFloat(), b.readFloat(), b.readFloat(), b.readFloat(), b.readVarInt(), b.readVarInt());
+            float energy = b.readFloat(), shields = b.readFloat(), maxEnergy = b.readFloat(), maxShields = b.readFloat();
+            int freeTicks = b.readVarInt(), freeTotal = b.readVarInt();
+            int[] cooldowns = new int[COOLDOWNS];
+            for (int i = 0; i < COOLDOWNS; i++) cooldowns[i] = b.readVarInt();
+            return new Bars(energy, shields, maxEnergy, maxShields, freeTicks, freeTotal, cooldowns);
         }
         static void handle(Bars m, Supplier<NetworkEvent.Context> ctx) {
             ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,

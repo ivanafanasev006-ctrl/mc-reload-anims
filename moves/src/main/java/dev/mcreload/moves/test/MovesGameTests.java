@@ -458,8 +458,12 @@ public final class MovesGameTests {
             p.hurt(p.damageSources().mobAttack(other), 6f);
             t.close(p.getHealth(), 20f, "health after another zombie's blow during the finisher");
         });
-        t.at(3 + dev.mcreload.moves.Strikes.FINISH_STAB, () -> t.check(zombie.isAlive() && zombie.getHealth() < 4f,
-                "after the stab the zombie should be hurt and alive: " + zombie.getHealth()));
+        // quick, no lead-up (author, 2026-10-30): held unhurt until the stab, dead at it, quicker than the axe's
+        t.at(dev.mcreload.moves.Strikes.FINISH_KILL, () -> t.check(zombie.isAlive() && zombie.getHealth() >= 3.9f,
+                "before the stab the zombie should be held and unhurt: " + zombie.getHealth()));
+        t.at(3, () -> t.check(Move.FINISHER.length < Move.FINISHER_AXE.length && dev.mcreload.moves.Strikes.FINISH_KILL < dev.mcreload.moves.Strikes.CHOP_HIT
+                && dev.mcreload.moves.Strikes.FINISH_KILL <= 6, "the stab kills at tick " + dev.mcreload.moves.Strikes.FINISH_KILL + " of " + Move.FINISHER.length
+                + " (the chop at " + dev.mcreload.moves.Strikes.CHOP_HIT + " of " + Move.FINISHER_AXE.length + ")"));
         t.at(3 + dev.mcreload.moves.Strikes.FINISH_KILL, () -> t.check(!zombie.isAlive(), "the zombie survived the finisher"))
                 .run(4 + dev.mcreload.moves.Strikes.FINISH_KILL);
     }
@@ -827,26 +831,94 @@ public final class MovesGameTests {
         }).run(3);
     }
 
-    /** The celebrate emote: free, 9 s, nothing else starts over it; moving (a cancel) ends it early. */
+    /**
+     * The sword's turn (G with a sword; author, 2026-10-30): a sword only; one quick turn on the spot
+     * hitting every mob round once (in front, behind, at the side), not the one out of reach; then 20 s.
+     */
     @GameTest(template = FLOOR, timeoutTicks = 200)
-    public static void celebrateEmote(GameTestHelper h) {
+    public static void swordSpinHitsAllRound(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
+        Zombie front = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        Zombie back = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 1);
+        Zombie side = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 3);
+        Zombie far = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 8, 2, 3);
+        Zombie[] near = {front, back, side};
+        noSun(front, back, side, far);
         Stamina s = Stamina.of(p);
+        int[] hits = new int[3];
+        float[] last = new float[3];
         t.at(2, () -> {
+            for (Zombie z : new Zombie[]{front, back, side, far}) {
+                z.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(200);
+                z.setHealth(200);
+                z.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
+            }
+            Vec3 me = h.absoluteVec(new Vec3(3.5, 2, 3.5));
+            p.teleportTo(me.x, me.y, me.z);
             p.setOnGround(true);
             MoveServer.seen(p);
-            s.energy = 10f;
-            t.check(MoveServer.request(p, Move.CELEBRATE, false), "the emote refused on the ground");
-            t.close(s.energy, 10f, "energy after the emote (it is free)");
-            t.check(Move.CELEBRATE.length >= 180, "the emote lasts " + Move.CELEBRATE.length + " ticks (author: hanging to 8 s, then the fall)");
-            t.check(!MoveServer.request(p, Move.DODGE_LEFT, false), "a dodge over the emote (it must be broken off first)");
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+            t.check(!MoveServer.request(p, Move.SWORD_SPIN, false), "the sword's turn with an axe");
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.SWORD_SPIN, false), "the sword's turn refused with a sword");
+            t.close(s.energy, 100f - MovesConfig.costSwordSpin(), "energy after the sword's turn");
+            t.check(Move.SWORD_SPIN.length <= 20 && dev.mcreload.moves.Spin.SPIN_TO - dev.mcreload.moves.Spin.SPIN_FROM <= 8,
+                    "the turn takes " + (dev.mcreload.moves.Spin.SPIN_TO - dev.mcreload.moves.Spin.SPIN_FROM) + " ticks of " + Move.SWORD_SPIN.length + " (a quick one)");
+            for (int i = 0; i < 3; i++) last[i] = near[i].getHealth();
         });
-        t.at(20, () -> {
-            t.check(s.move == Move.CELEBRATE, "the emote ended before its time");
-            MoveServer.cancel(p, Move.CELEBRATE);
-            t.check(s.move == null, "moving did not end the emote");
-        }).run(21);
+        for (int i = 3; i < 4 + Move.SWORD_SPIN.length; i++) {
+            t.at(i, () -> {
+                for (int k = 0; k < 3; k++) {
+                    if (near[k].getHealth() < last[k]) hits[k]++;
+                    last[k] = near[k].getHealth();
+                }
+            });
+        }
+        t.at(5 + Move.SWORD_SPIN.length, () -> {
+            t.check(hits[0] == 1 && hits[1] == 1 && hits[2] == 1, "hits: in front " + hits[0] + ", behind " + hits[1] + ", at the side " + hits[2] + " (want 1 each)");
+            t.close(far.getHealth(), 200f, "the zombie out of reach was hit");
+            s.energy = 100f;
+            t.check(!MoveServer.request(p, Move.SWORD_SPIN, false), "a second turn right after the first");
+            t.check(s.spinCooldown > 20 * 15, "the turn's cooldown " + s.spinCooldown + " ticks (want 20 s)");
+        }).run(6 + Move.SWORD_SPIN.length);
+    }
+
+    /**
+     * The splash of the blade driven into the ground (author, 2026-10-30): 1 HP to everything on the
+     * player's block and the 8 round it (armour or not), nothing to a mob two blocks off.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void plungeSplashHurtsRound(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie beside = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 4, 2, 3);
+        Zombie corner = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 2, 4);
+        Zombie under = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 3);
+        Zombie far = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 3);
+        Zombie[] all = {beside, corner, under, far};
+        noSun(all);
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            beside.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+            for (Zombie z : all) z.setHealth(20f);
+            Vec3 me = h.absoluteVec(new Vec3(3.5, 2, 3.5));
+            p.teleportTo(me.x, me.y, me.z);
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            p.setOnGround(false);
+            p.fallDistance = 10f;
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.PLUNGE_FALL, false), "the blade not held ready in a fall");
+            p.setOnGround(true);
+            t.check(MoveServer.request(p, Move.PLUNGE, false), "the plunge on landing refused");
+        });
+        t.at(5 + dev.mcreload.moves.Plunge.STAB, () -> {
+            t.close(beside.getHealth(), 19f, "the zombie on the next block (in iron armour)");
+            t.close(corner.getHealth(), 19f, "the zombie on the corner block");
+            t.close(under.getHealth(), 19f, "the zombie on the player's own block");
+            t.close(far.getHealth(), 20f, "the zombie two blocks off");
+        }).run(6 + dev.mcreload.moves.Plunge.STAB);
     }
 
     /**

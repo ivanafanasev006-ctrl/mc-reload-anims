@@ -23,6 +23,8 @@ import net.minecraft.client.player.AbstractClientPlayer;
  */
 public final class PlayerRig {
     public static final int BASE_PRIORITY = -100_000;
+    /** Our keyframe emotes (celebrate): over the base, under every other mod's layer and the harmonizer. */
+    public static final int EMOTE_PRIORITY = -50_000;
     public static final int HARMONIZER_PRIORITY = 100_000;
 
     static final int T_POS = 0, T_ROT = 1, T_BEND = 2;
@@ -32,6 +34,7 @@ public final class PlayerRig {
     public final PoseFrame frame = new PoseFrame();
     final BaseLayer base;
     final HarmonizerLayer harmonizer;
+    final EmoteLayer emote;
 
     /** What the base layer output this frame, per part and transform type. */
     final float[][][] baseOut = new float[PoseFrame.COUNT][3][3];
@@ -48,6 +51,7 @@ public final class PlayerRig {
         this.motion = new MotionState(player);
         this.base = new BaseLayer(this);
         this.harmonizer = new HarmonizerLayer(this);
+        this.emote = new EmoteLayer(this);
     }
 
     public BaseLayer baseLayer() {
@@ -56,6 +60,10 @@ public final class PlayerRig {
 
     public HarmonizerLayer harmonizerLayer() {
         return harmonizer;
+    }
+
+    public EmoteLayer emoteLayer() {
+        return emote;
     }
 
     /** The dummy in the animation gallery (always animated, it is there to show them). */

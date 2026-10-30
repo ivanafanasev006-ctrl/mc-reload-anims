@@ -81,6 +81,8 @@ public final class Stamina {
     public int whirlCooldown;
     /** The whirlwind: the last turn each mob was hit in (server; entity id to turn). */
     public final java.util.Map<Integer, Integer> whirlHits = new java.util.HashMap<>();
+    /** Ticks before the next sword's turn (G with a sword; both ends, as the dash's). */
+    public int spinCooldown;
     /** Ticks before the next attack out of a slide (both ends, as the dash's). */
     public int slideAttackCooldown;
     /** The facing when the attack out of a slide started (both ends): it ends half a turn round from it. */
@@ -175,6 +177,7 @@ public final class Stamina {
         if (dashCooldown > 0) dashCooldown--;
         if (slideAttackCooldown > 0) slideAttackCooldown--;
         if (whirlCooldown > 0) whirlCooldown--;
+        if (spinCooldown > 0) spinCooldown--;
         if (move == null) return;
         boolean wasLow = low();
         moveTick++;
@@ -382,6 +385,7 @@ public final class Stamina {
                 FastRun.serverTick(sp, s);
                 Plunge.serverTick(sp, s);
                 Whirl.serverTick(sp, s);
+                Spin.serverTick(sp, s);
                 Strikes.serverTick(sp, s);
                 Deflect.serverTick(sp, s);
                 Bow.serverTick(sp, s);

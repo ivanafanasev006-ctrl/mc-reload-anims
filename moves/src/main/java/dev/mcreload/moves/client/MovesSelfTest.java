@@ -189,23 +189,25 @@ public final class MovesSelfTest {
         whirlwind("92a_whirlwind", CameraType.THIRD_PERSON_BACK);
         whirlwind("92b_whirlwind_front", CameraType.THIRD_PERSON_FRONT);
         fastRun("16_fast_run");
-        // the shots: the squat, waiting, deeper on the riser, the leap, the top, the scream, the hang, the fall, the landing, the stance
-        SCENARIOS.add(new Scenario("45_celebrate", 205, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
+        // the author's message of 2026-10-30: G (the sword's turn, the whirlwind), the tray, the splash
+        swordSpin("88_sword_spin", CameraType.THIRD_PERSON_BACK);
+        swordSpin("89_sword_spin_first_person", CameraType.FIRST_PERSON);
+        tray("17_tray");
+        plungeSplash("99b_plunge_splash");
+        // celebrate is Kinetrix's now: its emote (played as the emote menu plays it) and its music, then broken off
+        SCENARIOS.add(new Scenario("45_kinetrix_celebrate", 205, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_FRONT);
-            if (t == 4) KeyMapping.click(MovesClient.CELEBRATE.getKey());
-            if (t == 6) note("celebrate: move " + Stamina.of(mc.player).move + "; its music in the sounds: "
-                    + (mc.getSoundManager().getSoundEvent(dev.mcreload.moves.Celebrate.MUSIC_ID) != null));
-            if (t == 125) note("celebrate: still " + Stamina.of(mc.player).move + " at 6 s (hanging), the music playing " + musicPlaying(mc));
-            if (t == 175) note("celebrate: landing at 8.5 s, still " + Stamina.of(mc.player).move);
-            if (t == 197) note("celebrate: after 9.6 s " + Stamina.of(mc.player).move + ", the music playing " + musicPlaying(mc));
-        }, new int[]{4, 14, 45, 77, 80, 83, 86, 101, 125, 155, 168, 172, 175, 182, 192}, false));
-        // broken off by walking at 2 s: the emote and its music stop
-        SCENARIOS.add(new Scenario("46_celebrate_broken_off", 70, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
+            if (t == 4) note("celebrate (Kinetrix): started " + kinetrixEmote(mc, 20));
+            if (t == 8) note("celebrate (Kinetrix): the music playing " + musicPlaying(mc));
+            if (t == 125) note("celebrate (Kinetrix): at 6 s the emote " + kinetrixEmote(mc, -2) + ", the music playing " + musicPlaying(mc));
+            if (t == 197) note("celebrate (Kinetrix): after 9.6 s the emote " + kinetrixEmote(mc, -2) + ", the music playing " + musicPlaying(mc));
+        }, new int[]{4, 14, 45, 77, 80, 86, 101, 125, 168, 175, 192}, false));
+        SCENARIOS.add(new Scenario("46_kinetrix_celebrate_broken_off", 70, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
-            if (t == 4) KeyMapping.click(MovesClient.CELEBRATE.getKey());
-            if (t == 40) note("celebrate broken off: before, " + Stamina.of(mc.player).move + ", the music playing " + musicPlaying(mc));
+            if (t == 4) kinetrixEmote(mc, 20);
+            if (t == 40) note("celebrate broken off: before, the emote " + kinetrixEmote(mc, -2) + ", the music playing " + musicPlaying(mc));
             mc.options.keyUp.setDown(t >= 44 && t < 50);
-            if (t == 60) note("celebrate broken off: after walking, " + Stamina.of(mc.player).move + ", the music playing " + musicPlaying(mc));
+            if (t == 60) note("celebrate broken off: after walking, the emote " + kinetrixEmote(mc, -2) + ", the music playing " + musicPlaying(mc));
         }, new int[]{}, false));
         ledgeCorner("87_ledge_corner");
         slideAttack("96_slide_attack", CameraType.THIRD_PERSON_BACK);
@@ -406,10 +408,11 @@ public final class MovesSelfTest {
                 mc.setScreen(null);
             }
         }, new int[]{8, 16}, false));
-        // ---- the moves' page: every move switched on or off for this player
-        SCENARIOS.add(new Scenario("51_settings_moves", 22, sp -> place(sp, 0, new ItemStack(Items.BOW)), (mc, t) -> {
+        // ---- the menu (/kinetrix_moves): the attacks and the mechanics, their keys and switches
+        SCENARIOS.add(new Scenario("51_menu", 22, sp -> place(sp, 0, new ItemStack(Items.BOW)), (mc, t) -> {
             camera(mc, CameraType.FIRST_PERSON);
-            if (t == 2) mc.setScreen(new MovesToggleScreen(new MovesSettingsScreen(null)));
+            if (t == 2) net.minecraftforge.client.ClientCommandHandler.runCommand("kinetrix_moves");
+            if (t == 4) note("menu: /kinetrix_moves opened " + (mc.screen == null ? "nothing" : mc.screen.getClass().getSimpleName()));
             if (t == 10) {
                 mc.options.guiScale().set(4);
                 mc.resizeDisplay();
@@ -467,10 +470,9 @@ public final class MovesSelfTest {
         }, (mc, t) -> {
             camera(mc, camera);
             if (t == 1) Stamina.of(mc.player).dashCooldown = 0;
-            // author, 2026-10-29, fifth message: S and the left button held, the right button once.
+            // author, 2026-10-30: the left and the right button held together.
             // The buttons go down without a click: a real press reaches the moves' tick handler before
             // vanilla's keys, here it would come after them and vanilla would swing first.
-            mc.options.keyDown.setDown(t >= 6 && t < 12);
             mc.options.keyAttack.setDown(t >= 7 && t < 12);
             if (t == 10) {
                 startPos = mc.player.position();
@@ -607,7 +609,7 @@ public final class MovesSelfTest {
         }, new int[]{6, 12, 15, 17, 19, 21, 23, 26, 29, 32, 36, 40}, camera != CameraType.FIRST_PERSON));
     }
 
-    /** An axe, S and the left button held, then the right one held: the whirlwind among three zombies; its reach, its run, its cooldown. */
+    /** An axe, G: the whirlwind among three zombies; its reach, its run, its cooldown. */
     private static void whirlwind(String name, CameraType camera) {
         SCENARIOS.add(new Scenario(name, 70, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_AXE));
@@ -618,10 +620,10 @@ public final class MovesSelfTest {
         }, (mc, t) -> {
             camera(mc, camera);
             if (t == 1) Stamina.of(mc.player).whirlCooldown = 0;
-            mc.options.keyDown.setDown(t >= 4 && t < 9);
-            mc.options.keyAttack.setDown(t >= 5 && t < 60);
-            if (t == 8) startPos = mc.player.position();
-            mc.options.keyUse.setDown(t >= 8 && t < 60);
+            if (t == 8) {
+                startPos = mc.player.position();
+                KeyMapping.click(MovesClient.ABILITY.getKey());
+            }
             if (t == 9) note(name + ": move " + Stamina.of(mc.player).move);
             if (t == 30) note(name + ": still turning " + Stamina.of(mc.player).move);
             if (t == 54) {
@@ -630,6 +632,68 @@ public final class MovesSelfTest {
                 dummyReport(mc, name, true);
             }
         }, new int[]{8, 10, 12, 14, 16, 18, 20, 23, 26, 30, 34, 38, 42, 46, 50}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /** A sword, G: the quick turn on the spot among three zombies (one behind); who it hits, that it stays put, its cooldown. */
+    private static void swordSpin(String name, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 40, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            Stamina.of(sp).spinCooldown = 0;
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0, 2.0, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.8, 0.4, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -0.6, -1.8, 20f);
+        }, (mc, t) -> {
+            camera(mc, camera);
+            if (t == 1) Stamina.of(mc.player).spinCooldown = 0;
+            if (t == 8) {
+                startPos = mc.player.position();
+                KeyMapping.click(MovesClient.ABILITY.getKey());
+            }
+            if (t == 9) note(name + ": move " + Stamina.of(mc.player).move);
+            if (t == 30) {
+                note(String.format(Locale.ROOT, "%s: moved %.2f blocks, cooldown %d s, %s", name,
+                        mc.player.position().subtract(startPos).horizontalDistance(), Stamina.of(mc.player).spinCooldown / 20, Stamina.of(mc.player).move));
+                dummyReport(mc, name, true);
+            }
+        }, new int[]{8, 9, 10, 11, 12, 13, 14, 15, 17, 20, 26}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /** The tray: a sword (the turn waiting, the dash waiting, the slide's attack ready), then an axe (the whirlwind ready), pressing G while it waits. */
+    private static void tray(String name) {
+        SCENARIOS.add(new Scenario(name, 60, sp -> {
+            place(sp, 0, new ItemStack(Items.DIAMOND_SWORD));
+            Stamina s = Stamina.of(sp);
+            s.spinCooldown = 12 * 20;
+            s.dashCooldown = 25 * 20;
+            s.slideAttackCooldown = 0;
+            s.whirlCooldown = 0;
+        }, (mc, t) -> {
+            camera(mc, CameraType.FIRST_PERSON);
+            Stamina s = Stamina.of(mc.player);
+            if (t == 1) {
+                s.spinCooldown = 12 * 20;
+                s.dashCooldown = 25 * 20;
+                s.slideAttackCooldown = 0;
+            }
+            if (t == 20) KeyMapping.click(MovesClient.ABILITY.getKey());
+            if (t == 22) note("tray: G while the turn waits: " + s.move + ", the turn " + s.spinCooldown / 20 + " s, the dash " + s.dashCooldown / 20 + " s");
+            if (t == 30) mc.player.getInventory().setItem(mc.player.getInventory().selected, new ItemStack(Items.IRON_AXE));
+        }, new int[]{10, 21, 40}, false));
+    }
+
+    /** Falling with a sword among four zombies: the three on the blocks round the landing lose 1 HP, the one two blocks off none. */
+    private static void plungeSplash(String name) {
+        SCENARIOS.add(new Scenario(name, 70, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0, 1.0, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.0, -1.0, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -1.0, 0, 20f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0, -2.5, 20f);
+            sp.teleportTo(sp.getX(), sp.getY() + 8, sp.getZ());
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 60) dummyReport(mc, name, true);
+        }, new int[]{20, 26, 30}, true));
     }
 
     /** Ctrl, W and Space, R at a zombie: the roll kick, a flip over it, the kick, the landing facing it, the roll. */
@@ -1376,7 +1440,25 @@ public final class MovesSelfTest {
                 layer.isActive(), b, p.onGround()));
     }
 
-    /** The celebrate emote's music is playing on this client (the sound engine's playing instances; the development game's names). */
+    private static final net.minecraft.resources.ResourceLocation KINETRIX_CELEBRATE = new net.minecraft.resources.ResourceLocation("kinetrix", "celebrate");
+
+    /**
+     * Kinetrix's emote of this player (by reflection: Kinetrix is not compiled against): {@code play} >= 0
+     * starts that emote as its menu does; returns the emote playing now (-1: none, null: no Kinetrix).
+     */
+    private static Integer kinetrixEmote(Minecraft mc, int play) {
+        try {
+            Object rig = Class.forName("dev.mcreload.anim.client.rig.RigRegistry")
+                    .getMethod("get", net.minecraft.client.player.AbstractClientPlayer.class).invoke(null, mc.player);
+            Object motion = rig.getClass().getField("motion").get(rig);
+            if (play >= 0) motion.getClass().getMethod("playEmote", int.class).invoke(motion, play);
+            return motion.getClass().getField("emote").getInt(motion);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    /** Kinetrix's celebrate music is playing on this client (the sound engine's playing instances; the development game's names). */
     private static boolean musicPlaying(Minecraft mc) {
         try {
             java.lang.reflect.Field f = mc.getSoundManager().getClass().getDeclaredField("soundEngine");
@@ -1385,7 +1467,7 @@ public final class MovesSelfTest {
             java.lang.reflect.Field g = engine.getClass().getDeclaredField("instanceToChannel");
             g.setAccessible(true);
             for (Object o : ((java.util.Map<?, ?>) g.get(engine)).keySet()) {
-                if (o instanceof net.minecraft.client.resources.sounds.SoundInstance si && si.getLocation().equals(dev.mcreload.moves.Celebrate.MUSIC_ID)) return true;
+                if (o instanceof net.minecraft.client.resources.sounds.SoundInstance si && si.getLocation().equals(KINETRIX_CELEBRATE)) return true;
             }
             return false;
         } catch (ReflectiveOperationException e) {

@@ -58,6 +58,7 @@ public final class ClientBootstrap {
         RigRegistry.put(player, rig);
         RigRegistry.putStack(stack, rig);
         stack.addAnimLayer(PlayerRig.BASE_PRIORITY, rig.baseLayer());
+        stack.addAnimLayer(PlayerRig.EMOTE_PRIORITY, rig.emoteLayer());
         stack.addAnimLayer(PlayerRig.HARMONIZER_PRIORITY, rig.harmonizerLayer());
     }
 

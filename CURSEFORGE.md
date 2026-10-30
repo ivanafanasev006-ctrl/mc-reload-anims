@@ -28,7 +28,7 @@ Kinetrix replaces Minecraft's stiff six-block puppet movement with procedural, p
 
 ## Animation gallery
 
-Type **`/kinetrix`** (or `/kinetrix menu`) for a menu of every animation and emote, by category, each with a note on
+Type **`/kinetrix`** for a menu of every animation and emote, by category, each with a note on
 when it plays and a live preview: a copy of you in the menu doing it over and over (drag to turn it). Emotes and idle
 fidgets can be played on yourself straight from there. Client-side: works on any server.
 

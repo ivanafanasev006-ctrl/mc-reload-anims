@@ -17,7 +17,7 @@ public final class MovesConfig {
             APPLE_BOOST, MAX_SHIELDS, SHIELD_REGEN, SHIELD_REGEN_COST, SLIDE_TAP, SLIDE_HELD, COOKED_FOOD,
             COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER,
             COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP, COST_DIVE, COST_FALL_ROLL, COST_LEDGE_GRAB, COST_LEDGE_CLIMB,
-            COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_SHIMMY, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL;
+            COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_SHIMMY, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL, COST_SWORD_SPIN;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
@@ -28,8 +28,9 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue DASH_WIDTH, SLIDE_ATTACK_CRIT, SLIDE_ATTACK_REACH, KICK_DAMAGE, KICK_STRENGTH,
             FALL_CUT;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
-    private static final ForgeConfigSpec.DoubleValue FAST_RUN_SPEED, FAST_RUN_COST, PLUNGE_CUT, PLUNGE_FROM, WHIRL_DAMAGE, WHIRL_REACH;
-    private static final ForgeConfigSpec.IntValue WHIRL_COOLDOWN;
+    private static final ForgeConfigSpec.DoubleValue FAST_RUN_SPEED, FAST_RUN_COST, PLUNGE_CUT, PLUNGE_FROM, WHIRL_DAMAGE, WHIRL_REACH,
+            SPIN_DAMAGE, SPIN_REACH, PLUNGE_SPLASH;
+    private static final ForgeConfigSpec.IntValue WHIRL_COOLDOWN, SPIN_COOLDOWN, PLUNGE_SPLASH_RADIUS;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -84,7 +85,7 @@ public final class MovesConfig {
         COST_BOW_DODGE = b.comment("A dodge with a shot: in the Legolas stance and the bow's combat flow (was 10). [default]")
                 .defineInRange("bowDodge", 5.0, 0.0, 10000.0);
         // Renamed from dashStrike (7.5) so worlds made before get the author's number.
-        COST_DASH = b.comment("Dash strike: S and the left button held with a sword, the right button once (author: 15).")
+        COST_DASH = b.comment("Dash strike: the left and the right button held together with a sword (author: 15).")
                 .defineInRange("dash", 15.0, 0.0, 10000.0);
         COST_FINISHER = b.comment("Finisher: the left button held at point blank to a weakened enemy. [default]")
                 .defineInRange("finisher", 5.0, 0.0, 10000.0);
@@ -117,8 +118,11 @@ public final class MovesConfig {
                 .defineInRange("rollKick", 15.0, 0.0, 10000.0);
         COST_PLUNGE = b.comment("Driving the blade into the ground on landing from a fall, a sword or an axe in hand. [default]")
                 .defineInRange("plunge", 2.5, 0.0, 10000.0);
-        COST_WHIRL = b.comment("The axe whirlwind: S and the left button held, then the right button. [default]")
+        COST_WHIRL = b.comment("The axe whirlwind: G with an axe. [default]")
                 .defineInRange("whirlwind", 20.0, 0.0, 10000.0);
+        // Author, 2026-10-30: G, a sword in hand.
+        COST_SWORD_SPIN = b.comment("The sword's quick turn round on the spot: G with a sword. [default]")
+                .defineInRange("swordSpin", 10.0, 0.0, 10000.0);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -162,14 +166,21 @@ public final class MovesConfig {
                 .defineInRange("kickStrength", 0.9, 0.0, 3.0);
         b.pop();
 
-        b.comment("The sword moves of the left button: the dash strike and the finisher; the axe whirlwind.").push("strikes");
-        WHIRL_COOLDOWN = b.comment("The axe whirlwind: seconds before it can be made again (author: 45).")
+        b.comment("The strikes: the dash, the finisher, the ability on G (the sword's turn, the axe whirlwind).").push("strikes");
+        WHIRL_COOLDOWN = b.comment("The axe whirlwind (G with an axe): seconds before it can be made again (author: 45).")
                 .defineInRange("whirlwindCooldownSeconds", 45, 0, 3600);
         WHIRL_DAMAGE = b.comment("The axe whirlwind: each of its three turns hits everything round once with the axe's blow times this. [default]")
                 .defineInRange("whirlwindDamage", 0.6, 0.0, 10.0);
         WHIRL_REACH = b.comment("The axe whirlwind: how far round the player the axe reaches (blocks, to the mob's side). [default]")
                 .defineInRange("whirlwindReach", 2.6, 1.0, 8.0);
-        DASH_CRIT = b.comment("Dash strike (S and the left button held, the right one): the blow is the weapon's times this (author: a crit",
+        // Author, 2026-10-30: "a sword turns round once on the spot, fast, the blade held out".
+        SPIN_COOLDOWN = b.comment("The sword's turn (G with a sword): seconds before it can be made again. [default]")
+                .defineInRange("swordSpinCooldownSeconds", 20, 0, 3600);
+        SPIN_DAMAGE = b.comment("The sword's turn: it hits everything round once with the sword's blow times this. [default]")
+                .defineInRange("swordSpinDamage", 1.0, 0.0, 10.0);
+        SPIN_REACH = b.comment("The sword's turn: how far round the player the blade reaches (blocks, to the mob's side). [default]")
+                .defineInRange("swordSpinReach", 2.6, 1.0, 8.0);
+        DASH_CRIT = b.comment("Dash strike (the left and the right button held with a sword): the blow is the weapon's times this (author: a crit",
                         "as in a jump; vanilla's crit is 1.5).")
                 .defineInRange("dashCrit", 1.5, 1.0, 10.0);
         DASH_COOLDOWN = b.comment("Dash strike: seconds before it can be made again (author: at least 30).")
@@ -205,6 +216,13 @@ public final class MovesConfig {
                 .defineInRange("plungeDamageCut", 0.2, 0.0, 1.0);
         PLUNGE_FROM = b.comment("The blade is held ready for the plunge from this many blocks of fall (vanilla hurts from 3). [default]")
                 .defineInRange("plungeFromBlocks", 3.5, 1.0, 64.0);
+        // Author, 2026-10-30: "splash damage of at least 1 HP within 1 block: the 8 blocks round and the 1 under the player".
+        PLUNGE_SPLASH = b.comment("The blade driven into the ground hurts everything standing on the blocks round the player this",
+                        "much (health points; author: 1).")
+                .defineInRange("plungeSplashDamage", 1.0, 0.0, 1000.0);
+        PLUNGE_SPLASH_RADIUS = b.comment("How many blocks round the player's own the splash reaches (author: 1, the 8 round it and the one",
+                        "under the player).")
+                .defineInRange("plungeSplashBlocks", 1, 0, 8);
         LEDGE_GRAB = b.comment("The right button in a jump or a fall catches a ledge (author: before the sword block, placing",
                         "blocks and the rest of the right button).")
                 .define("ledgeGrab", true);
@@ -302,6 +320,12 @@ public final class MovesConfig {
     public static float whirlDamage() { return f(WHIRL_DAMAGE, 0.6); }
     public static float whirlReach() { return f(WHIRL_REACH, 2.6); }
     public static float fastRunBarPerSecond() { return f(FAST_RUN_COST, 0.01); }
+    public static float costSwordSpin() { return f(COST_SWORD_SPIN, 10.0); }
+    public static int swordSpinCooldownTicks() { return get(SPIN_COOLDOWN, 20) * 20; }
+    public static float swordSpinDamage() { return f(SPIN_DAMAGE, 1.0); }
+    public static float swordSpinReach() { return f(SPIN_REACH, 2.6); }
+    public static float plungeSplash() { return f(PLUNGE_SPLASH, 1.0); }
+    public static int plungeSplashBlocks() { return get(PLUNGE_SPLASH_RADIUS, 1); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

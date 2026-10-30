@@ -89,8 +89,8 @@ public enum Move {
 
     // ---- sword moves (author, 2026-10-28)
     /**
-     * A sword in hand, S and the left button held, the right button once (author, 2026-10-29, fifth
-     * message; it was the left button sprinting with W): a dash into a lunge, the blade into the
+     * A sword in hand, the left and the right button held together (author, 2026-10-30; it was S and
+     * the left button held, the right button once): a dash into a lunge, the blade into the
      * belly (dash_strike). The run carries on and speeds up into the lunge (about 3.4 blocks by
      * 0.45 s, less if someone is in the way); the blade hits the first one it reaches on the way,
      * from 0.25 s to 0.55 s (Strikes.DASH_REACH_FROM, DASH_REACH_TO), with a crit, as a blow in a
@@ -101,12 +101,13 @@ public enum Move {
     DASH("dash_strike", 1f, 31, -1, -1, -1, -1, Side.FRONT, MovesConfig::costDash),
     /**
      * A weakened mob (a fifth of its health or less) at point blank, the left button held with a
-     * sword: the finishing stab (finisher_stab; an axe has its own, FINISHER_AXE). The free hand takes it by the shoulder, the blade
-     * goes in at 0.35 s and it is held on it until the blade comes out at 0.95 s, when it dies
-     * (Strikes.FINISH_STAB, FINISH_KILL). Not on bosses. The player stands still meanwhile, so
-     * nothing hurts them until the kill (author), the mob least of all.
+     * sword: the finishing stab (finisher_stab; an axe has its own, FINISHER_AXE). Author, 2026-10-30:
+     * as quick as the axe's, the blade into the belly, no lead-up: the free hand takes it by the
+     * shoulder as the sword draws back, the blade goes in at 0.3 s and it dies then
+     * (Strikes.FINISH_KILL), it is pulled out at 0.6 s (Strikes.FINISH_OUT: running on may break off
+     * the rest), the stance again by 0.95 s. Not on bosses. Nothing hurts the player until the stab.
      */
-    FINISHER("finisher_stab", 1f, 30, 0, Strikes.FINISH_KILL + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher),
+    FINISHER("finisher_stab", 1f, 19, 0, Strikes.FINISH_KILL + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher),
     /**
      * The same with an axe (author, 2026-10-30: "not stabbed into the belly like the sword, but struck
      * from above, at the head or just at the body, with a vertical swing"): the chop (finisher_chop).
@@ -171,23 +172,20 @@ public enum Move {
      */
     PLUNGE("plunge_land", 1f, 20, -1, -1, -1, -1, Side.FRONT, MovesConfig::costPlunge),
     /**
-     * An axe in hand, S and the left button held, then the right button held: the berserker's
-     * whirlwind (axe_whirlwind; author, 2026-10-29, fifth message): a wind-up, three turns round with
-     * the axe out, carried forward like a top, the blade hitting everything round once a turn
-     * (Whirl), then the axe back in front; 2.1 s. Letting go of either button stops it. 45 s
-     * before the next one.
+     * G with an axe in hand (author, 2026-10-30; it was S and the left button held, then the right
+     * one): the berserker's whirlwind (axe_whirlwind; author, 2026-10-29, fifth message): a wind-up,
+     * three turns round with the axe out, carried forward like a top, the blade hitting everything
+     * round once a turn (Whirl), then the axe back in front; 2.1 s. G again stops it. 45 s before
+     * the next one.
      */
     WHIRL("axe_whirlwind", 1f, 42, -1, -1, -1, -1, Side.FRONT, MovesConfig::costWhirl),
-
     /**
-     * The celebrate emote (G; author, 2026-10-30): down into a squat, waiting to the music's drop;
-     * the leap at 3.71 s, the figure 1.4 blocks up by 4.0 s, hanging in the air with the music
-     * until it stops (8.0 s), the fall, the landing at 8.29 s, the stance by 9 s. Only the figure
-     * leaves the ground: the player stays on it, as in the author's Roblox reference. The author's
-     * music plays from the player meanwhile (Celebrate). Moving or a hit breaks it off (and the
-     * music). It costs nothing.
+     * G with a sword in hand (author, 2026-10-30: "a quick turn round on the spot, the sword held out
+     * turned flat"): the sword's turn (sword_spin), a short wind-up, one turn to the left from 0.1 to
+     * 0.4 s with the blade out flat, cutting everything within reach as it passes (Spin), the stance
+     * again by 0.8 s. 20 s before the next one [default].
      */
-    CELEBRATE("celebrate", 1f, 181, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    SWORD_SPIN("sword_spin", 1f, 16, -1, -1, -1, -1, Side.FRONT, MovesConfig::costSwordSpin),
 
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
@@ -329,7 +327,7 @@ public enum Move {
 
     /** A sword move started by the left button: while it plays the button strikes nothing else. */
     public boolean strike() {
-        return this == DASH || finisher() || this == SLIDE_ATTACK || this == WHIRL;
+        return this == DASH || finisher() || this == SLIDE_ATTACK || this == WHIRL || this == SWORD_SPIN;
     }
 
     /** On the ledge: hanging, moving along it, climbing onto it or off it, being pulled up (not the friend pulling). */
@@ -381,7 +379,7 @@ public enum Move {
     /** Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28). */
     public boolean firstPerson() {
         return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
-                || this == WHIRL || ledge();
+                || this == WHIRL || this == SWORD_SPIN || ledge();
     }
 
     /**
@@ -398,12 +396,12 @@ public enum Move {
             case ROLL_KICK -> Kick.RK_ROLL_TO;
             case PLUNGE -> Plunge.STAND;
             case WHIRL -> Whirl.SPIN_TO + 2;
-            case CELEBRATE -> 0;
+            case SWORD_SPIN -> Spin.SPIN_TO + 1;
             case DIVE -> DIVE_UP;
             case LEDGE_CLIMB -> CLIMB_ON_TOP;
             case SLIDE_ATTACK -> SLIDE_ATTACK_UP;
             case FALL_ROLL -> Fall.STAND;
-            case FINISHER -> Strikes.FINISH_KILL + 1;
+            case FINISHER -> Strikes.FINISH_OUT;
             case FINISHER_AXE -> Strikes.CHOP_OUT;
             default -> -1;
         };

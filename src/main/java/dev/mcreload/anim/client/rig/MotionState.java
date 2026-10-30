@@ -1072,10 +1072,10 @@ public final class MotionState {
     public static final int EMOTE_DANCE = 0, EMOTE_WAVE = 1, EMOTE_CLAP = 2, EMOTE_FACEPALM = 3, EMOTE_SHRUG = 4,
             EMOTE_SALUTE = 5, EMOTE_BOW = 6, EMOTE_SIT = 7, EMOTE_THUMBS = 8, EMOTE_VICTORY = 9, EMOTE_POINT = 10,
             EMOTE_LAUGH = 11, EMOTE_CRY = 12, EMOTE_FLOSS = 13, EMOTE_PUSHUPS = 14, EMOTE_RUNNING_MAN = 15,
-            EMOTE_ROBOT = 16, EMOTE_GUITAR = 17, EMOTE_FLEX = 18, EMOTE_MEDITATE = 19, EMOTE_COUNT = 20;
+            EMOTE_ROBOT = 16, EMOTE_GUITAR = 17, EMOTE_FLEX = 18, EMOTE_MEDITATE = 19, EMOTE_CELEBRATE = 20, EMOTE_COUNT = 21;
     public static final String[] EMOTE_KEYS = {"dance", "wave", "clap", "facepalm", "shrug", "salute", "bow", "sit",
             "thumbs", "victory", "point", "laugh", "cry", "floss", "pushups", "running_man", "robot", "guitar",
-            "flex", "meditate"};
+            "flex", "meditate", "celebrate"};
     public int emote = -1;
     public float emoteStart = -100f;
     public final Smooth emoteW = new Smooth(6f);
@@ -1091,6 +1091,7 @@ public final class MotionState {
             case EMOTE_SHRUG -> 1.8f;
             case EMOTE_THUMBS, EMOTE_POINT -> 2.0f;
             case EMOTE_CRY -> 3.5f;
+            case EMOTE_CELEBRATE -> EmoteLayer.CELEBRATE_SECONDS;
             default -> 2.8f;
         };
     }

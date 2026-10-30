@@ -128,7 +128,8 @@ public final class GalleryScreen extends Screen {
         // The stage.
         g.fill(viewX, viewY, viewX + viewW, viewY + viewH, 0x60000000);
         if (stage != null && stage.ready() && selected != null) {
-            int size = (int) (viewH * 0.62f);
+            // celebrate leaps 1.4 blocks up and hangs there: seen smaller, so the whole jump fits
+            int size = (int) (viewH * ("emote_celebrate".equals(selected.id()) ? 0.4f : 0.62f));
             float pt = minecraft.getFrameTime();
             g.enableScissor(viewX, viewY, viewX + viewW, viewY + viewH);
             stage.render(g, viewX + viewW / 2, viewY + viewH - viewH / 7, size, viewYaw, viewPitch, pt);

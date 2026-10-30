@@ -35,7 +35,7 @@ public final class AnimPriority {
     public static boolean muted(Object stack, IAnimation layer) {
         if (!Cfg.enabled) return false;
         PlayerRig rig = RigRegistry.byStack(stack);
-        if (rig == null || layer == rig.baseLayer() || layer == rig.harmonizerLayer()) return false;
+        if (rig == null || layer == rig.baseLayer() || layer == rig.harmonizerLayer() || layer == rig.emoteLayer()) return false;
         if (Cfg.ownMovesFirst && rig.motion.fullBodyMove()) return true;
         Set<String> list = Cfg.priorityOver;
         String owner = list.isEmpty() ? null : owner(layer);

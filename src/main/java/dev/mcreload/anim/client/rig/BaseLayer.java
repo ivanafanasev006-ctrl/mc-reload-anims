@@ -21,6 +21,7 @@ public final class BaseLayer implements IAnimation {
     @Override
     public void tick() {
         rig.motion.tick();
+        rig.emote.follow();
     }
 
     @Override

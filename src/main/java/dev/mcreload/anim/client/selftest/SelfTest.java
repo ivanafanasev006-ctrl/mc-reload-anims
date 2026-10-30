@@ -321,20 +321,22 @@ public final class SelfTest {
         // The animation gallery, opened with the command: a few entries from different categories
         // on the preview dummy.
         String[][] galleryShots = {{"sword_draw", "8"}, {"sprint", "40"}, {"sleep_face_down", "65"}, {"sleep_hands_behind", "90"},
-                {"sit_back", "115"}, {"doze", "140"}, {"dual_run", "170"}, {"swim", "205"}};
+                {"sit_back", "115"}, {"doze", "140"}, {"dual_run", "170"}, {"swim", "205"}, {"emote_celebrate", "230"}};
         Window[] galleryWindows = new Window[galleryShots.length];
         for (int i = 0; i < galleryShots.length; i++) {
             int at = Integer.parseInt(galleryShots[i][1]);
-            galleryWindows[i] = new Window(at + 8, at + 22, 2, 0.25f);
+            // celebrate (a keyframe emote with music): its leap and its hang, 3.7 s in
+            galleryWindows[i] = galleryShots[i][0].equals("emote_celebrate") ? new Window(at + 76, at + 100, 4, 0.25f)
+                    : new Window(at + 8, at + 22, 2, 0.25f);
         }
-        SCENARIOS.add(new Scenario("79_gallery", 236, sp -> place(sp, 2, Y, 0, -90, none),
+        SCENARIOS.add(new Scenario("79_gallery", 336, sp -> place(sp, 2, Y, 0, -90, none),
                 (mc, t) -> {
                     if (t == 4) {
                         captureFromScreen = true;
-                        net.minecraftforge.client.ClientCommandHandler.runCommand("kinetrix menu");
+                        net.minecraftforge.client.ClientCommandHandler.runCommand("kinetrix");
                     }
                     if (t == 7 && !(mc.screen instanceof dev.mcreload.anim.client.gallery.GalleryScreen)) {
-                        McReloadAnim.LOG.warn("[kinetrix] self-test: /kinetrix menu did not open the gallery");
+                        McReloadAnim.LOG.warn("[kinetrix] self-test: /kinetrix did not open the gallery");
                         mc.setScreen(new dev.mcreload.anim.client.gallery.GalleryScreen(null));
                     }
                     for (String[] shot : galleryShots) {
@@ -342,7 +344,7 @@ public final class SelfTest {
                             gs.select(dev.mcreload.anim.client.gallery.Demos.byId(shot[0]));
                         }
                     }
-                    if (t == 236) {
+                    if (t == 336) {
                         captureFromScreen = false;
                         mc.setScreen(null);
                     }

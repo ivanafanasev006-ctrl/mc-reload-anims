@@ -55,8 +55,8 @@ public final class MovesClient {
     /** Only registered without Kinetrix; with it the slide uses Kinetrix's crawl key. */
     private static final KeyMapping OWN_SLIDE = new KeyMapping("key.kinetrix_moves.slide", KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, "key.categories.kinetrix_moves");
-    /** The celebrate emote (author, 2026-10-29): G, again to stop it. */
-    public static final KeyMapping CELEBRATE = new KeyMapping("key.kinetrix_moves.celebrate", KeyConflictContext.IN_GAME,
+    /** The ability (author, 2026-10-30: G, rebindable): the sword's turn with a sword, the whirlwind with an axe. */
+    public static final KeyMapping ABILITY = new KeyMapping("key.kinetrix_moves.ability", KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.kinetrix_moves");
     private static final boolean KINETRIX = ModList.get().isLoaded("kinetrix");
 
@@ -98,9 +98,9 @@ public final class MovesClient {
         MinecraftForge.EVENT_BUS.addListener(MovesClient::playerTick);
         MinecraftForge.EVENT_BUS.addListener(MovesClient::movementInput);
         MinecraftForge.EVENT_BUS.addListener(MovesClient::interaction);
-        MinecraftForge.EVENT_BUS.addListener(MovesSettingsScreen::registerCommand);
+        MinecraftForge.EVENT_BUS.addListener(MovesMenuScreen::registerCommand);
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
-                () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> new MovesSettingsScreen(parent)));
+                () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> new MovesMenuScreen(parent)));
         GuardInput.init();
         StoopFx.init();
         Cutscene.init();
@@ -109,7 +109,7 @@ public final class MovesClient {
 
     private static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(DODGE);
-        event.register(CELEBRATE);
+        event.register(ABILITY);
         if (!KINETRIX) event.register(OWN_SLIDE);
     }
 
@@ -127,8 +127,9 @@ public final class MovesClient {
         LocalPlayer p = mc.player;
         if (flash > 0) flash--;
         if (shieldFlash > 0) shieldFlash--;
-        boolean dodgePressed = false;
+        boolean dodgePressed = false, abilityPressed = false;
         while (DODGE.consumeClick()) dodgePressed = true;
+        while (ABILITY.consumeClick()) abilityPressed = true;
         boolean slideDown = held(mc, slideKey(mc));
         boolean slidePressed = slideDown && !slideWasDown;
         slideWasDown = slideDown;
@@ -148,13 +149,6 @@ public final class MovesClient {
         }
         Stamina s = Stamina.of(p);
         Cutscene.tick(mc, p, s);
-
-        // ---- the celebrate emote: G (again: stop it); moving or a hit breaks it off too
-        boolean celebrate = false;
-        while (CELEBRATE.consumeClick()) celebrate = true;
-        if (celebrate && s.move == Move.CELEBRATE) cancel(p, s, 6);
-        else if (celebrate && s.move == null) start(p, s, Move.CELEBRATE, false, -1);
-        if (s.move == Move.CELEBRATE && p.hurtTime > 0) cancel(p, s, 4);
 
         // ---- the fast run: Ctrl held (the server gives the speed while sprinting and takes the energy)
         boolean run = HudConfig.Moves.FAST_RUN.on() && mc.options.keySprint.isDown();
@@ -210,6 +204,7 @@ public final class MovesClient {
             // The left button with a sword or an axe: the attack out of the slide (after its cooldown).
             if (attackPressed && HudConfig.Moves.SLIDE_ATTACK.on() && dev.mcreload.moves.Strikes.finisherWeapon(p)) {
                 if (s.slideAttackCooldown > 0) {
+                    MovesHud.refused(Move.SLIDE_ATTACK);
                     p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_moves.slide_attack.cooldown",
                             (s.slideAttackCooldown + 19) / 20), true);
                 } else if (start(p, s, Move.SLIDE_ATTACK, false, -1)) {
@@ -244,8 +239,8 @@ public final class MovesClient {
             if ((was == Move.HOP || was == Move.DASH) && sprinted && mc.options.keyUp.isDown()) p.setSprinting(true);
         }
 
-        // ---- the sword moves of the left button: the finisher, the dash strike (they take the click)
-        if (StrikeInput.tick(mc, p, s, attackDown, attackPressed)) attackPressed = false;
+        // ---- the strikes: the finisher, the dash strike (they take the click), the ability on G
+        if (StrikeInput.tick(mc, p, s, attackDown, attackPressed, abilityPressed)) attackPressed = false;
 
         // ---- the bow: the flow and the Legolas stance (their arrows, poses and dodges), then the
         // volley: a fully drawn bow and the left button (which in the flow is the flow's next step)
@@ -306,7 +301,7 @@ public final class MovesClient {
         return mc.options.keyUp.isDown() || mc.options.keyDown.isDown() || mc.options.keyLeft.isDown() || mc.options.keyRight.isDown();
     }
 
-    private static KeyMapping slideKey(Minecraft mc) {
+    static KeyMapping slideKey(Minecraft mc) {
         if (!KINETRIX) return OWN_SLIDE;
         for (KeyMapping k : mc.options.keyMappings) if ("key.kinetrix.crawl".equals(k.getName())) return k;
         return OWN_SLIDE;
@@ -357,6 +352,10 @@ public final class MovesClient {
         s.target = target;
         if (move == Move.DASH) s.dashCooldown = MovesConfig.dashCooldownTicks();
         if (move == Move.WHIRL) s.whirlCooldown = MovesConfig.whirlCooldownTicks();
+        if (move == Move.SWORD_SPIN) {
+            s.spinCooldown = MovesConfig.swordSpinCooldownTicks();
+            s.attackYaw = p.getYRot();
+        }
         if (move == Move.SLIDE_ATTACK) {
             s.slideAttackCooldown = MovesConfig.slideAttackCooldownTicks();
             s.attackYaw = p.getYRot();
@@ -419,6 +418,12 @@ public final class MovesClient {
         }
         if (move == Move.WHIRL) {
             whirl(p, t);
+            return;
+        }
+        if (move == Move.SWORD_SPIN) {
+            // on the spot: the run it may start from is braked at once
+            Vec3 v = p.getDeltaMovement();
+            p.setDeltaMovement(v.x * 0.3, v.y, v.z * 0.3);
             return;
         }
         if (move == Move.PLUNGE_FALL) return;     // the little steering vanilla gives in the air stays
@@ -766,6 +771,8 @@ public final class MovesClient {
             if (t == 1) step(p, ground, 0.9f);
         } else if (move == Move.WHIRL) {
             if (t >= dev.mcreload.moves.Whirl.SPIN_FROM && t < dev.mcreload.moves.Whirl.SPIN_TO && t % 5 == 0) step(p, ground, 0.3f);
+        } else if (move == Move.SWORD_SPIN) {
+            if (t == dev.mcreload.moves.Spin.SPIN_FROM || t == dev.mcreload.moves.Spin.SPIN_TO) step(p, ground, 0.4f);
         } else if (move == Move.HOP || move == Move.KICK) {
             if (t == Move.HOP_LAND || (move == Move.KICK && t == Kick.LAND)) step(p, ground, 0.7f);
             if (move == Move.KICK && t == Kick.SPIN) sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 0.4f, 0.8f);
@@ -854,6 +861,11 @@ public final class MovesClient {
         s.shields = m.shields();
         s.freeTicks = m.freeTicks();
         s.freeTotal = m.freeTotal();
+        // the cooldowns as the server counts them (the tray; after joining the client knows none of its own)
+        s.dashCooldown = m.cooldowns()[0];
+        s.whirlCooldown = m.cooldowns()[1];
+        s.spinCooldown = m.cooldowns()[2];
+        s.slideAttackCooldown = m.cooldowns()[3];
         maxEnergy = m.maxEnergy();
         maxShields = m.maxShields();
     }

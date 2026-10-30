@@ -1,25 +1,19 @@
 package dev.mcreload.moves.client;
 
-import com.mojang.brigadier.Command;
 import dev.mcreload.moves.HudConfig;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.CommonComponents;
-import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 
 import java.util.Locale;
 
 /**
- * How the bars look: style, shield icon, which side is which, the arrow counter; and the Moves...
- * button to the page that switches moves on and off (MovesToggleScreen). Opened with
- * {@code /kinetrix_moves} or the Config button in the Mods list; shows the bars as they will be.
+ * How the bars look: style, shield icon, which side is which, the arrow counter and the tray of
+ * cooldowns. Opened from the mod's menu (MovesMenuScreen); shows the bars and the tray as they will be.
  */
 public final class MovesSettingsScreen extends Screen {
     private static final int BUTTON_H = 20, GAP = 4;
@@ -30,16 +24,6 @@ public final class MovesSettingsScreen extends Screen {
     public MovesSettingsScreen(Screen parent) {
         super(Component.translatable("kinetrix_moves.settings.title"));
         this.parent = parent;
-    }
-
-    static void registerCommand(RegisterClientCommandsEvent event) {
-        Command<CommandSourceStack> open = ctx -> {
-            Minecraft mc = Minecraft.getInstance();
-            // After the chat screen has closed.
-            mc.tell(() -> mc.setScreen(new MovesSettingsScreen(null)));
-            return 1;
-        };
-        event.getDispatcher().register(Commands.literal("kinetrix_moves").executes(open));
     }
 
     @Override
@@ -75,16 +59,14 @@ public final class MovesSettingsScreen extends Screen {
                 .withTooltip(v -> Tooltip.create(Component.translatable("kinetrix_moves.settings.arrows.tip")))
                 .create(at[3][0], at[3][1], w, BUTTON_H, Component.translatable("kinetrix_moves.settings.arrows"),
                         (b, v) -> HudConfig.ARROWS.set(v)));
-        addRenderableWidget(Button.builder(Component.translatable("kinetrix_moves.settings.moves"), b -> {
-                    HudConfig.SPEC.save();
-                    minecraft.setScreen(new MovesToggleScreen(this));
-                })
-                .tooltip(Tooltip.create(Component.translatable("kinetrix_moves.settings.moves.tip")))
-                .bounds(at[4][0], at[4][1], twoColumns ? 2 * w + GAP : w, BUTTON_H).build());
+        addRenderableWidget(CycleButton.onOffBuilder(HudConfig.tray())
+                .withTooltip(v -> Tooltip.create(Component.translatable("kinetrix_moves.settings.tray.tip")))
+                .create(at[4][0], at[4][1], twoColumns ? 2 * w + GAP : w, BUTTON_H, Component.translatable("kinetrix_moves.settings.tray"),
+                        (b, v) -> HudConfig.TRAY.set(v)));
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose())
                 .bounds((width - 150) / 2, height - 28, 150, BUTTON_H).build());
         int below = at[4][1] + BUTTON_H + 8;
-        previewTop = below + 34 <= height - 32 ? below : -1;
+        previewTop = below + 40 <= height - 32 ? below : -1;
     }
 
     private static String key(String what, String value) {
@@ -96,10 +78,18 @@ public final class MovesSettingsScreen extends Screen {
         renderBackground(g);
         g.drawCenteredString(font, title, width / 2, 14, 0xFFFFFF);
         super.render(g, mouseX, mouseY, partialTick);
-        // The bars as they will look: shields 6.5 of 10, energy 60 %.
+        // The bars as they will look: shields 6.5 of 10, energy 60 %; under them the tray.
         if (previewTop >= 0 && width >= 200) {
             g.drawCenteredString(font, Component.translatable("kinetrix_moves.settings.preview"), width / 2, previewTop, 0xA0A0A0);
-            MovesHud.preview(g, width / 2, previewTop + 16);
+            boolean tray = HudConfig.tray();
+            if (tray && width >= 400) {
+                // side by side: the bars on the left, the tray on the right
+                MovesHud.preview(g, width / 2 - 98, previewTop + 16);
+                MovesHud.trayPreview(g, width / 2 + 98, previewTop + 14);
+            } else {
+                MovesHud.preview(g, width / 2, previewTop + 16);
+                if (tray && previewTop + 70 <= height - 32) MovesHud.trayPreview(g, width / 2, previewTop + 44);
+            }
         }
     }
 

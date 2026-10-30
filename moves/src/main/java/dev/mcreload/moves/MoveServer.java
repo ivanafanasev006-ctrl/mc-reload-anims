@@ -46,7 +46,7 @@ public final class MoveServer {
         if (move == Move.HOP) Hop.started(p, s, enemy);
         if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
         if (move == Move.WHIRL) Whirl.started(p, s);
-        if (move == Move.CELEBRATE) Celebrate.started(p);
+        if (move == Move.SWORD_SPIN) Spin.started(p, s);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
         if (move == Move.DASH) {
             s.dashCooldown = MovesConfig.dashCooldownTicks();
@@ -85,7 +85,6 @@ public final class MoveServer {
         }
         if ((move == Move.KICK || move == Move.ROLL_KICK) && !s.kickDone && s.moveTick >= Kick.hit(move) - 2
                 && p.level().getEntity(s.target) instanceof net.minecraft.world.entity.LivingEntity mob) Kick.kick(p, s, mob);
-        if (move == Move.CELEBRATE && s.moveTick < move.length - 4) Celebrate.stopped(p);
         s.end(p);
         MovesNet.stop(p);
     }
@@ -131,16 +130,18 @@ public final class MoveServer {
             int grace = JUMP_GRACE + (p.level().isClientSide ? 0 : GROUND_GRACE);
             return p.fallDistance < Fall.TUCK_FROM && (ground || p.tickCount - lastGround(p) <= grace);
         }
-        // The strikes: the dash with a sword, the whirlwind with an axe (S and the left button held,
-        // the right one; author, 2026-10-29, fifth message); the finisher: the stab with a sword, the
-        // chop with an axe (author, 2026-10-30).
+        // The strikes: the dash with a sword (the left and the right button held); on G the sword's turn
+        // with a sword, the whirlwind with an axe; the finisher: the stab with a sword, the chop with an
+        // axe (author, 2026-10-30).
         if (move == Move.DASH && !Strikes.sword(p)) return false;
         if (move == Move.WHIRL && !Strikes.axe(p)) return false;
+        if (move == Move.SWORD_SPIN && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER_AXE && !Strikes.axe(p)) return false;
         // They wait out their cooldowns (the server lets a client a few ticks ahead of it through).
         if (move == Move.DASH) return ground && s.dashCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.WHIRL) return ground && s.whirlCooldown <= (p.level().isClientSide ? 0 : 5);
+        if (move == Move.SWORD_SPIN) return ground && s.spinCooldown <= (p.level().isClientSide ? 0 : 5);
         return ground || !MovesConfig.dodgeOnlyOnGround();
     }
 

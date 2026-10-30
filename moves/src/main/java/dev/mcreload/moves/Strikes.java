@@ -9,7 +9,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -31,13 +30,14 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  * The sword moves of the left button (author, 2026-10-28):
  *
  * <ul>
- *   <li><b>Dash strike</b> ({@code dash_strike}): S and the left button held, the right button once. The player runs
+ *   <li><b>Dash strike</b> ({@code dash_strike}): the left and the right button held with a sword. The player runs
  *   on into a lunge and the blade goes into the belly of whoever is in front at 0.45 s, as a crit
  *   (the weapon's blow times 1.5, as in a jump).</li>
  *   <li><b>Finisher</b> ({@code finisher_stab}): a mob with a fifth of its health or less at point
- *   blank, the left button held, a sword or an axe in hand. It is held on the blade from the stab (0.35 s) and dies when the
- *   blade comes out (0.95 s). Not on bosses (the dragon, the wither, the forge:bosses tag, our
- *   kinetrix_moves:no_finisher tag, or anything with more health than a config limit).</li>
+ *   blank, the left button held, a sword in hand. It is held from the start and dies at the stab into
+ *   its belly (0.3 s; author, 2026-10-30: as quick as the axe's, no lead-up). Not on bosses (the
+ *   dragon, the wither, the forge:bosses tag, our kinetrix_moves:no_finisher tag, or anything with
+ *   more health than a config limit).</li>
  *   <li><b>The axe's finisher</b> ({@code finisher_chop}; author, 2026-10-30): the same mob, the same button, an axe in
  *   hand: no stab but a chop from above. It is held while the axe goes up and dies at the blow (0.6 s).</li>
  * </ul>
@@ -71,8 +71,8 @@ public final class Strikes {
     public static final int SLIDE_TURN = 6;
     /** A crit's blow, as in a jump (vanilla). */
     public static final float CRIT = 1.5f;
-    /** Finisher: the blade goes in (0.35 s) and comes out, when the mob dies (0.95 s). */
-    public static final int FINISH_STAB = 7, FINISH_KILL = 19;
+    /** Finisher: the blade goes into the belly and kills (0.3 s); it is out (0.6 s), when running on may break off the rest. */
+    public static final int FINISH_KILL = 6, FINISH_OUT = 12;
     /** The axe's finisher: the axe comes down onto the mob by the neck and kills it (0.58 s: the first
      *  tick after it), and is wrenched out of it (0.9 s), when running on may break off the rest. */
     public static final int CHOP_HIT = 12, CHOP_OUT = 18;
@@ -263,14 +263,14 @@ public final class Strikes {
         s.target = target.getId();
     }
 
-    /** The tick a finisher kills on: the sword's blade coming out, the axe's blow. */
+    /** The tick a finisher kills on: the sword's stab, the axe's blow. */
     static int killTick(Move move) {
         return move == Move.FINISHER_AXE ? CHOP_HIT : FINISH_KILL;
     }
 
     /**
-     * The mob is held: it stays where it is, turned to the player, and does nothing. The sword's stab
-     * hurts it (a flinch, nothing more) and the blade coming out kills it; the axe's blow kills it.
+     * The mob is held: it stays where it is, turned to the player, and does nothing, until the sword's
+     * stab or the axe's blow kills it.
      */
     static void finisherTick(ServerPlayer p, Stamina s) {
         if (!(p.level().getEntity(s.target) instanceof LivingEntity mob) || !mob.isAlive()) return;
@@ -285,26 +285,17 @@ public final class Strikes {
             m.setTarget(p);
         }
         ServerLevel level = p.serverLevel();
-        if (s.move == Move.FINISHER && s.moveTick == FINISH_STAB) {
-            DamageSource src = p.damageSources().playerAttack(p);
-            mob.hurt(src, Math.min(1f, Math.max(0f, mob.getHealth() - 0.5f)));
-            mob.setDeltaMovement(0, 0, 0);
-            level.playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1f, 0.8f);
-            Vec3 at = mob.position().add(0, mob.getBbHeight() * 0.5, 0);
-            level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, at.x, at.y, at.z, 4, 0.15, 0.15, 0.15, 0.1);
-            p.getMainHandItem().hurtAndBreak(1, p, e -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
-        } else if (s.moveTick == kill) {
+        if (s.moveTick == kill) {
             boolean chop = s.move == Move.FINISHER_AXE;
             mob.invulnerableTime = 0;
             mob.hurt(p.damageSources().playerAttack(p), mob.getHealth() + mob.getAbsorptionAmount() + 1000f);
-            level.playSound(null, mob.getX(), mob.getY(), mob.getZ(), chop ? SoundEvents.PLAYER_ATTACK_STRONG : SoundEvents.PLAYER_ATTACK_CRIT,
-                    SoundSource.PLAYERS, 1f, chop ? 0.6f : 0.7f);
-            Vec3 at = mob.position().add(0, mob.getBbHeight() * (chop ? 0.8 : 0.6), 0);
+            level.playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1f, chop ? 0.6f : 0.8f);
+            if (!chop) level.playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 0.8f, 0.7f);
+            // the axe by the neck, the sword into the belly
+            Vec3 at = mob.position().add(0, mob.getBbHeight() * (chop ? 0.8 : 0.5), 0);
             level.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 16, 0.2, 0.2, 0.2, 0.3);
-            if (chop) {
-                level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, at.x, at.y, at.z, 6, 0.15, 0.15, 0.15, 0.1);
-                p.getMainHandItem().hurtAndBreak(1, p, e -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
-            }
+            level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, at.x, at.y, at.z, 6, 0.15, 0.15, 0.15, 0.1);
+            p.getMainHandItem().hurtAndBreak(1, p, e -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
             p.setLastHurtMob(mob);
             s.combatTicks = MovesConfig.combatTicks();
         }
