@@ -1,0 +1,33 @@
+total 18868
+drwxr-xr-x 2 runner runner    4096 Oct 30 18:52 .
+drwxr-xr-x 8 runner runner    4096 Oct 30 18:52 ..
+-rw-r--r-- 1 runner runner  580602 Oct 30 18:52 architectury-9.2.14-forge.jar
+-rw-r--r-- 1 runner runner  143121 Oct 30 18:52 bc_particle-0.0.6-forge-1.20.1.jar
+-rw-r--r-- 1 runner runner 1054339 Oct 30 18:52 bettercombat-forge-1.9.0+1.20.1.jar
+-rw-r--r-- 1 runner runner   40125 Oct 30 18:52 caelus-forge-3.2.0+1.20.1.jar
+-rw-r--r-- 1 runner runner 1181413 Oct 30 18:52 cloth-config-11.1.136-forge.jar
+-rw-r--r-- 1 runner runner  398066 Oct 30 18:52 curios-forge-5.14.1+1.20.1.jar
+-rw-r--r-- 1 runner runner 1320675 Oct 30 18:52 embeddium-0.3.31+mc1.20.1.jar
+-rw-r--r-- 1 runner runner  445642 Oct 30 18:52 entity_model_features_forge_1.20.1-2.4.1.jar
+-rw-r--r-- 1 runner runner  676887 Oct 30 18:52 entity_texture_features_forge_1.20.1-6.2.9.jar
+-rw-r--r-- 1 runner runner 1038209 Oct 30 18:52 geckolib-forge-1.20.1-4.8.4.jar
+-rw-r--r-- 1 runner runner 8784756 Oct 30 18:52 irons_spellbooks-1.20.1-3.4.0.11.jar
+-rw-r--r-- 1 runner runner  492333 Oct 30 18:52 kinetrix-1.20.1-1.1.1-beta.jar
+-rw-r--r-- 1 runner runner  181437 Oct 30 18:52 player-animation-lib-forge-1.0.2-rc1+1.20.jar
+-rw-r--r-- 1 runner runner 2163998 Oct 30 18:52 skinlayers3d-forge-1.11.1-mc1.20.1.jar
+-rw-r--r-- 1 runner runner  779530 Oct 30 18:52 vintage_animations-forge-1.3.0.jar
+architectury-9.2.14-forge.jar: modId = "architectury"
+bc_particle-0.0.6-forge-1.20.1.jar: modId="bc_particle" #mandatory
+bettercombat-forge-1.9.0+1.20.1.jar: modId="bettercombat" #mandatory
+caelus-forge-3.2.0+1.20.1.jar: modId="caelus"
+cloth-config-11.1.136-forge.jar: modId = "cloth_config"
+curios-forge-5.14.1+1.20.1.jar: modId="curios"
+embeddium-0.3.31+mc1.20.1.jar: modId="embeddium"
+entity_model_features_forge_1.20.1-2.4.1.jar: modId = "entity_model_features"
+entity_texture_features_forge_1.20.1-6.2.9.jar: modId = "entity_texture_features"
+geckolib-forge-1.20.1-4.8.4.jar: modId="geckolib"
+irons_spellbooks-1.20.1-3.4.0.11.jar: modId="irons_spellbooks" #mandatory
+kinetrix-1.20.1-1.1.1-beta.jar: modId="kinetrix"
+player-animation-lib-forge-1.0.2-rc1+1.20.jar: modId = "playeranimator"
+skinlayers3d-forge-1.11.1-mc1.20.1.jar: modId="skinlayers3d"
+vintage_animations-forge-1.3.0.jar: modId = "vintage_animations"
