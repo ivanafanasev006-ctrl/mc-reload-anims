@@ -13,6 +13,9 @@
   and the roll on. Changed: 4 s to 2.1 s, the twists a clean flip (the mechanic turns the player
   to the mob, the camera with them, as in hop_on_kick), the limbs kept clear of the body.
 
+Later messages, made here too: celebrate to the author's music (2026-10-29, again 2026-10-30); the
+axe's head flat in the whirlwind and the axe's own finisher, finisher_chop (2026-10-30).
+
 The model does not fly or travel: the mechanic carries the player (the paths it reads, see
 paths()); every frame the lowest point of the body is put on the floor where the feet are down.
 """
@@ -88,6 +91,61 @@ def aimed(pose, direction, start=(0.0, 0.0, 0.0)):
     from scipy.optimize import least_squares
     res = least_squares(miss, np.asarray(start, float), diff_step=1e-3, max_nfev=200)
     return held(pose, tuple(float(v) for v in res.x))
+
+
+#: Where an axe's edge faces, in the held item's own frame. The rig's sword stands for any blade: its
+#: guard lies in the plane of the game's flat item picture, as an axe's head does, and the axe's edge
+#: is on the guard's -x side (up in the stance's grip; author, 2026-10-30: "in the turns the axe just
+#: looks up", where that side was up).
+EDGE_LOCAL = np.array((-1.0, 0.0, 0.0))
+
+
+def edge(pose):
+    """The way the axe's edge faces in the pose (world, unit)."""
+    return kit.fk(pose)[ITEM][:3, :3] @ EDGE_LOCAL
+
+
+def aimed_flat(pose, direction, edge_dir, start=(0.0, 0.0, 0.0)):
+    """The pose with the item turned in the fist so the blade points along `direction` and the
+    edge faces `edge_dir` (world; only its part across the blade counts)."""
+    want = np.asarray(direction, float)
+    want = want / np.linalg.norm(want)
+    e = np.asarray(edge_dir, float)
+    e = e - want * e.dot(want)
+    e = e / np.linalg.norm(e)
+
+    def miss(r):
+        q = held(pose, r)
+        g, t = blade(q)
+        d = t - g
+        d = d / np.linalg.norm(d)
+        return np.concatenate([(d - want) * 10.0, (edge(q) - e) * 10.0, (np.asarray(r) - np.asarray(start)) * 0.002])
+
+    from scipy.optimize import least_squares
+    res = least_squares(miss, np.asarray(start, float), diff_step=1e-3, max_nfev=300)
+    return held(pose, tuple(float(v) for v in res.x))
+
+
+#: The item group's own turn in the rig: Blockbench adds a key's angles to it (angle by angle), so
+#: turns of the item are worked out on the sum and the key is what is left after it.
+ITEM_REST = np.array(kit.RIG.groups[kit.RIG.by_name[ITEM]]['rotation'], float)
+
+
+def item_continuous(prev, v):
+    """The item's key v made continuous with prev (as kit.continuous, on the whole turn)."""
+    if prev is None:
+        return tuple(float(x) for x in v)
+    return tuple(float(x) for x in kit.continuous(np.add(prev, ITEM_REST), np.add(v, ITEM_REST)) - ITEM_REST)
+
+
+def turned_between(a, b, f, prev=None):
+    """The item's key a fraction f of the way from a to b, along the shortest turn between the two
+    (as a wrist turns it; not angle by angle, which tumbles it); continuous with prev."""
+    from scipy.spatial.transform import Rotation, Slerp
+    ends = Rotation.from_matrix(np.stack([kit.rot_of(ITEM_REST + np.asarray(a, float)),
+                                          kit.rot_of(ITEM_REST + np.asarray(b, float))]))
+    m = Slerp([0.0, 1.0], ends)([min(1.0, max(0.0, f))]).as_matrix()[0]
+    return item_continuous(prev, kit.euler_of(m) - ITEM_REST)
 
 
 def _arms_on(pose, prev, key, rhand, lhand, wl=1.0):
@@ -270,6 +328,7 @@ def axe_whirlwind():
     a = L.Anim('axe_whirlwind', WHIRL_LEN, 'once')
     item = (0.0, 0.0, 0.0)
     out_rot = None
+    prev_item = None
     prev_body = None
     for t in kit.frames(0, WHIRL_LEN):
         p = kit.design(d, t)
@@ -291,23 +350,23 @@ def axe_whirlwind():
         p['body@p'] = (bp[0], bp[1] + bob, bp[2])
         p['body'] = tuple(kit.continuous(prev_body, p['body']))
         prev_body = p['body']
-        # the blade: out along the arm and a little up while it turns; back to the normal grip after
-        if SPIN_FROM - 0.05 <= t <= SPIN_TO:
-            r = math.radians(yaw)
-            out = np.array((math.cos(r), 0.18, -math.sin(r)))     # the body's right, turned with it (Blockbench +Y turns +x to -z)
-            p = aimed(p, out, start=item)
-            item = p[ITEM]
+        # the axe (author, 2026-10-30: "the axe just looks up, unturned in the hand: the blade flat to
+        # the ground, not upright, facing out"): in the turns the haft out along the arm and a little
+        # up, the head flat to the ground, its edge leading into the turn, into whatever it meets. The
+        # wrist turns it so over the wind-up and back over the end, along the shortest turn in the fist.
+        r = math.radians(yaw)
+        out = np.array((math.cos(r), 0.18, -math.sin(r)))     # the body's right, turned with it (Blockbench +Y turns +x to -z)
+        lead = np.array((-math.sin(r), 0.0, -math.cos(r)))    # the way that hand goes as the body turns
+        if t <= SPIN_TO:
+            q = aimed_flat(p, out, lead, start=item)
+            item = item_continuous(item, q[ITEM])
             out_rot = item
-        elif t < SPIN_FROM - 0.05:
             f = kit.smooth(t / (SPIN_FROM - 0.05))
-            r = math.radians(yaw)
-            out = np.array((math.cos(r), 0.18, -math.sin(r)))
-            q = aimed(p, out, start=item)
-            p = held(p, _lerp3((0.0, 0.0, 0.0), q[ITEM], f))
-            item = q[ITEM]
+            p = held(p, item if f >= 1.0 else turned_between((0.0, 0.0, 0.0), item, f, prev_item))
         else:
             f = kit.smooth(min(1.0, (t - SPIN_TO) / (1.95 - SPIN_TO)))
-            p = held(p, _lerp3(out_rot, (0.0, 0.0, 0.0), f))
+            p = held(p, turned_between(out_rot, (0.0, 0.0, 0.0), f, prev_item))
+        prev_item = p[ITEM]
         a.key(t, p)
     a.tol_rot, a.tol_pos = 0.4, 0.08
     return a
@@ -544,4 +603,164 @@ def celebrate():
         p = kit.grounded(p, clearance=cel_height(t) + hair, bones=LEGS)
         a.key(t, p)
     a.tol_rot, a.tol_pos = 0.4, 0.08
+    return a
+
+
+# --------------------------------------------------------------------------------------------
+# finisher_chop: the finisher with an axe (author, 2026-10-30)
+# --------------------------------------------------------------------------------------------
+
+#: Author, 2026-10-30: "a finisher for the axe, so that it does not stab into the belly like the
+#: sword but strikes from above, at the head or just at the body, with a vertical swing". No draft:
+#: made from the description. The mob stands at point blank, facing the player (the finisher's reach,
+#: 0.8 block from the player's middle to its side: its middle 18.8 px in front); the grey figure
+#: stands for it here, weakened and stooping, and never reaches the game.
+#: The free hand takes it by the shoulder (CH_GRAB), the axe goes up and hangs down behind the back
+#: (to CH_TOP, a last inch to CH_HOLD), comes over and down onto it by the neck (CH_HIT:
+#: Strikes.CHOP_HIT, the kill) and on into its chest (CH_DEEP), stays in while it sags, is wrenched
+#: out (CH_PULL) and the stance comes back by CH_LEN. The blow takes 0.12 s from the top (CH_HOLD to
+#: CH_HIT): two and a half of the game's ticks, so the swing is seen, not skipped.
+CH_GRAB, CH_TOP, CH_HOLD, CH_HIT, CH_DEEP, CH_PULL, CH_LEN = 0.17, 0.42, 0.46, 14 / 24, 16 / 24, 0.9, 1.4167
+MOB_AT = (0.0, 0.0, -18.8)
+#: Where the axe's head goes, on the mob as it is then: down onto the top of its shoulder by the neck
+#: (its left one, before the player's right hand) at the blow (CH_HIT), then on down into its chest
+#: (CH_DEEP). The game's arms do not reach over the head, so at point blank a blow onto the head's
+#: top would come up at it, the haft upright; onto the shoulder it comes down from above. The axe is
+#: long for point blank: its head goes in a little further, into the root of the neck (and the mob
+#: stands nearer or further in the game anyway).
+HIT_ON, HIT_OFFSET = 'lshoulder2', np.array((-1.5, 2.0, 0.5))
+DEEP_ON, DEEP_OFFSET = 'chestfront2', np.array((3.0, -1.0, -2.5))
+#: The arm's turn about its own length is held near its design (a solver left free finds the same
+#: fist with the arm turned half round), and the elbow only bends.
+ARM_LIMITS = {('right_arm', 1): (-60.0, 40.0), ('right_arm', 2): (-25.0, 45.0), ('right_forearm', 0): (0.0, 140.0)}
+kit.POINTS.setdefault('axetip', (ITEM, tuple(TIP_LOCAL)))
+
+
+#: The wrist cocked for the chop: the haft turned this far from across the fist towards the line of
+#: the forearm, as a hand holds an axe up for a blow (the head then leads the swing less steeply).
+CHOP_COCK = 35.0
+
+
+def chop_grip():
+    """The axe's turn in the fist for the chop: the game's grip (the haft across the fist, out of
+    the thumb's side) turned half round about the haft, so the edge faces away from the elbow, the
+    way the head goes in a blow from above (in the game's grip it faces the elbow: the blow would
+    land with the back of the head); and the wrist cocked by CHOP_COCK."""
+    from scipy.spatial.transform import Rotation
+    axis = (TIP_LOCAL - GRIP_LOCAL) / np.linalg.norm(TIP_LOCAL - GRIP_LOCAL)
+    turned = kit.rot_of(ITEM_REST) @ Rotation.from_rotvec(np.pi * axis).as_matrix()
+    rolled = tuple(float(v) for v in kit.euler_of(turned) - ITEM_REST)
+    # cocked: at rest (the forearm hanging) the haft tips from forward towards the ground
+    rest = held({}, rolled)
+    g, t = blade(rest)
+    cock = Rotation.from_euler('x', -CHOP_COCK, degrees=True).as_matrix()
+    return aimed_flat(rest, cock @ (t - g), cock @ edge(rest), start=rolled)[ITEM]
+
+
+def _mob(t):
+    """The mob's own pose: stooping, weakened; at the blow its head snaps down, the knees give and it
+    sags down and back, away from the player (who leans in over it)."""
+    weak = {'chest': (-9, 0, 0), 'head': (-8, 0, 0), 'right_arm': (8, 0, 5), 'right_forearm': (14, 0, 0),
+            'left_arm': (8, 0, -5), 'left_forearm': (14, 0, 0), 'right_leg': (5, 0, 2), 'right_shin': (-8, 0, 0),
+            'left_leg': (5, 0, -2), 'left_shin': (-8, 0, 0)}
+    struck = {**weak, 'body': (8, 0, 0), 'chest': (-10, 0, 0), 'head': (-30, 0, 0), 'right_arm': (-6, 0, 10), 'left_arm': (-6, 0, -10),
+              'right_leg': (18, 0, 3), 'right_shin': (-36, 0, 0), 'left_leg': (18, 0, -3), 'left_shin': (-36, 0, 0)}
+    sag = {**struck, 'body': (18, 0, 0), 'chest': (-12, 0, 0), 'head': (-24, 0, 0), 'right_leg': (42, 0, 4), 'right_shin': (-84, 0, 0),
+           'left_leg': (42, 0, -4), 'left_shin': (-84, 0, 0), 'right_arm': (4, 0, 12), 'left_arm': (4, 0, -12)}
+    d = L.Anim('mob', CH_LEN)
+    for tk, pose, ease in ((0.0, weak, 'auto'), (CH_HIT, weak, 'auto'), (CH_HIT + 0.08, struck, 'out'),
+                           (0.95, sag, 'inout'), (CH_LEN, sag, 'auto')):
+        d.key(tk, pose, ease, whole=True)
+    return kit.grounded(kit.design(d, t))
+
+
+def _on_mob(t, name, offset):
+    """A point of the mob (as it is at t), moved by offset (world px)."""
+    return kit.pt(kit.fk(kit.as_partner(_mob(t), MOB_AT)), name) + offset
+
+
+def _axe_onto(pose, point):
+    """The right arm solved so the axe's head is at `point`, the grip as the pose holds it and the
+    arm's designed angles preferred. Returns (pose, miss px)."""
+    q, err, x = kit.solve(pose, [('axetip', np.asarray(point, float), 1.0)], kit.arm_vary('right'), ARM_LIMITS,
+                          reg=[0.08, 0.1, 0.08, 0.08])
+    return q, err
+
+
+def _left_hand_on(pose, mob_own):
+    """The left arm solved so the fist closes over the top front of the mob's right shoulder."""
+    W = kit.fk({**pose, **kit.as_partner(mob_own, MOB_AT)})
+    target = kit.pt(W, 'rshoulder2') + np.array((0.0, 1.0, 2.6))
+    q, err, x = kit.solve(pose, [('lhand', target, 1.0)], kit.arm_vary('left'), kit.arm_bounds('left'), reg=0.004)
+    return q
+
+
+def finisher_chop():
+    """A step into the stance, the left foot forward; the free hand takes the mob by the shoulder and
+    holds it; the axe goes up and hangs down behind the back, the body leaning back, the right
+    shoulder drawn back, the weight on the back foot; a last inch, then the chop: the body drives
+    forward and down onto the front knee, the shoulders square, the arm comes down, the axe's head
+    over the shoulder and down onto the mob by the neck, the edge first, and on down into its chest;
+    it stays in while the mob sags, the hand pressing it down; it is wrenched out, the free hand
+    shoving the mob off, and the stance comes back. The axe turns in the fist as it is raised, in
+    front (chop_grip: the edge away from the elbow, the wrist cocked), and back at the end; between,
+    the grip holds."""
+    stance = {'right_leg': (-14, 0, 4), 'right_shin': (-10, 0, 0), 'left_leg': (16, 0, -3), 'left_shin': (-14, 0, 0)}
+    ready = {**stance, 'torso': (0, -8, 0), 'chest': (-4, 0, 0), 'head': (2, 4, 0),
+             'right_arm': (35, 0, 8), 'right_forearm': (40, 0, 0)}
+    top = {'body': (5, 0, 0), 'body@p': (0, 0, 1.0), 'torso': (0, -18, 0), 'chest': (8, 0, 0), 'head': (2, 10, 0),
+           'right_arm': (172, 0, -10), 'right_forearm': (85, 0, 0),
+           'right_leg': (-10, 0, 4), 'right_shin': (-18, 0, 0), 'left_leg': (18, 0, -3), 'left_shin': (-10, 0, 0)}
+    hold = {**top, 'right_arm': (176, 0, -10), 'right_forearm': (92, 0, 0), 'chest': (10, 0, 0)}
+    # the arm goes up and comes down straight forward, a little out at the top: the game's arms do not
+    # reach over the head, so the axe passes by its right side, in the arm's own plane, never through it
+    lift = {**ready, 'torso': (0, -14, 0), 'chest': (2, 0, 0), 'head': (2, 8, 0), 'right_arm': (100, 0, -5), 'right_forearm': (15, 0, 0)}
+    hit = {'body': (-4, 0, 0), 'body@p': (0, 0, -1.5), 'torso': (0, 10, 0), 'chest': (-12, 0, 0), 'head': (2, -4, 0),
+           'right_arm': (30, 0, 0), 'right_forearm': (60, 0, 0),
+           'right_leg': (-18, 0, 4), 'right_shin': (-8, 0, 0), 'left_leg': (26, 0, -3), 'left_shin': (-34, 0, 0)}
+    deep = {**hit, 'body': (-5, 0, 0), 'chest': (-16, 0, 0), 'head': (-4, -4, 0), 'torso': (0, 12, 0),
+            'right_arm': (20, 0, 0), 'right_forearm': (50, 0, 0), 'left_shin': (-38, 0, 0)}
+    stuck = {**deep, 'chest': (-18, 0, 0), 'body@p': (0, 0, -1.7)}
+    pull = {**stance, 'body': (-2, 0, 0), 'body@p': (0, 0, -0.8), 'torso': (0, 0, 0), 'chest': (-10, 0, 0), 'head': (0, 0, 0),
+            'right_arm': (70, -6, 16), 'right_forearm': (38, 0, 0), 'left_arm': (72, 0, -8), 'left_forearm': (8, 0, 0)}
+    back = {'chest': (-4, 0, 0), 'right_arm': (26, 0, 10), 'right_forearm': (34, 0, 0), 'left_arm': (16, 0, -8),
+            'left_forearm': (22, 0, 0), 'right_leg': (-6, 0, 3), 'right_shin': (-6, 0, 0), 'left_leg': (8, 0, -2), 'left_shin': (-8, 0, 0)}
+
+    # the blow and the follow-through: the arm solved, with the chop's grip, so the axe's head goes
+    # into the mob by the neck, then down into its chest (the stuck pose keeps that arm)
+    grip = chop_grip()
+    q, err_hit = _axe_onto(held(hit, grip), _on_mob(CH_HIT, HIT_ON, HIT_OFFSET))
+    hit['right_arm'], hit['right_forearm'] = q['right_arm'], q['right_forearm']
+    q, err_deep = _axe_onto(held(deep, grip), _on_mob(CH_DEEP, DEEP_ON, DEEP_OFFSET))
+    deep['right_arm'], deep['right_forearm'] = q['right_arm'], q['right_forearm']
+    stuck['right_arm'], stuck['right_forearm'] = deep['right_arm'], deep['right_forearm']
+
+    keys = [(0.0, {}, 'auto'), (CH_GRAB, ready, 'inout'), (0.3, lift, 'auto'), (CH_TOP, top, 'out'), (CH_HOLD, hold, 'linear'),
+            (CH_HIT, hit, 'in'), (CH_DEEP, deep, 'out'), (0.8, stuck, 'inout'), (CH_PULL, pull, 'out'),
+            (1.08, back, 'inout'), (CH_LEN, {}, 'inout')]
+    # the free hand on the mob's shoulder from the grab until the axe is out (solved at each key)
+    for i, (tk, pose, ease) in enumerate(keys):
+        if CH_GRAB <= tk <= 0.8:
+            keys[i] = (tk, _left_hand_on(pose, _mob(tk)), ease)
+    d = L.Anim('chop_design', CH_LEN)
+    for tk, pose, ease in keys:
+        d.key(tk, pose, ease, whole=True)
+
+    rest = (0.0, 0.0, 0.0)
+
+    def grip_at(t):
+        if t <= 0.95:
+            return turned_between(rest, grip, kit.smooth((t - 0.02) / (0.2 - 0.02)))
+        return turned_between(grip, rest, kit.smooth((t - 0.95) / (1.28 - 0.95)))
+
+    a = L.Anim('finisher_chop', CH_LEN, 'once')
+    prev_item = None
+    for t in kit.frames(0, CH_LEN):
+        p = kit.grounded(kit.design(d, t), bones=LEGS)
+        p = held(p, item_continuous(prev_item, grip_at(t)))
+        prev_item = p[ITEM]
+        p.update(kit.as_partner(_mob(t), MOB_AT))
+        a.key(t, p)
+    a.tol_rot, a.tol_pos = 0.4, 0.08
+    a.chop_error = (err_hit, err_deep)
     return a
