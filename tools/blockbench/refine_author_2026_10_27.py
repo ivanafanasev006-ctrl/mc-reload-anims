@@ -412,6 +412,11 @@ def build(names=None):
     out["animations"] = []
     for a in made:
         a.store(out)
+    # The rolls' blade: the author's turn of it in the fist stood it out to the side, away from the
+    # body (his video of 2026-10-30, 23:01); it lies along the forearm now (refine_author_2026_10_29/round7.py).
+    sys.path.insert(0, os.path.join(HERE, "refine_author_2026_10_29"))
+    import round7  # noqa: E402
+    round7.tuck_blade(out, round7.ROLLS_27)
     os.makedirs(os.path.dirname(DST), exist_ok=True)
     ak.save_model(out, DST)
     print("wrote", DST, ":", ", ".join(a.name for a in made))

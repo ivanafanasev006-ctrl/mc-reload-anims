@@ -17,7 +17,13 @@ writes tools/blockbench/refined/author_2026-10-29.bbmodel     (hop_on_kick, slid
        tools/blockbench/refined/kinetrix/emotes.bbmodel       (Kinetrix's own keyframe emotes: celebrate to
                                                               the author's music, round5.py; author,
                                                               2026-10-30: the emote belongs to Kinetrix)
-       tools/blockbench/refined/ledge_2026-10-29.bbmodel      (the ledge set, with the ledge to see it by)
+       tools/blockbench/refined/ledge_2026-10-29.bbmodel      (the ledge set, with the ledge to see it by;
+                                                              after the video of 2026-10-30, 23:01: the leap
+                                                              to an edge looked at, no creeping along the
+                                                              edge, the pull-up's knee forward; round7.py)
+
+After that video the rolls' blade lies along the forearm (round7.tuck_blade; the rolls of 2026-10-27
+too, refine_author_2026_10_27.py).
 
 The same round also changed hop_roll_dodge and finisher_stab (refine_author_2026_10_28b.py) and is
 described in docs/moves.md: what each move is for and which key drives which part of the mechanic.
@@ -42,6 +48,7 @@ import ledge
 import moves
 import round5
 import round6
+import round7
 from kit import L
 
 DST = os.path.join(kit.BB, 'refined', 'author_2026-10-29.bbmodel')
@@ -147,12 +154,15 @@ def to_json(a, uuids):
     return j
 
 
-def write_set(model, made, dst):
-    """The model with these animations (and no others) written to dst."""
+def write_set(model, made, dst, tuck=None):
+    """The model with these animations (and no others) written to dst; tuck: the rolls among them
+    whose blade lies along the forearm (round7.tuck_blade)."""
     uuids = L.bone_uuids(model)
     for a in made:
         no_bow(a)
     model['animations'] = [to_json(a, uuids) for a in made]
+    if tuck:
+        round7.tuck_blade(model, tuck)
     model['animations'][0]['selected'] = True
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     with open(dst, 'w', encoding='utf-8', newline='\n') as f:
@@ -176,6 +186,7 @@ def main():
     for a in made:
         no_bow(a)
     model['animations'] = [to_json(a, uuids) for a in made]
+    round7.tuck_blade(model, round7.rolls_29())
     model['animations'][0]['selected'] = True
     with open(DST, 'w', encoding='utf-8', newline='\n') as f:
         json.dump(model, f, separators=(',', ':'))
@@ -186,7 +197,7 @@ def main():
         mb = json.load(f)
     # axe_whirlwind: made again (even, up to five turns, its ending apart) in round6, with the sword's turn
     made_b = [round5.hop_roll_kick(), round5.plunge_fall(), round5.plunge_land(), round5.finisher_chop()]
-    write_set(mb, made_b, DST_B)
+    write_set(mb, made_b, DST_B, round7.rolls_29b())
 
     # --- the message of 2026-10-30: the sword's turn and the quick finisher; Kinetrix's emote ---
     with open(SRC_C, encoding='utf-8') as f:
@@ -209,19 +220,17 @@ def main():
     hang = ledge.ledge_hang()
     bystander(hang, hang.length)
     anims.append(hang)
-    v = ledge.SHIMMY_STEP / ledge.SHIMMY_T
-    for side in ('right', 'left'):
-        s = ledge.ledge_shimmy(side)
-        sign = 1 if side == 'right' else -1
-        wall_keys(s, {t: (sign * v * t, 0, 0) for t in kit.frames(0, s.length)})
-        bystander(s, s.length)
-        anims.append(s)
+    # hand over hand along the edge (ledge.ledge_shimmy) is gone: the author, 2026-10-30, kept only the hops
     for side in ('left', 'right'):
         h = ledge.ledge_hop(side)
         sign = -1 if side == 'left' else 1
         wall_keys(h, {t: (sign * ledge.hop_path(t) / ledge.PX, 0, 0) for t in kit.frames(0, h.length)})
         bystander(h, h.length)
         anims.append(h)
+    leap = round7.ledge_leap()
+    wall_keys(leap, round7.leap_wall(leap))
+    bystander(leap, leap.length)
+    anims.append(leap)
     c = ledge.ledge_climb_up()
     wall_keys(c, c.root)
     bystander(c, c.length)
