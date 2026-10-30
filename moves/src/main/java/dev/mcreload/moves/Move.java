@@ -101,12 +101,20 @@ public enum Move {
     DASH("dash_strike", 1f, 31, -1, -1, -1, -1, Side.FRONT, MovesConfig::costDash),
     /**
      * A weakened mob (a fifth of its health or less) at point blank, the left button held with a
-     * sword or an axe: the finishing stab (finisher_stab). The free hand takes it by the shoulder, the blade
+     * sword: the finishing stab (finisher_stab; an axe has its own, FINISHER_AXE). The free hand takes it by the shoulder, the blade
      * goes in at 0.35 s and it is held on it until the blade comes out at 0.95 s, when it dies
      * (Strikes.FINISH_STAB, FINISH_KILL). Not on bosses. The player stands still meanwhile, so
      * nothing hurts them until the kill (author), the mob least of all.
      */
     FINISHER("finisher_stab", 1f, 30, 0, Strikes.FINISH_KILL + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher),
+    /**
+     * The same with an axe (author, 2026-10-30: "not stabbed into the belly like the sword, but struck
+     * from above, at the head or just at the body, with a vertical swing"): the chop (finisher_chop).
+     * The free hand takes it by the shoulder, the axe goes up behind the back and comes down onto it
+     * by the neck at 0.58 s, killing it (Strikes.CHOP_HIT), on into its chest; it is wrenched out at
+     * 0.9 s (Strikes.CHOP_OUT). Nothing hurts the player until the blow.
+     */
+    FINISHER_AXE("finisher_chop", 1f, 31, 0, Strikes.CHOP_HIT + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher),
 
     // ---- the author's second message of 2026-10-29
     /**
@@ -311,12 +319,17 @@ public enum Move {
 
     /** A move made at someone (the vault, the kick, the finisher, a friend's hand): the client names them, the server checks them. */
     public boolean targeted() {
-        return this == HOP || this == KICK || this == ROLL_KICK || this == FINISHER || this == LEDGE_HELP;
+        return this == HOP || this == KICK || this == ROLL_KICK || finisher() || this == LEDGE_HELP;
+    }
+
+    /** The finisher: the sword's stab or the axe's chop. */
+    public boolean finisher() {
+        return this == FINISHER || this == FINISHER_AXE;
     }
 
     /** A sword move started by the left button: while it plays the button strikes nothing else. */
     public boolean strike() {
-        return this == DASH || this == FINISHER || this == SLIDE_ATTACK || this == WHIRL;
+        return this == DASH || finisher() || this == SLIDE_ATTACK || this == WHIRL;
     }
 
     /** On the ledge: hanging, moving along it, climbing onto it or off it, being pulled up (not the friend pulling). */
@@ -367,7 +380,7 @@ public enum Move {
 
     /** Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28). */
     public boolean firstPerson() {
-        return this == HOP || this == DASH || this == FINISHER || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
+        return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
                 || this == WHIRL || ledge();
     }
 
@@ -391,6 +404,7 @@ public enum Move {
             case SLIDE_ATTACK -> SLIDE_ATTACK_UP;
             case FALL_ROLL -> Fall.STAND;
             case FINISHER -> Strikes.FINISH_KILL + 1;
+            case FINISHER_AXE -> Strikes.CHOP_OUT;
             default -> -1;
         };
     }

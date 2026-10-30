@@ -16,7 +16,8 @@ import net.minecraft.world.phys.EntityHitResult;
  * <ul>
  *   <li><b>Finisher.</b> A mob with a fifth of its health or less at point blank, a sword or an axe in hand: a
  *   hint shows under the crosshair; the left button held (pressed while the hint shows, or kept
- *   down a moment, as when holding it to attack) starts the finishing stab.</li>
+ *   down a moment, as when holding it to attack) starts the finishing stab, or with an axe the chop
+ *   from above (author, 2026-10-30).</li>
  *   <li><b>Dash strike.</b> A sword in hand, S and the left button held, the right button once
  *   (author, 2026-10-29, fifth message): a lunge forward; then 30 s before the next one (the
  *   hotbar says how long).</li>
@@ -73,10 +74,12 @@ public final class StrikeInput {
             swallow(mc);
             return true;
         }
-        finisherTarget = s.move == null && dev.mcreload.moves.HudConfig.Moves.FINISHER.on() && MoveServer.allowed(p, s, Move.FINISHER)
+        // the finisher: the stab with a sword, the chop with an axe (author, 2026-10-30)
+        Move finisher = Strikes.axe(p) ? Move.FINISHER_AXE : Move.FINISHER;
+        finisherTarget = s.move == null && dev.mcreload.moves.HudConfig.Moves.FINISHER.on() && MoveServer.allowed(p, s, finisher)
                 ? Strikes.finisherTarget(p, looked(mc), true) : null;
         if (finisherTarget != null && attackDown && (attackPressed || held >= HOLD_TICKS)) {
-            if (MovesClient.start(p, s, Move.FINISHER, finisherTarget.getId())) {
+            if (MovesClient.start(p, s, finisher, finisherTarget.getId())) {
                 swallow(mc);
                 return true;
             }

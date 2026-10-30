@@ -38,6 +38,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  *   blank, the left button held, a sword or an axe in hand. It is held on the blade from the stab (0.35 s) and dies when the
  *   blade comes out (0.95 s). Not on bosses (the dragon, the wither, the forge:bosses tag, our
  *   kinetrix_moves:no_finisher tag, or anything with more health than a config limit).</li>
+ *   <li><b>The axe's finisher</b> ({@code finisher_chop}; author, 2026-10-30): the same mob, the same button, an axe in
+ *   hand: no stab but a chop from above. It is held while the axe goes up and dies at the blow (0.6 s).</li>
  * </ul>
  */
 public final class Strikes {
@@ -71,6 +73,9 @@ public final class Strikes {
     public static final float CRIT = 1.5f;
     /** Finisher: the blade goes in (0.35 s) and comes out, when the mob dies (0.95 s). */
     public static final int FINISH_STAB = 7, FINISH_KILL = 19;
+    /** The axe's finisher: the axe comes down onto the mob by the neck and kills it (0.58 s: the first
+     *  tick after it), and is wrenched out of it (0.9 s), when running on may break off the rest. */
+    public static final int CHOP_HIT = 12, CHOP_OUT = 18;
 
     // ------------------------------------------------------------------ who
 
@@ -150,7 +155,7 @@ public final class Strikes {
     static void serverTick(ServerPlayer p, Stamina s) {
         if (s.move == Move.DASH) dashTick(p, s);
         if (s.move == Move.SLIDE_ATTACK && s.moveTick == SLIDE_HIT) slideHit(p, s);
-        if (s.move == Move.FINISHER) finisherTick(p, s);
+        if (s.move != null && s.move.finisher()) finisherTick(p, s);
     }
 
     /** The dash: the blade looks for its mob every tick of the lunge, in a box that moves with the player. */
@@ -258,13 +263,19 @@ public final class Strikes {
         s.target = target.getId();
     }
 
+    /** The tick a finisher kills on: the sword's blade coming out, the axe's blow. */
+    static int killTick(Move move) {
+        return move == Move.FINISHER_AXE ? CHOP_HIT : FINISH_KILL;
+    }
+
     /**
-     * The mob is held on the blade: it stays where it is, turned to the player, and does nothing.
-     * The stab hurts it (a flinch, nothing more); the blade coming out kills it.
+     * The mob is held: it stays where it is, turned to the player, and does nothing. The sword's stab
+     * hurts it (a flinch, nothing more) and the blade coming out kills it; the axe's blow kills it.
      */
     static void finisherTick(ServerPlayer p, Stamina s) {
         if (!(p.level().getEntity(s.target) instanceof LivingEntity mob) || !mob.isAlive()) return;
-        if (s.moveTick > FINISH_KILL) return;
+        int kill = killTick(s.move);
+        if (s.moveTick > kill) return;
         Vec3 v = mob.getDeltaMovement();
         mob.setDeltaMovement(0, Math.min(v.y, 0), 0);
         mob.hurtMarked = true;
@@ -274,7 +285,7 @@ public final class Strikes {
             m.setTarget(p);
         }
         ServerLevel level = p.serverLevel();
-        if (s.moveTick == FINISH_STAB) {
+        if (s.move == Move.FINISHER && s.moveTick == FINISH_STAB) {
             DamageSource src = p.damageSources().playerAttack(p);
             mob.hurt(src, Math.min(1f, Math.max(0f, mob.getHealth() - 0.5f)));
             mob.setDeltaMovement(0, 0, 0);
@@ -282,12 +293,18 @@ public final class Strikes {
             Vec3 at = mob.position().add(0, mob.getBbHeight() * 0.5, 0);
             level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, at.x, at.y, at.z, 4, 0.15, 0.15, 0.15, 0.1);
             p.getMainHandItem().hurtAndBreak(1, p, e -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
-        } else if (s.moveTick == FINISH_KILL) {
+        } else if (s.moveTick == kill) {
+            boolean chop = s.move == Move.FINISHER_AXE;
             mob.invulnerableTime = 0;
             mob.hurt(p.damageSources().playerAttack(p), mob.getHealth() + mob.getAbsorptionAmount() + 1000f);
-            level.playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1f, 0.7f);
-            Vec3 at = mob.position().add(0, mob.getBbHeight() * 0.6, 0);
+            level.playSound(null, mob.getX(), mob.getY(), mob.getZ(), chop ? SoundEvents.PLAYER_ATTACK_STRONG : SoundEvents.PLAYER_ATTACK_CRIT,
+                    SoundSource.PLAYERS, 1f, chop ? 0.6f : 0.7f);
+            Vec3 at = mob.position().add(0, mob.getBbHeight() * (chop ? 0.8 : 0.6), 0);
             level.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 16, 0.2, 0.2, 0.2, 0.3);
+            if (chop) {
+                level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, at.x, at.y, at.z, 6, 0.15, 0.15, 0.15, 0.1);
+                p.getMainHandItem().hurtAndBreak(1, p, e -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
+            }
             p.setLastHurtMob(mob);
             s.combatTicks = MovesConfig.combatTicks();
         }
@@ -298,7 +315,7 @@ public final class Strikes {
     public static void attack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer p) || event.isCanceled()) return;
         Stamina s = Stamina.of(p);
-        if (s.move != Move.FINISHER || s.moveTick > FINISH_KILL + 2) return;
+        if (s.move == null || !s.move.finisher() || s.moveTick > killTick(s.move) + 2) return;
         Entity by = event.getSource().getEntity();
         if (by != null && by.getId() == s.target) event.setCanceled(true);
     }

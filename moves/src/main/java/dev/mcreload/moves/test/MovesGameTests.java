@@ -464,7 +464,10 @@ public final class MovesGameTests {
                 .run(4 + dev.mcreload.moves.Strikes.FINISH_KILL);
     }
 
-    /** The finisher with an axe (author, 2026-10-28): it kills a weak mob as the sword does; a pickaxe makes none. */
+    /**
+     * The finisher with an axe (author, 2026-10-28; its own chop, 2026-10-30): the chop, not the stab;
+     * the zombie is held and alive until the blow and dead at it; a pickaxe makes none, a sword no chop.
+     */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void finisherWithAnAxe(GameTestHelper h) {
         Script t = new Script(h).settle();
@@ -474,12 +477,18 @@ public final class MovesGameTests {
             zombie.setHealth(3f);
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_PICKAXE));
             t.check(!MoveServer.request(p, Move.FINISHER, false, zombie.getId()), "finisher with a pickaxe");
+            t.check(!MoveServer.request(p, Move.FINISHER_AXE, false, zombie.getId()), "the axe's finisher with a pickaxe");
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            t.check(!MoveServer.request(p, Move.FINISHER_AXE, false, zombie.getId()), "the axe's chop with a sword");
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
-            t.check(MoveServer.request(p, Move.FINISHER, false, zombie.getId()), "finisher refused with an axe");
+            t.check(!MoveServer.request(p, Move.FINISHER, false, zombie.getId()), "the sword's stab with an axe");
+            t.check(MoveServer.request(p, Move.FINISHER_AXE, false, zombie.getId()), "the axe's finisher refused");
             t.check(!MoveServer.request(p, Move.DASH, false), "the dash strike is a sword's: refused with an axe");
         });
-        t.at(3 + dev.mcreload.moves.Strikes.FINISH_KILL, () -> t.check(!zombie.isAlive(), "the zombie survived the axe's finisher"))
-                .run(4 + dev.mcreload.moves.Strikes.FINISH_KILL);
+        t.at(dev.mcreload.moves.Strikes.CHOP_HIT, () -> t.check(zombie.isAlive() && zombie.getHealth() >= 2.9f,
+                "before the blow the zombie should be held, unhurt: " + zombie.isAlive() + ", " + zombie.getHealth()));
+        t.at(3 + dev.mcreload.moves.Strikes.CHOP_HIT, () -> t.check(!zombie.isAlive(), "the zombie survived the axe's blow"))
+                .run(4 + dev.mcreload.moves.Strikes.CHOP_HIT);
     }
 
     /** No finisher on a healthy mob, without a sword, on a boss (by the tag or by its health), too far. */

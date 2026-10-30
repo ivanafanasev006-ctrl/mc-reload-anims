@@ -47,7 +47,7 @@ public final class MoveServer {
         if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
         if (move == Move.WHIRL) Whirl.started(p, s);
         if (move == Move.CELEBRATE) Celebrate.started(p);
-        if (move == Move.FINISHER) Strikes.finisherStarted(p, s, enemy);
+        if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
         if (move == Move.DASH) {
             s.dashCooldown = MovesConfig.dashCooldownTicks();
             s.dashHit = false;
@@ -95,7 +95,7 @@ public final class MoveServer {
         if (move == Move.HOP) return Hop.valid(p, e);
         if (move == Move.KICK || move == Move.ROLL_KICK) return Kick.valid(p, e);
         if (move == Move.LEDGE_HELP) return e instanceof Player;
-        if (move == Move.FINISHER) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
+        if (move.finisher()) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;
     }
 
@@ -132,10 +132,12 @@ public final class MoveServer {
             return p.fallDistance < Fall.TUCK_FROM && (ground || p.tickCount - lastGround(p) <= grace);
         }
         // The strikes: the dash with a sword, the whirlwind with an axe (S and the left button held,
-        // the right one; author, 2026-10-29, fifth message); the finisher with a sword or an axe.
+        // the right one; author, 2026-10-29, fifth message); the finisher: the stab with a sword, the
+        // chop with an axe (author, 2026-10-30).
         if (move == Move.DASH && !Strikes.sword(p)) return false;
         if (move == Move.WHIRL && !Strikes.axe(p)) return false;
-        if (move == Move.FINISHER && !Strikes.finisherWeapon(p)) return false;
+        if (move == Move.FINISHER && !Strikes.sword(p)) return false;
+        if (move == Move.FINISHER_AXE && !Strikes.axe(p)) return false;
         // They wait out their cooldowns (the server lets a client a few ticks ahead of it through).
         if (move == Move.DASH) return ground && s.dashCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.WHIRL) return ground && s.whirlCooldown <= (p.level().isClientSide ? 0 : 5);
