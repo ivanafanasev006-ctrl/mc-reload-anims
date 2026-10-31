@@ -59,6 +59,7 @@ public final class MoveServer {
         if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
         if (move == Move.WHIRL) Whirl.started(p, s);
         if (move == Move.SWORD_SPIN) Spin.started(p, s);
+        if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
         if (move == Move.DASH) {
             s.dashCooldown = MovesConfig.dashCooldownTicks();
@@ -134,7 +135,7 @@ public final class MoveServer {
         if (move == Move.SLIDE) return ground && sprint;
         // Out of the slide, a sword or an axe in hand, after the cooldown (a client a few ticks ahead is let through).
         if (move == Move.SLIDE_ATTACK) {
-            return s.move == Move.SLIDE && Strikes.finisherWeapon(p) && s.slideAttackCooldown <= (p.level().isClientSide ? 0 : 5);
+            return s.move == Move.SLIDE && Strikes.slideWeapon(p) && s.slideAttackCooldown <= (p.level().isClientSide ? 0 : 5);
         }
         // In the air: the tuck while falling far enough, the roll out of it; the ledge from a jump or a fall.
         if (move == Move.FALL_TUCK) return p.fallDistance >= Fall.TUCK_FROM - (p.level().isClientSide ? 0f : 1f);
@@ -160,6 +161,8 @@ public final class MoveServer {
         if (move == Move.SWORD_SPIN && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER_AXE && !Strikes.axe(p)) return false;
+        // The bow's G: 10 s after the volley, 40 s after the hail (author, 2026-10-31), the one wait for both.
+        if (move.volley() && s.bowCooldown > (p.level().isClientSide ? 0 : 5)) return false;
         // The volley at the marked: its first step waits out the cooldown and wants the energy for the start.
         if (move.marked() && (s.move == null || !s.move.marked())) {
             if (s.markedCooldown > (p.level().isClientSide ? 0 : 5)) return false;

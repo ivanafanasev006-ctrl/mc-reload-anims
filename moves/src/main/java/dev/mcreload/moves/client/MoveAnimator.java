@@ -77,6 +77,8 @@ public final class MoveAnimator {
         if (move.firstPerson()) firstPerson(keyframes);
         IAnimation played = endsTurned(anim) ? new EndsOnLastFrame(keyframes) : keyframes;
         if (move.shot != null && move.shot.holdAt() >= 0) played = new Segment(played, move.shot.holdAt() - from);
+        // A bow in the attack out of a slide: held as it is, not turned in the fist as the blade is
+        if (move == Move.SLIDE_ATTACK && dev.mcreload.moves.Bow.isBow(p.getMainHandItem())) played = new ItemAsHeld(played);
         // On the ledge the moves follow each other quickly: a longer blend, the hands do not jump.
         int fade = move.ledge() && was != null && was.ledge() ? 4 : 2;
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(fade, Ease.INOUTSINE), unwound(layer, anim, from, played));
@@ -132,6 +134,39 @@ public final class MoveAnimator {
             if (!frames.isEmpty() && Math.abs(frames.get(frames.size() - 1).value) > Mth.PI) return true;
         }
         return false;
+    }
+
+    /** An animation whose turns of the held items are left out (a bow swung where the animation turns a blade). */
+    private record ItemAsHeld(IAnimation inner) implements IAnimation {
+        @Override
+        public void tick() {
+            inner.tick();
+        }
+
+        @Override
+        public boolean isActive() {
+            return inner.isActive();
+        }
+
+        @Override
+        public FirstPersonMode getFirstPersonMode(float tickDelta) {
+            return inner.getFirstPersonMode(tickDelta);
+        }
+
+        @Override
+        public FirstPersonConfiguration getFirstPersonConfiguration(float tickDelta) {
+            return inner.getFirstPersonConfiguration(tickDelta);
+        }
+
+        @Override
+        public void setupAnim(float tickDelta) {
+            inner.setupAnim(tickDelta);
+        }
+
+        @Override
+        public Vec3f get3DTransform(String part, TransformType type, float tickDelta, Vec3f value0) {
+            return "rightItem".equals(part) || "leftItem".equals(part) ? value0 : inner.get3DTransform(part, type, tickDelta, value0);
+        }
     }
 
     /** An animation stopped on its last frame (see {@link #endsTurned}): over once it gets there. */

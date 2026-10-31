@@ -224,6 +224,7 @@ public final class MovesSelfTest {
         ledgeCorner("87_ledge_corner");
         slideAttack("96_slide_attack", CameraType.THIRD_PERSON_BACK);
         slideAttack("97_slide_attack_first_person", CameraType.FIRST_PERSON);
+        slideAttack("96b_slide_attack_bow", CameraType.THIRD_PERSON_BACK, Items.BOW);
         fallRoll("98_fall_roll", CameraType.THIRD_PERSON_BACK);
         ledgeJump("80_ledge_jump_hops_leap_climb", CameraType.THIRD_PERSON_BACK);
         ledgeJump("84_ledge_first_person", CameraType.FIRST_PERSON);
@@ -268,9 +269,11 @@ public final class MovesSelfTest {
         // right button stays held from before it
         SCENARIOS.add(new Scenario("80_bow_volley", 70, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
+            Stamina.of(sp).bowCooldown = 0;
             sp.getInventory().add(new ItemStack(Items.ARROW, 10));
         }, (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 1) Stamina.of(mc.player).bowCooldown = 0;     // a G of a scenario before waits on
             if (t == 2) {
                 mc.options.keyUse.setDown(true);
                 KeyMapping.click(mc.options.keyUse.getKey());
@@ -280,7 +283,9 @@ public final class MovesSelfTest {
                 note("volley: drawn " + mc.player.getTicksUsingItem() + " ticks");
                 KeyMapping.click(MovesClient.ABILITY.getKey());
             }
-            if (t == 28) note("volley: move " + Stamina.of(mc.player).move + " (G tapped)");
+            if (t == 28) note("volley: move " + Stamina.of(mc.player).move + " (G tapped), G waits " + Stamina.of(mc.player).bowCooldown / 20 + " s");
+            if (t == 64) KeyMapping.click(MovesClient.ABILITY.getKey());
+            if (t == 66) note("volley: G again 1.9 s later: move " + Stamina.of(mc.player).move + ", G waits " + Stamina.of(mc.player).bowCooldown / 20 + " s");
             if (t >= 28 && t <= 66) {
                 int left = mc.player.getInventory().countItem(Items.ARROW);
                 if (left != arrowsWere && arrowsWere >= 0) note("volley: an arrow left at tick " + (t - 28) + " of the volley");
@@ -300,9 +305,11 @@ public final class MovesSelfTest {
         // letting go shoots the last arrow and stands up
         SCENARIOS.add(new Scenario("81_bow_flow", 300, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
+            Stamina.of(sp).bowCooldown = 0;
             sp.getInventory().add(new ItemStack(Items.ARROW, 16));
         }, (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 1) Stamina.of(mc.player).bowCooldown = 0;     // a G of a scenario before waits on
             if (t == 2) {
                 mc.options.keyUse.setDown(true);
                 KeyMapping.click(mc.options.keyUse.getKey());
@@ -384,9 +391,11 @@ public final class MovesSelfTest {
         // ---- G held: the hail, five to ten arrows spread about the look, the slide a block longer
         SCENARIOS.add(new Scenario("85_bow_hail", 70, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
+            Stamina.of(sp).bowCooldown = 0;
             sp.getInventory().add(new ItemStack(Items.ARROW, 20));
         }, (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 1) Stamina.of(mc.player).bowCooldown = 0;     // a G of a scenario before waits on
             if (t == 6) {
                 startPos = mc.player.position();
                 KeyMapping.click(MovesClient.ABILITY.getKey());
@@ -449,11 +458,13 @@ public final class MovesSelfTest {
         // ---- G at two marked mobs: the volley's arrows at them in turn, the player turned to each
         SCENARIOS.add(new Scenario("87_bow_g_marked", 70, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
+            Stamina.of(sp).bowCooldown = 0;
             sp.getInventory().add(new ItemStack(Items.ARROW, 20));
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -4, 9, 20f);
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 5, 8, 20f);
         }, (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 1) Stamina.of(mc.player).bowCooldown = 0;     // a G of a scenario before waits on
             LocalPlayer p = mc.player;
             if (t == 2) {
                 mc.options.keyUse.setDown(true);
@@ -933,8 +944,12 @@ public final class MovesSelfTest {
 
     /** Sprinting, C tapped, a zombie a step to the side of the way: the left button as the slide passes it. */
     private static void slideAttack(String name, CameraType camera) {
+        slideAttack(name, camera, Items.IRON_SWORD);
+    }
+
+    private static void slideAttack(String name, CameraType camera, net.minecraft.world.item.Item weapon) {
         SCENARIOS.add(new Scenario(name, 60, sp -> {
-            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            place(sp, 0, new ItemStack(weapon));
             sp.teleportTo(sp.serverLevel(), 0.5, Y + 1, -6.5, 0f, 0f);
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0.9, 5.5, -1f);
             Stamina.of(sp).slideAttackCooldown = 0;

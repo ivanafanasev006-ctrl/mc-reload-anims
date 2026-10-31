@@ -658,6 +658,25 @@ public final class MovesGameTests {
         }).run(5 + Move.SLIDE_ATTACK.length);
     }
 
+    /** The attack out of a slide with a bow (author, 2026-10-31: "as with the sword and the axe"): its close-combat blow, a crit. */
+    @GameTest(template = FLOOR, timeoutTicks = 100)
+    public static void slideAttackWithABow(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie behind = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 1);
+        noSun(behind);
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            p.setSprinting(true);
+            t.check(MoveServer.request(p, Move.SLIDE, false), "slide refused");
+            t.check(MoveServer.request(p, Move.SLIDE_ATTACK, false), "the attack out of the slide refused with a bow");
+        });
+        t.at(3 + dev.mcreload.moves.Strikes.SLIDE_HIT, () -> {
+            float lost = 20f - behind.getHealth();
+            t.check(lost >= 5.5f, "the zombie slid past took " + lost + " (a crit of the bow's 4 is 6)");
+        }).run(4 + dev.mcreload.moves.Strikes.SLIDE_HIT);
+    }
+
     /** R held in a fall: tucked, the landing hurts 70 % less (another player's the same fall does not); then the roll. */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void fallRollCutsDamage(GameTestHelper h) {
@@ -1369,13 +1388,18 @@ public final class MovesGameTests {
             s.energy = 100f;
             t.check(MoveServer.request(p, Move.BARRAGE, false), "G with a bow refused");
             t.close(s.energy, 100f - MovesConfig.costBarrage(), "energy after a volley");
+            t.check(s.bowCooldown == MovesConfig.volleyCooldownTicks(), "the wait after G: " + s.bowCooldown + " ticks (want 10 s)");
         });
         // counted by the bow's wear (the player picks up the arrows that land at their feet)
         int[] shots = dev.mcreload.moves.Bow.VOLLEY_SHOTS;
         t.at(1 + shots[0], () -> t.check(p.getMainHandItem().getDamageValue() == 1, "the first arrow did not leave"));
         t.at(shots[1], () -> t.check(p.getMainHandItem().getDamageValue() == 1, "the second arrow came early"));
-        t.at(1 + shots[1], () -> t.check(p.getMainHandItem().getDamageValue() == 2, "the second arrow did not leave"))
-                .run(2 + shots[1]);
+        t.at(1 + shots[1], () -> t.check(p.getMainHandItem().getDamageValue() == 2, "the second arrow did not leave"));
+        // G again before its 10 s: neither the volley nor the hail (the one wait for both)
+        t.at(2 + Move.BARRAGE.length, () -> {
+            t.check(!MoveServer.request(p, Move.BARRAGE, false), "G again within 10 s");
+            t.check(!MoveServer.request(p, Move.HAIL, false), "G held within the 10 s of the volley");
+        }).run(3 + Move.BARRAGE.length);
     }
 
     /** This player's arrows (the other tests of the batch shoot nearby too). */
@@ -1401,6 +1425,7 @@ public final class MovesGameTests {
             p.getFoodData().setSaturation(0f);
             s.energy = 100f;
             t.check(MoveServer.request(p, Move.HAIL, false), "the hail refused");
+            t.check(s.bowCooldown == MovesConfig.hailCooldownTicks(), "the wait after G held: " + s.bowCooldown + " ticks (want 40 s)");
         });
         // each arrow's way as it leaves (they land at the player's feet, who picks them up: counted by the bow's wear)
         List<Float> yaws = new ArrayList<>();
@@ -1470,6 +1495,7 @@ public final class MovesGameTests {
             a.teleportTo(ahead.x, ahead.y, ahead.z);
             a.setDeltaMovement(Vec3.ZERO);
             s.energy = 100f;
+            s.bowCooldown = 0;     // the volley's 10 s waited out
             t.check(MoveServer.request(p, Move.HAIL, false), "the hail refused");
         });
         t.at(hail + dev.mcreload.moves.Bow.HAIL_FROM + 2 * dev.mcreload.moves.Bow.HAIL_EVERY + 3, () -> {

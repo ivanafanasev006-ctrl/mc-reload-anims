@@ -25,7 +25,7 @@ public final class HudConfig {
         ROLLS("rolls", "Rolls: R + W / R + S."),
         FAST_RUN("fastRun", "The fast run: Ctrl held while sprinting (7 blocks a second, eats energy)."),
         SLIDE("slide", "The slide: sprinting, C."),
-        SLIDE_ATTACK("slideAttack", "The attack out of a slide: the left button while sliding with a sword or an axe."),
+        SLIDE_ATTACK("slideAttack", "The attack out of a slide: the left button while sliding with a sword, an axe or a bow."),
         VAULT("vault", "The vault over a mob: R + W at point blank."),
         KICK("kick", "The vault with a kick: W and Space down, R at a mob."),
         ROLL_KICK("rollKick", "The roll kick: Ctrl (the fast run), W and Space down, R at a mob (a back roll after it)."),
@@ -40,7 +40,7 @@ public final class HudConfig {
         LEDGE_GRAB("ledgeGrab", "Catching a ledge: the right button in a jump or a fall."),
         AUTO_HANG("autoHang", "Down onto a ledge: Ctrl + W + C at a drop."),
         LEDGE_HOPS("ledgeHops", "The hops along a ledge (A / D while hanging) and the leap to another edge looked at (Space)."),
-        VOLLEY("bowVolley", "G with a bow: the volley, three arrows (held: the hail, 5 to 10 spread out)."),
+        VOLLEY("bowVolley", "G with a bow: the volley, three arrows, 10 s cooldown (held: the hail, 5 to 10 spread out, 40 s)."),
         MARKS("bowMarks", "The bow's marks (the right button held, the left one on a mob) and the volley at the marked (the right button let go)."),
         FLOW("bowFlow", "The bow's combat flow after the volley: the left button dodges and shoots."),
         LEGOLAS("legolas", "The Legolas stance: R with the bow fully drawn.");

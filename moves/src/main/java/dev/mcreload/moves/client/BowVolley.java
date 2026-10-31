@@ -76,7 +76,8 @@ public final class BowVolley {
             return false;
         }
         // ---- G: tapped, the volley; held, the hail
-        if (abilityPressed && s.move == null && gDown == 0 && HudConfig.Moves.VOLLEY.on() && Bow.volleyReady(p)) gDown = 1;
+        if (abilityPressed && s.move == null && gDown == 0 && HudConfig.Moves.VOLLEY.on() && Bow.volleyReady(p)
+                && !StrikeInput.waits(p, s, Move.BARRAGE)) gDown = 1;
         if (gDown > 0) {
             gDown++;
             boolean held = MovesClient.held(mc, MovesClient.ABILITY);

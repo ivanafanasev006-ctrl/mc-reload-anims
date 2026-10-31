@@ -99,6 +99,11 @@ public final class Strikes {
     }
 
     /** The finisher is made with a sword or an axe (author, 2026-10-28; other mods' axes too: whatever chops like one). */
+    /** The attack out of a slide can be made with this in hand: a sword, an axe, and a bow (author, 2026-10-31: "as with the sword and the axe"). */
+    public static boolean slideWeapon(Player p) {
+        return finisherWeapon(p) || Bow.isBow(p.getMainHandItem());
+    }
+
     public static boolean finisherWeapon(Player p) {
         ItemStack hand = p.getMainHandItem();
         return Guard.isSword(hand) || hand.getItem() instanceof net.minecraft.world.item.AxeItem
@@ -201,6 +206,7 @@ public final class Strikes {
      * turned through and ends facing back the way they slid, so it reaches the mobs they slid past.
      */
     static void slideHit(ServerPlayer p, Stamina s) {
+        // (with a bow: its blow, 4, as it strikes in close combat; author, 2026-10-31)
         double reach = MovesConfig.slideAttackReach();
         float r = (s.attackYaw + 180f) * Mth.DEG_TO_RAD;
         Vec3 facing = new Vec3(-Mth.sin(r), 0, Mth.cos(r));

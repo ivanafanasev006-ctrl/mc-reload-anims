@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "6";
+    public static final String VERSION = "7";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -88,7 +88,7 @@ public final class MovesNet {
         if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p),
                 new Bars(s.energy, s.shields, dev.mcreload.moves.MovesConfig.maxEnergy(), dev.mcreload.moves.MovesConfig.maxShields(),
                         s.freeTicks, s.freeTotal, new int[]{s.dashCooldown, s.whirlCooldown, s.spinCooldown, s.slideAttackCooldown,
-                        s.markedCooldown}));
+                        s.markedCooldown, s.bowCooldown}));
     }
 
     /** A real player whose client has the mod (fake players and test players have no client). */
@@ -152,10 +152,10 @@ public final class MovesNet {
     /** Server -> client: the player's own bars. */
     /**
      * The bars, and the ticks left of the cooldowns (the tray): the dash, the whirlwind, the sword's
-     * turn, the attack out of a slide, the volley at the marked.
+     * turn, the attack out of a slide, the volley at the marked, the bow's G.
      */
     public record Bars(float energy, float shields, float maxEnergy, float maxShields, int freeTicks, int freeTotal, int[] cooldowns) {
-        public static final int COOLDOWNS = 5;
+        public static final int COOLDOWNS = 6;
 
         static void write(Bars m, FriendlyByteBuf b) {
             b.writeFloat(m.energy);

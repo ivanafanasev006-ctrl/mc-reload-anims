@@ -206,7 +206,7 @@ public final class MovesClient {
             if (s.moveTick <= Move.SLIDE_CRAWL_TICK) s.held &= slideDown;
             airTicks = p.onGround() ? 0 : airTicks + 1;
             // The left button with a sword or an axe: the attack out of the slide (after its cooldown).
-            if (attackPressed && HudConfig.Moves.SLIDE_ATTACK.on() && dev.mcreload.moves.Strikes.finisherWeapon(p)) {
+            if (attackPressed && HudConfig.Moves.SLIDE_ATTACK.on() && dev.mcreload.moves.Strikes.slideWeapon(p)) {
                 if (s.slideAttackCooldown > 0) {
                     MovesHud.refused(Move.SLIDE_ATTACK);
                     p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_moves.slide_attack.cooldown",
@@ -362,6 +362,7 @@ public final class MovesClient {
         s.target = target;
         if (move == Move.DASH) s.dashCooldown = MovesConfig.dashCooldownTicks();
         if (move == Move.WHIRL) s.whirlCooldown = MovesConfig.whirlCooldownTicks();
+        if (move.volley()) dev.mcreload.moves.Bow.started(s, move);
         if (move == Move.SWORD_SPIN) {
             s.spinCooldown = MovesConfig.swordSpinCooldownTicks();
             s.attackYaw = p.getYRot();
@@ -881,6 +882,10 @@ public final class MovesClient {
         s.spinCooldown = m.cooldowns()[2];
         s.slideAttackCooldown = m.cooldowns()[3];
         s.markedCooldown = m.cooldowns()[4];
+        s.bowCooldown = m.cooldowns()[5];
+        if (s.bowCooldown > s.bowCooldownTotal) {
+            s.bowCooldownTotal = s.bowCooldown > MovesConfig.volleyCooldownTicks() ? MovesConfig.hailCooldownTicks() : MovesConfig.volleyCooldownTicks();
+        }
         maxEnergy = m.maxEnergy();
         maxShields = m.maxShields();
     }

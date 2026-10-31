@@ -72,6 +72,7 @@ public final class StrikeInput {
             case SLIDE_ATTACK -> s.slideAttackCooldown;
             // the volley at the marked, in the tray by its first step
             case MARKED_SPIN_LEFT -> s.markedCooldown;
+            case BARRAGE -> s.bowCooldown;
             default -> 0;
         };
     }
@@ -137,16 +138,20 @@ public final class StrikeInput {
 
     /** Starts a strike that waits out a cooldown, or says above the hotbar how long it still needs. */
     private static boolean begin(Minecraft mc, LocalPlayer p, Stamina s, Move move) {
-        int cooldown = cooldown(s, move);
-        if (cooldown > 0) {
-            MovesHud.refused(move);
-            p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_moves.cooldown",
-                    net.minecraft.network.chat.Component.translatable("kinetrix_moves.settings.move." + key(move)), (cooldown + 19) / 20), true);
-            return false;
-        }
+        if (waits(p, s, move)) return false;
         if (!MovesClient.start(p, s, move, -1)) return false;
         swallow(mc);
         if (move != Move.DASH) LedgeInput.swallowUse(mc);
+        return true;
+    }
+
+    /** The strike still waits out its cooldown: its bar in the tray flashes and how long it needs shows above the hotbar. */
+    static boolean waits(LocalPlayer p, Stamina s, Move move) {
+        int cooldown = cooldown(s, move);
+        if (cooldown <= 0) return false;
+        MovesHud.refused(move);
+        p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_moves.cooldown",
+                net.minecraft.network.chat.Component.translatable("kinetrix_moves.settings.move." + key(move)), (cooldown + 19) / 20), true);
         return true;
     }
 
@@ -158,6 +163,7 @@ public final class StrikeInput {
             case SWORD_SPIN -> HudConfig.Moves.SWORD_SPIN.key;
             case SLIDE_ATTACK -> HudConfig.Moves.SLIDE_ATTACK.key;
             case MARKED_SPIN_LEFT -> HudConfig.Moves.MARKS.key;
+            case BARRAGE -> HudConfig.Moves.VOLLEY.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }

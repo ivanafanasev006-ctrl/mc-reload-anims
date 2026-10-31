@@ -47,7 +47,7 @@ public enum Move {
      * A sharp step back down onto a knee, sliding on into the kneel (1.85 blocks in 0.1-0.55 s), and
      * three arrows 0.55 s apart (Bow.VOLLEY_SHOTS; the draws between them played slower,
      * MoveAnimator.pace), each at a marked mob in turn if there are any in sight (Marks). It was the
-     * full draw and the left button, which marks mobs now.
+     * full draw and the left button, which marks mobs now. 10 s before G again (author, 2026-10-31).
      */
     BARRAGE("bow_barrage", 1f, 36, -1, -1, -1, -1, Side.BACK, MovesConfig::costBarrage,
             0.30f, 0.28f, 0.26f, 0.23f, 0.20f, 0.17f, 0.14f, 0.11f, 0.09f, 0.07f),
@@ -56,7 +56,7 @@ public enum Move {
      * middle, and the slide back a block further"; "as quick as the volley"). 2.85 blocks back, then an
      * arrow every 4 ticks from 0.55 s (Bow.HAIL_FROM, HAIL_EVERY): five at least, on while G is held, ten
      * at most, each after the third for MovesConfig.costHailExtra; spread up to 8 degrees about the look,
-     * or at the marked mobs in turn.
+     * or at the marked mobs in turn. 40 s before G again (author, 2026-10-31).
      */
     HAIL("bow_barrage", 1f, 53, -1, -1, -1, -1, Side.BACK, MovesConfig::costBarrage,
             0.40f, 0.38f, 0.35f, 0.32f, 0.29f, 0.26f, 0.23f, 0.20f, 0.17f, 0.14f, 0.11f),
@@ -185,10 +185,11 @@ public enum Move {
      */
     ROLL_KICK("hop_roll_kick", 1f, 38, 0, Kick.RK_LAND, Kick.RK_ROLL_FROM, Kick.RK_ROLL_TO, Side.FRONT, MovesConfig::costRollKick),
     /**
-     * The left button while sliding, a sword or an axe in hand: a half turn clockwise with the blade
-     * out to the right (slide_under_attack), a crit to everything it sweeps through at 0.3 s, and the
-     * push of a tapped slide carrying the player on the way they slid, now backwards; they stand up
-     * facing the way they turned. Low like the slide while it slides. 30 s before the next one.
+     * The left button while sliding, a sword, an axe or a bow in hand (the bow since 2026-10-31): a
+     * half turn clockwise with the blade out to the right (slide_under_attack; a bow held as it is), a
+     * crit to everything it sweeps through at 0.3 s, and the push of a tapped slide carrying the player
+     * on the way they slid, now backwards; they stand up facing the way they turned. Low like the slide
+     * while it slides. 15 s before the next one.
      */
     SLIDE_ATTACK("slide_under_attack", 1f, 28, -1, -1, 0, 14, Side.FRONT, MovesConfig::costSlideAttack),
     /** R held while falling: tucked until the landing (fall_tuck, looped). */

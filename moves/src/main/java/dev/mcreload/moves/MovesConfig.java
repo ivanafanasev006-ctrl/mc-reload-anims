@@ -33,7 +33,7 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue FAST_RUN_SPEED, FAST_RUN_COST, PLUNGE_CUT, PLUNGE_FROM, WHIRL_DAMAGE, WHIRL_REACH,
             SPIN_DAMAGE, SPIN_REACH, PLUNGE_SPLASH;
     private static final ForgeConfigSpec.IntValue WHIRL_COOLDOWN, SPIN_COOLDOWN, PLUNGE_SPLASH_RADIUS, MARKS_MAX, MARK_SECONDS,
-            MARKED_COOLDOWN;
+            MARKED_COOLDOWN, VOLLEY_COOLDOWN, HAIL_COOLDOWN;
     private static final ForgeConfigSpec.DoubleValue MARK_RANGE;
 
     static {
@@ -277,6 +277,11 @@ public final class MovesConfig {
                 .defineInRange("markRange", 64.0, 8.0, 256.0);
         MARKED_COOLDOWN = b.comment("The volley at the marked: seconds before it can be made again (author: 25).")
                 .defineInRange("markedVolleyCooldown", 25, 0, 3600);
+        // Author, 2026-10-31: "the cooldown on G 10 seconds, on G+ 40 seconds".
+        VOLLEY_COOLDOWN = b.comment("G with a bow, tapped (the volley): seconds before G can be used again (author: 10).")
+                .defineInRange("volleyCooldown", 10, 0, 3600);
+        HAIL_COOLDOWN = b.comment("G with a bow, held (the hail): seconds before G can be used again (author: 40).")
+                .defineInRange("hailCooldown", 40, 0, 3600);
         b.pop();
         SPEC = b.build();
     }
@@ -365,6 +370,8 @@ public final class MovesConfig {
     public static int markTicks() { return get(MARK_SECONDS, 60) * 20; }
     public static double markRange() { return get(MARK_RANGE, 64.0); }
     public static int markedCooldownTicks() { return get(MARKED_COOLDOWN, 25) * 20; }
+    public static int volleyCooldownTicks() { return get(VOLLEY_COOLDOWN, 10) * 20; }
+    public static int hailCooldownTicks() { return get(HAIL_COOLDOWN, 40) * 20; }
     public static float swordSpinDamage() { return f(SPIN_DAMAGE, 1.0); }
     public static float swordSpinReach() { return f(SPIN_REACH, 2.6); }
     public static float plungeSplash() { return f(PLUNGE_SPLASH, 1.0); }

@@ -217,7 +217,7 @@ public final class MovesHud {
         Move ability = StrikeInput.ability(p);
         if (ability != null) out.add(ability);
         if (Strikes.sword(p) && HudConfig.Moves.DASH.on()) out.add(Move.DASH);
-        if (Strikes.finisherWeapon(p) && HudConfig.Moves.SLIDE_ATTACK.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_ATTACK);
+        if (Strikes.slideWeapon(p) && HudConfig.Moves.SLIDE_ATTACK.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_ATTACK);
         // the volley at the marked (by its first step)
         if (dev.mcreload.moves.Bow.isBow(p.getMainHandItem()) && HudConfig.Moves.MARKS.on()) out.add(Move.MARKED_SPIN_LEFT);
         return out;
@@ -231,6 +231,7 @@ public final class MovesHud {
             case SWORD_SPIN -> MovesConfig.swordSpinCooldownTicks();
             case SLIDE_ATTACK -> MovesConfig.slideAttackCooldownTicks();
             case MARKED_SPIN_LEFT -> MovesConfig.markedCooldownTicks();
+            case BARRAGE -> MovesConfig.volleyCooldownTicks();
             default -> 0;
         };
     }
@@ -257,7 +258,8 @@ public final class MovesHud {
             long ready = READY_AT.getOrDefault(move, 0L);
             float glint = Mth.clamp(1f - (now - ready) / 400f, 0f, 1f);
             boolean flash = refused == move && now < refusedUntil && (now / 75) % 2 == 0;
-            trayRow(g, mc.font, x, y, p.getMainHandItem(), trayKeys(mc, move), left, cooldownTotal(move), glint, flash);
+            int total = move == Move.BARRAGE ? Math.max(s.bowCooldownTotal, left) : cooldownTotal(move);
+            trayRow(g, mc.font, x, y, p.getMainHandItem(), trayKeys(mc, move), left, total, glint, flash);
             y -= TRAY_ROW;
         }
     }

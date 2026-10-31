@@ -166,6 +166,12 @@ public final class Bow {
         return isBow(bow) && (!p.getProjectile(bow).isEmpty() || p.getAbilities().instabuild);
     }
 
+    /** G with a bow started (both ends): the wait before the next one, 10 s after the volley, 40 s after the hail. */
+    public static void started(Stamina s, Move move) {
+        s.bowCooldown = move == Move.HAIL ? MovesConfig.hailCooldownTicks() : MovesConfig.volleyCooldownTicks();
+        s.bowCooldownTotal = s.bowCooldown;
+    }
+
     /** The arrow of the hail at this tick (0-based), -1: none. */
     public static int hailArrow(int tick) {
         int d = tick - HAIL_FROM;
