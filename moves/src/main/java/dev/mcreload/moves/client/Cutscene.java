@@ -30,6 +30,8 @@ public final class Cutscene {
     /** Ticks the camera stays behind after the move (an attack straight after another keeps it there). */
     private static final int LINGER = 4;
     private static int linger;
+    /** The bow's G going on shoots at marked mobs in sight (decided as it starts). */
+    private static boolean volleyAtMarks;
 
     static void init() {
         MinecraftForge.EVENT_BUS.addListener(Cutscene::fov);
@@ -38,7 +40,11 @@ public final class Cutscene {
     /** Every client tick: the camera taken for the kick or an attack and given back when it ends. */
     static void tick(Minecraft mc, LocalPlayer p, Stamina s) {
         boolean kicking = p != null && (s.move == Move.KICK || s.move == Move.ROLL_KICK) && s.moveTick < Kick.land(s.move);
-        boolean behind = kicking ? HudConfig.kickCutscene() : p != null && s.move != null && s.move.cameraBehind() && HudConfig.attackCamera();
+        // G and G held with a bow: from behind when marked mobs are in sight as it starts (it aims at them by
+        // itself), else in first person, aimed by the player (author, 2026-10-31)
+        if (p != null && s.move != null && s.move.volley() && s.moveTick <= 1) volleyAtMarks = !dev.mcreload.moves.Marks.inSight(p, s).isEmpty();
+        boolean aimed = p != null && s.move != null && (s.move.cameraBehind() || (s.move.volley() && volleyAtMarks));
+        boolean behind = kicking ? HudConfig.kickCutscene() : aimed && HudConfig.attackCamera();
         if (behind) linger = LINGER;
         else if (linger > 0) linger--;
         if (behind && before == null && mc.options.getCameraType() == CameraType.FIRST_PERSON) {
