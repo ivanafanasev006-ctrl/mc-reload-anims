@@ -1,0 +1,400 @@
+[11:32:37] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_running_man t=47 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:38] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_robot t=6 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.07 walkSpeed=0.00
+[11:32:39] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_robot t=26 fps=27 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:40] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_robot t=46 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:41] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_guitar t=5 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.06 walkSpeed=0.00
+[11:32:42] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_guitar t=25 fps=27 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:43] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_guitar t=45 fps=27 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:44] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_flex t=4 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.24 walkSpeed=0.00
+[11:32:45] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_flex t=24 fps=27 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:46] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_flex t=44 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:47] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_meditate t=3 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.37 walkSpeed=0.00
+[11:32:48] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_meditate t=23 fps=27 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:49] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 40_emote_meditate t=43 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:50] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_air_barrage_roll t=2 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.39 walkSpeed=0.00
+[11:32:51] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation air_barrage_roll.json
+[11:32:51] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_air_barrage_roll t=22 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:52] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation axe_whirlwind.json
+[11:32:52] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_axe_whirlwind t=10 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:53] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_axe_whirlwind t=30 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:54] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_axe_whirlwind t=50 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:55] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_axe_whirlwind t=70 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:56] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_axe_whirlwind t=90 fps=27 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:57] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation axe_whirlwind_end.json
+[11:32:57] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_axe_whirlwind_end t=19 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:58] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_axe_whirlwind_end t=39 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:32:59] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bend_demo.json
+[11:32:59] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bend_demo t=19 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:00] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bend_demo t=39 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:01] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bend_demo t=59 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:02] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage t=8 fps=27 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.01 walkSpeed=0.00
+[11:33:02] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_barrage.json
+[11:33:03] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage t=28 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:04] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage t=48 fps=26 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:05] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_barrage_1_kneel.json
+[11:33:05] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_1_kneel t=17 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:06] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_1_kneel t=37 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:07] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_1_kneel t=57 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:08] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_1_kneel t=77 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:09] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_1_kneel t=97 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:10] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_barrage_2_stand.json
+[11:33:10] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_2_stand t=18 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:11] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_2_stand t=38 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:12] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_2_stand t=58 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:13] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_2_stand t=78 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:14] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_barrage_3_crouch.json
+[11:33:14] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_3_crouch t=9 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.01 walkSpeed=0.00
+[11:33:15] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_3_crouch t=29 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:16] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_3_crouch t=49 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:17] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_3_crouch t=69 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:18] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_3_crouch t=0 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:19] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_barrage_4_low.json
+[11:33:19] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_4_low t=20 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:20] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_4_low t=40 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:21] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_4_low t=60 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:22] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_4_low t=80 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:23] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_barrage_combo.json
+[11:33:23] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=13 fps=27 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:24] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=33 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:25] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=53 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:26] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=73 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:27] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=93 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:28] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=113 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:29] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=133 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:30] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=153 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:31] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=173 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:32] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=193 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:33] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_barrage_combo t=213 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:34] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_backstep_shot t=2 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.64 walkSpeed=0.00
+[11:33:35] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_flow_backstep_shot.json
+[11:33:35] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_backstep_shot t=22 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:36] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_backstep_shot t=42 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:37] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_crouch_shot t=1 fps=25 pos=(2.50, 120.00, 0.50) ground=false sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:38] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_flow_crouch_shot.json
+[11:33:38] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_crouch_shot t=21 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:39] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_crouch_shot t=41 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:40] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_crouch_shot t=0 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:41] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_flow_roll_left_shot.json
+[11:33:41] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_roll_left_shot t=20 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:42] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_roll_left_shot t=40 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:43] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_roll_left_shot t=60 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:44] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_flow_roll_right_shot.json
+[11:33:44] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_roll_right_shot t=14 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:45] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_roll_right_shot t=34 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:46] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_roll_right_shot t=54 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:47] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_stand_shot t=8 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.01 walkSpeed=0.00
+[11:33:47] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_flow_stand_shot.json
+[11:33:48] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_stand_shot t=28 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:49] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_stand_shot t=48 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:50] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_turn_left t=7 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.02 walkSpeed=0.00
+[11:33:50] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_flow_turn_left.json
+[11:33:51] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_turn_left t=27 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:52] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_turn_left t=47 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:53] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_flow_turn_right.json
+[11:33:53] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_turn_right t=18 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:54] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_flow_turn_right t=38 fps=19 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:55] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_slide_shot.json
+[11:33:55] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_slide_shot t=9 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.01 walkSpeed=0.00
+[11:33:56] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_slide_shot t=29 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:57] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_slide_shot t=49 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:33:58] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_strike_overhead t=8 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.01 walkSpeed=0.00
+[11:33:58] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_strike_overhead.json
+[11:33:59] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_strike_overhead t=28 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:00] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_strike_overhead t=48 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:01] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_strike_side.json
+[11:34:01] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_strike_side t=19 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:02] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_strike_side t=39 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:03] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_strike_thrust.json
+[11:34:03] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_strike_thrust t=10 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.01 walkSpeed=0.00
+[11:34:04] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_strike_thrust t=30 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:05] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_strike_thrust t=0 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:06] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation bow_walk_around.json
+[11:34:06] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_walk_around t=20 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:07] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_walk_around t=40 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:08] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_bow_walk_around t=60 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:09] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation celebrate.json
+[11:34:09] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_celebrate t=9 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.01 walkSpeed=0.00
+[11:34:10] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_celebrate t=29 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:11] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_celebrate t=49 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:12] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_celebrate t=69 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:13] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_cross_guard t=8 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.02 walkSpeed=0.00
+[11:34:13] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation cross_guard.json
+[11:34:14] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_cross_guard t=28 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:15] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_cross_guard t=48 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:16] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_cross_guard_double t=7 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.03 walkSpeed=0.00
+[11:34:16] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation cross_guard_double.json
+[11:34:17] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_cross_guard_double t=27 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:18] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_cross_guard_double t=47 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:19] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_cross_guard_flat t=6 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.09 walkSpeed=0.00
+[11:34:19] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation cross_guard_flat.json
+[11:34:20] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_cross_guard_flat t=26 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:21] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_cross_guard_flat t=46 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:22] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation dash_strike.json
+[11:34:22] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dash_strike t=10 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.01 walkSpeed=0.00
+[11:34:23] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dash_strike t=30 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:24] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dash_strike t=50 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:25] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation dive_roll.json
+[11:34:25] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dive_roll t=11 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:26] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dive_roll t=31 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:27] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dive_roll t=51 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:28] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation dodge_back.json
+[11:34:28] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dodge_back t=18 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:29] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dodge_back t=38 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:30] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation dodge_front.json
+[11:34:30] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dodge_front t=12 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:31] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dodge_front t=32 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:32] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dodge_left t=6 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.04 walkSpeed=0.00
+[11:34:32] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation dodge_left.json
+[11:34:33] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dodge_left t=26 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:34] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dodge_right t=5 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.05 walkSpeed=0.00
+[11:34:35] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation dodge_right.json
+[11:34:35] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_dodge_right t=25 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:36] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_fall_roll t=4 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.10 walkSpeed=0.00
+[11:34:37] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation fall_roll.json
+[11:34:37] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_fall_roll t=24 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:38] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_fall_roll t=44 fps=21 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:39] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_fall_tuck t=3 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.38 walkSpeed=0.00
+[11:34:40] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation fall_tuck.json
+[11:34:40] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_fall_tuck t=23 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:41] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_fall_tuck t=43 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:42] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation finisher_chop.json
+[11:34:42] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_finisher_chop t=12 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:43] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_finisher_chop t=32 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:44] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_finisher_chop t=52 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:45] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation finisher_stab.json
+[11:34:45] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_finisher_stab t=13 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:46] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_finisher_stab t=33 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:47] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_holding_back_air t=3 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.14 walkSpeed=0.00
+[11:34:48] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation holding_back_air.json
+[11:34:48] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_holding_back_air t=23 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:49] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_holding_back_air t=43 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:50] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_holding_back_air t=63 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:51] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_holding_back_air t=83 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:52] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation hop.json
+[11:34:52] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop t=11 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:53] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop t=31 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:54] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop t=51 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:55] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation hop_on_kick.json
+[11:34:55] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop_on_kick t=17 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:56] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop_on_kick t=37 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:57] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop_on_kick t=57 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:34:58] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop_roll_dodge t=6 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.03 walkSpeed=0.00
+[11:34:58] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation hop_roll_dodge.json
+[11:34:59] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop_roll_dodge t=26 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:00] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop_roll_dodge t=46 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:01] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation hop_roll_kick.json
+[11:35:01] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop_roll_kick t=14 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:02] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop_roll_kick t=34 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:03] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_hop_roll_kick t=54 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:04] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_land_heavy t=5 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.06 walkSpeed=0.00
+[11:35:05] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation land_heavy.json
+[11:35:05] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_land_heavy t=25 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:06] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_land_heavy t=45 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:07] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_land_heavy t=65 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:08] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_land_heavy t=85 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:09] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation ledge_climb_down.json
+[11:35:09] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_climb_down t=14 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:10] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_climb_down t=34 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:11] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_climb_down t=54 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:12] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation ledge_climb_up.json
+[11:35:12] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_climb_up t=19 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:13] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_climb_up t=39 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:14] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation ledge_hang.json
+[11:35:14] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hang t=13 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:15] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hang t=33 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:16] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hang t=53 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:17] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hang t=73 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:18] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hang t=93 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:19] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_help_pull t=7 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.02 walkSpeed=0.00
+[11:35:19] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation ledge_help_pull.json
+[11:35:20] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_help_pull t=27 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:21] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_help_pull t=47 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:22] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_help_pull t=67 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:23] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hop_left t=4 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.24 walkSpeed=0.00
+[11:35:24] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation ledge_hop_left.json
+[11:35:24] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hop_left t=24 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:25] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hop_left t=44 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:26] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hop_left t=64 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:27] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation ledge_hop_right.json
+[11:35:27] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hop_right t=16 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:28] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hop_right t=36 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:29] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_hop_right t=56 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:30] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_leap t=8 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.01 walkSpeed=0.00
+[11:35:30] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation ledge_leap.json
+[11:35:31] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_leap t=28 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:32] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_leap t=0 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:33] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation ledge_pulled_up.json
+[11:35:33] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_pulled_up t=20 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:34] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_pulled_up t=40 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:35] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_pulled_up t=60 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:36] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_ledge_pulled_up t=80 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:37] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation plunge_fall.json
+[11:35:37] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_plunge_fall t=17 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:38] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_plunge_fall t=37 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:39] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_plunge_land t=6 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.03 walkSpeed=0.00
+[11:35:39] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation plunge_land.json
+[11:35:40] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_plunge_land t=26 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:41] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_plunge_land t=46 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:42] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation slide.json
+[11:35:42] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_slide t=15 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:43] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_slide t=35 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:44] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_slide t=55 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:45] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation slide_under_attack.json
+[11:35:45] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_slide_under_attack t=10 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:46] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_slide_under_attack t=30 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:47] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_slide_under_attack t=50 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:48] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation sword_spin.json
+[11:35:48] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_sword_spin t=14 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:49] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_sword_spin t=34 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:50] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_sword_spin t=54 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:51] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test: playing Blockbench animation sword_spin_end.json
+[11:35:51] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_sword_spin_end t=17 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:52] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 99_bb_sword_spin_end t=37 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:53] [Server thread/INFO] [minecraft/MinecraftServer]: Dev has made the advancement [Cover Me with Diamonds]
+[11:35:53] [Render thread/INFO] [minecraft/ChatComponent]: [System] [CHAT] Dev has made the advancement [Cover Me with Diamonds]
+[11:35:53] [Render thread/INFO] [minecraft/AdvancementList]: Loaded 51 advancements
+[11:35:53] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 60_armor_walk t=17 fps=23 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.032 sprintW=0.00 airW=0.00 walkSpeed=0.03
+[11:35:54] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 60_armor_walk t=37 fps=22 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:55] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 60_armor_walk t=57 fps=24 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:56] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 61_armor_flex t=12 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.002 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:57] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 61_armor_flex t=32 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:58] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 61_armor_flex t=52 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:35:59] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 61_armor_flex t=72 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:00] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 62_attack_key t=11 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:01] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 62_attack_key t=31 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:02] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 62b_item_swat t=6 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.053 sprintW=0.00 airW=0.04 walkSpeed=0.00
+[11:36:03] [Server thread/INFO] [minecraft/MinecraftServer]: Dev has made the advancement [Suit Up]
+[11:36:03] [Render thread/INFO] [minecraft/ChatComponent]: [System] [CHAT] Dev has made the advancement [Suit Up]
+[11:36:03] [Render thread/INFO] [minecraft/AdvancementList]: Loaded 53 advancements
+[11:36:03] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 62b_item_swat t=26 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:04] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 62b_item_swat t=46 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:05] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 63_pick_mining t=15 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:06] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 63_pick_mining t=35 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:07] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_0 t=4 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.14 walkSpeed=0.00
+[11:36:08] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_0 t=24 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:09] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_0 t=44 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:10] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_0 t=64 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:11] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_1 t=3 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.15 walkSpeed=0.00
+[11:36:12] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_1 t=23 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:13] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_1 t=43 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:14] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_1 t=63 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:15] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_2 t=2 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.37 walkSpeed=0.00
+[11:36:16] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_2 t=22 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:17] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_2 t=42 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:18] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_2 t=62 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:19] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_4 t=1 fps=23 pos=(2.50, 120.00, 0.50) ground=false sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:20] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_4 t=21 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:21] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_4 t=41 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:22] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_4 t=61 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:23] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_4 t=0 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:24] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_5 t=20 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:25] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_5 t=40 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:26] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_5 t=60 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:27] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_5 t=80 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:28] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_9 t=19 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:29] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_9 t=39 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:30] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_9 t=59 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:31] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_9 t=79 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:32] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_0 t=18 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:33] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_0 t=38 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:34] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_0 t=58 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:35] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_0 t=78 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:36] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_1 t=17 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:37] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_1 t=37 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:38] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_1 t=57 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:39] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_1 t=77 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:40] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_2 t=16 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:41] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_2 t=36 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:42] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_2 t=56 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:43] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_2 t=76 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:44] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_4 t=15 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:45] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_4 t=35 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:46] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_4 t=55 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:47] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_4 t=75 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:48] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_5 t=14 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:49] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_5 t=34 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:50] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_5 t=54 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:51] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_5 t=74 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:52] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_9 t=13 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:53] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_9 t=33 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:54] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_9 t=53 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:55] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64_idle_torch_9 t=73 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:56] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=12 fps=24 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.012 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:57] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=32 fps=19 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:58] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=52 fps=23 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:36:59] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=72 fps=22 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:00] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=92 fps=25 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:01] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=112 fps=24 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:02] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=132 fps=24 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:03] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=152 fps=24 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:04] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=172 fps=25 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:05] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=192 fps=24 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:06] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=212 fps=25 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:07] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=232 fps=24 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:08] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=252 fps=25 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:09] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=272 fps=24 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:10] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 65_friend t=292 fps=25 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:11] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 70_crawl t=11 fps=26 pos=(1.50, 120.00, -5.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:12] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 70_crawl t=31 fps=24 pos=(1.50, 120.00, -5.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:13] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 70_crawl t=51 fps=24 pos=(2.72, 120.00, -5.50) ground=true sprint=false speed=0.064 sprintW=0.00 airW=0.00 walkSpeed=0.26
+[11:37:14] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 70_crawl t=71 fps=22 pos=(4.01, 120.00, -5.50) ground=true sprint=false speed=0.065 sprintW=0.00 airW=0.00 walkSpeed=0.26
+[11:37:15] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 70_crawl t=91 fps=23 pos=(5.31, 120.00, -5.50) ground=true sprint=false speed=0.065 sprintW=0.00 airW=0.00 walkSpeed=0.26
+[11:37:16] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 70_crawl t=111 fps=25 pos=(5.96, 120.00, -5.50) ground=true sprint=false speed=0.006 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:17] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 71_sit_0 t=5 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.07 walkSpeed=0.00
+[11:37:18] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 71_sit_0 t=25 fps=22 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:19] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 71_sit_0 t=45 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:20] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 71_sit_0 t=65 fps=25 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.017 sprintW=0.00 airW=0.00 walkSpeed=0.15
+[11:37:21] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 71_sit_1 t=14 fps=23 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.002 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:22] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 71_sit_1 t=34 fps=22 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:23] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 71_sit_1 t=54 fps=23 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:24] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_21 t=3 fps=24 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.048 sprintW=0.00 airW=0.37 walkSpeed=0.17
+[11:37:25] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_21 t=23 fps=25 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:26] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_21 t=43 fps=26 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:27] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_21 t=63 fps=25 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:28] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_21 t=83 fps=25 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:29] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_21 t=103 fps=25 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:30] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_21 t=123 fps=23 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:31] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_21 t=143 fps=24 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:32] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_21 t=163 fps=24 pos=(2.70, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:33] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_22 t=2 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.027 sprintW=0.00 airW=0.40 walkSpeed=0.00
+[11:37:34] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_22 t=22 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:35] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_22 t=42 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:36] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_22 t=62 fps=20 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:37] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_22 t=82 fps=24 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:38] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_22 t=102 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:39] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_22 t=122 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:40] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_22 t=142 fps=23 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:41] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 64b_idle_dual_22 t=162 fps=25 pos=(2.50, 120.00, 0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:42] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 72_friend_posture t=1 fps=25 pos=(2.50, 120.00, -0.50) ground=false sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:43] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 72_friend_posture t=21 fps=26 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.001 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:44] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 72_friend_posture t=41 fps=25 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:45] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 72_friend_posture t=61 fps=28 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:46] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 72_friend_posture t=81 fps=27 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:47] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 72_friend_posture t=101 fps=27 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:48] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 72_friend_posture t=121 fps=27 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:49] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] self-test 72_friend_posture t=141 fps=28 pos=(2.50, 120.00, -0.50) ground=true sprint=false speed=0.000 sprintW=0.00 airW=0.00 walkSpeed=0.00
+[11:37:52] [Render thread/INFO] [de.mc.an.McReloadAnim/]: [kinetrix] SELF-TEST FINISHED
+[11:37:52] [Render thread/INFO] [minecraft/Minecraft]: Stopping!
+[11:37:52] [Server thread/INFO] [minecraft/ServerGamePacketListenerImpl]: Dev lost connection: Disconnected
+[11:37:52] [Server thread/INFO] [minecraft/MinecraftServer]: Dev left the game
+[11:37:52] [Server thread/INFO] [minecraft/ServerGamePacketListenerImpl]: Stopping singleplayer server as player logged out
+[11:37:52] [Server thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[11:37:52] [Server thread/INFO] [minecraft/MinecraftServer]: Saving players
+[11:37:52] [Server thread/INFO] [minecraft/MinecraftServer]: Saving worlds
+[11:37:52] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[New World]'/minecraft:overworld
+[11:37:53] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[New World]'/minecraft:the_nether
+[11:37:53] [Server thread/INFO] [minecraft/MinecraftServer]: Saving chunks for level 'ServerLevel[New World]'/minecraft:the_end
+[11:37:53] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (New World): All chunks are saved
+[11:37:53] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[11:37:53] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[11:37:53] [Server thread/INFO] [minecraft/MinecraftServer]: ThreadedAnvilChunkStorage: All dimensions are saved
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_3-1793446031651.json
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 10m 47s
+11 actionable tasks: 11 executed
