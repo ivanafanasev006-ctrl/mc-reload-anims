@@ -742,11 +742,18 @@ public final class MovesGameTests {
             t.check(s.shotDraw >= Move.SLIDE_SHOT_SPIN, "the draw kept: " + s.shotDraw);
             t.check(MoveServer.request(p, Move.SLIDE_SHOT_END, false), "the ending refused");
         });
+        // each arrow's way as it leaves, the tick it leaves and the next (another test's mob nearby may take one
+        // out of the world straight after)
         List<Float> yaws = new ArrayList<>();
+        java.util.Set<Integer> seen = new java.util.HashSet<>();
+        for (int k = shot - 1; k <= shot; k++) {
+            t.at(k, () -> {
+                for (Arrow a : arrows(h, p)) if (seen.add(a.getId())) yaws.add(a.getYRot());
+            });
+        }
         t.at(shot, () -> {
             t.check(p.getMainHandItem().getDamageValue() == dev.mcreload.moves.Bow.SLIDE_SHOT_ARROWS,
                     "arrows shot: " + p.getMainHandItem().getDamageValue());
-            for (Arrow a : arrows(h, p)) yaws.add(a.getYRot());
             double lo = 1e9, hi = -1e9;
             for (float yaw : yaws) {
                 lo = Math.min(lo, yaw);
