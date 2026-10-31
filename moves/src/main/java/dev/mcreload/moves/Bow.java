@@ -36,8 +36,8 @@ import java.util.UUID;
  * The bow as a weapon (docs/combat-spec.md, 6): +50 % durability; in close combat a fixed 4
  * damage at a sword's pace, with a sword's sweep and a jump crit; on G the volley, three arrows on
  * the keys of {@code bow_barrage}, 0.55 s apart, and held, the hail, five to ten quick ones spread
- * about the look; the volley at the marked mobs (Marks), an arrow at each in turn. The arrows of all
- * three hit whatever they hit, the mob's moment of invulnerability after a hit aside (author,
+ * about the look; the volley at the marked mobs (Marks), an arrow at each in turn; the shot out of a
+ * slide, three side by side. The arrows of all of them hit whatever they hit, the mob's moment of invulnerability after a hit aside (author,
  * 2026-10-30, 23:01: "it does not register, the arrow bounces off").
  */
 public final class Bow {
@@ -63,6 +63,13 @@ public final class Bow {
     public static final float HAIL_PACE = 5f / 4f, HAIL_SPREAD = 8f;
     /** The hail's animation: bow_barrage's draw and release from tick 16 to 21, over and over. */
     public static final int HAIL_LOOP_FROM = 16, HAIL_LOOP_TO = 21;
+    /**
+     * The shot out of a slide (C + RMB; author, 2026-10-31: "when he lets go of RMB he shoots 3 arrows at
+     * once, side by side"): SLIDE_SHOT_ARROWS arrows MovesConfig.slideShotSpread degrees apart about the
+     * look, at SLIDE_SHOT_RELEASE ticks into its ending (the string hand opens in bow_slide_shot), as
+     * strong as the bow's draw; the turn onto the knee draws it, so they are never weaker than that.
+     */
+    public static final int SLIDE_SHOT_ARROWS = 3, SLIDE_SHOT_RELEASE = 2;
     /** The arrows of the volleys and the hail fly as from a full draw at the marked mobs (straighter, further). */
     public static final float AIMED_POWER = 1f;
     /** An arrow of a volley: it hits through the mob's moment of invulnerability after a hit. */
@@ -168,8 +175,7 @@ public final class Bow {
 
     /** G with a bow started (both ends): the wait before the next one, 10 s after the volley, 40 s after the hail. */
     public static void started(Stamina s, Move move) {
-        s.bowCooldown = move == Move.HAIL ? MovesConfig.hailCooldownTicks() : MovesConfig.volleyCooldownTicks();
-        s.bowCooldownTotal = s.bowCooldown;
+        s.bowCooldown = s.cooled(move == Move.HAIL ? MovesConfig.hailCooldownTicks() : MovesConfig.volleyCooldownTicks());
     }
 
     /** The arrow of the hail at this tick (0-based), -1: none. */
@@ -190,9 +196,16 @@ public final class Bow {
         return -1;
     }
 
-    /** Every server tick of the volley, the hail and the volley at the marked: their arrows. */
+    /** Every server tick of the volley, the hail, the volley at the marked and the shot out of a slide: their arrows. */
     static void serverTick(ServerPlayer p, Stamina s) {
-        if (s.move == Move.BARRAGE) {
+        legolasTick(p, s);
+        if (s.move == Move.SLIDE_SHOT_END && s.moveTick == SLIDE_SHOT_RELEASE) {
+            slideShot(p, s);
+        } else if (s.move == Move.SLIDE_SHOT && s.moveTick > Move.SLIDE_SHOT_SPIN + 40 && !drawing(p)) {
+            // the bow let go (or put away) long ago and the client never said: up, no arrows
+            s.end(p);
+            dev.mcreload.moves.net.MovesNet.stop(p);
+        } else if (s.move == Move.BARRAGE) {
             int k = volleyArrow(s.moveTick);
             if (k >= 0) volleyShot(p, s, k, 0f);
         } else if (s.move == Move.HAIL) {
@@ -222,6 +235,31 @@ public final class Bow {
         shoot(p, VOLLEY_POWER, look);
     }
 
+    /** The three arrows of the shot out of a slide, side by side about the look, as strong as the draw. */
+    static void slideShot(ServerPlayer p, Stamina s) {
+        int draw = s.shotDraw >= 0 ? s.shotDraw : drawing(p) ? p.getTicksUsingItem() : 0;
+        if (p.isUsingItem()) p.stopUsingItem();     // no arrow of the bow's own (no release event either)
+        float power = BowItem.getPowerForTime(Math.max(draw, Move.SLIDE_SHOT_SPIN));
+        float spread = MovesConfig.slideShotSpread();
+        for (int i = 0; i < SLIDE_SHOT_ARROWS; i++) {
+            float yaw = p.getYRot() + (i - (SLIDE_SHOT_ARROWS - 1) / 2f) * spread;
+            shoot(p, power, Vec3.directionFromRotation(p.getXRot(), yaw));
+        }
+        s.shotDraw = -1;
+    }
+
+    /**
+     * The Legolas stance ends when the bow is let go (the client ends it then too, BowStance): its
+     * cooldown starts then (author, 2026-10-31: "10-15 seconds"), so a long stance does not use the
+     * wait up while it lasts. Between two of its arrows the bow is let go and drawn again within the
+     * same tick, so it is drawn here.
+     */
+    private static void legolasTick(ServerPlayer p, Stamina s) {
+        if (!s.legolasLive || drawing(p)) return;
+        s.legolasLive = false;
+        s.legolasCooldown = s.cooled(MovesConfig.legolasCooldownTicks());
+    }
+
     /** The arrow of the volley at the marked's step: at its mob, if it is still there to hit. */
     static void markedShot(ServerPlayer p, Stamina s) {
         if (s.stepShot) return;
@@ -239,13 +277,20 @@ public final class Bow {
     }
 
     /**
-     * The bow let go at the full draw with marked mobs in sight and the volley at them ready: no arrow of
-     * the bow's own, the volley's steps shoot (the client starts them, BowVolley.released).
+     * The bow let go in the shot out of a slide: no arrow of the bow's own, its three leave in its ending
+     * (the client starts it once the player is down on the knee), as strong as the draw now. Let go at
+     * the full draw with marked mobs in sight and the volley at them ready: no arrow of the bow's own,
+     * the volley's steps shoot (the client starts them, BowVolley.released).
      */
     @SubscribeEvent
     public static void released(net.minecraftforge.event.entity.living.LivingEntityUseItemEvent.Stop event) {
         if (!(event.getEntity() instanceof ServerPlayer p) || !isBow(event.getItem())) return;
         Stamina s = Stamina.of(p);
+        if (s.move == Move.SLIDE_SHOT) {
+            event.setCanceled(true);
+            s.shotDraw = p.getTicksUsingItem();
+            return;
+        }
         if (p.getTicksUsingItem() >= 20 - SERVER_DRAW_SLACK && !s.marks.isEmpty() && Marks.volleyReady(p, s)) event.setCanceled(true);
     }
 

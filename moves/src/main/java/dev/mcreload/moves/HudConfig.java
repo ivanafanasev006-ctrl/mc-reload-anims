@@ -26,6 +26,8 @@ public final class HudConfig {
         FAST_RUN("fastRun", "The fast run: Ctrl held while sprinting (7 blocks a second, eats energy)."),
         SLIDE("slide", "The slide: sprinting, C."),
         SLIDE_ATTACK("slideAttack", "The attack out of a slide: the left button while sliding with a sword, an axe or a bow."),
+        SLIDE_SHOT("slideShot", "The shot out of a slide: the right button while sliding with a bow (a whole turn onto one knee, three arrows",
+                "when it is let go; 20 s cooldown)."),
         VAULT("vault", "The vault over a mob: R + W at point blank."),
         KICK("kick", "The vault with a kick: W and Space down, R at a mob."),
         ROLL_KICK("rollKick", "The roll kick: Ctrl (the fast run), W and Space down, R at a mob (a back roll after it)."),
@@ -42,15 +44,14 @@ public final class HudConfig {
         LEDGE_HOPS("ledgeHops", "The hops along a ledge (A / D while hanging) and the leap to another edge looked at (Space)."),
         VOLLEY("bowVolley", "G with a bow: the volley, three arrows, 10 s cooldown (held: the hail, 5 to 10 spread out, 40 s)."),
         MARKS("bowMarks", "The bow's marks (the right button held, the left one on a mob) and the volley at the marked (the right button let go)."),
-        FLOW("bowFlow", "The bow's combat flow after the volley: the left button dodges and shoots."),
-        LEGOLAS("legolas", "The Legolas stance: R with the bow fully drawn.");
+        LEGOLAS("legolas", "The Legolas stance: R with the bow fully drawn (12 s cooldown from its end).");
 
         /** The key in the file and in the language files (kinetrix_moves.settings.move.<key>). */
         public final String key;
-        private final String comment;
+        private final String[] comment;
         private ForgeConfigSpec.BooleanValue value;
 
-        Moves(String key, String comment) {
+        Moves(String key, String... comment) {
             this.key = key;
             this.comment = comment;
         }
@@ -76,7 +77,7 @@ public final class HudConfig {
                 .define("swapSides", false);
         ARROWS = b.comment("Arrow counter left of the hotbar while a bow is in hand.").define("arrowCounter", true);
         TRAY = b.comment("The tray in the bottom right corner: the strikes with a cooldown that the weapon in hand can make (G, the",
-                        "dash, the attack out of a slide), each with its key and a bar that fills as it comes back (author, 2026-10-30).")
+                        "dash, the attacks out of a slide), each with its key and a bar that fills as it comes back (author, 2026-10-30).")
                 .define("cooldownTray", true);
         b.pop();
         b.comment("Which moves this player's keys make (false: the keys do what they do without the mod).").push("moves");

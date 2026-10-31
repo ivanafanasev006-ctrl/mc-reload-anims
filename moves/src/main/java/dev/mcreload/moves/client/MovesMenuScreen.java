@@ -29,8 +29,8 @@ import java.util.function.Consumer;
 public final class MovesMenuScreen extends Screen {
     /** The attacks, then the moves and the rest, as the menu lists them. */
     private static final HudConfig.Moves[] ATTACKS = {HudConfig.Moves.SWORD_SPIN, HudConfig.Moves.WHIRL, HudConfig.Moves.DASH,
-            HudConfig.Moves.FINISHER, HudConfig.Moves.SLIDE_ATTACK, HudConfig.Moves.KICK, HudConfig.Moves.ROLL_KICK,
-            HudConfig.Moves.PLUNGE, HudConfig.Moves.VOLLEY, HudConfig.Moves.MARKS, HudConfig.Moves.FLOW, HudConfig.Moves.LEGOLAS};
+            HudConfig.Moves.FINISHER, HudConfig.Moves.SLIDE_ATTACK, HudConfig.Moves.SLIDE_SHOT, HudConfig.Moves.KICK, HudConfig.Moves.ROLL_KICK,
+            HudConfig.Moves.PLUNGE, HudConfig.Moves.VOLLEY, HudConfig.Moves.MARKS, HudConfig.Moves.LEGOLAS};
     private static final HudConfig.Moves[] MOVES = {HudConfig.Moves.DODGES, HudConfig.Moves.ROLLS, HudConfig.Moves.FAST_RUN,
             HudConfig.Moves.SLIDE, HudConfig.Moves.VAULT, HudConfig.Moves.DIVE, HudConfig.Moves.GUARD, HudConfig.Moves.FALL_ROLL,
             HudConfig.Moves.LEDGE_GRAB, HudConfig.Moves.AUTO_HANG, HudConfig.Moves.LEDGE_HOPS};

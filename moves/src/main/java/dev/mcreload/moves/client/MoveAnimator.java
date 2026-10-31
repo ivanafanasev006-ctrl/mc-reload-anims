@@ -71,7 +71,8 @@ public final class MoveAnimator {
         // The hail: the volley's draw and release over and over (MoveAnimator.pace sets the pace).
         if (move == Move.HAIL) anim = hailLoop(anim);
         // Bow moves may play a part of their animation (a half of bow_walk_around) and hold its last frame.
-        int from = move.shot != null ? move.shot.animStart() : 0;
+        // The ending of the shot out of a slide plays bow_slide_shot from the knee.
+        int from = move.shot != null ? move.shot.animStart() : move == Move.SLIDE_SHOT_END ? Move.SLIDE_SHOT_SPIN : 0;
         if (move == Move.LEDGE_HANG && was != null && was.ledge()) from = HANG_LOOP;
         KeyframeAnimationPlayer keyframes = new KeyframeAnimationPlayer(anim, from);
         if (move.firstPerson()) firstPerson(keyframes);
@@ -318,9 +319,9 @@ public final class MoveAnimator {
     private static final int KNEEL_TICK = 10;
 
     /**
-     * Holds the volley's kneel (the right button still down after it, BowStance): the legs and body
-     * stay as in {@code bow_barrage}, the head and arms are left to the drawn bow, so they follow
-     * where the player aims.
+     * Holds the volley's kneel (the right button still down after it, BowStance; the shot out of a slide
+     * on its knee, bow_slide_shot's 0.5 s being the same pose): the legs and body stay as in
+     * {@code bow_barrage}, the head and arms are left to the drawn bow, so they follow where the player aims.
      */
     public static void playKneel(AbstractClientPlayer p) {
         MoveLayer layer = layer(p);

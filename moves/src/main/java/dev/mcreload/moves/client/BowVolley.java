@@ -151,15 +151,21 @@ public final class BowVolley {
     }
 
     /**
-     * The local player lets go of the drawn bow (vanilla's release, whatever let go of the button): at
-     * the full draw with marked mobs in sight and the volley at them ready, the bow looses no arrow of its
-     * own (the server keeps it too, Bow.released) and the volley starts on the next tick.
+     * The local player lets go of the drawn bow (vanilla's release, whatever let go of the button): in
+     * the shot out of a slide, its arrows (MovesClient.slideShotReleased). At the full draw with marked
+     * mobs in sight and the volley at them ready, the bow looses no arrow of its own (the server keeps
+     * it too, Bow.released) and the volley starts on the next tick.
      */
     private static void released(net.minecraftforge.event.entity.living.LivingEntityUseItemEvent.Stop event) {
         Minecraft mc = Minecraft.getInstance();
-        if (event.getEntity() != mc.player || !Bow.isBow(event.getItem()) || queue != null || !HudConfig.Moves.MARKS.on()) return;
+        if (event.getEntity() != mc.player || !Bow.isBow(event.getItem())) return;
         LocalPlayer p = mc.player;
         Stamina s = Stamina.of(p);
+        if (MovesClient.slideShotReleased(s)) {
+            event.setCanceled(true);
+            return;
+        }
+        if (queue != null || !HudConfig.Moves.MARKS.on()) return;
         if (p.getTicksUsingItem() < 20 || (s.move != null && !s.move.drawnBow()) || !Marks.volleyReady(p, s)) return;
         event.setCanceled(true);
         queue = new ArrayList<>();
@@ -185,7 +191,7 @@ public final class BowVolley {
             if (!MovesClient.start(p, s, move, e.getId(), BowStance.keys(mc))) break;
             // as the server counts it: the first step starts the wait and pays for the start, each one for its mob
             if (first) {
-                s.markedCooldown = MovesConfig.markedCooldownTicks();
+                s.markedCooldown = s.cooled(MovesConfig.markedCooldownTicks());
                 s.spend(MovesConfig.costMarked(), p);
             }
             s.spend(MovesConfig.costMarkedEach(), p);

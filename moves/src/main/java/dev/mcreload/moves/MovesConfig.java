@@ -18,7 +18,7 @@ public final class MovesConfig {
             COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER,
             COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP, COST_DIVE, COST_FALL_ROLL, COST_LEDGE_GRAB, COST_LEDGE_CLIMB,
             COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_LEDGE_LEAP, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL, COST_SWORD_SPIN,
-            COST_SPIN_EXTRA, COST_WHIRL_EXTRA, COST_HAIL_EXTRA, COST_MARKED, COST_MARKED_EACH;
+            COST_SPIN_EXTRA, COST_WHIRL_EXTRA, COST_HAIL_EXTRA, COST_MARKED, COST_MARKED_EACH, COST_SLIDE_SHOT, ENCHANTED_COOLDOWN;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
@@ -33,8 +33,8 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue FAST_RUN_SPEED, FAST_RUN_COST, PLUNGE_CUT, PLUNGE_FROM, WHIRL_DAMAGE, WHIRL_REACH,
             SPIN_DAMAGE, SPIN_REACH, PLUNGE_SPLASH;
     private static final ForgeConfigSpec.IntValue WHIRL_COOLDOWN, SPIN_COOLDOWN, PLUNGE_SPLASH_RADIUS, MARKS_MAX, MARK_SECONDS,
-            MARKED_COOLDOWN, VOLLEY_COOLDOWN, HAIL_COOLDOWN;
-    private static final ForgeConfigSpec.DoubleValue MARK_RANGE;
+            MARKED_COOLDOWN, VOLLEY_COOLDOWN, HAIL_COOLDOWN, SLIDE_SHOT_COOLDOWN, LEGOLAS_COOLDOWN;
+    private static final ForgeConfigSpec.DoubleValue MARK_RANGE, SLIDE_SHOT_BLOCKS, SLIDE_SHOT_SPREAD;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -65,8 +65,14 @@ public final class MovesConfig {
                         "cooked, baked, roasted, fried, grilled, smoked, stew, soup, pie or bread). A little energy in a",
                         "fight without potions or golden apples (author: 25 of 100).")
                 .defineInRange("cookedFoodEnergy", 25.0, 0.0, 10000.0);
-        ENCHANTED_INFINITE = b.comment("Enchanted golden apple: fills the bar, then moves cost nothing for this many seconds (author: 30).")
-                .defineInRange("enchantedAppleFreeSeconds", 30, 0, 3600);
+        // Renamed from enchantedAppleFreeSeconds (30) so worlds made before get the author's new number.
+        ENCHANTED_INFINITE = b.comment("Enchanted golden apple: fills the bar, then moves cost nothing for this many seconds, and the",
+                        "attacks' cooldowns are shorter as long (author: 30, then 45).")
+                .defineInRange("enchantedAppleSeconds", 45, 0, 3600);
+        // Author, 2026-10-31: "and it should cut the cooldown of all the attacks of all the weapons by 50 %".
+        ENCHANTED_COOLDOWN = b.comment("Enchanted golden apple: every attack's cooldown started while it works, and every one running when",
+                        "it is eaten, is this share of its length (author: 50 % less, 0.5).")
+                .defineInRange("enchantedAppleCooldownFactor", 0.5, 0.0, 1.0);
         b.pop();
 
         b.comment("Shields: spent by blocks and deflected arrows, refilled from energy.").push("shields");
@@ -86,7 +92,7 @@ public final class MovesConfig {
         COST_SLIDE = b.comment("Slide, sprint + C (was 20). [default]").defineInRange("slide", 10.0, 0.0, 10000.0);
         COST_HOP = b.comment("Vault over a mob at point blank, R + W (was 25). [default]").defineInRange("hop", 12.5, 0.0, 10000.0);
         COST_BARRAGE = b.comment("Bow volley: G with a bow (was the full draw and the left button; was 20). [default]").defineInRange("volley", 10.0, 0.0, 10000.0);
-        COST_BOW_DODGE = b.comment("A dodge with a shot: in the Legolas stance and the bow's combat flow (was 10). [default]")
+        COST_BOW_DODGE = b.comment("A dodge with a shot in the Legolas stance (was 10). [default]")
                 .defineInRange("bowDodge", 5.0, 0.0, 10000.0);
         // Renamed from dashStrike (7.5) so worlds made before get the author's number.
         COST_DASH = b.comment("Dash strike: the left and the right button held together with a sword (author: 15).")
@@ -95,8 +101,10 @@ public final class MovesConfig {
                 .defineInRange("finisher", 5.0, 0.0, 10000.0);
         COST_KICK = b.comment("The vault with a kick: W held, Space and R at a mob. [default]")
                 .defineInRange("kick", 15.0, 0.0, 10000.0);
-        COST_SLIDE_ATTACK = b.comment("The attack out of a slide: the left button while sliding with a sword or an axe. [default]")
+        COST_SLIDE_ATTACK = b.comment("The attack out of a slide: the left button while sliding with a sword, an axe or a bow. [default]")
                 .defineInRange("slideAttack", 10.0, 0.0, 10000.0);
+        COST_SLIDE_SHOT = b.comment("The shot out of a slide: the right button while sliding with a bow (its 3 arrows). [default]")
+                .defineInRange("slideShot", 10.0, 0.0, 10000.0);
         // Renamed from ledgeHop (5) so worlds made before get the cheaper hop: the hops now go one after another.
         COST_LEDGE_HOP = b.comment("Each hop along a ledge (hanging, A or D held; the hops go one after another). [default]")
                 .defineInRange("ledgeHopEach", 2.5, 0.0, 10000.0);
@@ -265,7 +273,7 @@ public final class MovesConfig {
         b.pop();
 
         b.comment("The bow.").push("bow");
-        KNEEL_MOVE = b.comment("After the volley, with the right button still held, the player stays on one knee and aims:",
+        KNEEL_MOVE = b.comment("After the volley and in the shot out of a slide, the right button held, the player stays on one knee and aims:",
                         "walking speed as a share of the drawn bow's, as when sneaking (author: \"at a snail's pace\"). [default]")
                 .defineInRange("kneelMoveFactor", 0.3, 0.0, 1.0);
         // Author, 2026-10-30, 23:01.
@@ -282,6 +290,20 @@ public final class MovesConfig {
                 .defineInRange("volleyCooldown", 10, 0, 3600);
         HAIL_COOLDOWN = b.comment("G with a bow, held (the hail): seconds before G can be used again (author: 40).")
                 .defineInRange("hailCooldown", 40, 0, 3600);
+        // Author, 2026-10-31: "C + RMB with the bow ... the cooldown 20 seconds".
+        SLIDE_SHOT_COOLDOWN = b.comment("The shot out of a slide (the right button while sliding with a bow): seconds before it can be",
+                        "made again (author: 20).")
+                .defineInRange("slideShotCooldown", 20, 0, 3600);
+        SLIDE_SHOT_BLOCKS = b.comment("The shot out of a slide: how far the slide carries the player on through the turn, braking to a",
+                        "stop on the knee (blocks). [default]")
+                .defineInRange("slideShotBlocks", 2.0, 0.0, 8.0);
+        SLIDE_SHOT_SPREAD = b.comment("The shot out of a slide: degrees between its three arrows, side by side (vanilla's multishot",
+                        "crossbow: 10). [default]")
+                .defineInRange("slideShotSpread", 10.0, 0.0, 45.0);
+        // Author, 2026-10-31: "the Legolas stance on RMB + R should have a cooldown of 10-15 seconds".
+        LEGOLAS_COOLDOWN = b.comment("The Legolas stance: seconds from its end (the right button let go) before it can be taken again",
+                        "(author: 10 to 15; 12 [default] between).")
+                .defineInRange("legolasCooldown", 12, 0, 3600);
         b.pop();
         SPEC = b.build();
     }
@@ -297,7 +319,8 @@ public final class MovesConfig {
     public static int appleFreeTicks() { return get(APPLE_INFINITE, 10) * 20; }
     public static int appleBoostTicks() { return get(APPLE_BOOST_SECONDS, 30) * 20; }
     public static float appleBoostFactor() { return f(APPLE_BOOST, 2.0); }
-    public static int enchantedFreeTicks() { return get(ENCHANTED_INFINITE, 30) * 20; }
+    public static int enchantedFreeTicks() { return get(ENCHANTED_INFINITE, 45) * 20; }
+    public static float enchantedCooldownFactor() { return f(ENCHANTED_COOLDOWN, 0.5); }
     public static float maxShields() { return f(MAX_SHIELDS, 10.0); }
     public static float shieldRegen() { return f(SHIELD_REGEN, 0.5); }
     public static int shieldRegenTicks() { return get(SHIELD_REGEN_SECONDS, 4) * 20; }
@@ -372,6 +395,11 @@ public final class MovesConfig {
     public static int markedCooldownTicks() { return get(MARKED_COOLDOWN, 25) * 20; }
     public static int volleyCooldownTicks() { return get(VOLLEY_COOLDOWN, 10) * 20; }
     public static int hailCooldownTicks() { return get(HAIL_COOLDOWN, 40) * 20; }
+    public static float costSlideShot() { return f(COST_SLIDE_SHOT, 10.0); }
+    public static int slideShotCooldownTicks() { return get(SLIDE_SHOT_COOLDOWN, 20) * 20; }
+    public static float slideShotBlocks() { return f(SLIDE_SHOT_BLOCKS, 2.0); }
+    public static float slideShotSpread() { return f(SLIDE_SHOT_SPREAD, 10.0); }
+    public static int legolasCooldownTicks() { return get(LEGOLAS_COOLDOWN, 12) * 20; }
     public static float swordSpinDamage() { return f(SPIN_DAMAGE, 1.0); }
     public static float swordSpinReach() { return f(SPIN_REACH, 2.6); }
     public static float plungeSplash() { return f(PLUNGE_SPLASH, 1.0); }

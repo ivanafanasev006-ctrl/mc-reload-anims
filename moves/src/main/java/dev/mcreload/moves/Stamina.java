@@ -46,6 +46,12 @@ public final class Stamina {
     public int freeTicks, freeTotal;
     /** Game ticks left of the golden apple's faster refill. */
     public int boostTicks;
+    /**
+     * Game ticks left of the enchanted golden apple's quick hands (author, 2026-10-31): every attack's
+     * cooldown started meanwhile is halved (MovesConfig.enchantedCooldownFactor), and so are the ones
+     * running when it is eaten. Both ends (the server sends it with the bars).
+     */
+    public int hasteTicks;
     /** Game ticks left of being in combat (hit or was hit). */
     public int combatTicks;
     /** Ticks towards the next shield refill. */
@@ -85,8 +91,8 @@ public final class Stamina {
     public int spinCooldown;
     /** The bow's marks (Marks; both ends): the marked mob's entity id to the game time the mark ends, in the order made. */
     public final java.util.LinkedHashMap<Integer, Long> marks = new java.util.LinkedHashMap<>();
-    /** Ticks before the next G with a bow (both ends, as the dash's), and how long that wait was (the tray's bar). */
-    public int bowCooldown, bowCooldownTotal;
+    /** Ticks before the next G with a bow (both ends, as the dash's). */
+    public int bowCooldown;
     /** Ticks before the next volley at the marked (both ends, as the dash's). */
     public int markedCooldown;
     /** The volley at the marked (server): the mobs shot at in it so far, and whether the step going on has shot its arrow. */
@@ -96,6 +102,14 @@ public final class Stamina {
     public int slideAttackCooldown;
     /** The facing when the attack out of a slide started (both ends): it ends half a turn round from it. */
     public float attackYaw;
+    /** Ticks before the next shot out of a slide, C + RMB with a bow (both ends, as the dash's). */
+    public int slideShotCooldown;
+    /** The shot out of a slide (server): how long the bow had been drawn when the right button was let go (-1: not yet). */
+    public int shotDraw = -1;
+    /** Ticks before the next Legolas stance (both ends; it runs from the stance's end). */
+    public int legolasCooldown;
+    /** The Legolas stance is on (server): a dodge of it was made and the bow has been drawn since. */
+    public boolean legolasLive;
     /** The kick: given (server), where the player took off and which way they faced. */
     public boolean kickDone;
     public net.minecraft.world.phys.Vec3 kickFrom;
@@ -127,6 +141,28 @@ public final class Stamina {
 
     public boolean free() {
         return freeTicks > 0;
+    }
+
+    /** A cooldown of {@code ticks} as it starts now: halved while the enchanted golden apple works (hasteTicks). */
+    public int cooled(int ticks) {
+        return hasteTicks > 0 ? Math.round(ticks * MovesConfig.enchantedCooldownFactor()) : ticks;
+    }
+
+    /** The attacks' cooldowns, in the order the server sends them (MovesNet.Bars). */
+    public int[] cooldowns() {
+        return new int[]{dashCooldown, whirlCooldown, spinCooldown, slideAttackCooldown, markedCooldown, bowCooldown,
+                slideShotCooldown, legolasCooldown};
+    }
+
+    public void setCooldowns(int[] c) {
+        dashCooldown = c[0];
+        whirlCooldown = c[1];
+        spinCooldown = c[2];
+        slideAttackCooldown = c[3];
+        markedCooldown = c[4];
+        bowCooldown = c[5];
+        slideShotCooldown = c[6];
+        legolasCooldown = c[7];
     }
 
     public boolean canAfford(Move m, Player p) {
@@ -189,6 +225,9 @@ public final class Stamina {
         if (spinCooldown > 0) spinCooldown--;
         if (markedCooldown > 0) markedCooldown--;
         if (bowCooldown > 0) bowCooldown--;
+        if (slideShotCooldown > 0) slideShotCooldown--;
+        if (legolasCooldown > 0) legolasCooldown--;
+        if (hasteTicks > 0) hasteTicks--;
         if (!marks.isEmpty() && p.tickCount % 10 == 0) Marks.prune(p, this);
         if (move == null) return;
         boolean wasLow = low();
@@ -305,6 +344,14 @@ public final class Stamina {
         if (enchanted) {
             energy = MovesConfig.maxEnergy();
             setFree(MovesConfig.enchantedFreeTicks());
+            // the cooldowns running now are halved too (not again by a second apple while the first works)
+            if (hasteTicks <= 0) {
+                hasteTicks = 1;
+                int[] c = cooldowns();
+                for (int i = 0; i < c.length; i++) c[i] = cooled(c[i]);
+                setCooldowns(c);
+            }
+            hasteTicks = Math.max(hasteTicks, MovesConfig.enchantedFreeTicks());
         } else {
             setFree(MovesConfig.appleFreeTicks());
             boostTicks = Math.max(boostTicks, MovesConfig.appleBoostTicks());
@@ -327,6 +374,7 @@ public final class Stamina {
         t.putInt("free", freeTicks);
         t.putInt("freeTotal", freeTotal);
         t.putInt("boost", boostTicks);
+        t.putInt("haste", hasteTicks);
         return t;
     }
 
@@ -336,6 +384,7 @@ public final class Stamina {
         freeTicks = t.getInt("free");
         freeTotal = t.getInt("freeTotal");
         boostTicks = t.getInt("boost");
+        hasteTicks = t.getInt("haste");
     }
 
     static void registerCapability(RegisterCapabilitiesEvent event) {

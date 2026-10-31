@@ -62,7 +62,9 @@ public final class MovesClient {
 
     /** R pressed without a direction: waits this many more ticks for A, D, S or W. */
     private static int dodgeWait;
-    private static boolean slideWasDown, jumpWasDown, attackWasDown;
+    private static boolean slideWasDown, jumpWasDown, attackWasDown, useWasDown;
+    /** The shot out of a slide: the right button was let go (vanilla's arrow kept back); its ending starts on the knee. */
+    private static boolean slideShotLoosed;
     /** What the server was last told of the fast run's key (Ctrl). */
     private static boolean runSent;
     /** Facing at the start of the local move: the push keeps this direction. */
@@ -138,8 +140,10 @@ public final class MovesClient {
         slideWasDown = slideDown;
         boolean jumpDown = mc.options.keyJump.isDown(), attackDown = mc.options.keyAttack.isDown();
         boolean jumpPressed = jumpDown && !jumpWasDown, attackPressed = attackDown && !attackWasDown;
+        boolean useDown = held(mc, mc.options.keyUse), usePressed = useDown && !useWasDown;
         jumpWasDown = jumpDown;
         attackWasDown = attackDown;
+        useWasDown = useDown;
         sinceJump = jumpPressed ? 0 : Math.min(sinceJump + 1, 100);
         if (p == null || mc.screen != null || !serverHasMod()) {
             if (runSent && p != null && serverHasMod()) MovesNet.CHANNEL.sendToServer(new MovesNet.Run(false));
@@ -216,8 +220,15 @@ public final class MovesClient {
                     attackPressed = false;
                 }
             }
+            // The right button with a bow: the shot out of the slide (author, 2026-10-31), after its cooldown.
+            // Vanilla's draw starts on the same click (the move does not take it).
+            if (s.move == Move.SLIDE && usePressed && HudConfig.Moves.SLIDE_SHOT.on() && dev.mcreload.moves.Bow.isBow(p.getMainHandItem())
+                    && !StrikeInput.waits(p, s, Move.SLIDE_SHOT)) {
+                slideShotLoosed = false;
+                start(p, s, Move.SLIDE_SHOT, false, -1);
+            }
             if (s.move != Move.SLIDE) {
-                // the attack took over
+                // the attack or the shot took over
             } else if (jumpPressed || attackPressed || airTicks > 4) {
                 cancel(p, s, 3);
             } else if (s.held && s.moveTick >= Move.SLIDE_CRAWL_TICK) {
@@ -234,11 +245,24 @@ public final class MovesClient {
             if (slidePressed) start(p, s, Move.SLIDE, true, -1);
         }
 
+        // ---- the shot out of a slide: on the knee while the right button is held; let go, its arrows and up
+        if (s.move == Move.SLIDE_SHOT) {
+            p.setSprinting(false);
+            if (slideShotLoosed && s.moveTick >= Move.SLIDE_SHOT_SPIN) {
+                slideShotLoosed = false;
+                if (!start(p, s, Move.SLIDE_SHOT_END, false, -1)) cancel(p, s, 6);
+            } else if (!slideShotLoosed && s.moveTick >= 3 && !dev.mcreload.moves.Bow.drawing(p)) {
+                cancel(p, s, 6);    // the bow put away, or it could not be drawn
+            } else if (!p.onGround() && p.fallDistance > 1f) {
+                cancel(p, s, 4);    // slid off a drop: no kneeling in the air (the fall's own moves may follow)
+            }
+        }
+
         // ---- once a move's push is over, running, jumping or striking ends it: a dodge, a roll, a
         // slide or the hop does not hold the player in place while its animation plays out
         if (s.move != null && recoverable(s) && (moving(mc) || jumpPressed || attackPressed)) {
             Move was = s.move;
-            cancel(p, s, was == Move.DASH || was == Move.HOP ? 5 : 3);
+            cancel(p, s, was == Move.DASH || was == Move.HOP ? 5 : was == Move.SLIDE_SHOT_END ? 6 : 3);
             // a vault or a dash run on: the sprint they started from goes on (the move held the keys)
             if ((was == Move.HOP || was == Move.DASH) && sprinted && mc.options.keyUp.isDown()) p.setSprinting(true);
         }
@@ -247,16 +271,15 @@ public final class MovesClient {
         if (StrikeInput.tick(mc, p, s, attackDown, attackPressed, abilityPressed)) attackPressed = false;
 
         // ---- the bow: the marks (the right button held, the left one on a mob), the volley at the
-        // marked (the right button let go), G's volley and hail (BowVolley); the flow and the Legolas
-        // stance (their arrows, poses and dodges; in the flow the left button off a mob is its next step)
-        boolean marking = BowVolley.tickLocal(mc, p, s, attackPressed, abilityPressed);
+        // marked (the right button let go), G's volley and hail (BowVolley); the Legolas stance (its
+        // arrows and dodges)
+        BowVolley.tickLocal(mc, p, s, attackPressed, abilityPressed);
         BowStance.tickLocal(p, s);
-        if (attackPressed && !marking) BowStance.attackKey(p, s);
-        // The left button is the bow's while the bow's moves play, the bow is drawn, in the flow and the
-        // Legolas stance (on one knee between two arrows the bow is not drawn): it swings nothing, not even
+        // The left button is the bow's while the bow's moves play, the bow is drawn, in the Legolas stance
+        // (between two arrows the bow is not drawn) and on the knee after G: it swings nothing, not even
         // Better Combat's blow, which comes before Forge's interaction event that stops vanilla's.
-        if ((s.move != null && (s.move.volley() || s.move.marked())) || BowStance.active(p) || BowStance.kneeling(p)
-                || dev.mcreload.moves.Bow.drawing(p)) StrikeInput.swallow(mc);
+        if ((s.move != null && (s.move.volley() || s.move.marked() || s.move == Move.SLIDE_SHOT || s.move == Move.SLIDE_SHOT_END))
+                || BowStance.active(p) || BowStance.kneeling(p) || dev.mcreload.moves.Bow.drawing(p)) StrikeInput.swallow(mc);
 
         // ---- dodges and rolls: R and a direction (R with the bow fully drawn: the Legolas stance)
         if (dodgePressed && BowStance.dodgeKey(p)) dodgePressed = false;
@@ -360,16 +383,22 @@ public final class MovesClient {
         pushDir = null;
         airTicks = 0;
         s.target = target;
-        if (move == Move.DASH) s.dashCooldown = MovesConfig.dashCooldownTicks();
-        if (move == Move.WHIRL) s.whirlCooldown = MovesConfig.whirlCooldownTicks();
+        if (move == Move.DASH) s.dashCooldown = s.cooled(MovesConfig.dashCooldownTicks());
+        if (move == Move.WHIRL) s.whirlCooldown = s.cooled(MovesConfig.whirlCooldownTicks());
         if (move.volley()) dev.mcreload.moves.Bow.started(s, move);
         if (move == Move.SWORD_SPIN) {
-            s.spinCooldown = MovesConfig.swordSpinCooldownTicks();
+            s.spinCooldown = s.cooled(MovesConfig.swordSpinCooldownTicks());
             s.attackYaw = p.getYRot();
         }
         if (move == Move.SLIDE_ATTACK) {
-            s.slideAttackCooldown = MovesConfig.slideAttackCooldownTicks();
+            s.slideAttackCooldown = s.cooled(MovesConfig.slideAttackCooldownTicks());
             s.attackYaw = p.getYRot();
+        }
+        if (move == Move.SLIDE_SHOT) {
+            s.slideShotCooldown = s.cooled(MovesConfig.slideShotCooldownTicks());
+            // on the way the slide was going, whichever way the player looks now
+            Vec3 v = p.getDeltaMovement();
+            if (v.horizontalDistanceSqr() > 1.0E-4) moveYaw = (float) (Mth.atan2(-v.x, v.z) * Mth.RAD_TO_DEG);
         }
         if (move.ledge()) LedgeInput.started(p, move, was);
         // the kick goes at the mob, whichever way within reach the player looked
@@ -379,6 +408,17 @@ public final class MovesClient {
         }
         MoveAnimator.play(p, move, was);
         MovesNet.CHANNEL.sendToServer(new MovesNet.Request((byte) move.ordinal(), held, target));
+        return true;
+    }
+
+    /**
+     * The local player let go of the bow (vanilla's release): in the shot out of a slide no arrow of the
+     * bow's own (the server keeps it too, Bow.released); its three leave in its ending, which starts once
+     * the player is down on the knee. Returns whether the release was the shot's.
+     */
+    static boolean slideShotReleased(Stamina s) {
+        if (s.move != Move.SLIDE_SHOT) return false;
+        slideShotLoosed = true;
         return true;
     }
 
@@ -447,6 +487,21 @@ public final class MovesClient {
         }
         if (move == Move.SLIDE_ATTACK) {
             slideAttack(p, s, t);
+            return;
+        }
+        if (move == Move.SLIDE_SHOT) {
+            // the slide carries on through the turn and brakes to a stop on the knee; then the keys creep (movementInput)
+            if (t < Move.SLIDE_SHOT_SPIN) {
+                float speed = Move.slideSpeed(MovesConfig.slideShotBlocks(), s.slid);
+                s.slid += speed;
+                Vec3 dir = move(Move.SLIDE_SHOT);
+                p.setDeltaMovement(dir.x * speed, p.getDeltaMovement().y, dir.z * speed);
+            }
+            return;
+        }
+        if (move == Move.SLIDE_SHOT_END) {
+            Vec3 v = p.getDeltaMovement();
+            p.setDeltaMovement(v.x * 0.5, v.y, v.z * 0.5);
             return;
         }
         if (move == Move.FALL_ROLL) {
@@ -729,14 +784,16 @@ public final class MovesClient {
     }
 
     /**
-     * During the volley the bow is not drawn again nor swung: the volley plays out first. In the
-     * flow and the Legolas stance the left button is theirs (BowStance), it does not swing the bow.
+     * During the volley the bow is not drawn again nor swung: the volley plays out first; nor while the
+     * shot out of a slide gets up. In the Legolas stance the left button is its own (BowStance), it does
+     * not swing the bow.
      */
     private static void interaction(net.minecraftforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         LocalPlayer p = Minecraft.getInstance().player;
         Stamina s = p == null ? null : Stamina.of(p);
         boolean striking = s != null && s.move != null && s.move.strike() && s.moveTick < s.move.recoverFrom();
-        boolean bow = s != null && s.move != null && (s.move.volley() || s.move.marked());
+        boolean bow = s != null && s.move != null && (s.move.volley() || s.move.marked()
+                || (s.move == Move.SLIDE_SHOT_END && s.moveTick < s.move.recoverFrom()));
         if (p != null && (bow || striking || (event.isAttack() && BowStance.active(p)))) {
             event.setCanceled(true);
             event.setSwingHand(false);
@@ -748,6 +805,11 @@ public final class MovesClient {
         BowStance.movementInput(event.getEntity(), event.getInput());
         Stamina s = Stamina.of(event.getEntity());
         if (s.move == null || s.moveTick >= s.move.length - 3) return;
+        // On the knee in the shot out of a slide: the keys creep, very slowly (author, 2026-10-31)
+        if (s.move == Move.SLIDE_SHOT && s.moveTick >= Move.SLIDE_SHOT_SPIN) {
+            BowStance.creep(event.getInput());
+            return;
+        }
         if (s.move == Move.SLIDE && s.moveTick < Move.PUSH_TICK) return;
         if (s.move == Move.FALL_TUCK || s.move == Move.PLUNGE_FALL) return;     // in the air: the little steering vanilla gives stays
         if (s.move == Move.SWORD_SPIN || s.move == Move.SPIN_END) return;     // the sword's turns walk with the keys
@@ -775,6 +837,11 @@ public final class MovesClient {
         BowStance.tick(p);
         if (move == null) return;
         int t = s.moveTick;    // already counted on for this tick
+        // The shot out of a slide down on the knee: held there, the head and arms aiming with the drawn bow
+        if (move == Move.SLIDE_SHOT && t == Move.SLIDE_SHOT_SPIN) {
+            MoveAnimator.playKneel(p);
+            step(p, p.level().getBlockState(BlockPos.containing(p.getX(), p.getY() - 0.2, p.getZ())), 0.5f);
+        }
         BlockPos below = BlockPos.containing(p.getX(), p.getY() - 0.2, p.getZ());
         BlockState ground = p.level().getBlockState(below);
         if (t == Move.PUSH_TICK) sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 0.25f, 1.6f);
@@ -877,15 +944,8 @@ public final class MovesClient {
         s.freeTicks = m.freeTicks();
         s.freeTotal = m.freeTotal();
         // the cooldowns as the server counts them (the tray; after joining the client knows none of its own)
-        s.dashCooldown = m.cooldowns()[0];
-        s.whirlCooldown = m.cooldowns()[1];
-        s.spinCooldown = m.cooldowns()[2];
-        s.slideAttackCooldown = m.cooldowns()[3];
-        s.markedCooldown = m.cooldowns()[4];
-        s.bowCooldown = m.cooldowns()[5];
-        if (s.bowCooldown > s.bowCooldownTotal) {
-            s.bowCooldownTotal = s.bowCooldown > MovesConfig.volleyCooldownTicks() ? MovesConfig.hailCooldownTicks() : MovesConfig.volleyCooldownTicks();
-        }
+        s.setCooldowns(m.cooldowns());
+        s.hasteTicks = m.hasteTicks();
         maxEnergy = m.maxEnergy();
         maxShields = m.maxShields();
     }

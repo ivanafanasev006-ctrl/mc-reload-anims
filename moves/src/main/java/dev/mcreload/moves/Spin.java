@@ -54,7 +54,7 @@ public final class Spin {
     }
 
     static void started(ServerPlayer p, Stamina s) {
-        s.spinCooldown = MovesConfig.swordSpinCooldownTicks();
+        s.spinCooldown = s.cooled(MovesConfig.swordSpinCooldownTicks());
         s.attackYaw = p.getYRot();
         s.whirlHits.clear();
     }

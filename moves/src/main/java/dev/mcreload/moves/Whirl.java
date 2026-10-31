@@ -49,7 +49,7 @@ public final class Whirl {
     }
 
     static void started(ServerPlayer p, Stamina s) {
-        s.whirlCooldown = MovesConfig.whirlCooldownTicks();
+        s.whirlCooldown = s.cooled(MovesConfig.whirlCooldownTicks());
         s.whirlHits.clear();
     }
 

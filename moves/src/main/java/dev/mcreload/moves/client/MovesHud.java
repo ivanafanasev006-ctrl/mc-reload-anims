@@ -204,6 +204,8 @@ public final class MovesHud {
     /** When each strike last came back (its slot glints), and its cooldown the frame before. */
     private static final java.util.Map<Move, Long> READY_AT = new java.util.EnumMap<>(Move.class);
     private static final java.util.Map<Move, Integer> WAS = new java.util.EnumMap<>(Move.class);
+    /** How long each strike's wait was when it started (the bar's whole: shorter after G than after G held, halved by the apple). */
+    private static final java.util.Map<Move, Integer> TOTAL = new java.util.EnumMap<>(Move.class);
 
     /** The key of a strike was pressed while it waited: its bar flashes red for a moment. */
     static void refused(Move move) {
@@ -218,8 +220,11 @@ public final class MovesHud {
         if (ability != null) out.add(ability);
         if (Strikes.sword(p) && HudConfig.Moves.DASH.on()) out.add(Move.DASH);
         if (Strikes.slideWeapon(p) && HudConfig.Moves.SLIDE_ATTACK.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_ATTACK);
-        // the volley at the marked (by its first step)
-        if (dev.mcreload.moves.Bow.isBow(p.getMainHandItem()) && HudConfig.Moves.MARKS.on()) out.add(Move.MARKED_SPIN_LEFT);
+        boolean bow = dev.mcreload.moves.Bow.isBow(p.getMainHandItem());
+        if (bow && HudConfig.Moves.SLIDE_SHOT.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_SHOT);
+        // the volley at the marked (by its first step), the Legolas stance (by its dodge)
+        if (bow && HudConfig.Moves.MARKS.on()) out.add(Move.MARKED_SPIN_LEFT);
+        if (bow && HudConfig.Moves.LEGOLAS.on()) out.add(Move.LEGOLAS_LEFT);
         return out;
     }
 
@@ -232,8 +237,21 @@ public final class MovesHud {
             case SLIDE_ATTACK -> MovesConfig.slideAttackCooldownTicks();
             case MARKED_SPIN_LEFT -> MovesConfig.markedCooldownTicks();
             case BARRAGE -> MovesConfig.volleyCooldownTicks();
+            case SLIDE_SHOT -> MovesConfig.slideShotCooldownTicks();
+            case LEGOLAS_LEFT -> MovesConfig.legolasCooldownTicks();
             default -> 0;
         };
+    }
+
+    /**
+     * The bar's whole for a strike waiting {@code left} ticks: how long the wait was when it started
+     * (G's after the hail is 40 s, after the volley 10; the enchanted golden apple halves them), or,
+     * not seen starting (just joined, another weapon in hand then), the usual wait.
+     */
+    private static int trayTotal(Move move, Stamina s, int left, Integer was) {
+        int usual = s.cooled(cooldownTotal(move));
+        if (was == null || left > was) TOTAL.put(move, Math.max(left, usual));
+        return Math.max(left, TOTAL.getOrDefault(move, usual));
     }
 
     /**
@@ -258,7 +276,7 @@ public final class MovesHud {
             long ready = READY_AT.getOrDefault(move, 0L);
             float glint = Mth.clamp(1f - (now - ready) / 400f, 0f, 1f);
             boolean flash = refused == move && now < refusedUntil && (now / 75) % 2 == 0;
-            int total = move == Move.BARRAGE ? Math.max(s.bowCooldownTotal, left) : cooldownTotal(move);
+            int total = trayTotal(move, s, left, was);
             trayRow(g, mc.font, x, y, p.getMainHandItem(), trayKeys(mc, move), left, total, glint, flash);
             y -= TRAY_ROW;
         }
@@ -314,13 +332,21 @@ public final class MovesHud {
         g.blit(tex, x + w - 1, y, BAR_W - 1, 0, 1, BAR_H, BAR_W, BAR_H);
     }
 
-    /** The keys of a strike, short: "G", "LMB+RMB", "C+LMB" (as they are bound). */
+    /**
+     * The keys of a strike, short: "G(G+)" (author, 2026-10-31: on every weapon, so it is plain that G
+     * may be tapped or held), "LMB+RMB", "C+LMB", "C+RMB", "↑RMB", "RMB+R" (as they are bound).
+     */
     static String trayKeys(Minecraft mc, Move move) {
         return switch (move) {
             case DASH -> shortKey(mc.options.keyAttack) + "+" + shortKey(mc.options.keyUse);
             case SLIDE_ATTACK -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
+            case SLIDE_SHOT -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyUse);
             case MARKED_SPIN_LEFT -> "↑" + shortKey(mc.options.keyUse);
-            default -> shortKey(MovesClient.ABILITY);
+            case LEGOLAS_LEFT -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.DODGE);
+            default -> {
+                String g = shortKey(MovesClient.ABILITY);
+                yield g + "(" + g + "+)";
+            }
         };
     }
 

@@ -21,6 +21,8 @@ writes tools/blockbench/refined/author_2026-10-29.bbmodel     (hop_on_kick, slid
                                                               after the video of 2026-10-30, 23:01: the leap
                                                               to an edge looked at, no creeping along the
                                                               edge, the pull-up's knee forward; round7.py)
+       tools/blockbench/refined/bow_2026-10-31.bbmodel        (the message of 2026-10-31: the bow's shot out
+                                                              of a slide, C + RMB, bow_slide_shot; round8.py)
 
 After that video the rolls' blade lies along the forearm (round7.tuck_blade; the rolls of 2026-10-27
 too, refine_author_2026_10_27.py).
@@ -49,6 +51,7 @@ import moves
 import round5
 import round6
 import round7
+import round8
 from kit import L
 
 DST = os.path.join(kit.BB, 'refined', 'author_2026-10-29.bbmodel')
@@ -56,6 +59,8 @@ DST = os.path.join(kit.BB, 'refined', 'author_2026-10-29.bbmodel')
 SRC_B = os.path.join(kit.BB, 'animations', 'author_2026-10-29b.bbmodel')
 DST_B = os.path.join(kit.BB, 'refined', 'author_2026-10-29b.bbmodel')
 DST_LEDGE = os.path.join(kit.BB, 'refined', 'ledge_2026-10-29.bbmodel')
+#: The bow's shot out of a slide (round8.py), on the author's rig of 2026-10-29 (it has the bow).
+DST_BOW = os.path.join(kit.BB, 'refined', 'bow_2026-10-31.bbmodel')
 #: The author's file of 2026-10-30 (his whirlwind's try) is the model for the round's own set (round6.py).
 SRC_C = os.path.join(kit.BB, 'animations', 'author_2026-10-30.bbmodel')
 DST_C = os.path.join(kit.BB, 'refined', 'author_2026-10-30.bbmodel')
@@ -154,12 +159,13 @@ def to_json(a, uuids):
     return j
 
 
-def write_set(model, made, dst, tuck=None):
+def write_set(model, made, dst, tuck=None, bow=False):
     """The model with these animations (and no others) written to dst; tuck: the rolls among them
-    whose blade lies along the forearm (round7.tuck_blade)."""
+    whose blade lies along the forearm (round7.tuck_blade); bow: they hold the bow (its still track kept)."""
     uuids = L.bone_uuids(model)
     for a in made:
-        no_bow(a)
+        if not bow:
+            no_bow(a)
     model['animations'] = [to_json(a, uuids) for a in made]
     if tuck:
         round7.tuck_blade(model, tuck)
@@ -208,6 +214,13 @@ def main():
         mk = json.load(f)
     mk['name'] = 'kinetrix_emotes'
     write_set(mk, [round5.celebrate()], DST_KINETRIX)
+
+    # --- the message of 2026-10-31: the bow's shot out of a slide (C + RMB) ---
+    mbow = copy.deepcopy(src)
+    mbow['name'] = 'bow_2026-10-31'
+    set_visible(mbow, 'right_item_sword', False)
+    set_visible(mbow, 'right_item_bow', True)
+    write_set(mbow, [round8.bow_slide_shot()], DST_BOW, bow=True)
 
     # --- the ledge set ---
     lm = copy.deepcopy(src)

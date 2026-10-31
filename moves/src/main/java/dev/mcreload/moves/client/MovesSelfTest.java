@@ -225,6 +225,7 @@ public final class MovesSelfTest {
         slideAttack("96_slide_attack", CameraType.THIRD_PERSON_BACK);
         slideAttack("97_slide_attack_first_person", CameraType.FIRST_PERSON);
         slideAttack("96b_slide_attack_bow", CameraType.THIRD_PERSON_BACK, Items.BOW);
+        slideShot("96c_slide_shot", CameraType.THIRD_PERSON_BACK);
         fallRoll("98_fall_roll", CameraType.THIRD_PERSON_BACK);
         ledgeJump("80_ledge_jump_hops_leap_climb", CameraType.THIRD_PERSON_BACK);
         ledgeJump("84_ledge_first_person", CameraType.FIRST_PERSON);
@@ -299,11 +300,10 @@ public final class MovesSelfTest {
             if (t == 66) mc.options.keyUse.setDown(false);
         }, new int[]{26, 29, 33, 39, 44, 50, 55, 60}, true));
 
-        // ---- after the volley, the right button still held: on one knee, creeping and aiming; then
-        // the flow: each left click a dodge (none: a spin in place; A: a roll to the left; S: a hop
-        // back) and the round's next pose (crouched, standing, on the knee, crouched, standing);
-        // letting go shoots the last arrow and stands up
-        SCENARIOS.add(new Scenario("81_bow_flow", 300, sp -> {
+        // ---- after the volley, the right button still held: on one knee, creeping and aiming; the left
+        // button does nothing there now (author, 2026-10-31: the old flow is gone, the Legolas stance took
+        // its place); letting go shoots the arrow and stands up
+        SCENARIOS.add(new Scenario("81_bow_kneel_after_g", 130, sp -> {
             place(sp, 0, new ItemStack(Items.BOW));
             Stamina.of(sp).bowCooldown = 0;
             sp.getInventory().add(new ItemStack(Items.ARROW, 16));
@@ -315,40 +315,26 @@ public final class MovesSelfTest {
                 KeyMapping.click(mc.options.keyUse.getKey());
             }
             if (t == 26) KeyMapping.click(MovesClient.ABILITY.getKey());
-            if (t == 80 || t == 125 || t == 170 || t == 201 || t == 246) mc.options.keyAttack.setDown(true);
-            if (t == 81 || t == 126 || t == 171 || t == 202 || t == 247) mc.options.keyAttack.setDown(false);
             if (t == 68) {
-                note("flow: kneeling " + BowStance.kneeling(mc.player) + ", drawing " + mc.player.isUsingItem() + ", in the flow " + BowStance.inFlow());
+                note("kneel after G: kneeling " + BowStance.kneeling(mc.player) + ", drawing " + mc.player.isUsingItem());
                 startPos = mc.player.position();
             }
             mc.options.keyUp.setDown(t >= 56 && t < 76);
             if (t == 76) {
-                note(String.format(Locale.ROOT, "flow: crept %.2f blocks in 1 s on the knee (walking with a drawn bow: about 0.9)",
+                note(String.format(Locale.ROOT, "kneel after G: crept %.2f blocks in 1 s on the knee (walking with a drawn bow: about 0.9)",
                         mc.player.position().subtract(startPos).horizontalDistance()));
-                startPos = mc.player.position();
             }
-            if (t == 79 || t == 86 || t == 100 || t == 122 || t == 131 || t == 150 || t == 167 || t == 178 || t == 197
-                    || t == 206 || t == 222 || t == 242 || t == 250 || t == 268 || t == 288 || t == 298) {
+            if (t == 80 || t == 90 || t == 100) mc.options.keyAttack.setDown(true);
+            if (t == 81 || t == 91 || t == 101) mc.options.keyAttack.setDown(false);
+            if (t == 79 || t == 84 || t == 94 || t == 104) {
                 Move m = Stamina.of(mc.player).move;
-                note(String.format(Locale.ROOT, "flow t=%d: arrows %d, move %s, kneeling %s, energy %.0f", t,
-                        mc.player.getInventory().countItem(Items.ARROW), m, BowStance.kneeling(mc.player), Stamina.of(mc.player).energy));
+                note(String.format(Locale.ROOT, "kneel after G t=%d (left clicks at 80, 90, 100): arrows %d, move %s, kneeling %s", t,
+                        mc.player.getInventory().countItem(Items.ARROW), m, BowStance.kneeling(mc.player)));
             }
-            if (t == 197) note(String.format(Locale.ROOT, "flow: three spins in place moved the player %.2f blocks",
-                    mc.player.position().subtract(startPos).horizontalDistance()));
-            if (t == 200) {
-                startPos = mc.player.position();
-                mc.options.keyLeft.setDown(true);
-            }
-            if (t == 206) mc.options.keyLeft.setDown(false);
-            if (t == 242) note(String.format(Locale.ROOT, "flow: rolled %.2f blocks to the left", mc.player.position().subtract(startPos).horizontalDistance()));
-            if (t == 245) {
-                startPos = mc.player.position();
-                mc.options.keyDown.setDown(true);
-            }
-            if (t == 251) mc.options.keyDown.setDown(false);
-            if (t == 288) note(String.format(Locale.ROOT, "flow: hopped back %.2f blocks", mc.player.position().subtract(startPos).horizontalDistance()));
-            if (t == 292) mc.options.keyUse.setDown(false);
-        }, new int[]{60, 86, 100, 108, 131, 150, 178, 187, 206, 222, 250, 268, 296}, true));
+            if (t == 110) mc.options.keyUse.setDown(false);
+            if (t == 125) note(String.format(Locale.ROOT, "kneel after G: let go, arrows %d, kneeling %s",
+                    mc.player.getInventory().countItem(Items.ARROW), BowStance.kneeling(mc.player)));
+        }, new int[]{40, 60, 84, 94, 114, 124}, true));
 
         // ---- the Legolas stance: the bow fully drawn, R once; the arrow leaves by itself at every full
         // draw, then a dodge by the keys: A, then S + A (back and to the left), then D, then none
@@ -384,6 +370,8 @@ public final class MovesSelfTest {
                         Stamina.of(mc.player).energy, BowStance.inLegolas()));
             }
             if (t == 140) mc.options.keyUse.setDown(false);
+            if (t == 146) note("legolas: let go, its wait " + (Stamina.of(mc.player).legolasCooldown + 19) / 20 + " s (want 12), stance "
+                    + BowStance.inLegolas());
         }, new int[]{24, 28, 32, 36, 44, 50, 76, 80, 100, 104, 128, 146}, true));
 
         // ---- the bow in close combat: three blows at a husk (with Better Combat its strikes: from the
@@ -975,6 +963,76 @@ public final class MovesSelfTest {
                 dummyReport(mc, name, true);
             }
         }, new int[]{12, 15, 17, 18, 19, 20, 22, 24, 28, 32, 38}, camera != CameraType.FIRST_PERSON));
+    }
+
+    /**
+     * The shot out of a slide (author, 2026-10-31): sprinting, C tapped, the right button as the slide
+     * goes: a whole turn down onto one knee, the bow drawn; the camera turned a little and W held on the
+     * knee (it creeps); let go: three arrows at once, side by side, at three zombies ahead; up, and
+     * walking on. Then the tray (the bow's rows: G(G+), C+LMB, C+RMB, the marked, RMB+R) with the
+     * enchanted golden apple eaten: every wait half as long.
+     */
+    private static void slideShot(String name, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 110, sp -> {
+            place(sp, 0, new ItemStack(Items.BOW));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 16));
+            sp.teleportTo(sp.serverLevel(), 0.5, Y + 1, -8.5, 0f, 0f);
+            for (int i = -1; i <= 1; i++) dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, i * 1.4, 14, -1f);
+            Stamina st = Stamina.of(sp);
+            st.slideShotCooldown = 0;
+            st.legolasCooldown = 0;
+            st.hasteTicks = 0;
+        }, (mc, t) -> {
+            camera(mc, camera);
+            Stamina s = Stamina.of(mc.player);
+            if (t == 1) s.slideShotCooldown = 0;
+            KeyMapping slide = slideKey(mc);
+            mc.options.keyUp.setDown((t >= 2 && t < 14) || (t >= 34 && t < 44));
+            mc.options.keySprint.setDown(t >= 2 && t < 14);
+            if (t == 12) slide.setDown(true);
+            if (t == 13) slide.setDown(false);
+            if (t == 16) {
+                startPos = mc.player.position();
+                mc.options.keyUse.setDown(true);
+                KeyMapping.click(mc.options.keyUse.getKey());
+            }
+            if (t == 17 || t == 24 || t == 30) note(String.format(Locale.ROOT, "%s t=%d: move %s, tick %d, drawing %s, yaw %.0f", name, t,
+                    s.move, s.moveTick, mc.player.isUsingItem(), mc.player.getYRot()));
+            if (t == 30) note(String.format(Locale.ROOT, "%s: slid on %.2f blocks into the knee", name,
+                    mc.player.position().subtract(startPos).horizontalDistance()));
+            // the camera turned a little and back (it is free on the knee); the arrows go the way it looks
+            if (t >= 30 && t < 34) mc.player.setYRot(mc.player.getYRot() + 2f);
+            if (t >= 40 && t < 44) mc.player.setYRot(mc.player.getYRot() - 2f);
+            if (t == 34) startPos = mc.player.position();
+            if (t == 44) note(String.format(Locale.ROOT, "%s: crept %.2f blocks in 0.5 s on the knee, move %s", name,
+                    mc.player.position().subtract(startPos).horizontalDistance(), s.move));
+            if (t == 50) mc.options.keyUse.setDown(false);
+            if (t == 51 || t == 54) note(String.format(Locale.ROOT, "%s t=%d: let go, move %s, arrows %d", name, t, s.move,
+                    mc.player.getInventory().countItem(Items.ARROW)));
+            if (t == 80) {
+                note(String.format(Locale.ROOT, "%s: arrows left %d (16 - 3), move %s, wait %d s", name,
+                        mc.player.getInventory().countItem(Items.ARROW), s.move, (s.slideShotCooldown + 19) / 20));
+                dummyReport(mc, name, true);
+            }
+            // the tray with the enchanted golden apple: the waits started now are half as long
+            if (t == 84) mc.getSingleplayerServer().execute(() -> {
+                Stamina st = Stamina.of(mc.getSingleplayerServer().getPlayerList().getPlayers().get(0));
+                st.ateGoldenApple(true);
+                st.legolasCooldown = st.cooled(dev.mcreload.moves.MovesConfig.legolasCooldownTicks());
+                st.markedCooldown = st.cooled(dev.mcreload.moves.MovesConfig.markedCooldownTicks());
+                st.bowCooldown = st.cooled(dev.mcreload.moves.MovesConfig.hailCooldownTicks());
+            });
+            if (t == 100) note(String.format(Locale.ROOT, "%s: enchanted apple, free %d s, waits: G %d s (40 halved), C+RMB %d s (was halved at the apple),"
+                            + " marked %d s (25 halved), RMB+R %d s (12 halved)", name, s.freeTicks / 20, (s.bowCooldown + 19) / 20,
+                    (s.slideShotCooldown + 19) / 20, (s.markedCooldown + 19) / 20, (s.legolasCooldown + 19) / 20));
+            // the apple and the waits do not carry over into the scenarios after
+            if (t == 106) mc.getSingleplayerServer().execute(() -> {
+                Stamina st = Stamina.of(mc.getSingleplayerServer().getPlayerList().getPlayers().get(0));
+                st.hasteTicks = 0;
+                st.freeTicks = 0;
+                st.setCooldowns(new int[Stamina.of(mc.player).cooldowns().length]);
+            });
+        }, new int[]{14, 17, 19, 21, 23, 26, 30, 44, 51, 53, 56, 60, 66, 72, 104}, camera != CameraType.FIRST_PERSON));
     }
 
     /** Dropped from 11 blocks up, R held: tucked, the roll on landing, the knee; the fall's damage. */

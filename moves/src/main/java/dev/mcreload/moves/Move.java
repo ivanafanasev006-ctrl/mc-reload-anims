@@ -61,38 +61,11 @@ public enum Move {
     HAIL("bow_barrage", 1f, 53, -1, -1, -1, -1, Side.BACK, MovesConfig::costBarrage,
             0.40f, 0.38f, 0.35f, 0.32f, 0.29f, 0.26f, 0.23f, 0.20f, 0.17f, 0.14f, 0.11f),
 
-    // ---- the bow's combat flow (docs/combat-spec.md, 6.3): after the volley, the right button
-    // held, each left click is a dodge by the keys held then (a spin almost in place with none),
-    // and straight after it the next pose of the round: crouched, standing, on one knee. The bow
-    // stays drawn through both; the arrow leaves on the pose's release, with the draw it has.
-    // Dodges: 10 energy; another move may follow 4 ticks before their end (the pose, on the
-    // server a little late).
-    /** No keys (or W: forward): a full spin to the left, almost in place; untouchable like a side dodge. */
-    FLOW_SPIN_LEFT("bow_flow_turn_left", Bow.shot(0, 13, -1, 9), 13, 2, 6, -1, -1, Side.FRONT, MovesConfig::costBowDodge,
-            0.62f, 0.52f, 0.40f, 0.26f),
-    /** The same to the right, every other click. */
-    FLOW_SPIN_RIGHT("bow_flow_turn_right", Bow.shot(0, 13, -1, 9), 13, 2, 6, -1, -1, Side.FRONT, MovesConfig::costBowDodge,
-            0.62f, 0.52f, 0.40f, 0.26f),
-    /** A: a roll to the left (0.08-0.5 s, as far as a back roll), low and untouchable like one. */
-    FLOW_ROLL_LEFT("bow_flow_roll_left_shot", Bow.shot(0, 11, -1, 7), 11, 2, 9, 2, 10, Side.LEFT, MovesConfig::costBowDodge,
-            0.45f, 0.43f, 0.40f, 0.36f, 0.31f, 0.27f, 0.22f, 0.18f),
-    /** D: the same to the right. */
-    FLOW_ROLL_RIGHT("bow_flow_roll_right_shot", Bow.shot(0, 11, -1, 7), 11, 2, 9, 2, 10, Side.RIGHT, MovesConfig::costBowDodge,
-            0.45f, 0.43f, 0.40f, 0.36f, 0.31f, 0.27f, 0.22f, 0.18f),
-    /** S: a hop back (about 1.3 blocks, landing at 0.44 s), untouchable like a side dodge. */
-    FLOW_BACKSTEP("bow_flow_backstep_shot", Bow.shot(0, 10, -1, 6), 10, 2, 6, -1, -1, Side.BACK, MovesConfig::costBowDodge,
-            0.30f, 0.26f, 0.22f, 0.17f, 0.12f, 0.07f),
-    /** The round's poses, from where their animations are already in the pose: crouched side-on, the arrow at 0.6 s. */
-    FLOW_CROUCH("bow_flow_crouch_shot", Bow.shot(3, -1, 12, 17), 27, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    /** Standing side-on, the arrow at 0.6 s. */
-    FLOW_STAND("bow_flow_stand_shot", Bow.shot(3, -1, 12, 17), 27, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    /** Down onto one knee (the end of the volley's spin), the arrow at 0.15 s; then held on the knee. */
-    FLOW_KNEEL("bow_barrage", Bow.shot(8, -1, 3, 6), 6, -1, -1, -1, -1, Side.FRONT, () -> 0),
-
     // ---- the Legolas stance (docs/combat-spec.md, 6.4): the bow fully drawn, R once. Each time the
     // draw is full again the arrow leaves by itself, then a dodge spinning round: to the side of A or
     // D, the way the keys point (S + A: back and to the left), almost in place with none. The halves
-    // of bow_walk_around, 1 s each.
+    // of bow_walk_around, 1 s each. It took the place of the old combat flow (author, 2026-10-31) and
+    // waits MovesConfig.legolasCooldown from its end (the button let go) before it can be taken again.
     /** A (or every other dodge without it): the spin to the left (the first half), pushed like a side dodge, untouchable as one. */
     LEGOLAS_LEFT("bow_walk_around", Bow.shot(0, 20, -1, 17), 20, 2, 6, -1, -1, Side.LEFT, MovesConfig::costBowDodge,
             0.62f, 0.52f, 0.40f, 0.26f),
@@ -101,10 +74,11 @@ public enum Move {
             0.62f, 0.52f, 0.40f, 0.26f),
 
     // ---- the volley at the marked mobs (Marks; author, 2026-10-30, 23:01): the right button let go at
-    // the full draw with marked mobs in sight, once in 25 s: an arrow at each in turn, the flow's turns
-    // and poses played very fast, the player turned to each. W, A, S, D: a spin forward, a roll to that
-    // side, a hop back that way; none: a spin and a pose in turn, almost in place. The arrow leaves at
-    // the step's release, aimed at its mob by the server; the next step may start a tick after it.
+    // the full draw with marked mobs in sight, once in 25 s: an arrow at each in turn, the turns and
+    // poses of the bow's old combat flow (bow_flow_*, 2026-10-28) played very fast, the player turned to
+    // each. W, A, S, D: a spin forward, a roll to that side, a hop back that way; none: a spin and a pose
+    // in turn, almost in place. The arrow leaves at the step's release, aimed at its mob by the server;
+    // the next step may start a tick after it.
     /** A spin to the left (bow_flow_turn_left, twice as fast). */
     MARKED_SPIN_LEFT("bow_flow_turn_left", 2f, Bow.shot(0, 13, 6, 7), 8, 1, 4, -1, -1, Side.FRONT, () -> 0,
             0.30f, 0.25f, 0.15f, 0.08f),
@@ -120,7 +94,7 @@ public enum Move {
     /** S: a hop back. */
     MARKED_BACKSTEP("bow_flow_backstep_shot", 2f, Bow.shot(0, 10, 5, 6), 7, 1, 3, -1, -1, Side.BACK, () -> 0,
             0.35f, 0.30f, 0.20f, 0.10f),
-    /** The flow's poses, twice as fast: crouched side-on. */
+    /** The old flow's poses, twice as fast: crouched side-on. */
     MARKED_CROUCH("bow_flow_crouch_shot", 2f, Bow.shot(3, -1, 5, 6), 7, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** Standing side-on. */
     MARKED_STAND("bow_flow_stand_shot", 2f, Bow.shot(3, -1, 5, 6), 7, -1, -1, -1, -1, Side.FRONT, () -> 0),
@@ -192,6 +166,20 @@ public enum Move {
      * while it slides. 15 s before the next one.
      */
     SLIDE_ATTACK("slide_under_attack", 1f, 28, -1, -1, 0, 14, Side.FRONT, MovesConfig::costSlideAttack),
+    /**
+     * The right button while sliding with a bow (author, 2026-10-31: "like C + LMB, but the turn is not
+     * 180 degrees but 360 round himself; he starts drawing the bow and sits on one knee like that"): off
+     * the hip, a whole turn clockwise down onto the left knee by 0.5 s (bow_slide_shot; the slide carries
+     * on and brakes to a stop, MovesConfig.slideShotBlocks), the bow drawing as vanilla draws it; then
+     * held on the knee while the button is held, aiming where the player looks, creeping very slowly
+     * (MovesConfig.kneelMoveFactor). Low while it comes up off the hip. 20 s before the next one.
+     */
+    SLIDE_SHOT("bow_slide_shot", 1f, Move.FOREVER, -1, -1, 0, 4, Side.FRONT, MovesConfig::costSlideShot),
+    /**
+     * The button let go (not before the knee): three arrows at once, side by side (Bow.SLIDE_SHOT_RELEASE),
+     * as strong as the draw; then up calmly (bow_slide_shot from 0.5 s), moving breaks off the rest.
+     */
+    SLIDE_SHOT_END("bow_slide_shot", 1f, 23, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** R held while falling: tucked until the landing (fall_tuck, looped). */
     FALL_TUCK("fall_tuck", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /**
@@ -287,6 +275,8 @@ public enum Move {
     public static final int CLIMB_ON_TOP = 14;
     /** The attack out of a slide: up from its crouch (0.8 s), moving breaks off the rest of the getting up. */
     public static final int SLIDE_ATTACK_UP = 16;
+    /** The shot out of a slide: down on the knee (0.5 s of bow_slide_shot, where SLIDE_SHOT_END starts); up enough to walk on (0.9 s). */
+    public static final int SLIDE_SHOT_SPIN = 10, SLIDE_SHOT_UP = 8;
     /** The vault lands this far beyond the mob it goes over. */
     public static final float HOP_BEYOND = 1.4f;
     /** Side dodges knock an arrow aside with the weapon in these ticks (0-0.21 s, docs/moves.md). */
@@ -363,7 +353,7 @@ public enum Move {
         return this == DODGE_LEFT || this == DODGE_RIGHT;
     }
 
-    /** A move of the drawn bow (the flow, the Legolas stance): the bow stays drawn through it. */
+    /** A move of the drawn bow (the Legolas stance's dodges): the bow stays drawn through it. */
     public boolean drawnBow() {
         return shot != null && !marked();
     }
@@ -431,7 +421,8 @@ public enum Move {
     public boolean follows(Move now) {
         if (now == null) return false;
         return switch (this) {
-            case SLIDE_ATTACK -> now == SLIDE;
+            case SLIDE_ATTACK, SLIDE_SHOT -> now == SLIDE;
+            case SLIDE_SHOT_END -> now == SLIDE_SHOT;
             case FALL_ROLL -> now == FALL_TUCK;
             // R while falling with the blade held for the plunge: the tuck instead; the plunge's landing
             case FALL_TUCK -> now == PLUNGE_FALL;
@@ -442,7 +433,7 @@ public enum Move {
             // the edge caught out of a fall, a slide or a roll off a drop, or back to the hang on it
             case LEDGE_HANG -> now == FALL_TUCK || now == PLUNGE_FALL || now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT
                     || now == LEDGE_LEAP || now == LEDGE_DOWN
-                    || now == SLIDE || now == SLIDE_ATTACK || now.rolls() || now.sideDodge() || now == DIVE;
+                    || now == SLIDE || now == SLIDE_ATTACK || now == SLIDE_SHOT || now.rolls() || now.sideDodge() || now == DIVE;
             case LEDGE_HOP_LEFT, LEDGE_HOP_RIGHT -> now.hanging() || now == LEDGE_HOP_LEFT || now == LEDGE_HOP_RIGHT;
             case LEDGE_LEAP, LEDGE_CLIMB, LEDGE_PULLED -> now.hanging();
             // the volley at the marked: each step from the one before (the arrow left at its release)
@@ -469,7 +460,7 @@ public enum Move {
     /** Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28). */
     public boolean firstPerson() {
         return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
-                || turning() || ledge() || volley() || marked();
+                || turning() || ledge() || volley() || marked() || this == SLIDE_SHOT || this == SLIDE_SHOT_END;
     }
 
     /**
@@ -490,6 +481,7 @@ public enum Move {
             case DIVE -> DIVE_UP;
             case LEDGE_CLIMB -> CLIMB_ON_TOP;
             case SLIDE_ATTACK -> SLIDE_ATTACK_UP;
+            case SLIDE_SHOT_END -> SLIDE_SHOT_UP;
             case FALL_ROLL -> Fall.STAND;
             case FINISHER -> Strikes.FINISH_OUT;
             case FINISHER_AXE -> Strikes.CHOP_OUT;

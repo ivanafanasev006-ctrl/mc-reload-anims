@@ -178,6 +178,36 @@ public final class MovesGameTests {
         }).run(5);
     }
 
+    /**
+     * The enchanted golden apple (author, 2026-10-31): 45 s of free moves, and the attacks' cooldowns half
+     * as long meanwhile: the ones running when it is eaten (not again by a second apple), and the ones
+     * started while it works; after it, whole again.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void enchantedAppleHalvesCooldowns(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> {
+            t.check(MovesConfig.enchantedFreeTicks() == 45 * 20, "free time of the enchanted apple: " + MovesConfig.enchantedFreeTicks());
+            s.dashCooldown = 600;
+            s.bowCooldown = 100;
+            s.ateGoldenApple(true);
+            t.check(s.freeTicks == 45 * 20 && s.hasteTicks == 45 * 20, "free " + s.freeTicks + ", quick " + s.hasteTicks + " ticks");
+            t.check(s.dashCooldown == 300 && s.bowCooldown == 50, "running cooldowns: dash " + s.dashCooldown + ", G " + s.bowCooldown);
+            s.ateGoldenApple(true);
+            t.check(s.dashCooldown == 300, "halved again by a second apple: " + s.dashCooldown);
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD));
+            t.check(MoveServer.request(p, Move.SWORD_SPIN, false), "the sword's turn refused");
+            t.check(s.spinCooldown == MovesConfig.swordSpinCooldownTicks() / 2, "the turn's wait with the apple: " + s.spinCooldown);
+        });
+        t.at(40, () -> {
+            s.hasteTicks = 0;
+            s.spinCooldown = 0;
+            t.check(s.cooled(MovesConfig.dashCooldownTicks()) == MovesConfig.dashCooldownTicks(), "a cooldown after the apple is whole");
+        }).run(41);
+    }
+
     /** Cooked food gives back a little energy (author: 25 of 100), raw food none; a golden apple frees moves for 15 s. */
     @GameTest(template = FLOOR)
     public static void cookedFoodGivesEnergy(GameTestHelper h) {
@@ -675,6 +705,63 @@ public final class MovesGameTests {
             float lost = 20f - behind.getHealth();
             t.check(lost >= 5.5f, "the zombie slid past took " + lost + " (a crit of the bow's 4 is 6)");
         }).run(4 + dev.mcreload.moves.Strikes.SLIDE_HIT);
+    }
+
+    /**
+     * The shot out of a slide (author, 2026-10-31: C + RMB with a bow, "a turn of 360 round himself, he
+     * draws the bow on one knee, lets go of RMB and shoots 3 arrows at once, side by side; 20 s
+     * cooldown"): out of the slide only, the bow drawn on the knee; let go, no arrow of the bow's own,
+     * then three at once, spread side by side; again within 20 s refused.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void slideShot(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        int release = 4 + Move.SLIDE_SHOT_SPIN + 6, shot = release + 1 + dev.mcreload.moves.Bow.SLIDE_SHOT_RELEASE;
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            p.getInventory().add(new ItemStack(Items.ARROW, 16));
+            p.setXRot(55f);     // into the floor close by, not into the other tests' mobs
+            s.energy = 100f;
+            t.check(!MoveServer.request(p, Move.SLIDE_SHOT, false), "the shot without a slide");
+            p.setSprinting(true);
+            t.check(MoveServer.request(p, Move.SLIDE, false), "slide refused");
+        });
+        t.at(4, () -> {
+            float before = s.energy;
+            t.check(MoveServer.request(p, Move.SLIDE_SHOT, false), "the shot out of the slide refused");
+            t.close(s.energy, before - MovesConfig.costSlideShot(), "energy after the shot out of a slide");
+            t.check(s.slideShotCooldown == MovesConfig.slideShotCooldownTicks(), "its wait: " + s.slideShotCooldown + " ticks (want 20 s)");
+            p.startUsingItem(InteractionHand.MAIN_HAND);     // vanilla's draw, on the same click
+        });
+        t.at(release, () -> {
+            t.check(s.move == Move.SLIDE_SHOT, "not held on the knee: " + s.move);
+            p.releaseUsingItem();       // the right button let go
+            t.check(p.getMainHandItem().getDamageValue() == 0, "the bow shot an arrow of its own");
+            t.check(s.shotDraw >= Move.SLIDE_SHOT_SPIN, "the draw kept: " + s.shotDraw);
+            t.check(MoveServer.request(p, Move.SLIDE_SHOT_END, false), "the ending refused");
+        });
+        List<Float> yaws = new ArrayList<>();
+        t.at(shot, () -> {
+            t.check(p.getMainHandItem().getDamageValue() == dev.mcreload.moves.Bow.SLIDE_SHOT_ARROWS,
+                    "arrows shot: " + p.getMainHandItem().getDamageValue());
+            for (Arrow a : arrows(h, p)) yaws.add(a.getYRot());
+            double lo = 1e9, hi = -1e9;
+            for (float yaw : yaws) {
+                lo = Math.min(lo, yaw);
+                hi = Math.max(hi, yaw);
+            }
+            // vanilla's own scatter of an arrow (about 0.75 degrees across, looking 55 degrees down) on top of the spread
+            float spread = 2 * MovesConfig.slideShotSpread();
+            t.check(yaws.size() == 3 && Math.abs(hi - lo - spread) < 4f, yaws.size() + " arrows over " + (hi - lo) + " degrees (want " + spread + ")");
+        });
+        t.at(shot + Move.SLIDE_SHOT_END.length, () -> {
+            t.check(s.move == null, "still in " + s.move);
+            p.setSprinting(true);
+            t.check(MoveServer.request(p, Move.SLIDE, false), "slide refused");
+            t.check(!MoveServer.request(p, Move.SLIDE_SHOT, false), "the shot out of a slide again within 20 s");
+        }).run(shot + Move.SLIDE_SHOT_END.length + 1);
     }
 
     /** R held in a fall: tucked, the landing hurts 70 % less (another player's the same fall does not); then the roll. */
@@ -1574,42 +1661,41 @@ public final class MovesGameTests {
     }
 
     /**
-     * The flow's moves are made with the bow drawn, not without it. A dodge costs its energy, the
-     * pose after it nothing; the pose may follow a little before the dodge has played out (the
-     * client's request comes that much early); a pose cannot be cut short before its arrow has left
-     * and the hand followed through.
+     * The Legolas stance (author, 2026-10-31: "a cooldown of 10-15 seconds"; the old combat flow is gone):
+     * its dodges need the drawn bow; one dodge after another while the bow is drawn; once it is let go
+     * the cooldown starts (12 s) and a new stance waits it out.
      */
     @GameTest(template = FLOOR, timeoutTicks = 200)
-    public static void bowFlowNeedsADrawnBow(GameTestHelper h) {
+    public static void legolasCooldown(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Stamina s = Stamina.of(p);
         t.at(1, () -> {
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
             p.getInventory().add(new ItemStack(Items.ARROW, 8));
+            p.setXRot(55f);     // into the floor close by, not into the other tests' mobs
         });
         t.at(3, () -> {
             s.energy = 100f;
-            t.check(!MoveServer.request(p, Move.FLOW_SPIN_LEFT, false), "a flow dodge without a drawn bow");
             t.check(!MoveServer.request(p, Move.LEGOLAS_LEFT, false), "a Legolas dodge without a drawn bow");
             p.startUsingItem(InteractionHand.MAIN_HAND);
         });
         t.at(5, () -> {
-            t.check(MoveServer.request(p, Move.FLOW_SPIN_LEFT, false), "a flow dodge refused with the bow drawn");
-            t.close(s.energy, 100f - MovesConfig.costBowDodge(), "energy after a flow dodge");
-            t.check(!MoveServer.request(p, Move.FLOW_CROUCH, false), "a pose at the start of the dodge");
+            t.check(MoveServer.request(p, Move.LEGOLAS_LEFT, false), "a Legolas dodge refused with the bow drawn");
+            t.check(s.legolasLive && s.legolasCooldown == 0, "the stance is on, no wait yet: " + s.legolasCooldown);
         });
-        t.at(5 + Move.FLOW_SPIN_LEFT.freeFrom(), () -> {
-            float before = s.energy;
-            t.check(MoveServer.request(p, Move.FLOW_CROUCH, false), "the pose refused at the end of the dodge");
-            t.close(s.energy, before, "energy after a pose");
-            t.check(!MoveServer.request(p, Move.FLOW_ROLL_LEFT, false), "a dodge cut into a pose before its arrow left");
+        t.at(5 + Move.LEGOLAS_LEFT.freeFrom(), () -> {
+            t.check(MoveServer.request(p, Move.LEGOLAS_RIGHT, false), "the next dodge of the same stance refused");
+            p.stopUsingItem();      // the right button let go
         });
-        t.at(5 + Move.FLOW_SPIN_LEFT.freeFrom() + Move.FLOW_CROUCH.freeFrom(), () -> {
-            s.energy = 100f;
-            t.check(MoveServer.request(p, Move.FLOW_ROLL_LEFT, false), "a roll refused once the pose's arrow had left");
-            t.close(s.energy, 100f - MovesConfig.costBowDodge(), "energy after a roll in the flow");
-        }).run(5 + Move.FLOW_SPIN_LEFT.freeFrom() + Move.FLOW_CROUCH.freeFrom() + 1);
+        t.at(7 + Move.LEGOLAS_LEFT.freeFrom(), () -> t.check(!s.legolasLive && s.legolasCooldown > MovesConfig.legolasCooldownTicks() - 5,
+                "the stance's wait from its end: " + s.legolasCooldown + " ticks (want 12 s)"));
+        t.at(6 + Move.LEGOLAS_LEFT.freeFrom() + Move.LEGOLAS_RIGHT.length, () -> {
+            p.startUsingItem(InteractionHand.MAIN_HAND);
+            t.check(!MoveServer.request(p, Move.LEGOLAS_LEFT, false), "a new Legolas stance within its 12 s");
+            s.legolasCooldown = 0;
+            t.check(MoveServer.request(p, Move.LEGOLAS_LEFT, false), "a new Legolas stance after its wait");
+        }).run(7 + Move.LEGOLAS_LEFT.freeFrom() + Move.LEGOLAS_RIGHT.length);
     }
 
     /** A Legolas dodge: the bow drawn, its energy, untouchable like a side dodge. */

@@ -46,7 +46,7 @@ public final class MoveServer {
             if (s.move != null && s.move.marked()) {
                 Bow.markedShot(p, s);
             } else {
-                s.markedCooldown = MovesConfig.markedCooldownTicks();
+                s.markedCooldown = s.cooled(MovesConfig.markedCooldownTicks());
                 s.markedShot.clear();
                 s.spend(MovesConfig.costMarked(), p);
             }
@@ -62,13 +62,19 @@ public final class MoveServer {
         if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
         if (move == Move.DASH) {
-            s.dashCooldown = MovesConfig.dashCooldownTicks();
+            s.dashCooldown = s.cooled(MovesConfig.dashCooldownTicks());
             s.dashHit = false;
         }
         if (move == Move.SLIDE_ATTACK) {
-            s.slideAttackCooldown = MovesConfig.slideAttackCooldownTicks();
+            s.slideAttackCooldown = s.cooled(MovesConfig.slideAttackCooldownTicks());
             s.attackYaw = p.getYRot();
         }
+        if (move == Move.SLIDE_SHOT) {
+            s.slideShotCooldown = s.cooled(MovesConfig.slideShotCooldownTicks());
+            s.shotDraw = -1;
+        }
+        // a dodge of the Legolas stance: the stance is on (its cooldown starts when the bow is let go, Bow.serverTick)
+        if (move.legolas()) s.legolasLive = true;
         // Caught by the edge: the fall so far does not hurt (the tuck's own fall does, less: Fall).
         if (move.ledge()) p.fallDistance = 0f;
         if (move.volley() || move.marked()) p.stopUsingItem();     // the volleys take over the drawn bow (no arrow of its own)
@@ -118,12 +124,13 @@ public final class MoveServer {
     public static boolean allowed(Player p, Stamina s, Move move) {
         if (!p.isAlive() || p.isSpectator() || p.isPassenger() || p.isSleeping() || p.isFallFlying()
                 || p.getAbilities().flying || p.isInWater() || p.isInLava()) return false;
-        // Using an item (eating, drawing a bow) rules moves out, except the volley, which needs a full
-        // draw, and the moves of the flow and the Legolas stance, made with the bow drawn.
-        // The ledge and the fall take the hands from whatever they were doing.
-        // The bow's G and the volley at the marked take the bow over, drawn or not.
-        boolean hands = move.ledge() || move == Move.FALL_TUCK || move == Move.FALL_ROLL || move == Move.PLUNGE_FALL || move == Move.PLUNGE;
-        boolean bow = move.volley() || move.marked();
+        // Using an item (eating, drawing a bow) rules moves out, except the dodges of the Legolas stance,
+        // made with the bow drawn. The ledge and the fall take the hands from whatever they were doing.
+        // The bow's G and the volley at the marked take the bow over, drawn or not; the shot out of a slide
+        // draws it (vanilla's draw, started by the same right click), and its ending looses it.
+        boolean hands = move.ledge() || move == Move.FALL_TUCK || move == Move.FALL_ROLL || move == Move.PLUNGE_FALL || move == Move.PLUNGE
+                || move == Move.SLIDE_SHOT_END;
+        boolean bow = move.volley() || move.marked() || move == Move.SLIDE_SHOT;
         if (bow && !Bow.volleyReady(p)) return false;
         if (!hands && !bow && (move.drawnBow() ? !Bow.drawing(p) : p.isUsingItem())) return false;
         // One move at a time; the next may start once this one has played out (its fade aside), or at
@@ -137,6 +144,9 @@ public final class MoveServer {
         if (move == Move.SLIDE_ATTACK) {
             return s.move == Move.SLIDE && Strikes.slideWeapon(p) && s.slideAttackCooldown <= (p.level().isClientSide ? 0 : 5);
         }
+        // The right button out of the slide with a bow (author, 2026-10-31), after its cooldown; its ending out of it.
+        if (move == Move.SLIDE_SHOT) return s.move == Move.SLIDE && ground && s.slideShotCooldown <= (p.level().isClientSide ? 0 : 5);
+        if (move == Move.SLIDE_SHOT_END) return s.move == Move.SLIDE_SHOT;
         // In the air: the tuck while falling far enough, the roll out of it; the ledge from a jump or a fall.
         if (move == Move.FALL_TUCK) return p.fallDistance >= Fall.TUCK_FROM - (p.level().isClientSide ? 0f : 1f);
         if (move == Move.FALL_ROLL) return s.move == Move.FALL_TUCK;
@@ -161,6 +171,8 @@ public final class MoveServer {
         if (move == Move.SWORD_SPIN && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER_AXE && !Strikes.axe(p)) return false;
+        // The Legolas stance: a new one waits out the cooldown from the last one's end (author, 2026-10-31: 10-15 s).
+        if (move.legolas() && !s.legolasLive && s.legolasCooldown > (p.level().isClientSide ? 0 : 5)) return false;
         // The bow's G: 10 s after the volley, 40 s after the hail (author, 2026-10-31), the one wait for both.
         if (move.volley() && s.bowCooldown > (p.level().isClientSide ? 0 : 5)) return false;
         // The volley at the marked: its first step waits out the cooldown and wants the energy for the start.
@@ -223,11 +235,12 @@ public final class MoveServer {
 
     /** Sends the bars to the player when they changed enough to show (or {@code now}). */
     static void sync(ServerPlayer p, Stamina s, boolean now) {
-        float[] last = SENT.computeIfAbsent(p.getUUID(), u -> new float[]{-1, -1, -1, -1, -1, -1});
+        float[] last = SENT.computeIfAbsent(p.getUUID(), u -> new float[]{-1, -1, -1, -1, -1, -1, -1});
         float maxE = MovesConfig.maxEnergy(), maxS = MovesConfig.maxShields();
         // The bar is 71 pixels: a quarter of a pixel is invisible; free time counts by the second.
         boolean changed = Math.abs(last[0] - s.energy) >= maxE / 284f || last[1] != s.shields
-                || last[2] != maxE || last[3] != maxS || (int) last[4] != s.freeTicks / 20 || (int) last[5] != s.freeTotal;
+                || last[2] != maxE || last[3] != maxS || (int) last[4] != s.freeTicks / 20 || (int) last[5] != s.freeTotal
+                || (last[6] > 0) != (s.hasteTicks > 0);
         if (!changed && !now) return;
         last[0] = s.energy;
         last[1] = s.shields;
@@ -235,6 +248,7 @@ public final class MoveServer {
         last[3] = maxS;
         last[4] = s.freeTicks / 20;
         last[5] = s.freeTotal;
+        last[6] = s.hasteTicks;
         MovesNet.stamina(p, s);
     }
 

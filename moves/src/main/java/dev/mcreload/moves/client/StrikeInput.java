@@ -73,6 +73,9 @@ public final class StrikeInput {
             // the volley at the marked, in the tray by its first step
             case MARKED_SPIN_LEFT -> s.markedCooldown;
             case BARRAGE -> s.bowCooldown;
+            case SLIDE_SHOT -> s.slideShotCooldown;
+            // the Legolas stance, in the tray by its dodge
+            case LEGOLAS_LEFT -> s.legolasCooldown;
             default -> 0;
         };
     }
@@ -164,6 +167,8 @@ public final class StrikeInput {
             case SLIDE_ATTACK -> HudConfig.Moves.SLIDE_ATTACK.key;
             case MARKED_SPIN_LEFT -> HudConfig.Moves.MARKS.key;
             case BARRAGE -> HudConfig.Moves.VOLLEY.key;
+            case SLIDE_SHOT -> HudConfig.Moves.SLIDE_SHOT.key;
+            case LEGOLAS_LEFT -> HudConfig.Moves.LEGOLAS.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }
