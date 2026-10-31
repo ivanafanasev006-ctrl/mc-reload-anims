@@ -29,29 +29,24 @@ import java.util.List;
  * camera behind the player only for the volley at the marked and the kicks' cutscenes).
  *
  * <p><b>The mod's attacks.</b> In first person playerAnimator draws the player's own model from the
- * eyes, only its arms and what they hold. The whole player's turn in an animation turns those arms
- * round the camera: in G's spins they are behind it half the time, out to the sides the rest. So in
- * the first person pass ({@link #body}) the whole-body turn is left out and the arms stay in front of
- * the camera; for the blades' spins (G with a sword or an axe, the arms out straight to the sides)
- * the turn is folded into a sweep instead: on every turn the blade crosses the view from the right
- * to the left, as it would pass in front of the eyes.</p>
+ * eyes, only its arms and what they hold. In the first person pass ({@link #bodyRotation},
+ * {@link #bodyPosition}) the whole-body turn is left out and the model's eyes are put at the camera,
+ * so the arms stay in front of it, on a knee too. Not G's spins with a sword or an axe: there the
+ * whole body turns and the blade goes round the camera, as before 0.8.0 (author, 2026-10-31, 15:56:
+ * "as in the old versions, it was perfect"; folded into a sweep across the view it jerked to and fro).</p>
  *
- * <p><b>Everyone else's attacks and the bow.</b> Better Combat's strikes are drawn in first person
- * with the weapon only (its arms setting is off by default): the layer here ({@link Layer}) sits over
- * every other mod's layer and, while one of them draws the model in first person, keeps that and
- * shows both arms. It also draws the model's arms (vanilla's own poses) while the bow is drawn
- * and while a sword, an axe or a bow swings at something (not while breaking a block). It changes
- * nothing else: every transform passes through. Switched off in the menu ("Arms in first person").</p>
+ * <p><b>Everyone else's attacks.</b> Better Combat's strikes are drawn in first person with the weapon
+ * only (its arms setting is off by default): the layer here ({@link Layer}) sits over every other mod's
+ * layer and, while one of them draws the model in first person, keeps that and shows both arms; also
+ * while a sword, an axe or a bow swings at something (not while breaking a block). Not the drawn bow:
+ * vanilla's own draw (from the eyes the model's bow lies askew across the view, author, 15:59). It
+ * changes nothing else: every transform passes through. Switched off in the menu ("Arms in first person").</p>
  */
 public final class FirstPersonArms {
     /** Over every other mod's layer, under Kinetrix's harmonizer (100 000), which draws nothing in first person. */
     public static final int PRIORITY = 90_000;
     private static final ResourceLocation LAYER = new ResourceLocation(KinetrixMoves.MODID, "first_person_arms");
     private static final FirstPersonConfiguration ARMS = new FirstPersonConfiguration(true, true, true, true);
-    /** Half the arc the blade sweeps across the view in G's spins (radians; the view is about 100 degrees wide). */
-    private static final float SWEEP = 45f * Mth.DEG_TO_RAD;
-    /** The drawn bow from the eyes: the arms lowered by DRAW_LOWER, the bow turned by DRAW_TURN about its grip (radians). */
-    private static final float DRAW_LOWER = 10f * Mth.DEG_TO_RAD, DRAW_TURN = 60f * Mth.DEG_TO_RAD;
     /** Other attacks may still turn the body this far (a twist into a blow), no further. */
     private static final float TWIST = 40f * Mth.DEG_TO_RAD;
 
@@ -86,7 +81,9 @@ public final class FirstPersonArms {
     static boolean applies(AbstractClientPlayer p) {
         if (!HudConfig.firstPersonArms()) return false;
         Move m = Stamina.of(p).move;
-        return m == null ? Bow.isBow(p.getMainHandItem()) : attack(m);
+        // G's spins with a sword or an axe: the whole body turns, the arms round the camera, as before 0.8.0
+        // (author, 2026-10-31, 15:56: "as it was in the old versions, it was perfect")
+        return m == null ? Bow.isBow(p.getMainHandItem()) : attack(m) && !m.turning();
     }
 
     /**
@@ -97,11 +94,7 @@ public final class FirstPersonArms {
     static Vec3f bodyRotation(AbstractClientPlayer p, Vec3f v) {
         Move m = Stamina.of(p).move;
         float yaw = Mth.wrapDegrees(v.getY() * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD;
-        if (m != null && m.turning()) {
-            // the right arm points ahead at a quarter turn to the left; each turn sweeps it from the right to the left
-            float half = Mth.HALF_PI;
-            yaw = half + Mth.wrapDegrees((v.getY() - half) * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD * (SWEEP / Mth.PI);
-        } else if (m == null || bow(m)) {
+        if (m == null || bow(m)) {
             yaw = 0f;     // the bow's spins (onto the knee, the Legolas dodges): the drawn bow stays ahead
         } else {
             yaw = Mth.clamp(yaw, -TWIST, TWIST);
@@ -171,20 +164,7 @@ public final class FirstPersonArms {
 
         @Override
         public Vec3f get3DTransform(String part, TransformType type, float tickDelta, Vec3f value0) {
-            if (type != TransformType.ROTATION || !HudConfig.firstPersonArms() || !Bow.isBow(player.getMainHandItem())
-                    || !ownFirstPerson(player)) return value0;
-            // The bow from the eyes is turned to show its face, as vanilla's own first person view shows it
-            // (edge-on it is a dark rod across the view); drawn in vanilla's pose (no move of the mod's, or
-            // held on the knee) the arms go a little lower too.
-            Move m = Stamina.of(player).move;
-            boolean vanillaArms = m == null || (m == Move.SLIDE_SHOT && Stamina.of(player).moveTick >= Move.SLIDE_SHOT_SPIN);
-            if (!Bow.drawing(player) && (m == null || !bow(m))) return value0;
-            return switch (part) {
-                case "rightArm", "leftArm" -> vanillaArms && Bow.drawing(player)
-                        ? new Vec3f(value0.getX() + DRAW_LOWER, value0.getY(), value0.getZ()) : value0;
-                case "rightItem" -> new Vec3f(value0.getX(), value0.getY() + DRAW_TURN, value0.getZ());
-                default -> value0;
-            };
+            return value0;
         }
 
         @Override
@@ -197,9 +177,10 @@ public final class FirstPersonArms {
             if (asking || player != mc.player || !HudConfig.firstPersonArms() || !mc.options.getCameraType().isFirstPerson()) {
                 return FirstPersonMode.NONE;
             }
-            // the bow drawn; a sword, an axe or a bow swung at something (not breaking a block)
+            // a sword, an axe or a bow swung at something (not breaking a block). Not the drawn bow: from the eyes
+            // the model's bow lies across the view askew (author, 2026-10-31, 15:59), vanilla's own draw is straight
             boolean weapon = Strikes.finisherWeapon(player) || Bow.isBow(player.getMainHandItem());
-            if (Bow.drawing(player) || (weapon && player.swinging && (mc.gameMode == null || !mc.gameMode.isDestroying()))) {
+            if (weapon && player.swinging && (mc.gameMode == null || !mc.gameMode.isDestroying())) {
                 return FirstPersonMode.THIRD_PERSON_MODEL;
             }
             return below() == FirstPersonMode.THIRD_PERSON_MODEL ? FirstPersonMode.THIRD_PERSON_MODEL : FirstPersonMode.NONE;

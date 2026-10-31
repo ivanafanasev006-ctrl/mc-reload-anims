@@ -90,7 +90,7 @@ public final class HudConfig {
                         "turning the player to each mob; author, 2026-10-31: the only attack seen from behind) and comes back after it.")
                 .define("markedVolleyCamera", true);
         FIRST_PERSON_ARMS = b.comment("In first person both arms are seen in every attack, as on a ledge (author, 2026-10-31): the mod's",
-                        "attacks, the left button's blows (Better Combat's too), the bow drawn. false: vanilla's view of the held item.")
+                        "attacks (G's spins: the whole body turns, as before), the left button's blows (Better Combat's too). false: vanilla's view.")
                 .define("firstPersonArms", true);
         b.pop();
         SPEC = b.build();

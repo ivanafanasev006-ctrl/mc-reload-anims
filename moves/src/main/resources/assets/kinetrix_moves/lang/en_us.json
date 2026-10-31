@@ -57,7 +57,7 @@
   "kinetrix_moves.settings.move.kickCutscene": "Kick cutscene",
   "kinetrix_moves.settings.move.kickCutscene.tip": "During the kick the camera goes behind you and the view narrows as if time slowed.",
   "kinetrix_moves.settings.move.firstPersonArms": "Arms in first person",
-  "kinetrix_moves.settings.move.firstPersonArms.tip": "In first person both arms are seen in every attack, as on a ledge: the mod's attacks, the left button's blows (Better Combat's too), the bow drawn. In G's spins the blade sweeps across the view. Off: vanilla's view of the held item.",
+  "kinetrix_moves.settings.move.firstPersonArms.tip": "In first person both arms are seen in every attack, as on a ledge: the mod's attacks, the left button's blows (Better Combat's too), G's spins as before. Off: vanilla's view of the held item.",
   "kinetrix_moves.hint.finisher": "[%s] Finish off",
   "kinetrix_moves.slide_attack.cooldown": "Slide attack ready in %s s",
   "kinetrix_moves.ledge.no_room": "No room to climb up there",

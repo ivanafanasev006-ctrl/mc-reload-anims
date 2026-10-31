@@ -57,7 +57,7 @@
   "kinetrix_moves.settings.move.kickCutscene": "Катсцена пинка",
   "kinetrix_moves.settings.move.kickCutscene.tip": "Во время пинка камера уходит за спину, а обзор сужается, будто время замедлилось.",
   "kinetrix_moves.settings.move.firstPersonArms": "Руки от первого лица",
-  "kinetrix_moves.settings.move.firstPersonArms.tip": "От первого лица во всех атаках видны обе руки, как на краю: атаки мода, удары ЛКМ (и Better Combat), натяжение лука. В оборотах на G клинок проходит через экран. Выключено: как в ванили, только предмет в руке.",
+  "kinetrix_moves.settings.move.firstPersonArms.tip": "От первого лица во всех атаках видны обе руки, как на краю: атаки мода, удары ЛКМ (и Better Combat), обороты на G — как раньше. Выключено: как в ванили, только предмет в руке.",
   "kinetrix_moves.hint.finisher": "[%s] — добить",
   "kinetrix_moves.slide_attack.cooldown": "Удар из подката перезаряжается: %s с",
   "kinetrix_moves.ledge.no_room": "Наверху нет места, чтобы залезть",
