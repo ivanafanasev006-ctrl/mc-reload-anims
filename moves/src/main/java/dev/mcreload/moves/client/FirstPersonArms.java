@@ -47,6 +47,8 @@ public final class FirstPersonArms {
     public static final int PRIORITY = 90_000;
     private static final ResourceLocation LAYER = new ResourceLocation(KinetrixMoves.MODID, "first_person_arms");
     private static final FirstPersonConfiguration ARMS = new FirstPersonConfiguration(true, true, true, true);
+    /** Ticks a layer below may keep the model drawn from the eyes with no move, guard or item in use (a strike lasts less). */
+    private static final int STALE = 40;
     /** Other attacks may still turn the body this far (a twist into a blow), no further. */
     private static final float TWIST = 40f * Mth.DEG_TO_RAD;
 
@@ -183,8 +185,22 @@ public final class FirstPersonArms {
             if (weapon && player.swinging && (mc.gameMode == null || !mc.gameMode.isDestroying())) {
                 return FirstPersonMode.THIRD_PERSON_MODEL;
             }
-            return below() == FirstPersonMode.THIRD_PERSON_MODEL ? FirstPersonMode.THIRD_PERSON_MODEL : FirstPersonMode.NONE;
+            if (below() != FirstPersonMode.THIRD_PERSON_MODEL) {
+                drawnSince = -1;
+                return FirstPersonMode.NONE;
+            }
+            // A layer that keeps the model drawn from the eyes with nothing going on (a frozen strike of
+            // another mod's, author, 2026-10-31, 20:23: "the arms stop showing until I press F5"): after
+            // STALE ticks vanilla's own hands again (this layer is the one the stack asks first).
+            if (drawnSince < 0) drawnSince = player.tickCount;
+            Stamina s = Stamina.of(player);
+            boolean busy = s.move != null || s.guard != dev.mcreload.moves.Guard.Kind.NONE || player.isUsingItem();
+            if (busy) drawnSince = player.tickCount;
+            return player.tickCount - drawnSince > STALE ? FirstPersonMode.VANILLA : FirstPersonMode.THIRD_PERSON_MODEL;
         }
+
+        /** Since when (player ticks) a layer below has drawn the model from the eyes with nothing of ours going on; -1: none does. */
+        private int drawnSince = -1;
 
         /** What the layers under this one draw in first person (Better Combat's strike, the mod's own moves). */
         @SuppressWarnings("unchecked")

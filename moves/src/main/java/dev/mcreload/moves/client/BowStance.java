@@ -69,6 +69,11 @@ public final class BowStance {
         return p == Minecraft.getInstance().player && mode != Mode.NONE;
     }
 
+    /** A bow pose is held on the player between moves (on the knee, side-on). */
+    static boolean holding(Player p) {
+        return HOLDING.containsKey(p);
+    }
+
     public static boolean kneeling(Player p) {
         HeldPose h = HOLDING.get(p);
         return h != null && h.hold == Hold.KNEEL;

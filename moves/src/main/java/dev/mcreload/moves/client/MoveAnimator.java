@@ -371,6 +371,26 @@ public final class MoveAnimator {
         }
     }
 
+    /** Ticks each player's animation has been playing with nothing behind it (MoveAnimator.watchdog). */
+    private static final java.util.Map<AbstractClientPlayer, Integer> IDLE = new java.util.WeakHashMap<>();
+
+    /**
+     * Every client tick, every player: an animation of ours left playing with no move, no guard and no
+     * held bow pose behind it (a frozen frame that would never end: the arms gone from first person,
+     * author, 2026-10-31, 20:23) is let go after a second. Endings and fades are over long before.
+     */
+    static void watchdog(AbstractClientPlayer p, dev.mcreload.moves.Stamina s, boolean held) {
+        MoveLayer layer = layer(p);
+        if (layer == null || !layer.isActive() || s.move != null || s.guard != dev.mcreload.moves.Guard.Kind.NONE || held) {
+            IDLE.remove(p);
+            return;
+        }
+        if (IDLE.merge(p, 1, Integer::sum) > 20) {
+            IDLE.remove(p);
+            stop(p, 4);
+        }
+    }
+
     /** Ends the animation early, blended out over {@code ticks}. */
     public static void stop(AbstractClientPlayer p, int ticks) {
         MoveLayer layer = layer(p);

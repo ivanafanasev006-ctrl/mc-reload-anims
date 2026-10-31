@@ -835,6 +835,7 @@ public final class MovesClient {
         Integer reached = move != null ? LAST_TICK.put(p, s.moveTick) : LAST_TICK.remove(p);
         if (was != null && move == null) BowStance.moveEnded(p, was, reached == null ? 0 : reached);
         BowStance.tick(p);
+        MoveAnimator.watchdog(p, s, BowStance.holding(p));
         if (move == null) return;
         int t = s.moveTick;    // already counted on for this tick
         // The shot out of a slide down on the knee: held there, the head and arms aiming with the drawn bow
