@@ -203,6 +203,8 @@ public final class MovesSelfTest {
         // the author's message of 2026-10-30: G (the sword's turn, the whirlwind), the tray, the splash
         swordSpin("88_sword_spin", CameraType.THIRD_PERSON_BACK, false);
         swordSpin("89_sword_spin_first_person", CameraType.FIRST_PERSON, false);
+        whirlwind("89b_whirlwind_first_person", CameraType.FIRST_PERSON, false);
+        firstPersonArms("99_first_person_arms");
         swordSpin("88b_sword_spin_held", CameraType.THIRD_PERSON_BACK, true);
         tray("17_tray");
         plungeSplash("99b_plunge_splash");
@@ -226,6 +228,7 @@ public final class MovesSelfTest {
         slideAttack("97_slide_attack_first_person", CameraType.FIRST_PERSON);
         slideAttack("96b_slide_attack_bow", CameraType.THIRD_PERSON_BACK, Items.BOW);
         slideShot("96c_slide_shot", CameraType.THIRD_PERSON_BACK);
+        slideShot("96d_slide_shot_first_person", CameraType.FIRST_PERSON);
         fallRoll("98_fall_roll", CameraType.THIRD_PERSON_BACK);
         ledgeJump("80_ledge_jump_hops_leap_climb", CameraType.THIRD_PERSON_BACK);
         ledgeJump("84_ledge_first_person", CameraType.FIRST_PERSON);
@@ -775,8 +778,8 @@ public final class MovesSelfTest {
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.8, 0.4, 20f);
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -0.6, -1.8, 20f);
         }, (mc, t) -> {
-            // first person only at the start: the attack takes the camera behind (Cutscene) and gives it back
-            if (t <= 1) camera(mc, camera);
+            // first person stays (author, 2026-10-31): both arms seen, the blade sweeping across the view
+            camera(mc, camera);
             if (t == 12 || t == 40) note(name + ": the camera at tick " + t + ": " + mc.options.getCameraType());
             if (t == 1) Stamina.of(mc.player).spinCooldown = 0;
             if (t == 8) {
@@ -795,6 +798,36 @@ public final class MovesSelfTest {
             }
         }, held ? new int[]{9, 11, 13, 15, 17, 19, 21, 23, 26, 30, 34} : new int[]{8, 9, 10, 11, 12, 13, 14, 15, 17, 20, 26},
                 camera != CameraType.FIRST_PERSON));
+    }
+
+    /**
+     * Both arms in first person (author, 2026-10-31, video 14:59): a sword swung at the air twice, then a bow
+     * swung, drawn (the right button held) and let go, then G with the bow (the spin onto the knee): the
+     * arms are seen in each, the camera never leaves first person.
+     */
+    private static void firstPersonArms(String name) {
+        SCENARIOS.add(new Scenario(name, 120, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            sp.getInventory().setItem(1, new ItemStack(Items.BOW));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 16));
+            Stamina.of(sp).bowCooldown = 0;
+        }, (mc, t) -> {
+            camera(mc, CameraType.FIRST_PERSON);
+            if (t == 1) {
+                mc.player.getInventory().selected = 0;
+                Stamina.of(mc.player).bowCooldown = 0;
+            }
+            if (t == 6 || t == 20 || t == 40) KeyMapping.click(mc.options.keyAttack.getKey());
+            if (t == 30) mc.player.getInventory().selected = 1;
+            if (t == 52) {
+                mc.options.keyUse.setDown(true);
+                KeyMapping.click(mc.options.keyUse.getKey());
+            }
+            if (t == 76) mc.options.keyUse.setDown(false);
+            if (t == 90) KeyMapping.click(MovesClient.ABILITY.getKey());
+            if (t == 8 || t == 42 || t == 64 || t == 96) note(name + " t=" + t + ": camera " + mc.options.getCameraType() + ", move "
+                    + Stamina.of(mc.player).move + ", drawing " + mc.player.isUsingItem() + ", swinging " + mc.player.swinging);
+        }, new int[]{7, 8, 9, 22, 42, 43, 60, 70, 92, 96, 100, 104, 112}, false));
     }
 
     /** The tray: a sword (the turn waiting, the dash waiting, the slide's attack ready), then an axe (the whirlwind ready), pressing G while it waits. */
@@ -1509,8 +1542,8 @@ public final class MovesSelfTest {
         s.shields = 10f;
         s.freeTicks = 0;
         s.boostTicks = 0;
-        s.dashCooldown = 0;
-        s.slideAttackCooldown = 0;
+        s.hasteTicks = 0;
+        s.setCooldowns(new int[s.cooldowns().length]);
         sp.teleportTo(sp.serverLevel(), x + 0.5, Y + 1, 0.5, 0f, 10f);
     }
 

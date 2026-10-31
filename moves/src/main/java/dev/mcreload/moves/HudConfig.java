@@ -17,7 +17,7 @@ public final class HudConfig {
 
     public static final ForgeConfigSpec.EnumValue<Style> STYLE;
     public static final ForgeConfigSpec.EnumValue<Shape> SHAPE;
-    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS, TRAY, KICK_CUTSCENE, ATTACK_CAMERA;
+    public static final ForgeConfigSpec.BooleanValue SWAP_SIDES, ARROWS, TRAY, KICK_CUTSCENE, ATTACK_CAMERA, FIRST_PERSON_ARMS;
 
     /** The moves the player may switch off, in the order of the settings' page. */
     public enum Moves {
@@ -85,10 +85,13 @@ public final class HudConfig {
         KICK_CUTSCENE = b.comment("The vault with a kick is a cutscene: the camera goes behind the player from first person and the",
                         "view narrows as time seems to slow (author, 2026-10-29).")
                 .define("kickCutscene", true);
-        ATTACK_CAMERA = b.comment("In first person the camera goes behind the player for an attack (the dash, the finishers, G, the attack out",
-                        "of a slide, the blade into the ground) and comes back after it, so the move is seen (author, 2026-10-30).",
-                        "false: the camera stays, the arms are drawn in front of it.")
-                .define("attackCamera", true);
+        // Renamed from attackCamera: since 2026-10-31 the camera goes behind only for the volley at the marked.
+        ATTACK_CAMERA = b.comment("In first person the camera goes behind the player for the volley at the marked (it aims by itself,",
+                        "turning the player to each mob; author, 2026-10-31: the only attack seen from behind) and comes back after it.")
+                .define("markedVolleyCamera", true);
+        FIRST_PERSON_ARMS = b.comment("In first person both arms are seen in every attack, as on a ledge (author, 2026-10-31): the mod's",
+                        "attacks, the left button's blows (Better Combat's too), the bow drawn. false: vanilla's view of the held item.")
+                .define("firstPersonArms", true);
         b.pop();
         SPEC = b.build();
     }
@@ -100,6 +103,7 @@ public final class HudConfig {
     public static boolean tray() { return get(TRAY, true); }
     public static boolean kickCutscene() { return get(KICK_CUTSCENE, true); }
     public static boolean attackCamera() { return get(ATTACK_CAMERA, true); }
+    public static boolean firstPersonArms() { return get(FIRST_PERSON_ARMS, true); }
 
     private static <T> T get(ForgeConfigSpec.ConfigValue<T> value, T fallback) {
         try {

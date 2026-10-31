@@ -31,15 +31,32 @@ public final class MoveAnimator {
     public static final int PRIORITY = 2500;
 
     static void init() {
-        PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(LAYER, PRIORITY, player -> new MoveLayer());
+        PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(LAYER, PRIORITY, MoveLayer::new);
+        FirstPersonArms.init();
     }
 
-    /** The layer, with a speed control (the slide plays faster than in Blockbench). */
+    /**
+     * The layer, with a speed control (the slide plays faster than in Blockbench). Seen from the
+     * player's own eyes, an attack's whole-body turn is left out so the arms stay in front of the camera
+     * (FirstPersonArms.body).
+     */
     private static final class MoveLayer extends ModifierLayer<IAnimation> {
         final SpeedModifier speed = new SpeedModifier(1f);
+        private final AbstractClientPlayer player;
 
-        MoveLayer() {
+        MoveLayer(AbstractClientPlayer player) {
+            this.player = player;
             addModifierBefore(speed);
+        }
+
+        @Override
+        public Vec3f get3DTransform(String part, TransformType type, float tickDelta, Vec3f value0) {
+            Vec3f v = super.get3DTransform(part, type, tickDelta, value0);
+            if (!"body".equals(part) || !isActive() || !FirstPersonArms.ownFirstPerson(player) || !FirstPersonArms.applies(player)) return v;
+            if (type == TransformType.ROTATION) return FirstPersonArms.bodyRotation(player, v);
+            if (type != TransformType.POSITION) return v;
+            Vec3f rot = FirstPersonArms.bodyRotation(player, super.get3DTransform(part, TransformType.ROTATION, tickDelta, Vec3f.ZERO));
+            return FirstPersonArms.bodyPosition(player, rot);
         }
     }
 

@@ -449,18 +449,23 @@ public enum Move {
     }
 
     /**
-     * An attack: from first person the camera goes behind the player while it plays (Cutscene;
-     * author, 2026-10-30: in first person "you do not see what the attack does"). The kicks have
-     * their own cutscene. Not the bow's G: its arrows are aimed by the player.
+     * From first person the camera goes behind the player while it plays (Cutscene): only the volley at
+     * the marked, aimed by itself (author, 2026-10-31: "the only place where third person may be is the
+     * auto-aimed shooting at the marked"; the other attacks show the arms in first person,
+     * FirstPersonArms). The kicks have their own cutscene.
      */
     public boolean cameraBehind() {
-        return this == DASH || finisher() || this == SLIDE_ATTACK || this == PLUNGE || turning() || marked();
+        return marked();
     }
 
-    /** Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28). */
+    /**
+     * Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28;
+     * 2026-10-31: "both arms seen in every attack", FirstPersonArms). Not the shot out of a slide's
+     * getting up: its string hand comes back past the eyes; vanilla's bow is seen then.
+     */
     public boolean firstPerson() {
         return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
-                || turning() || ledge() || volley() || marked() || this == SLIDE_SHOT || this == SLIDE_SHOT_END;
+                || turning() || ledge() || volley() || marked() || this == SLIDE_SHOT;
     }
 
     /**

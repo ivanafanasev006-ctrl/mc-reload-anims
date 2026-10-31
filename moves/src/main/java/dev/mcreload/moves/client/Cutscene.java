@@ -18,13 +18,11 @@ import net.minecraftforge.common.MinecraftForge;
  * slowed, opening again as the player lands. The world is not slowed for anyone else. Switched off
  * in the settings (the moves' page).
  *
- * <p>The attacks too (author, 2026-10-30, 23:01: "in first person the 3D animations vanish, the
- * weapon just twitches in the hand and you do not see what the attack does, only its effects"): in
- * first person the camera sees nothing of a move but the arms, and those only where they are in
- * front of it (G turns the body right round, the arms are behind it half the time; with some shader
- * packs not even those). So for an attack (Move.cameraBehind) the camera goes behind the player and
- * comes back a few ticks after it, unless switched off (HudConfig.attackCamera; the arms are drawn in
- * first person then, as before).</p>
+ * <p>The volley at the marked too (Move.cameraBehind): it aims by itself and turns the player to each
+ * mob, so the camera goes behind the player and comes back a few ticks after it, unless switched off
+ * (HudConfig.attackCamera). The other attacks stay in first person with both arms seen (author,
+ * 2026-10-31: "the only place where third person may be is the auto-aimed shooting at the marked";
+ * FirstPersonArms); from 2026-10-30, 23:01 to then they all took the camera behind.</p>
  */
 public final class Cutscene {
     /** The camera before the cutscene took it, or null. */

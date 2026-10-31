@@ -63,6 +63,7 @@ public final class MovesMenuScreen extends Screen {
         for (HudConfig.Moves m : MOVES) rows.move(m);
         rows.header("kinetrix_moves.menu.view");
         rows.toggle("kinetrix_moves.settings.move.kickCutscene", HudConfig.kickCutscene(), HudConfig.KICK_CUTSCENE::set);
+        rows.toggle("kinetrix_moves.settings.move.firstPersonArms", HudConfig.firstPersonArms(), HudConfig.FIRST_PERSON_ARMS::set);
         rows.toggle("kinetrix_moves.settings.move.attackCamera", HudConfig.attackCamera(), HudConfig.ATTACK_CAMERA::set);
         addWidget(rows);
         int bw = Math.min(150, (width - 30) / 2);
