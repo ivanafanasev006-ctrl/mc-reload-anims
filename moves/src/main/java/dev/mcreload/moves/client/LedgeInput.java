@@ -89,6 +89,9 @@ public final class LedgeInput {
             return true;
         }
         if (!MovesConfig.ledgeGrab()) return false;
+        // In a fight (5 s after a blow either way) no edge is caught: the right button is the weapon's
+        // (author, 2026-11-06: "no misclicks"). Moves on an edge already caught go on.
+        if (s.combatTicks > 0) return false;
         // A friend below: the right button on them pulls them up.
         if (usePressed && p.onGround() && m == null && HudConfig.Moves.LEDGE_GRAB.on() && friendBelow(mc, p, s)) {
             swallowUse(mc);
@@ -113,12 +116,15 @@ public final class LedgeInput {
         if (useDown && !p.onGround() && !p.getAbilities().flying && !p.isInWater() && !p.onClimbable()
                 && HudConfig.Moves.LEDGE_GRAB.on() && (m == null || Move.LEDGE_HANG.follows(m))) {
             boolean falling = p.getDeltaMovement().y < -0.1 || p.fallDistance > 0.6f;
-            Ledge.Spot spot = Ledge.find(p, p.yo, p.getY(), falling);
+            // only the edge the player looks towards (author, 2026-11-06), not every one round them
+            Ledge.Spot spot = Ledge.find(p, p.yo, p.getY(), false);
+            if (spot != null && !Ledge.lookingAt(p, spot)) spot = null;
             catchFrom = null;
             // the edge just gone over, behind the player: they are carried back to it
             Vec3 ground = MoveServer.groundAt(p);
             if (spot == null && ground != null && p.tickCount - MoveServer.lastGround(p) <= Ledge.LEFT_TICKS) {
                 spot = Ledge.justLeft(p, ground, Ledge.LEFT_REACH, true);
+                if (spot != null && !Ledge.lookingAt(p, spot)) spot = null;
                 if (spot != null) {
                     catchFrom = p.position();
                     catchYaw = p.getYRot();
@@ -165,7 +171,8 @@ public final class LedgeInput {
             }
             // Space: the leap to the edge looked at (W + Space onto the top, if there is room there)
             Vec3 top = Ledge.onTop(p.level(), p.position(), d, s.ledgeTop);
-            boolean climb = up && Ledge.fits(p, top);
+            // room to stand on the top, or at least to crawl (a gap of a block: the player crawls on from the climb)
+            boolean climb = up && Ledge.roomOnTop(p, top);
             if (jumpPressed && !climb && aim != null) {
                 if (aim.reachable() && HudConfig.Moves.LEDGE_HOPS.on()) leap(p, s, d, aim.spot());
                 else p.displayClientMessage(Component.translatable("kinetrix_moves.ledge.too_far"), true);
@@ -283,13 +290,29 @@ public final class LedgeInput {
 
     /** The right button on a player hanging below the edge this one stands on: pull them up. */
     private static boolean friendBelow(Minecraft mc, LocalPlayer p, Stamina s) {
+        // the friend looked at; else (the edge's block is in the way of the crosshair) the hanging one nearest the look
         Entity looked = mc.hitResult instanceof EntityHitResult hit ? hit.getEntity() : mc.crosshairPickEntity;
-        if (!(looked instanceof Player other) || other == p) return false;
+        Player other = looked instanceof Player lp && lp != p && hangs(lp) ? lp : null;
+        if (other == null) {
+            double best = 3.0;
+            for (Player o : p.level().players()) {
+                if (o == p || !hangs(o)) continue;
+                Vec3 to = o.position().subtract(p.position());
+                double d2 = to.horizontalDistance();
+                float yaw = (float) (Mth.atan2(-to.x, to.z) * Mth.RAD_TO_DEG);
+                if (d2 < best && Math.abs(Mth.wrapDegrees(yaw - p.getYRot())) < 60f) {
+                    best = d2;
+                    other = o;
+                }
+            }
+        }
+        if (other == null) return false;
         Stamina os = Stamina.of(other);
-        if (os.move == null || !os.move.hanging() || os.ledgeDir < 0) return false;
         Direction d = Ledge.dir(os.ledgeDir);
-        Vec3 at = Ledge.friendAt(other.position(), d, os.ledgeTop);
-        if (Math.abs(p.getY() - os.ledgeTop) > 0.6 || p.position().distanceTo(at) > 2.0) return false;
+        // the edge's top as this client sees it: other players' copies are not told it (where their hands are)
+        double top = other.getY() + Ledge.HANG;
+        Vec3 at = Ledge.friendAt(other.position(), d, top);
+        if (Math.abs(p.getY() - top) > 0.6 || p.position().distanceTo(at) > 2.0) return false;
         if (!Ledge.fits(p, at) || !MoveServer.allowed(p, s, Move.LEDGE_HELP)) return false;
         from = at;
         fromYaw = d.getOpposite().toYRot();
@@ -298,6 +321,11 @@ public final class LedgeInput {
         p.setDeltaMovement(Vec3.ZERO);
         s.ledgeDir = os.ledgeDir;
         return MovesClient.start(p, s, Move.LEDGE_HELP, other.getId());
+    }
+
+    private static boolean hangs(Player o) {
+        Stamina os = Stamina.of(o);
+        return os.move != null && os.move.hanging() && os.ledgeDir >= 0;
     }
 
     /** Our own player was pulled up by a friend (the server says so): it hangs where it is. */
@@ -455,8 +483,14 @@ public final class LedgeInput {
     /** The bodies of other players on an edge face its wall (their heads may look round). */
     static void faceWall(AbstractClientPlayer p, Stamina s) {
         if (s.move == null || !s.move.ledge() || s.ledgeDir < 0) return;
-        // a hop may go round a corner, a leap to another wall: the body turns with the player meanwhile
-        if (s.move == Move.LEDGE_HOP_LEFT || s.move == Move.LEDGE_HOP_RIGHT || s.move == Move.LEDGE_LEAP) return;
+        // a hop may go round a corner, a leap to another wall: the body turns with the player meanwhile (their
+        // own turn, sent by the server), not with the way they move: vanilla turns a body that moves sideways
+        // towards where it goes, and along the edge it twisted to and fro (author, 2026-11-06: "jerky for a friend")
+        if (s.move == Move.LEDGE_HOP_LEFT || s.move == Move.LEDGE_HOP_RIGHT || s.move == Move.LEDGE_LEAP) {
+            p.yBodyRot = p.getYRot();
+            p.yBodyRotO = p.yRotO;
+            return;
+        }
         float yaw = Ledge.dir(s.ledgeDir).toYRot();
         p.yBodyRot = yaw;
         p.yBodyRotO = yaw;

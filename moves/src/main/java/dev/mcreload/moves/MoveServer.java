@@ -156,6 +156,8 @@ public final class MoveServer {
         // G let go: the turns end (in the air too: the keys walk the sword's turns, a step off an edge)
         if (move == Move.SPIN_END) return s.move == Move.SWORD_SPIN;
         if (move == Move.WHIRL_END) return s.move == Move.WHIRL;
+        // In a fight no edge is caught (author, 2026-11-06: 5 s after a blow either way); moves on one already caught go on.
+        if ((move == Move.LEDGE_DOWN || (move == Move.LEDGE_HANG && (s.move == null || !s.move.ledge()))) && s.combatTicks > 0) return false;
         if (move.ledge()) return move != Move.LEDGE_DOWN || ground;
         if (move == Move.LEDGE_HELP) return ground;
         // W + Space + R: the kick and the dive from the ground or a jump already begun, not out of a fall.
@@ -235,12 +237,12 @@ public final class MoveServer {
 
     /** Sends the bars to the player when they changed enough to show (or {@code now}). */
     static void sync(ServerPlayer p, Stamina s, boolean now) {
-        float[] last = SENT.computeIfAbsent(p.getUUID(), u -> new float[]{-1, -1, -1, -1, -1, -1, -1});
+        float[] last = SENT.computeIfAbsent(p.getUUID(), u -> new float[]{-1, -1, -1, -1, -1, -1, -1, -1});
         float maxE = MovesConfig.maxEnergy(), maxS = MovesConfig.maxShields();
         // The bar is 71 pixels: a quarter of a pixel is invisible; free time counts by the second.
         boolean changed = Math.abs(last[0] - s.energy) >= maxE / 284f || last[1] != s.shields
                 || last[2] != maxE || last[3] != maxS || (int) last[4] != s.freeTicks / 20 || (int) last[5] != s.freeTotal
-                || (last[6] > 0) != (s.hasteTicks > 0);
+                || (last[6] > 0) != (s.hasteTicks > 0) || (last[7] > 0) != (s.combatTicks > 0) || s.combatTicks == MovesConfig.combatTicks();
         if (!changed && !now) return;
         last[0] = s.energy;
         last[1] = s.shields;
@@ -249,6 +251,7 @@ public final class MoveServer {
         last[4] = s.freeTicks / 20;
         last[5] = s.freeTotal;
         last[6] = s.hasteTicks;
+        last[7] = s.combatTicks;
         MovesNet.stamina(p, s);
     }
 

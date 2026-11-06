@@ -260,6 +260,25 @@ public final class Ledge {
         return h < 0.5 && shape.min(Direction.Axis.Y) < 1.0E-3 ? h : 0.0;
     }
 
+    /**
+     * The player looks the way of the edge they would catch (author, 2026-11-06: "catch only when you look
+     * towards the corner you catch, not just when you are near"): within LOOK_YAW of its wall's way, not
+     * straight up or down.
+     */
+    public static boolean lookingAt(Player p, Spot s) {
+        return Math.abs(Mth.wrapDegrees(p.getYRot() - s.yaw())) <= LOOK_YAW && Math.abs(p.getXRot()) <= LOOK_PITCH;
+    }
+
+    /** How far off the wall's way (degrees) the look may be to catch its edge; how far up or down. */
+    public static final float LOOK_YAW = 60f, LOOK_PITCH = 65f;
+
+    /** Room at {@code at} to stand, or at least to crawl (a gap of one block: the player crawls on from the climb). */
+    public static boolean roomOnTop(Player p, Vec3 at) {
+        if (fits(p, at)) return true;
+        AABB box = p.getDimensions(net.minecraft.world.entity.Pose.SWIMMING).makeBoundingBox(at).deflate(1.0E-3);
+        return p.level().noCollision(p, box);
+    }
+
     /** The player's hitbox has room at {@code at}. */
     public static boolean fits(Player p, Vec3 at) {
         AABB box = p.getDimensions(net.minecraft.world.entity.Pose.STANDING).makeBoundingBox(at).deflate(1.0E-3);

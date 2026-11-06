@@ -228,6 +228,7 @@ public final class Stamina {
         if (slideShotCooldown > 0) slideShotCooldown--;
         if (legolasCooldown > 0) legolasCooldown--;
         if (hasteTicks > 0) hasteTicks--;
+        if (p.level().isClientSide && combatTicks > 0) combatTicks--;     // the server's own counts down in serverTick
         if (!marks.isEmpty() && p.tickCount % 10 == 0) Marks.prune(p, this);
         if (move == null) return;
         boolean wasLow = low();
@@ -479,8 +480,11 @@ public final class Stamina {
          */
         @SubscribeEvent(priority = EventPriority.HIGH)
         public static void attack(LivingAttackEvent event) {
-            if (!(event.getEntity() instanceof Player p) || p.level().isClientSide) return;
+            if (event.getEntity().level().isClientSide) return;
             DamageSource src = event.getSource();
+            // the one who hit anyone (an arrow's owner too) is in a fight
+            if (src.getEntity() instanceof Player hitter && hitter != event.getEntity()) of(hitter).combatTicks = MovesConfig.combatTicks();
+            if (!(event.getEntity() instanceof Player p)) return;
             if (src.getEntity() == null && src.getDirectEntity() == null) return;
             Stamina s = of(p);
             if (s.untouchable() && !src.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {

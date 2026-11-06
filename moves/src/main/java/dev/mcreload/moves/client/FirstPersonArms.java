@@ -176,27 +176,46 @@ public final class FirstPersonArms {
         /** THIRD_PERSON_MODEL when the arms are to be seen in first person now, else NONE. */
         private FirstPersonMode mode() {
             Minecraft mc = Minecraft.getInstance();
-            if (asking || player != mc.player || !HudConfig.firstPersonArms() || !mc.options.getCameraType().isFirstPerson()) {
+            if (player != mc.player) return FirstPersonMode.NONE;
+            swingWatch(mc);
+            if (asking || !HudConfig.firstPersonArms() || !mc.options.getCameraType().isFirstPerson()) {
+                drawnSince = -1;
                 return FirstPersonMode.NONE;
             }
-            // a sword, an axe or a bow swung at something (not breaking a block). Not the drawn bow: from the eyes
-            // the model's bow lies across the view askew (author, 2026-10-31, 15:59), vanilla's own draw is straight
-            boolean weapon = Strikes.finisherWeapon(player) || Bow.isBow(player.getMainHandItem());
-            if (weapon && player.swinging && (mc.gameMode == null || !mc.gameMode.isDestroying())) {
-                return FirstPersonMode.THIRD_PERSON_MODEL;
-            }
+            // a sword, an axe or a bow swung at something, for a few ticks from the swing's start (vanilla's own
+            // swinging flag may stay up: Better Combat holds it, and the arms were gone until F5, author,
+            // 2026-11-06). Not the drawn bow: from the eyes the model's bow lies askew (2026-10-31, 15:59).
+            if (player.tickCount < swingUntil) return FirstPersonMode.THIRD_PERSON_MODEL;
             if (below() != FirstPersonMode.THIRD_PERSON_MODEL) {
                 drawnSince = -1;
                 return FirstPersonMode.NONE;
             }
             // A layer that keeps the model drawn from the eyes with nothing going on (a frozen strike of
             // another mod's, author, 2026-10-31, 20:23: "the arms stop showing until I press F5"): after
-            // STALE ticks vanilla's own hands again (this layer is the one the stack asks first).
+            // STALE ticks vanilla's own hands again (this layer is the one the stack asks first). A fight's
+            // blows one after another keep it (the attack still winding up again).
             if (drawnSince < 0) drawnSince = player.tickCount;
             Stamina s = Stamina.of(player);
-            boolean busy = s.move != null || s.guard != dev.mcreload.moves.Guard.Kind.NONE || player.isUsingItem();
+            boolean busy = s.move != null || s.guard != dev.mcreload.moves.Guard.Kind.NONE || player.isUsingItem()
+                    || player.getAttackStrengthScale(0f) < 1f;
             if (busy) drawnSince = player.tickCount;
             return player.tickCount - drawnSince > STALE ? FirstPersonMode.VANILLA : FirstPersonMode.THIRD_PERSON_MODEL;
+        }
+
+        /** Ticks the arms are seen after a swing starts (vanilla's swing of a sword lasts 6). */
+        private static final int SWING = 6;
+        private int swingUntil = -1, watched = -1;
+        private boolean wasSwinging;
+
+        /** Once a tick: a swing of a sword, an axe or a bow just started (not at a block being broken) shows the arms a while. */
+        private void swingWatch(Minecraft mc) {
+            if (player.tickCount == watched) return;
+            watched = player.tickCount;
+            boolean weapon = Strikes.finisherWeapon(player) || Bow.isBow(player.getMainHandItem());
+            if (player.swinging && !wasSwinging && weapon && (mc.gameMode == null || !mc.gameMode.isDestroying())) {
+                swingUntil = player.tickCount + SWING;
+            }
+            wasSwinging = player.swinging;
         }
 
         /** Since when (player ticks) a layer below has drawn the model from the eyes with nothing of ours going on; -1: none does. */

@@ -1253,6 +1253,10 @@ public final class MovesGameTests {
             Vec3 hang = h.absoluteVec(new Vec3(3.5, 4.0 - dev.mcreload.moves.Ledge.HANG, 5.0 - 0.301));
             p.teleportTo(hang.x, hang.y, hang.z);
             p.fallDistance = 6f;
+            // in a fight no edge is caught (author, 2026-11-06: 5 s after a blow either way)
+            s.combatTicks = MovesConfig.combatTicks();
+            t.check(!MoveServer.request(p, Move.LEDGE_HANG, false, south), "an edge caught in a fight");
+            s.combatTicks = 0;
             t.check(MoveServer.request(p, Move.LEDGE_HANG, false, south), "the edge of a two-block wall was not caught");
             t.check(Math.abs(s.ledgeTop - h.absoluteVec(new Vec3(0, 4.0, 0)).y) < 0.01, "edge top " + s.ledgeTop);
             t.check(p.fallDistance == 0f, "the fall before the catch still counts");

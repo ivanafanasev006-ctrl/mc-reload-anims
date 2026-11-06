@@ -947,6 +947,7 @@ public final class MovesClient {
         // the cooldowns as the server counts them (the tray; after joining the client knows none of its own)
         s.setCooldowns(m.cooldowns());
         s.hasteTicks = m.hasteTicks();
+        s.combatTicks = m.combatTicks();
         maxEnergy = m.maxEnergy();
         maxShields = m.maxShields();
     }
