@@ -892,10 +892,12 @@ public final class MovesGameTests {
             t.check(!MoveServer.request(p, Move.XBOW_SPIN, false), "G again before its wait");
             s.xbowCooldown = 0;
             t.check(!MoveServer.request(p, Move.XBOW_VOLLEY, false), "the hop with the crossbow empty");
-            // two zombies about the player: one in front, one behind
+            // two zombies about the player: one in front, one to the side (behind, the turn flung it into the test's wall, where
+            // it choked: 0.92 more on a busy CI run)
             net.minecraft.world.phys.Vec3 look = net.minecraft.world.phys.Vec3.directionFromRotation(0f, p.getYRot());
+            net.minecraft.world.phys.Vec3 side = net.minecraft.world.phys.Vec3.directionFromRotation(0f, p.getYRot() + 90f);
             for (int i = 0; i < 2; i++) {
-                z[i] = h.spawnWithNoFreeWill(EntityType.ZOMBIE, h.relativeVec(p.position().add(look.scale(i == 0 ? 1.6 : -1.6))));
+                z[i] = h.spawnWithNoFreeWill(EntityType.ZOMBIE, h.relativeVec(p.position().add((i == 0 ? look : side).scale(1.6))));
                 noSun(z[i]);
             }
             was[0] = z[0].getHealth();
@@ -907,11 +909,11 @@ public final class MovesGameTests {
         int sweep = 5 + Move.XBOW_VOLLEY.length + Crossbow.SPIN_SWEEP;
         t.at(sweep, () -> {
             blow(t, was[0] - z[0].getHealth(), MovesConfig.crossbowSpinDamage(), "the turn's damage in front");
-            blow(t, was[1] - z[1].getHealth(), MovesConfig.crossbowSpinDamage(), "the turn's damage behind");
+            blow(t, was[1] - z[1].getHealth(), MovesConfig.crossbowSpinDamage(), "the turn's damage to the side");
         });
         t.at(sweep + 8, () -> {
             t.check(z[0].distanceTo(p) > was[2] + 0.5f, "the one in front not flung away: " + was[2] + " -> " + z[0].distanceTo(p));
-            t.check(z[1].distanceTo(p) > was[3] + 0.5f, "the one behind not flung away: " + was[3] + " -> " + z[1].distanceTo(p));
+            t.check(z[1].distanceTo(p) > was[3] + 0.5f, "the one to the side not flung away: " + was[3] + " -> " + z[1].distanceTo(p));
         }).run(sweep + 9);
     }
 
