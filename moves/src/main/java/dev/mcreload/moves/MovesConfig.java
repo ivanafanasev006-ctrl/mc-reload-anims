@@ -18,7 +18,8 @@ public final class MovesConfig {
             COST_DODGE, COST_ROLL, COST_SLIDE, COST_HOP, COST_BARRAGE, COST_BOW_DODGE, COST_DASH, COST_FINISHER,
             COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP, COST_DIVE, COST_FALL_ROLL, COST_LEDGE_GRAB, COST_LEDGE_CLIMB,
             COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_LEDGE_LEAP, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL, COST_SWORD_SPIN,
-            COST_SPIN_EXTRA, COST_WHIRL_EXTRA, COST_HAIL_EXTRA, COST_MARKED, COST_MARKED_EACH, COST_SLIDE_SHOT, ENCHANTED_COOLDOWN;
+            COST_SPIN_EXTRA, COST_WHIRL_EXTRA, COST_HAIL_EXTRA, COST_MARKED, COST_MARKED_EACH, COST_SLIDE_SHOT, ENCHANTED_COOLDOWN,
+            COST_XBOW_BLOW, COST_XBOW_HOP;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
@@ -35,6 +36,9 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.IntValue WHIRL_COOLDOWN, SPIN_COOLDOWN, PLUNGE_SPLASH_RADIUS, MARKS_MAX, MARK_SECONDS,
             MARKED_COOLDOWN, VOLLEY_COOLDOWN, HAIL_COOLDOWN, SLIDE_SHOT_COOLDOWN, LEGOLAS_COOLDOWN;
     private static final ForgeConfigSpec.DoubleValue MARK_RANGE, SLIDE_SHOT_BLOCKS, SLIDE_SHOT_SPREAD;
+    private static final ForgeConfigSpec.DoubleValue XBOW_THRUST_DAMAGE, XBOW_SLAP_DAMAGE, XBOW_SPINE_DAMAGE, XBOW_REACH, XBOW_THRUST_PUSH,
+            XBOW_STEP_REACH;
+    private static final ForgeConfigSpec.IntValue XBOW_CHAIN;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -146,6 +150,12 @@ public final class MovesConfig {
                 .defineInRange("markedVolley", 10.0, 0.0, 10000.0);
         COST_MARKED_EACH = b.comment("... and for each mob it shoots at. [default]")
                 .defineInRange("markedVolleyEach", 2.5, 0.0, 10000.0);
+        // Author, 2026-11-08: the crossbow's attacks on the left button; no numbers given.
+        COST_XBOW_BLOW = b.comment("Each of the crossbow's first three blows on the left button (the push, the slap, onto the spine): plain",
+                        "blows of the left button, as a sword's. [default]")
+                .defineInRange("crossbowBlow", 0.0, 0.0, 10000.0);
+        COST_XBOW_HOP = b.comment("The crossbow's fourth: the hop back with the shot, or the dash back (a dodge). [default]")
+                .defineInRange("crossbowHop", 5.0, 0.0, 10000.0);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -305,6 +315,29 @@ public final class MovesConfig {
                         "(author: 10 to 15; 12 [default] between).")
                 .defineInRange("legolasCooldown", 12, 0, 3600);
         b.pop();
+
+        // Author, 2026-11-08: "attacks on LMB with the crossbow: a push with one hand, a turn clockwise and a slap, a turn the
+        // other way and a blow onto the spine, the last a hop back and a shot if it is loaded, else a dash back".
+        b.comment("The crossbow's attacks on the left button: the push, the slap, onto the spine, the hop back with the shot (or the",
+                "dash back), each click the next while the chain lasts.").push("crossbow");
+        XBOW_THRUST_DAMAGE = b.comment("The push: damage (vanilla: a crossbow hits as a fist, 1). [default]")
+                .defineInRange("thrustDamage", 3.0, 0.0, 1000.0);
+        XBOW_SLAP_DAMAGE = b.comment("The slap with a turn: damage to each mob it sweeps through. [default]")
+                .defineInRange("slapDamage", 4.0, 0.0, 1000.0);
+        XBOW_SPINE_DAMAGE = b.comment("The blow onto the spine with a turn: damage. [default]")
+                .defineInRange("spineDamage", 6.0, 0.0, 1000.0);
+        XBOW_REACH = b.comment("How far the blows reach: blocks from the player's middle to the mob's side. [default]")
+                .defineInRange("reach", 2.6, 1.0, 8.0);
+        XBOW_THRUST_PUSH = b.comment("The push shoves the mob back along the look (blocks a tick; it goes about 2.2 times that, 1 block).",
+                        "The chain's blows shove their own way instead of vanilla's knockback, so the next one still reaches. [default]")
+                .defineInRange("thrustPush", 0.45, 0.0, 3.0);
+        XBOW_STEP_REACH = b.comment("Each blow steps the player in to the nearest mob in front up to this far (blocks to its side), so the blow lands",
+                        "where the animation's crossbow meets it (0: no step). [default]")
+                .defineInRange("stepReach", 4.0, 0.0, 8.0);
+        XBOW_CHAIN = b.comment("Ticks after a blow in which the next click is the next blow of the chain; later it starts over from the",
+                        "push (20 ticks = 1 s). [default]")
+                .defineInRange("chainTicks", 12, 0, 200);
+        b.pop();
         SPEC = b.build();
     }
 
@@ -404,6 +437,15 @@ public final class MovesConfig {
     public static float swordSpinReach() { return f(SPIN_REACH, 2.6); }
     public static float plungeSplash() { return f(PLUNGE_SPLASH, 1.0); }
     public static int plungeSplashBlocks() { return get(PLUNGE_SPLASH_RADIUS, 1); }
+    public static float costCrossbowBlow() { return f(COST_XBOW_BLOW, 0.0); }
+    public static float costCrossbowHop() { return f(COST_XBOW_HOP, 5.0); }
+    public static float crossbowThrustDamage() { return f(XBOW_THRUST_DAMAGE, 3.0); }
+    public static float crossbowSlapDamage() { return f(XBOW_SLAP_DAMAGE, 4.0); }
+    public static float crossbowSpineDamage() { return f(XBOW_SPINE_DAMAGE, 6.0); }
+    public static float crossbowReach() { return f(XBOW_REACH, 2.6); }
+    public static float crossbowThrustPush() { return f(XBOW_THRUST_PUSH, 0.45); }
+    public static float crossbowStepReach() { return f(XBOW_STEP_REACH, 4.0); }
+    public static int crossbowChainTicks() { return get(XBOW_CHAIN, 12); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

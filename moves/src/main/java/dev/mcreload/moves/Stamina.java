@@ -120,6 +120,9 @@ public final class Stamina {
     public int plungeLanded;
     /** The fast run (server): the client says its key is held; the player runs fast now. */
     public boolean runKey, fastRunning;
+    /** The crossbow's chain (both ends): the last blow made in it (1-3; 0: none, the next click is the push) and
+     *  the ticks left in which a click is the next one (Crossbow.started). */
+    public int chainStep, chainTicks;
     /** The ledge being held (both ends): which way its wall is from the player (Ledge.dir) and the height of its top. */
     public int ledgeDir = -1;
     public double ledgeTop;
@@ -228,6 +231,7 @@ public final class Stamina {
         if (slideShotCooldown > 0) slideShotCooldown--;
         if (legolasCooldown > 0) legolasCooldown--;
         if (hasteTicks > 0) hasteTicks--;
+        if (chainTicks > 0 && --chainTicks == 0) chainStep = 0;
         if (p.level().isClientSide && combatTicks > 0) combatTicks--;     // the server's own counts down in serverTick
         if (!marks.isEmpty() && p.tickCount % 10 == 0) Marks.prune(p, this);
         if (move == null) return;
@@ -449,6 +453,7 @@ public final class Stamina {
                 Whirl.serverTick(sp, s);
                 Spin.serverTick(sp, s);
                 Strikes.serverTick(sp, s);
+                Crossbow.serverTick(sp, s);
                 Deflect.serverTick(sp, s);
                 Bow.serverTick(sp, s);
                 MoveServer.afterTick(sp, s);

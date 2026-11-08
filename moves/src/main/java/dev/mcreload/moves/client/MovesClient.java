@@ -379,6 +379,7 @@ public final class MovesClient {
         GuardInput.lowerLocal(p, s, false);     // the server lowers it too
         sprinted = p.isSprinting();
         s.start(p, move, held);
+        dev.mcreload.moves.Crossbow.started(p, s, move);
         moveYaw = p.getYRot();
         pushDir = null;
         airTicks = 0;
@@ -489,6 +490,13 @@ public final class MovesClient {
             slideAttack(p, s, t);
             return;
         }
+        // the crossbow's blows step in to their mob until they land (Crossbow.stepIn), else stand
+        if (move == Move.XBOW_THRUST || move == Move.XBOW_SLAP || move == Move.XBOW_SPINE) {
+            if (t == 0) xbowTarget = dev.mcreload.moves.Crossbow.stepTarget(p);
+            Vec3 step = dev.mcreload.moves.Crossbow.stepIn(p, xbowTarget, move, t);
+            p.setDeltaMovement(step.x, p.getDeltaMovement().y, step.z);
+            return;
+        }
         if (move == Move.SLIDE_SHOT) {
             // the slide carries on through the turn and brakes to a stop on the knee; then the keys creep (movementInput)
             if (t < Move.SLIDE_SHOT_SPIN) {
@@ -530,6 +538,9 @@ public final class MovesClient {
         Vec3 dir = pushDir != null ? pushDir : move.direction(moveYaw);
         p.setDeltaMovement(dir.x * speed, p.getDeltaMovement().y, dir.z * speed);
     }
+
+    /** The mob the crossbow's blow going on steps in to (null: none in reach). */
+    private static net.minecraft.world.entity.LivingEntity xbowTarget;
 
     /** The vault's flight: horizontal velocity, take-off speed and the share of vanilla gravity in the air. */
     private static Vec3 hopVelocity = Vec3.ZERO;
@@ -864,6 +875,8 @@ public final class MovesClient {
         } else if (move == Move.DASH) {
             // Footfalls of the run-in, the lunge's front foot planting.
             if (t == 3 || t == 6 || t == 9) step(p, ground, t == 9 ? 0.8f : 0.4f);
+        } else if (move.crossbow()) {
+            crossbowCues(p, move, t, ground);
         } else if (move == Move.DODGE_LEFT || move == Move.DODGE_RIGHT) {
             if (t == 6) step(p, ground, 0.5f);
         } else if (move.rolls()) {
@@ -876,6 +889,41 @@ public final class MovesClient {
                             p.getX() + (p.getRandom().nextDouble() - 0.5) * 0.6, p.getY() + 0.05,
                             p.getZ() + (p.getRandom().nextDouble() - 0.5) * 0.6, 0, 0.05, 0);
                 }
+            }
+        }
+    }
+
+    /**
+     * The crossbow's blows, on their animations' keys (round9.py): the push's front foot planting as it lands; the
+     * whoosh of the turns and the feet set wide for the slap; the blow onto the spine coming down from the top and
+     * the foot stepping into it; the hop's landing; the dash's feet and the dust it raises, the hand on the floor.
+     */
+    private static void crossbowCues(Player p, Move move, int t, BlockState ground) {
+        switch (move) {
+            case XBOW_THRUST -> {
+                if (t == 4) step(p, ground, 0.5f);
+            }
+            case XBOW_SLAP -> {
+                if (t == 4) sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 0.3f, 1.4f);
+                if (t == 7) step(p, ground, 0.5f);
+            }
+            case XBOW_SPINE -> {
+                if (t == 4) sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 0.3f, 1.2f);
+                if (t == 10) sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 0.45f, 0.75f);
+                if (t == 11) step(p, ground, 0.7f);
+            }
+            case XBOW_SHOT -> {
+                if (t == 7) step(p, ground, 0.8f);
+            }
+            case XBOW_DASH -> {
+                if (t == 3 || t == 6) step(p, ground, 0.5f);
+                if (t >= 3 && t <= 8 && !ground.isAir()) {
+                    p.level().addParticle(new BlockParticleOption(ParticleTypes.BLOCK, ground),
+                            p.getX() + (p.getRandom().nextDouble() - 0.5) * 0.6, p.getY() + 0.05,
+                            p.getZ() + (p.getRandom().nextDouble() - 0.5) * 0.6, 0, 0.05, 0);
+                }
+            }
+            default -> {
             }
         }
     }

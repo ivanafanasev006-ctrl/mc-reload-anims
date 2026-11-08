@@ -1,6 +1,7 @@
 package dev.mcreload.moves.test;
 
 import com.mojang.authlib.GameProfile;
+import dev.mcreload.moves.Crossbow;
 import dev.mcreload.moves.Guard;
 import dev.mcreload.moves.KinetrixMoves;
 import dev.mcreload.moves.Move;
@@ -769,6 +770,108 @@ public final class MovesGameTests {
             t.check(MoveServer.request(p, Move.SLIDE, false), "slide refused");
             t.check(!MoveServer.request(p, Move.SLIDE_SHOT, false), "the shot out of a slide again within 20 s");
         }).run(shot + Move.SLIDE_SHOT_END.length + 1);
+    }
+
+    /**
+     * The crossbow's chain on the left button (author, 2026-11-08): the push, the slap and the blow onto the spine
+     * land on the zombie in front, each with its own damage, in order only (a blow out of turn is refused, the
+     * next from the blow's chain tick, not before); the fourth, the crossbow loaded, is the hop back and its own
+     * shot (an arrow, the crossbow empty after), untouchable off the floor, for its energy.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 300)
+    public static void crossbowChain(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        // 2 blocks in front; it stays put (the blows' knockback aside) so each blow reaches it
+        Zombie z = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        noSun(z);
+        z.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
+        float[] health = new float[1];
+        int slap = 2 + Crossbow.THRUST_CHAIN, spine = slap + Crossbow.SLAP_CHAIN, hop = spine + Crossbow.SPINE_CHAIN;
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CROSSBOW));
+            t.check(!MoveServer.request(p, Move.XBOW_SLAP, false), "the slap before the push");
+            t.check(MoveServer.request(p, Move.XBOW_THRUST, false), "the push refused");
+            health[0] = z.getHealth();
+        });
+        t.at(3 + Crossbow.THRUST_HIT, () -> {
+            blow(t, health[0] - z.getHealth(), MovesConfig.crossbowThrustDamage(), "the push's damage");
+            health[0] = z.getHealth();
+        });
+        // (the server lets the next one in 2 ticks early: the client runs ahead)
+        t.at(slap - 3, () -> t.check(!MoveServer.request(p, Move.XBOW_SLAP, false), "the slap before the push followed through"));
+        t.at(slap, () -> {
+            t.check(!MoveServer.request(p, Move.XBOW_SPINE, false), "onto the spine before the slap");
+            t.check(MoveServer.request(p, Move.XBOW_SLAP, false), "the slap refused after the push");
+        });
+        t.at(slap + 1 + Crossbow.SLAP_HIT, () -> {
+            blow(t, health[0] - z.getHealth(), MovesConfig.crossbowSlapDamage(), "the slap's damage");
+            health[0] = z.getHealth();
+        });
+        t.at(spine, () -> {
+            t.check(!MoveServer.request(p, Move.XBOW_SHOT, false), "the hop's shot before the blow onto the spine");
+            t.check(MoveServer.request(p, Move.XBOW_SPINE, false), "onto the spine refused after the slap");
+        });
+        t.at(spine + 1 + Crossbow.SPINE_HIT, () -> {
+            blow(t, health[0] - z.getHealth(), MovesConfig.crossbowSpineDamage(), "the blow onto the spine's damage");
+            t.check(p.getMainHandItem().getDamageValue() == 3, "the crossbow's wear: " + p.getMainHandItem().getDamageValue());
+            loaded(p.getMainHandItem());
+            p.setXRot(60f);     // the shot into the floor close by, not into the other tests
+            s.energy = 100f;
+        });
+        t.at(hop, () -> {
+            t.check(MoveServer.request(p, Move.XBOW_SHOT, false), "the hop with the shot refused, loaded");
+            t.close(s.energy, 100f - MovesConfig.costCrossbowHop(), "energy after the hop");
+        });
+        t.at(hop + 3, () -> t.check(s.untouchable(), "not untouchable in the hop"));
+        t.at(hop + 1 + Crossbow.LEAP_SHOT, () -> {
+            t.check(!net.minecraft.world.item.CrossbowItem.isCharged(p.getMainHandItem()), "the crossbow still loaded after the shot");
+            t.check(!arrows(h, p).isEmpty(), "no arrow left the crossbow");
+            t.check(s.chainStep == 0, "the chain goes on after its last blow: " + s.chainStep);
+        }).run(hop + 2 + Crossbow.LEAP_SHOT);
+    }
+
+    /**
+     * Not loaded, the fourth is the dash back (untouchable while it carries the player), never the shot; a pause
+     * longer than the chain's wait starts it over from the push.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void crossbowDashAndPause(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CROSSBOW));
+            s.chainStep = 3;
+            s.chainTicks = 20;
+            t.check(!MoveServer.request(p, Move.XBOW_SHOT, false), "the shot with an empty crossbow");
+            t.check(MoveServer.request(p, Move.XBOW_DASH, false), "the dash back refused");
+        });
+        t.at(5, () -> t.check(s.untouchable(), "not untouchable in the dash"));
+        t.at(3 + Move.XBOW_DASH.length, () -> {
+            t.check(s.move == null, "still in " + s.move);
+            t.check(MoveServer.request(p, Move.XBOW_THRUST, false), "the push refused after the chain's end");
+        });
+        // the push, then a pause longer than the wait: the slap no more, the push again
+        int after = 4 + Move.XBOW_DASH.length + Move.XBOW_THRUST.length + MovesConfig.crossbowChainTicks() + 12;
+        t.at(after, () -> {
+            t.check(!MoveServer.request(p, Move.XBOW_SLAP, false), "the slap after a long pause");
+            t.check(MoveServer.request(p, Move.XBOW_THRUST, false), "the push refused after a pause");
+        }).run(after + 1);
+    }
+
+    /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
+    private static void blow(Script t, float lost, float damage, String what) {
+        t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);
+    }
+
+    /** A crossbow loaded with an arrow, as vanilla's (CrossbowItem: the ChargedProjectiles list and the Charged flag). */
+    private static void loaded(ItemStack crossbow) {
+        net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+        list.add(new ItemStack(Items.ARROW).save(new net.minecraft.nbt.CompoundTag()));
+        crossbow.getOrCreateTag().put("ChargedProjectiles", list);
+        net.minecraft.world.item.CrossbowItem.setCharged(crossbow, true);
     }
 
     /** R held in a fall: tucked, the landing hurts 70 % less (another player's the same fall does not); then the roll. */

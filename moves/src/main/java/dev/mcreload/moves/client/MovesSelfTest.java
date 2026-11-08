@@ -207,6 +207,11 @@ public final class MovesSelfTest {
         firstPersonArms("99_first_person_arms");
         swordSpin("88b_sword_spin_held", CameraType.THIRD_PERSON_BACK, true);
         tray("17_tray");
+        // the author's message of 2026-11-08: the crossbow's chain on the left button
+        crossbowChain("96h_crossbow_chain", true, CameraType.THIRD_PERSON_BACK);
+        crossbowChain("96i_crossbow_chain_front", true, CameraType.THIRD_PERSON_FRONT);
+        crossbowChain("96j_crossbow_dash_back", false, CameraType.THIRD_PERSON_BACK);
+        crossbowChain("96k_crossbow_first_person", true, CameraType.FIRST_PERSON);
         plungeSplash("99b_plunge_splash");
         // celebrate is Kinetrix's now: its emote (played as the emote menu plays it) and its music, then broken off
         SCENARIOS.add(new Scenario("45_kinetrix_celebrate", 205, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
@@ -797,6 +802,43 @@ public final class MovesSelfTest {
                 dummyReport(mc, name, true);
             }
         }, held ? new int[]{9, 11, 13, 15, 17, 19, 21, 23, 26, 30, 34} : new int[]{8, 9, 10, 11, 12, 13, 14, 15, 17, 20, 26},
+                camera != CameraType.FIRST_PERSON));
+    }
+
+    /**
+     * The crossbow's chain (author, 2026-11-08): a zombie 1.8 blocks ahead, four clicks of the left button, each as
+     * the blow before has followed through: the push, the slap with a turn clockwise, the blow onto the spine with a
+     * turn the other way, then the hop back with the shot ({@code loaded}) or the dash back.
+     */
+    private static void crossbowChain(String name, boolean loaded, CameraType camera) {
+        int[] clicks = {8, 15, 26, 41};
+        SCENARIOS.add(new Scenario(name, 80, sp -> {
+            ItemStack crossbow = new ItemStack(Items.CROSSBOW);
+            if (loaded) {
+                net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+                list.add(new ItemStack(Items.ARROW).save(new net.minecraft.nbt.CompoundTag()));
+                crossbow.getOrCreateTag().put("ChargedProjectiles", list);
+                net.minecraft.world.item.CrossbowItem.setCharged(crossbow, true);
+            }
+            place(sp, 0, crossbow);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.8, 20f);
+        }, (mc, t) -> {
+            camera(mc, camera);
+            if (t == clicks[3]) startPos = mc.player.position();
+            // a click: down for a tick (a real press reaches the moves' tick handler before vanilla's keys)
+            boolean click = false;
+            for (int c : clicks) click |= t == c;
+            mc.options.keyAttack.setDown(click);
+            for (int c : clicks) {
+                if (t == c + 1) note(name + " t=" + t + ": " + Stamina.of(mc.player).move + ", chain " + Stamina.of(mc.player).chainStep);
+            }
+            if (t == 66) {
+                note(String.format(Locale.ROOT, "%s: the last one carried the player %.2f blocks back, loaded after: %s", name,
+                        mc.player.position().subtract(startPos).horizontalDistance(),
+                        net.minecraft.world.item.CrossbowItem.isCharged(mc.player.getMainHandItem())));
+                dummyReport(mc, name, true);
+            }
+        }, new int[]{10, 12, 14, 17, 19, 21, 22, 24, 28, 31, 34, 36, 37, 39, 43, 46, 49, 52, 55, 60},
                 camera != CameraType.FIRST_PERSON));
     }
 

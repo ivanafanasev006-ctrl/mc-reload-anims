@@ -227,6 +227,24 @@ public enum Move {
     /** The sword's turn's ending, in place of its next turn when G is up: the slow-down and the stance (0.45 s). */
     SPIN_END("sword_spin_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
 
+    // ---- the crossbow's attacks on the left button (author, 2026-11-08; Crossbow): each click the next
+    // blow of the chain, in place (the keys do not walk the player through a blow)
+    /** LMB 1, the push: the crossbow's front into the chest at 0.2 s (Crossbow.THRUST_HIT), the arm locked out, back (0.55 s). */
+    XBOW_THRUST("crossbow_thrust", 1f, 14, -1, -1, -1, -1, Side.FRONT, MovesConfig::costCrossbowBlow),
+    /** LMB 2, the slap: a whole turn clockwise, the crossbow's flat through the face at 0.35 s (SLAP_HIT), round to the front (0.75 s). */
+    XBOW_SLAP("crossbow_slap", 1f, 18, -1, -1, -1, -1, Side.FRONT, MovesConfig::costCrossbowBlow),
+    /** LMB 3, onto the spine: a whole turn the other way, the crossbow overhead and down onto the back at 0.55 s (SPINE_HIT), up (0.95 s). */
+    XBOW_SPINE("crossbow_spine", 1f, 22, -1, -1, -1, -1, Side.FRONT, MovesConfig::costCrossbowBlow),
+    /**
+     * LMB 4, loaded: the hop back (about 2 blocks, 0.1-0.4 s, untouchable off the floor, as a side dodge) into a
+     * crouch, the shot at 0.55 s (LEAP_SHOT), up (1.15 s). [default] distance
+     */
+    XBOW_SHOT("crossbow_leap_shot", 1f, 26, 2, 7, -1, -1, Side.BACK, MovesConfig::costCrossbowHop,
+            0.42f, 0.42f, 0.40f, 0.36f, 0.28f, 0.16f),
+    /** LMB 4, not loaded: the dash back, low along the floor (about 2.7 blocks, 0.1-0.45 s, untouchable meanwhile), up (0.72 s). [default] distance */
+    XBOW_DASH("crossbow_dash_back", 1f, 17, 2, 8, -1, -1, Side.BACK, MovesConfig::costCrossbowHop,
+            0.62f, 0.56f, 0.48f, 0.40f, 0.30f, 0.20f, 0.10f),
+
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
     LEDGE_HANG("ledge_hang", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeGrab),
@@ -383,14 +401,30 @@ public enum Move {
         return this == FINISHER || this == FINISHER_AXE;
     }
 
-    /** A sword move started by the left button: while it plays the button strikes nothing else. */
+    /**
+     * A strike started by the left button (or G): while it plays, until it may be broken off, the buttons do
+     * nothing of vanilla's (no swing, no block dug, the crossbow not loaded mid-blow).
+     */
     public boolean strike() {
-        return this == DASH || finisher() || this == SLIDE_ATTACK || turning();
+        return this == DASH || finisher() || this == SLIDE_ATTACK || turning() || crossbow();
     }
 
     /** G's moves: the sword's turns, the whirlwind, and their endings. */
     public boolean turning() {
         return this == WHIRL || this == WHIRL_END || this == SWORD_SPIN || this == SPIN_END;
+    }
+
+    /** A blow of the crossbow's chain on the left button (Crossbow). */
+    public boolean crossbow() {
+        return this == XBOW_THRUST || this == XBOW_SLAP || this == XBOW_SPINE || this == XBOW_SHOT || this == XBOW_DASH;
+    }
+
+    /**
+     * The whole body turns round in it, and in first person too (the arms go round the camera, the weapon
+     * sweeping past the eyes): G's turns, the crossbow's slap and its blow onto the spine.
+     */
+    public boolean spins() {
+        return turning() || this == XBOW_SLAP || this == XBOW_SPINE;
     }
 
     /** On the ledge: hanging, moving along it, climbing onto it or off it, being pulled up (not the friend pulling). */
@@ -439,6 +473,10 @@ public enum Move {
             // the volley at the marked: each step from the one before (the arrow left at its release)
             case MARKED_SPIN_LEFT, MARKED_SPIN_RIGHT, MARKED_ROLL_LEFT, MARKED_ROLL_RIGHT, MARKED_BACKSTEP, MARKED_CROUCH,
                  MARKED_STAND, MARKED_KNEEL -> now.marked();
+            // the crossbow's chain: each blow from the one before it, once that has followed through (Crossbow.follows)
+            case XBOW_SLAP -> now == XBOW_THRUST;
+            case XBOW_SPINE -> now == XBOW_SLAP;
+            case XBOW_SHOT, XBOW_DASH -> now == XBOW_SPINE;
             default -> false;
         };
     }
@@ -465,7 +503,7 @@ public enum Move {
      */
     public boolean firstPerson() {
         return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
-                || turning() || ledge() || volley() || marked() || this == SLIDE_SHOT;
+                || turning() || ledge() || volley() || marked() || this == SLIDE_SHOT || crossbow();
     }
 
     /**
@@ -490,6 +528,12 @@ public enum Move {
             case FALL_ROLL -> Fall.STAND;
             case FINISHER -> Strikes.FINISH_OUT;
             case FINISHER_AXE -> Strikes.CHOP_OUT;
+            // the crossbow's blows from where the next one may follow; the hop once the shot is out, the dash once up
+            case XBOW_THRUST -> Crossbow.THRUST_CHAIN;
+            case XBOW_SLAP -> Crossbow.SLAP_CHAIN;
+            case XBOW_SPINE -> Crossbow.SPINE_CHAIN;
+            case XBOW_SHOT -> Crossbow.LEAP_UP;
+            case XBOW_DASH -> Crossbow.DASH_UP;
             default -> -1;
         };
     }

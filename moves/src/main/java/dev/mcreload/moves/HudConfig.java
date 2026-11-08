@@ -44,7 +44,9 @@ public final class HudConfig {
         LEDGE_HOPS("ledgeHops", "The hops along a ledge (A / D while hanging) and the leap to another edge looked at (Space)."),
         VOLLEY("bowVolley", "G with a bow: the volley, three arrows, 10 s cooldown (held: the hail, 5 to 10 spread out, 40 s)."),
         MARKS("bowMarks", "The bow's marks (the right button held, the left one on a mob) and the volley at the marked (the right button let go)."),
-        LEGOLAS("legolas", "The Legolas stance: R with the bow fully drawn (12 s cooldown from its end).");
+        LEGOLAS("legolas", "The Legolas stance: R with the bow fully drawn (12 s cooldown from its end)."),
+        CROSSBOW("crossbow", "The crossbow's attacks on the left button: the push, the slap with a turn, onto the spine with a turn, the hop",
+                "back with the shot (loaded) or the dash back; each click the next.");
 
         /** The key in the file and in the language files (kinetrix_moves.settings.move.<key>). */
         public final String key;

@@ -59,6 +59,7 @@ public final class MoveServer {
         if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
         if (move == Move.WHIRL) Whirl.started(p, s);
         if (move == Move.SWORD_SPIN) Spin.started(p, s);
+        Crossbow.started(p, s, move);
         if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
         if (move == Move.DASH) {
@@ -164,6 +165,13 @@ public final class MoveServer {
         if (move == Move.KICK || move == Move.DIVE || move == Move.ROLL_KICK) {
             int grace = JUMP_GRACE + (p.level().isClientSide ? 0 : GROUND_GRACE);
             return p.fallDistance < Fall.TUCK_FROM && (ground || p.tickCount - lastGround(p) <= grace);
+        }
+        // The crossbow's chain on the left button (author, 2026-11-08): a crossbow in hand, from the ground; each
+        // blow after the one before it in the chain; the last one shoots only loaded (else it is the dash back).
+        if (move.crossbow()) {
+            if (!Crossbow.held(p) || !Crossbow.follows(move, s, p.level().isClientSide)) return false;
+            if (move == Move.XBOW_SHOT && !Crossbow.loaded(p)) return false;
+            return ground;
         }
         // The strikes: the dash with a sword (the left and the right button held); on G the sword's turn
         // with a sword, the whirlwind with an axe; the finisher: the stab with a sword, the chop with an

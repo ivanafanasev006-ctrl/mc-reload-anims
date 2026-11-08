@@ -1,5 +1,6 @@
 package dev.mcreload.moves.client;
 
+import dev.mcreload.moves.Crossbow;
 import dev.mcreload.moves.HudConfig;
 import dev.mcreload.moves.Move;
 import dev.mcreload.moves.MoveServer;
@@ -12,6 +13,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 
 /**
  * The strikes on the player's side (author, 2026-10-28, 2026-10-30).
@@ -107,6 +109,11 @@ public final class StrikeInput {
             }
             return true;
         }
+        // The crossbow's chain (author, 2026-11-08): each click the next blow
+        if (crossbow(mc, p, s, lmbPressed)) {
+            finisherTarget = null;
+            return true;
+        }
         // A strike going on: the button strikes nothing else until the blade is back.
         if (s.move != null && s.move.strike() && s.moveTick < s.move.recoverFrom()) {
             finisherTarget = null;
@@ -139,6 +146,44 @@ public final class StrikeInput {
         return false;
     }
 
+    /** A click kept for the crossbow's next blow: made before the blow going on had followed through. */
+    private static boolean xbowClick;
+
+    /**
+     * The crossbow's chain on the left button (Crossbow): a click is the next blow, the push when the chain has
+     * lapsed; one made before the blow going on has followed through is kept and starts the next blow from that
+     * blow's chain tick (a quick double click is not lost). While a blow plays the button is the chain's. Out of
+     * the chain, a click on a block digs it as ever. Returns whether the button was taken.
+     */
+    private static boolean crossbow(Minecraft mc, LocalPlayer p, Stamina s, boolean pressed) {
+        boolean chain = s.move != null && s.move.crossbow();
+        if (!Crossbow.held(p) || !HudConfig.Moves.CROSSBOW.on() || (s.move != null && !chain)) {
+            xbowClick = false;
+            return false;
+        }
+        boolean block = mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK;
+        if (pressed && !chain && block && s.chainTicks <= 0) return false;
+        if (pressed) xbowClick = true;
+        if (xbowClick) {
+            Move next = Crossbow.next(p, s);
+            if (MoveServer.allowed(p, s, next)) {
+                xbowClick = false;
+                if (!MovesClient.start(p, s, next, -1)) return false;
+                swallow(mc);
+                return true;
+            }
+            // not yet (the blow going on has not followed through, the last one is still up): kept while the chain
+            // plays; out of it (in the air, no energy) the click is vanilla's
+            if (!chain) {
+                xbowClick = false;
+                return false;
+            }
+        }
+        if (!chain) return false;
+        swallow(mc);
+        return true;
+    }
+
     /** Starts a strike that waits out a cooldown, or says above the hotbar how long it still needs. */
     private static boolean begin(Minecraft mc, LocalPlayer p, Stamina s, Move move) {
         if (waits(p, s, move)) return false;
@@ -169,6 +214,7 @@ public final class StrikeInput {
             case BARRAGE -> HudConfig.Moves.VOLLEY.key;
             case SLIDE_SHOT -> HudConfig.Moves.SLIDE_SHOT.key;
             case LEGOLAS_LEFT -> HudConfig.Moves.LEGOLAS.key;
+            case XBOW_THRUST, XBOW_SLAP, XBOW_SPINE, XBOW_SHOT, XBOW_DASH -> HudConfig.Moves.CROSSBOW.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }

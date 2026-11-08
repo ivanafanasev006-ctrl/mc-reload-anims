@@ -66,7 +66,7 @@ public final class FirstPersonArms {
     /** The mod's move is an attack whose arms are drawn in first person, its whole-body turn left out. */
     private static boolean attack(Move m) {
         return m == Move.DASH || m.finisher() || m == Move.SLIDE_ATTACK || m == Move.PLUNGE || m == Move.PLUNGE_FALL
-                || m.turning() || bow(m);
+                || m.turning() || bow(m) || m.crossbow();
     }
 
     /** A move with the bow drawn or about to shoot: the bow stays ahead. */
@@ -84,8 +84,8 @@ public final class FirstPersonArms {
         if (!HudConfig.firstPersonArms()) return false;
         Move m = Stamina.of(p).move;
         // G's spins with a sword or an axe: the whole body turns, the arms round the camera, as before 0.8.0
-        // (author, 2026-10-31, 15:56: "as it was in the old versions, it was perfect")
-        return m == null ? Bow.isBow(p.getMainHandItem()) : attack(m) && !m.turning();
+        // (author, 2026-10-31, 15:56: "as it was in the old versions, it was perfect"); the crossbow's turns too
+        return m == null ? Bow.isBow(p.getMainHandItem()) : attack(m) && !m.spins();
     }
 
     /**
