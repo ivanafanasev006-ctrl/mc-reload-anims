@@ -974,7 +974,8 @@ public final class MovesGameTests {
 
     /**
      * A player's arrow in water keeps most of its speed (author, after 0.9.1: "in water the bow is useless"): shot along
-     * a channel of water it goes on far past a skeleton's (vanilla's: 3 blocks a tick slowed to a crawl within 4 ticks).
+     * a channel of water it flies on much faster than a skeleton's (vanilla's: 3 blocks a tick slowed to a crawl within 4
+     * ticks).
      */
     @GameTest(template = FLOOR, timeoutTicks = 100)
     public static void arrowsInWater(GameTestHelper h) {
@@ -997,14 +998,17 @@ public final class MovesGameTests {
             }
             from[0] = a[0].position();
         });
-        t.at(4, () -> t.check(a[1].isInWater() && a[0].isInWater(), "the arrows not in the water: " + a[1].position() + " "
-                + h.getLevel().getBlockState(a[1].blockPosition()) + " " + h.relativeVec(a[1].position())));
-        t.at(10, () -> {
-            double ours = a[0].position().z - from[0].z, vanilla = a[1].position().z - from[0].z;
-            t.check(ours > vanilla + 5.0, "the player's arrow in water went " + ours + ", a skeleton's " + vanilla);
+        // their speed after a tick or two in the water (0.9 of it kept a tick against 0.6: 1.5 times as fast after one), before
+        // the player's leaves the channel and the floor
+        t.at(4, () -> {
+            t.check(a[1].isInWater() && a[0].isInWater(), "the arrows not in the water: " + a[1].position() + " "
+                    + h.getLevel().getBlockState(a[1].blockPosition()) + " " + h.relativeVec(a[1].position()));
+            double ours = a[0].getDeltaMovement().length(), vanilla = a[1].getDeltaMovement().length();
+            t.check(a[0].position().z - from[0].z > 2.0, "the player's arrow did not move: " + (a[0].position().z - from[0].z));
+            t.check(ours > vanilla * 1.4, "the player's arrow in water flies at " + ours + ", a skeleton's at " + vanilla);
             a[0].discard();
             a[1].discard();
-        }).run(11);
+        }).run(5);
     }
 
     /**
@@ -2229,6 +2233,7 @@ public final class MovesGameTests {
                 try {
                     for (ServerPlayer p : players) p.doTick();
                     for (Runnable step : steps.getOrDefault(tick, List.of())) step.run();
+                    strays(false);
                 } catch (RuntimeException | AssertionError e) {
                     leave();
                     tick = end + 1;
@@ -2242,7 +2247,24 @@ public final class MovesGameTests {
         }
 
         private void leave() {
+            strays(true);
             for (ServerPlayer p : players) h.getLevel().getServer().getPlayerList().remove(p);
+        }
+
+        /**
+         * The players' arrows out of the test's floor (or all of them, the test over) are taken away: the tests stand a few
+         * blocks apart, and one flying on hit another test's mobs now and then (a marked zombie out of the volley's sight,
+         * another one choking in a wall).
+         */
+        private void strays(boolean all) {
+            // the floor template: 7 by 7 (relative 0 to 7), its air 4 high over the test block
+            net.minecraft.world.phys.AABB floor = new net.minecraft.world.phys.AABB(h.absoluteVec(Vec3.ZERO), h.absoluteVec(new Vec3(7, 5, 7)))
+                    .inflate(0.5, 3, 0.5);
+            for (net.minecraft.world.entity.projectile.AbstractArrow a : h.getLevel().getEntitiesOfClass(
+                    net.minecraft.world.entity.projectile.AbstractArrow.class, floor.inflate(48),
+                    a -> !(a instanceof net.minecraft.world.entity.projectile.ThrownTrident) && players.contains(a.getOwner()))) {
+                if (all || !floor.contains(a.position())) a.discard();
+            }
         }
 
         void check(boolean ok, String what) {
