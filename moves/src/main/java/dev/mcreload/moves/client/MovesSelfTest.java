@@ -217,6 +217,7 @@ public final class MovesSelfTest {
         // its second half: G (loaded, then not), G held (the fan), the right button held and R (the rolls)
         crossbowSkills("96l_crossbow_g_fan_rolls", CameraType.THIRD_PERSON_BACK);
         crossbowSkills("96m_crossbow_g_first_person", CameraType.FIRST_PERSON);
+        chainFinisher("97d_chain_finisher");
         throwPull("97b_throw_sword", Items.IRON_SWORD);
         throwPull("97c_throw_axe", Items.IRON_AXE);
         rangedFinisher("96n_bow_finisher", Items.BOW, CameraType.THIRD_PERSON_BACK);
@@ -915,6 +916,37 @@ public final class MovesSelfTest {
             }
         }, new int[]{10, 12, 14, 17, 19, 21, 22, 24, 28, 31, 34, 36, 37, 39, 43, 46, 49, 52, 55, 60},
                 camera != CameraType.FIRST_PERSON));
+    }
+
+    /**
+     * The chain finisher (author, after 0.9.1): three zombies under half their health a few blocks apart, Ctrl, W and Space
+     * down and the left button: onto each in turn, then the flip; the camera behind.
+     */
+    private static void chainFinisher(String name) {
+        SCENARIOS.add(new Scenario(name, 100, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            Stamina.of(sp).chainCooldown = 0;
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 3.0, 8f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 2.5, 6.5, 8f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -1.5, 9.0, 8f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.FIRST_PERSON);
+            LocalPlayer p = mc.player;
+            Stamina st = Stamina.of(p);
+            if (t == 1) st.chainCooldown = 0;
+            mc.options.keySprint.setDown(t >= 6 && t < 12);
+            mc.options.keyUp.setDown(t >= 6 && t < 12);
+            mc.options.keyJump.setDown(t >= 8 && t < 12);
+            mc.options.keyAttack.setDown(t == 10);
+            if (t == 12 || t == 26 || t == 40 || t == 54 || t == 70) {
+                note(String.format(Locale.ROOT, "%s t=%d: %s tick %d, camera %s, at y %.2f, energy %.0f", name, t, st.move, st.moveTick,
+                        mc.options.getCameraType(), p.getY(), st.energy));
+            }
+            if (t == 90) {
+                note(name + ": the chain's wait " + st.chainCooldown / 20 + " s");
+                dummyReport(mc, name, true);
+            }
+        }, new int[]{16, 20, 24, 30, 36, 44, 52, 60, 66}, false));
     }
 
     /**

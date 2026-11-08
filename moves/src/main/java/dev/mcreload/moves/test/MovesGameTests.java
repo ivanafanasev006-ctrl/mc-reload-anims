@@ -1139,6 +1139,41 @@ public final class MovesGameTests {
         }).run(26 + dev.mcreload.moves.Thrown.PULL_TICK);
     }
 
+    /**
+     * The chain finisher (author, after 0.9.1): two zombies under half their health, three blocks apart: the leap onto the
+     * first kills it as the blade goes in, the hop onto the second the same, then the flip; 10 energy each, 120 s to wait.
+     * A zombie at full health is no target.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void chainFinisher(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie a = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5), b = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 7);
+        Zombie strong = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 5);
+        noSun(a, b, strong);
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            a.setHealth(8f);
+            b.setHealth(9f);
+            s.energy = 100f;
+            t.check(!MoveServer.request(p, Move.CHAIN_LEAP, false, strong.getId()), "the chain onto a zombie at full health");
+            t.check(MoveServer.request(p, Move.CHAIN_LEAP, false, a.getId()), "the chain refused");
+            t.check(s.chainCooldown > 20 * 100, "the chain's wait: " + s.chainCooldown);
+        });
+        t.at(3 + dev.mcreload.moves.Chain.KILL, () -> t.check(!a.isAlive(), "the first not killed: " + a.getHealth()));
+        t.at(3 + dev.mcreload.moves.Chain.NEXT, () -> t.check(MoveServer.request(p, Move.CHAIN_HOP, false, b.getId()), "the hop refused"));
+        int second = 4 + dev.mcreload.moves.Chain.NEXT;
+        t.at(second + dev.mcreload.moves.Chain.KILL, () -> {
+            t.check(!b.isAlive(), "the second not killed: " + b.getHealth());
+            t.check(strong.isAlive() && strong.getHealth() > 19f, "the strong one hurt");
+            // (it refills a little meanwhile)
+            t.check(s.energy < 100f - 2 * MovesConfig.costChain() + 5f, "energy after two: " + s.energy);
+        });
+        t.at(second + dev.mcreload.moves.Chain.NEXT, () -> t.check(MoveServer.request(p, Move.CHAIN_FLIP, false), "the flip refused"))
+                .run(second + dev.mcreload.moves.Chain.NEXT + 1);
+    }
+
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
     private static void blow(Script t, float lost, float damage, String what) {
         t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);

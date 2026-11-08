@@ -131,5 +131,8 @@
   "kinetrix_moves.crossbow.no_arrows": "Нет стрел",
   "kinetrix_moves.settings.move.throw": "Метание меча и топора",
   "kinetrix_moves.settings.move.throw.tip": "Меч или топор в руке: зажать ЛКМ и ПКМ — замах, отпустить ЛКМ — бросок, летит как трезубец. Попал в моба — застревает в нём; ЛКМ или ПКМ впритык — вытащить (немного урона, короткий стан), а если моб слабый — сразу добивание: мечом под дых, топором сверху. Убил броском — оружие падает и втыкается в землю; подбирается само, когда подходишь.",
-  "kinetrix_moves.settings.move.throw.keys": "%4$s + %5$s, отпустить %4$s"
+  "kinetrix_moves.settings.move.throw.keys": "%4$s + %5$s, отпустить %4$s",
+  "kinetrix_moves.settings.move.chainFinisher": "Цепное добивание",
+  "kinetrix_moves.settings.move.chainFinisher.tip": "Меч в руке, Ctrl + W + Space + ЛКМ: прыжок сзади на плечи мобу с меньше чем половиной здоровья и меч ему в голову; если рядом (до 5 блоков) есть ещё такой — перескок с разворотом на него, и так до 5; потом сальто назад. Камера от третьего лица. 10 энергии за каждого, перезарядка 120 с.",
+  "kinetrix_moves.settings.move.chainFinisher.keys": "Ctrl + W + Space + %4$s, меч"
 }

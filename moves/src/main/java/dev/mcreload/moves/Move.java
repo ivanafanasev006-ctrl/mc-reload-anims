@@ -303,6 +303,14 @@ public enum Move {
     /** The left or the right button at point blank to a mob with the player's weapon in it: pulled out at 0.3 s (Thrown.PULL_TICK). */
     WEAPON_PULL("weapon_pull", 1f, 17, -1, -1, -1, -1, Side.FRONT, () -> 0),
 
+    // ---- the chain finisher (author, after 0.9.1; Chain, ChainInput): chain_leap, chain_hop, chain_flip (round13.py)
+    /** Ctrl + W + Space + LMB with a sword: the leap onto the shoulders of a weak mob, the blade into its head at 0.5 s (Chain.KILL). */
+    CHAIN_LEAP("chain_leap", 1f, 19, 0, 15, -1, -1, Side.FRONT, MovesConfig::costChain),
+    /** On to the next weak mob near: the same leap and blade (each kill 10 energy). */
+    CHAIN_HOP("chain_hop", 1f, 19, 0, 15, -1, -1, Side.FRONT, MovesConfig::costChain),
+    /** None left (or five done): the back flip off it, down on the feet at 0.6 s. */
+    CHAIN_FLIP("chain_flip", 1f, 21, 0, 12, -1, -1, Side.BACK, () -> 0),
+
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
     LEDGE_HANG("ledge_hang", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeGrab),
@@ -451,7 +459,8 @@ public enum Move {
 
     /** A move made at someone (the vault, the kick, the finisher, a friend's hand): the client names them, the server checks them. */
     public boolean targeted() {
-        return this == HOP || this == KICK || this == ROLL_KICK || finisher() || this == LEDGE_HELP || this == WEAPON_PULL;
+        return this == HOP || this == KICK || this == ROLL_KICK || finisher() || this == LEDGE_HELP || this == WEAPON_PULL
+                || this == CHAIN_LEAP || this == CHAIN_HOP;
     }
 
     /** The finisher: the sword's stab or the axe's chop. */
@@ -464,7 +473,12 @@ public enum Move {
      * nothing of vanilla's (no swing, no block dug, the crossbow not loaded mid-blow).
      */
     public boolean strike() {
-        return this == DASH || finisher() || this == SLIDE_ATTACK || turning() || crossbow() || crossbowSkill() || thrown();
+        return this == DASH || finisher() || this == SLIDE_ATTACK || turning() || crossbow() || crossbowSkill() || thrown() || chain();
+    }
+
+    /** The chain finisher's leaps and its flip. */
+    public boolean chain() {
+        return this == CHAIN_LEAP || this == CHAIN_HOP || this == CHAIN_FLIP;
     }
 
     /** The throw (its aim, the throw itself) and the pull. */
@@ -554,6 +568,7 @@ public enum Move {
             case XBOW_FAN_SHOT -> now == XBOW_FAN;
             // the throw out of its aim; the finisher right after the pull (the author's "pulling it out, he drives it in again")
             case THROW -> now == THROW_AIM;
+            case CHAIN_HOP, CHAIN_FLIP -> now == CHAIN_LEAP || now == CHAIN_HOP;
             case FINISHER, FINISHER_AXE -> now == WEAPON_PULL;
             default -> false;
         };
@@ -609,6 +624,7 @@ public enum Move {
             case FINISHER -> Strikes.FINISH_OUT;
             case FINISHER_BOW -> Strikes.BOW_KILL + 4;
             case THROW -> Thrown.THROW_RELEASE + 4;
+            case CHAIN_FLIP -> Chain.FLIP_LAND + 3;
             case WEAPON_PULL -> Thrown.PULL_TICK + 4;
             case FINISHER_XBOW -> Strikes.XBOW_KILL + 5;
             case FINISHER_AXE -> Strikes.CHOP_OUT;

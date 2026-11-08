@@ -75,6 +75,11 @@ public final class MovesClient {
     private static int airTicks;
     /** Ticks since Space was last pressed (the kick and the dive: W, Space and R down together, give or take a few ticks). */
     private static int sinceJump = 100;
+
+    /** Ticks since Space was pressed (100 at most). */
+    static int sinceJump() {
+        return sinceJump;
+    }
     /** Space pressed this many ticks before R still counts as down with it (author: no timing needed). */
     private static final int JUMP_WITH_R = 6;
     /** The player was sprinting when the move started: a vault or a dash that ends in a run keeps the sprint. */
@@ -157,6 +162,7 @@ public final class MovesClient {
             BowVolley.reset();
             CrossbowInput.reset();
             if (p == null) ThrownClient.reset();
+            ChainInput.reset();
             if (p != null) Cutscene.tick(mc, p, Stamina.of(p));
             return;
         }
@@ -448,6 +454,7 @@ public final class MovesClient {
         if (event.phase == TickEvent.Phase.END) {
             if (p == Minecraft.getInstance().player && p instanceof LocalPlayer lp) {
                 LedgeInput.place(lp, s);
+                ChainInput.tick(lp, s);
                 kickTurn(lp, s);
                 MoveServer.seen(p);
             } else {

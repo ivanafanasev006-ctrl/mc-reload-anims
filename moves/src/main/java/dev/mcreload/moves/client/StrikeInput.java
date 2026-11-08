@@ -90,6 +90,7 @@ public final class StrikeInput {
             // the crossbow's G (one wait for the hop, the turn and the fan), its rolls (in the tray by the back roll)
             case XBOW_VOLLEY, XBOW_SPIN, XBOW_FAN -> s.xbowCooldown;
             case XBOW_ROLL_BACK -> s.xbowRollsCooldown;
+            case CHAIN_LEAP -> s.chainCooldown;
             default -> 0;
         };
     }
@@ -119,6 +120,12 @@ public final class StrikeInput {
                 if (more) s.spend(extra, p);    // as the server does (a tick later)
                 else MovesClient.start(p, s, sword ? Move.SPIN_END : Move.WHIRL_END, -1);
             }
+            return true;
+        }
+        // The chain finisher (author, after 0.9.1): Ctrl + W + Space + LMB with a sword
+        if (lmbPressed && ChainInput.start(mc, p, s, mc.options.keyJump.isDown() || MovesClient.sinceJump() <= 6)) {
+            finisherTarget = null;
+            swallow(mc);
             return true;
         }
         // The throw (author, after 0.9.1): a sword or an axe, the left and the right button held together, the weapon drawn
@@ -283,6 +290,7 @@ public final class StrikeInput {
             case XBOW_THRUST, XBOW_SLAP, XBOW_SPINE, XBOW_SHOT, XBOW_DASH -> HudConfig.Moves.CROSSBOW.key;
             case XBOW_VOLLEY, XBOW_SPIN, XBOW_FAN -> HudConfig.Moves.CROSSBOW_G.key;
             case XBOW_ROLL_BACK -> HudConfig.Moves.CROSSBOW_ROLLS.key;
+            case CHAIN_LEAP -> HudConfig.Moves.CHAIN.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }

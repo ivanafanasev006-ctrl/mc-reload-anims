@@ -226,6 +226,8 @@ public final class MovesHud {
         // the volley at the marked (by its first step), the Legolas stance (by its dodge)
         if (bow && HudConfig.Moves.MARKS.on()) out.add(Move.MARKED_SPIN_LEFT);
         if (bow && HudConfig.Moves.LEGOLAS.on()) out.add(Move.LEGOLAS_LEFT);
+        // the chain finisher with a sword
+        if (Strikes.sword(p) && HudConfig.Moves.CHAIN.on()) out.add(Move.CHAIN_LEAP);
         // the crossbow's rolls (by the back roll)
         if (dev.mcreload.moves.Crossbow.held(p) && HudConfig.Moves.CROSSBOW_ROLLS.on()) out.add(Move.XBOW_ROLL_BACK);
         return out;
@@ -244,6 +246,7 @@ public final class MovesHud {
             case LEGOLAS_LEFT -> MovesConfig.legolasCooldownTicks();
             case XBOW_VOLLEY -> MovesConfig.crossbowAbilityCooldownTicks();
             case XBOW_ROLL_BACK -> MovesConfig.crossbowRollsCooldownTicks();
+            case CHAIN_LEAP -> MovesConfig.chainCooldownTicks();
             default -> 0;
         };
     }
@@ -349,6 +352,7 @@ public final class MovesHud {
             case SLIDE_SHOT -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyUse);
             case MARKED_SPIN_LEFT -> "↑" + shortKey(mc.options.keyUse);
             case LEGOLAS_LEFT, XBOW_ROLL_BACK -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.DODGE);
+            case CHAIN_LEAP -> shortKey(mc.options.keySprint) + "+" + shortKey(mc.options.keyJump) + "+" + shortKey(mc.options.keyAttack);
             default -> {
                 String g = shortKey(MovesClient.ABILITY);
                 yield g + "(" + g + "+)";

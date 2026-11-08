@@ -28,7 +28,8 @@ public final class MovesConfig {
             VAULT_MIN_WIDTH, VAULT_MIN_HEIGHT, VAULT_MAX_HEIGHT, VAULT_SHOVE, DASH_CRIT, FINISH_HEALTH, FINISH_RANGE, FINISH_MAX_HEALTH;
     private static final ForgeConfigSpec.IntValue DASH_COOLDOWN, SLIDE_ATTACK_COOLDOWN;
     private static final ForgeConfigSpec.DoubleValue DASH_WIDTH, SLIDE_ATTACK_CRIT, SLIDE_ATTACK_REACH, KICK_DAMAGE, KICK_STRENGTH,
-            FALL_CUT, WATER_ARROWS, THROW_SPEED, THROW_DAMAGE, PULL_DAMAGE, COST_THROW;
+            FALL_CUT, WATER_ARROWS, THROW_SPEED, THROW_DAMAGE, PULL_DAMAGE, COST_THROW, COST_CHAIN, CHAIN_RANGE, CHAIN_HEALTH;
+    private static final ForgeConfigSpec.IntValue CHAIN_COOLDOWN, CHAIN_MAX;
     private static final ForgeConfigSpec.IntValue PULL_STUN;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
     private static final ForgeConfigSpec.DoubleValue LEAP_REACH, LEAP_UP, LEAP_DOWN;
@@ -383,6 +384,16 @@ public final class MovesConfig {
                 .defineInRange("pullDamage", 2.0, 0.0, 100.0);
         PULL_STUN = b.comment("Pulling the weapon out of a mob: ticks it is slowed and doubled over (author: \"a little stun\"). [default]")
                 .defineInRange("pullStunTicks", 15, 0, 200);
+        // Author, after 0.9.1: the chain finisher, "cooldown 120 seconds, 10 of 100 energy for each enemy killed, up to 5,
+        // about 5 blocks apart, under 50 % health".
+        CHAIN_COOLDOWN = b.comment("The chain finisher (Ctrl + W + Space + LMB with a sword): seconds before it can be made again (author: 120).")
+                .defineInRange("chainCooldown", 120, 0, 3600);
+        COST_CHAIN = b.comment("The chain finisher: energy for each mob it kills (author: 10).").defineInRange("chainCost", 10.0, 0.0, 10000.0);
+        CHAIN_RANGE = b.comment("The chain finisher: how far the next mob may be from the last (blocks; author: about 5).")
+                .defineInRange("chainRange", 5.0, 1.0, 16.0);
+        CHAIN_MAX = b.comment("The chain finisher: the most mobs in one (author: 5).").defineInRange("chainMax", 5, 1, 20);
+        CHAIN_HEALTH = b.comment("The chain finisher: mobs under this share of their health (author: 50 %).")
+                .defineInRange("chainHealth", 0.5, 0.0, 1.0);
         COST_THROW = b.comment("The throw of a sword or an axe: energy. [default]").defineInRange("throwCost", 5.0, 0.0, 10000.0);
         WATER_ARROWS = b.comment("Players' arrows (a bow's, a crossbow's) in water keep this much of their speed a tick (vanilla: 0.6, a full",
                         "draw crawls after 4 ticks; a trident 0.99). Author, after 0.9.1: \"in water the bow is useless\". [default]")
@@ -518,6 +529,11 @@ public final class MovesConfig {
     public static float pullDamage() { return f(PULL_DAMAGE, 2.0); }
     public static int pullStunTicks() { return get(PULL_STUN, 15); }
     public static float costThrow() { return f(COST_THROW, 5.0); }
+    public static int chainCooldownTicks() { return get(CHAIN_COOLDOWN, 120) * 20; }
+    public static float costChain() { return f(COST_CHAIN, 10.0); }
+    public static float chainRange() { return f(CHAIN_RANGE, 5.0); }
+    public static int chainMax() { return get(CHAIN_MAX, 5); }
+    public static float chainHealth() { return f(CHAIN_HEALTH, 0.5); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

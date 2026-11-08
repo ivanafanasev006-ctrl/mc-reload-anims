@@ -69,7 +69,8 @@ public final class MoveServer {
         Crossbow.started(p, s, move);
         if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
-        if (move == Move.WEAPON_PULL) s.target = target;
+        if (move == Move.WEAPON_PULL || move == Move.CHAIN_LEAP || move == Move.CHAIN_HOP) s.target = target;
+        if (move == Move.CHAIN_LEAP) s.chainCooldown = s.cooled(MovesConfig.chainCooldownTicks());
         if (move == Move.DASH) {
             s.dashCooldown = s.cooled(MovesConfig.dashCooldownTicks());
             s.dashHit = false;
@@ -127,6 +128,7 @@ public final class MoveServer {
         if (move == Move.KICK || move == Move.ROLL_KICK) return Kick.valid(p, e);
         if (move == Move.LEDGE_HELP) return e instanceof Player;
         if (move == Move.WEAPON_PULL) return Thrown.valid(p, e);
+        if (move == Move.CHAIN_LEAP || move == Move.CHAIN_HOP) return Chain.valid(p, move, e);
         if (move.finisher()) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;
     }
@@ -187,6 +189,16 @@ public final class MoveServer {
         if (move == Move.THROW_AIM) return Thrown.throwable(p) && ground;
         if (move == Move.THROW) return Thrown.throwable(p) && s.move == Move.THROW_AIM;
         if (move == Move.WEAPON_PULL) return true;
+        // The chain finisher (author, after 0.9.1): a sword, from the ground or a jump just begun, once its wait is over; each
+        // next leap (or the flip) once the blade is in
+        if (move == Move.CHAIN_LEAP) {
+            int grace = JUMP_GRACE + (p.level().isClientSide ? 0 : GROUND_GRACE);
+            return Strikes.sword(p) && s.chainCooldown <= (p.level().isClientSide ? 0 : 5)
+                    && p.fallDistance < Fall.TUCK_FROM && (ground || p.tickCount - lastGround(p) <= grace);
+        }
+        if (move == Move.CHAIN_HOP || move == Move.CHAIN_FLIP) {
+            return (s.move == Move.CHAIN_LEAP || s.move == Move.CHAIN_HOP) && s.moveTick >= Chain.NEXT - (p.level().isClientSide ? 0 : 3);
+        }
         // The crossbow's G (author, 2026-11-08): from the ground once its wait is over, the hop with three arrows only loaded,
         // the turn with the shove only not; the fan's shot out of its loading. The rolls (the right button held, R) from
         // the ground once their wait (from the last rolls' end) is over; each from the one before once its arrow is out.

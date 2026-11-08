@@ -39,7 +39,8 @@ public final class Cutscene {
 
     /** Every client tick: the camera taken for the kick or an attack and given back when it ends. */
     static void tick(Minecraft mc, LocalPlayer p, Stamina s) {
-        boolean kicking = p != null && (s.move == Move.KICK || s.move == Move.ROLL_KICK) && s.moveTick < Kick.land(s.move);
+        boolean kicking = p != null && (((s.move == Move.KICK || s.move == Move.ROLL_KICK) && s.moveTick < Kick.land(s.move))
+                || (s.move != null && s.move.chain()));     // the chain finisher too (author: "as for Ctrl + W + Space + R")
         // G and G held with a bow: from behind when marked mobs are in sight as it starts (it aims at them by
         // itself), else in first person, aimed by the player (author, 2026-10-31)
         if (p != null && s.move != null && s.move.volley() && s.moveTick <= 1) volleyAtMarks = !dev.mcreload.moves.Marks.inSight(p, s).isEmpty();

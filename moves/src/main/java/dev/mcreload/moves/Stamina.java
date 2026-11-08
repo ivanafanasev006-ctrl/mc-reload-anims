@@ -129,6 +129,8 @@ public final class Stamina {
     public int xbowCooldown;
     /** The crossbow's rolls (both ends): ticks before they can be taken again (from their end). */
     public int xbowRollsCooldown;
+    /** The chain finisher (both ends): ticks before it can be made again. */
+    public int chainCooldown;
     /** The crossbow's rolls are on (server): a roll of them was made; ticks since the last one ended (Crossbow.rollsTick). */
     public boolean xbowRollsLive;
     public int xbowRollsGap;
@@ -165,7 +167,7 @@ public final class Stamina {
     /** The attacks' cooldowns, in the order the server sends them (MovesNet.Bars). */
     public int[] cooldowns() {
         return new int[]{dashCooldown, whirlCooldown, spinCooldown, slideAttackCooldown, markedCooldown, bowCooldown,
-                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown};
+                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown};
     }
 
     public void setCooldowns(int[] c) {
@@ -179,6 +181,7 @@ public final class Stamina {
         legolasCooldown = c[7];
         xbowCooldown = c[8];
         xbowRollsCooldown = c[9];
+        chainCooldown = c[10];
     }
 
     public boolean canAfford(Move m, Player p) {
@@ -245,6 +248,7 @@ public final class Stamina {
         if (legolasCooldown > 0) legolasCooldown--;
         if (xbowCooldown > 0) xbowCooldown--;
         if (xbowRollsCooldown > 0) xbowRollsCooldown--;
+        if (chainCooldown > 0) chainCooldown--;
         if (hasteTicks > 0) hasteTicks--;
         if (chainTicks > 0 && --chainTicks == 0) chainStep = 0;
         if (p.level().isClientSide && combatTicks > 0) combatTicks--;     // the server's own counts down in serverTick
@@ -470,6 +474,7 @@ public final class Stamina {
                 Strikes.serverTick(sp, s);
                 Crossbow.serverTick(sp, s);
                 Thrown.serverTick(sp, s);
+                Chain.serverTick(sp, s);
                 Deflect.serverTick(sp, s);
                 Bow.serverTick(sp, s);
                 MoveServer.afterTick(sp, s);
