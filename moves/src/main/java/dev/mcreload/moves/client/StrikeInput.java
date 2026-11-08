@@ -41,6 +41,10 @@ public final class StrikeInput {
 
     /** The mob the finisher would be made on now (for the hint), or null. */
     private static LivingEntity finisherTarget;
+    /** G held this long with a sword makes its turns; let go before, the lunge. */
+    private static final int HOLD_G = 4;
+    /** Ticks G has been down since it was pressed with a sword (0: not waiting). */
+    private static int swordG;
     /** Ticks the left button has been down. */
     private static int held;
     /** The buttons were down last tick (as they are under the hand). */
@@ -58,7 +62,8 @@ public final class StrikeInput {
 
     /** The move G makes with what is in hand (null: none, or switched off in the settings). */
     public static Move ability(LocalPlayer p) {
-        if (Strikes.sword(p)) return HudConfig.Moves.SWORD_SPIN.on() ? Move.SWORD_SPIN : null;
+        // the sword's: tapped the lunge (the dash), held its turns (author, after 0.9.1); the tray shows the turns apart
+        if (Strikes.sword(p)) return HudConfig.Moves.DASH.on() ? Move.DASH : HudConfig.Moves.SWORD_SPIN.on() ? Move.SWORD_SPIN : null;
         if (Strikes.axe(p)) return HudConfig.Moves.WHIRL.on() ? Move.WHIRL : null;
         // the bow's: the volley, held the hail (BowVolley makes them)
         if (dev.mcreload.moves.Bow.isBow(p.getMainHandItem())) return HudConfig.Moves.VOLLEY.on() ? Move.BARRAGE : null;
@@ -114,6 +119,15 @@ public final class StrikeInput {
             }
             return true;
         }
+        // The crossbow's finisher before its chain (author, after 0.9.1): a click at a weak mob at point blank, an arrow in hand
+        if (lmbPressed && s.move == null && !rmb && Crossbow.held(p) && HudConfig.Moves.FINISHER.on() && MoveServer.allowed(p, s, Move.FINISHER_XBOW)) {
+            LivingEntity mob = Strikes.finisherTarget(p, looked(mc), true);
+            if (mob != null && MovesClient.start(p, s, Move.FINISHER_XBOW, mob.getId())) {
+                finisherTarget = null;
+                swallow(mc);
+                return true;
+            }
+        }
         // The crossbow's chain (author, 2026-11-08): each click the next blow
         if (crossbow(mc, p, s, lmbPressed)) {
             finisherTarget = null;
@@ -125,14 +139,31 @@ public final class StrikeInput {
             swallow(mc);
             return true;
         }
-        // G: the sword's turn with a sword, the whirlwind with an axe
-        if (abilityPressed && s.move == null) {
+        // G with a sword (author, after 0.9.1: "the sword's lunge on G, and on G+ the 3 turns"): tapped, the lunge; still
+        // down after HOLD_G ticks, the turns (they go on while it is held, up to 3)
+        if (!Strikes.sword(p)) swordG = 0;
+        if (abilityPressed && s.move == null && swordG == 0 && Strikes.sword(p)) swordG = 1;
+        if (swordG > 0) {
+            swordG++;
+            boolean down = MovesClient.held(mc, MovesClient.ABILITY);
+            if (!down || swordG > HOLD_G) {
+                swordG = 0;
+                Move move = down ? Move.SWORD_SPIN : Move.DASH;
+                boolean on = down ? HudConfig.Moves.SWORD_SPIN.on() : HudConfig.Moves.DASH.on();
+                if (on && s.move == null && begin(mc, p, s, move)) {
+                    if (move == Move.DASH) GuardInput.lowerLocal(p, s, true);
+                    return true;
+                }
+            }
+        }
+        // G: the whirlwind with an axe
+        if (abilityPressed && s.move == null && !Strikes.sword(p)) {
             Move move = ability(p);
             if (move != null && !move.volley() && !move.crossbowSkill() && begin(mc, p, s, move)) return true;
         }
         // the finisher: the stab with a sword, the chop with an axe (author, 2026-10-30); not with the
         // right button down too (that is the dash)
-        Move finisher = Strikes.axe(p) ? Move.FINISHER_AXE : Move.FINISHER;
+        Move finisher = Strikes.finisherOf(p);
         finisherTarget = s.move == null && !rmb && HudConfig.Moves.FINISHER.on() && MoveServer.allowed(p, s, finisher)
                 ? Strikes.finisherTarget(p, looked(mc), true) : null;
         if (finisherTarget != null && attackDown && (attackPressed || held >= HOLD_TICKS)) {
@@ -140,13 +171,6 @@ public final class StrikeInput {
                 swallow(mc);
                 return true;
             }
-        }
-        // the left and the right button held together with a sword: the dash
-        if (lmb && rmb && (lmbPressed || rmbPressed) && s.move == null && Strikes.sword(p) && HudConfig.Moves.DASH.on()) {
-            // the right button is the dash's either way: no sword block
-            LedgeInput.swallowUse(mc);
-            GuardInput.lowerLocal(p, s, true);
-            return begin(mc, p, s, Move.DASH);
         }
         return false;
     }

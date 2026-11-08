@@ -1005,6 +1005,93 @@ public final class MovesGameTests {
         }).run(11);
     }
 
+    /**
+     * The bow's and the crossbow's finishers (author, after 0.9.1): only with an arrow; the bow's shoves the weak zombie back
+     * and its arrow kills it, one arrow used; the crossbow's kills with an arrow into the head.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void rangedFinishers(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie[] z = new Zombie[2];
+        net.minecraft.world.phys.Vec3[] was = new net.minecraft.world.phys.Vec3[1];
+        t.at(2, () -> {
+            z[0] = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 4);
+            noSun(z[0]);
+            z[0].setHealth(z[0].getMaxHealth() * 0.2f);
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
+            s.energy = 100f;
+            t.check(!MoveServer.request(p, Move.FINISHER_BOW, false, z[0].getId()), "the bow's finisher with no arrow");
+            p.getInventory().add(new ItemStack(Items.ARROW, 2));
+            t.check(MoveServer.request(p, Move.FINISHER_BOW, false, z[0].getId()), "the bow's finisher refused");
+            was[0] = z[0].position();
+        });
+        t.at(3 + dev.mcreload.moves.Strikes.BOW_SHOVE + 4, () -> t.check(z[0].position().distanceTo(was[0]) > 0.5,
+                "the bow's finisher did not shove the zombie: " + z[0].position().distanceTo(was[0])));
+        t.at(4 + dev.mcreload.moves.Strikes.BOW_KILL + 1, () -> {
+            t.check(!z[0].isAlive(), "the zombie alive after the bow's finisher: " + z[0].getHealth());
+            t.check(Crossbow.arrows(p) == 1, "arrows after the bow's finisher: " + Crossbow.arrows(p));
+        });
+        int x = 8 + Move.FINISHER_BOW.length;
+        t.at(x, () -> {
+            z[1] = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 4);
+            noSun(z[1]);
+            z[1].setHealth(z[1].getMaxHealth() * 0.2f);
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CROSSBOW));
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.FINISHER_XBOW, false, z[1].getId()), "the crossbow's finisher refused");
+        });
+        t.at(x + 2 + dev.mcreload.moves.Strikes.XBOW_KILL + 1, () -> {
+            t.check(!z[1].isAlive(), "the zombie alive after the crossbow's finisher: " + z[1].getHealth());
+            t.check(Crossbow.arrows(p) == 0, "arrows after the crossbow's finisher: " + Crossbow.arrows(p));
+        }).run(x + 5 + dev.mcreload.moves.Strikes.XBOW_KILL);
+    }
+
+    /**
+     * The sword's turns parry (author, after 0.9.1): a zombie's blow does not hurt while the player turns, an arrow shot
+     * at them flies back; once the turns are over the blow hurts again.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void swordTurnsParry(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 4);
+        noSun(zombie);
+        net.minecraft.world.entity.projectile.Arrow[] a = new net.minecraft.world.entity.projectile.Arrow[1];
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.SWORD_SPIN, true), "the sword's turns refused");
+        });
+        t.at(5, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 6f);
+            t.close(p.getHealth(), 20f, "health after a zombie's blow in the turns");
+            // an arrow from 6 blocks in front, at the player
+            a[0] = new net.minecraft.world.entity.projectile.Arrow(EntityType.ARROW, h.getLevel());
+            net.minecraft.world.phys.Vec3 from = p.position().add(net.minecraft.world.phys.Vec3.directionFromRotation(0f, p.getYRot()).scale(6)).add(0, 1.2, 0);
+            a[0].moveTo(from.x, from.y, from.z, 0f, 0f);
+            net.minecraft.world.phys.Vec3 to = p.position().add(0, 1.0, 0).subtract(from);
+            a[0].shoot(to.x, to.y, to.z, 2.0f, 0f);
+            a[0].setNoGravity(true);
+            h.getLevel().addFreshEntity(a[0]);
+        });
+        t.at(12, () -> {
+            t.close(p.getHealth(), 20f, "health after an arrow in the turns");
+            net.minecraft.world.phys.Vec3 to = p.position().subtract(a[0].position());
+            t.check(a[0].getDeltaMovement().dot(to) < 0, "the arrow was not sent back: " + a[0].getDeltaMovement());
+            a[0].discard();
+        });
+        int after = 4 + Move.SWORD_SPIN.length + 4;
+        t.at(after, () -> {
+            t.check(s.move == null || s.move != Move.SWORD_SPIN, "still turning");
+            p.invulnerableTime = 0;
+            p.hurt(p.damageSources().mobAttack(zombie), 6f);
+            t.check(p.getHealth() < 19f, "a blow after the turns did not hurt: " + p.getHealth());
+        }).run(after + 1);
+    }
+
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
     private static void blow(Script t, float lost, float damage, String what) {
         t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);

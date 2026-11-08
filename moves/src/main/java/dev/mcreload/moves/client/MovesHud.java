@@ -218,7 +218,8 @@ public final class MovesHud {
         java.util.List<Move> out = new java.util.ArrayList<>();
         Move ability = StrikeInput.ability(p);
         if (ability != null) out.add(ability);
-        if (Strikes.sword(p) && HudConfig.Moves.DASH.on()) out.add(Move.DASH);
+        // the sword: the lunge on G (the ability above), its turns on G held
+        if (Strikes.sword(p) && HudConfig.Moves.DASH.on() && HudConfig.Moves.SWORD_SPIN.on()) out.add(Move.SWORD_SPIN);
         if (Strikes.slideWeapon(p) && HudConfig.Moves.SLIDE_ATTACK.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_ATTACK);
         boolean bow = dev.mcreload.moves.Bow.isBow(p.getMainHandItem());
         if (bow && HudConfig.Moves.SLIDE_SHOT.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_SHOT);
@@ -342,7 +343,8 @@ public final class MovesHud {
      */
     static String trayKeys(Minecraft mc, Move move) {
         return switch (move) {
-            case DASH -> shortKey(mc.options.keyAttack) + "+" + shortKey(mc.options.keyUse);
+            case DASH -> shortKey(MovesClient.ABILITY);
+            case SWORD_SPIN -> shortKey(MovesClient.ABILITY) + "+";
             case SLIDE_ATTACK -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
             case SLIDE_SHOT -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyUse);
             case MARKED_SPIN_LEFT -> "↑" + shortKey(mc.options.keyUse);

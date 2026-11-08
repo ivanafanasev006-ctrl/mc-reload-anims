@@ -130,6 +130,18 @@ public enum Move {
      * 0.9 s (Strikes.CHOP_OUT). Nothing hurts the player until the blow.
      */
     FINISHER_AXE("finisher_chop", 1f, 31, 0, Strikes.CHOP_HIT + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher),
+    /**
+     * The same with a bow (author, after 0.9.1: "LMB at point blank as with the sword; he shoves the enemy and shoots it in
+     * the body and it dies"; an arrow in the inventory needed): both hands shove it back at 0.18 s (Strikes.BOW_SHOVE), the
+     * bow drawn, the arrow into its body at 0.6 s (BOW_KILL) kills it (bow_finisher, round11.py).
+     */
+    FINISHER_BOW("bow_finisher", 1f, 23, 0, Strikes.BOW_KILL + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher),
+    /**
+     * With a crossbow ("he turns a whole turn, aims like a pistol with one hand and shoots a finishing arrow into the body
+     * or the head"; an arrow needed): the turn, the arm out, the arrow into its head at 0.6 s (XBOW_KILL) kills it
+     * (crossbow_finisher, round11.py).
+     */
+    FINISHER_XBOW("crossbow_finisher", 1f, 25, 0, Strikes.XBOW_KILL + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher),
 
     // ---- the author's second message of 2026-10-29
     /**
@@ -436,7 +448,7 @@ public enum Move {
 
     /** The finisher: the sword's stab or the axe's chop. */
     public boolean finisher() {
-        return this == FINISHER || this == FINISHER_AXE;
+        return this == FINISHER || this == FINISHER_AXE || this == FINISHER_BOW || this == FINISHER_XBOW;
     }
 
     /**
@@ -472,7 +484,7 @@ public enum Move {
      * sweeping past the eyes): G's turns, the crossbow's slap and its blow onto the spine.
      */
     public boolean spins() {
-        return turning() || this == XBOW_SLAP || this == XBOW_SPINE || this == XBOW_SPIN;
+        return turning() || this == XBOW_SLAP || this == XBOW_SPINE || this == XBOW_SPIN || this == FINISHER_XBOW;
     }
 
     /** On the ledge: hanging, moving along it, climbing onto it or off it, being pulled up (not the friend pulling). */
@@ -579,6 +591,8 @@ public enum Move {
             case SLIDE_SHOT_END -> SLIDE_SHOT_UP;
             case FALL_ROLL -> Fall.STAND;
             case FINISHER -> Strikes.FINISH_OUT;
+            case FINISHER_BOW -> Strikes.BOW_KILL + 4;
+            case FINISHER_XBOW -> Strikes.XBOW_KILL + 5;
             case FINISHER_AXE -> Strikes.CHOP_OUT;
             // the crossbow's blows from where the next one may follow; the hop once the shot is out, the dash once up
             case XBOW_THRUST -> Crossbow.THRUST_CHAIN;

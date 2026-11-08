@@ -200,6 +200,8 @@ public final class MoveServer {
         if (move == Move.SWORD_SPIN && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER && !Strikes.sword(p)) return false;
         if (move == Move.FINISHER_AXE && !Strikes.axe(p)) return false;
+        if ((move == Move.FINISHER_BOW && !Bow.isBow(p.getMainHandItem())) || (move == Move.FINISHER_XBOW && !Crossbow.held(p))) return false;
+        if ((move == Move.FINISHER_BOW || move == Move.FINISHER_XBOW) && !Strikes.rangedFinisher(p)) return false;
         // The Legolas stance: a new one waits out the cooldown from the last one's end (author, 2026-10-31: 10-15 s).
         if (move.legolas() && !s.legolasLive && s.legolasCooldown > (p.level().isClientSide ? 0 : 5)) return false;
         // The bow's G: 10 s after the volley, 40 s after the hail (author, 2026-10-31), the one wait for both.

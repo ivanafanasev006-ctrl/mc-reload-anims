@@ -1,5 +1,8 @@
 package dev.mcreload.moves;
 
+import net.minecraft.world.item.ArrowItem;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -73,6 +76,10 @@ public final class Strikes {
     public static final float CRIT = 1.5f;
     /** Finisher: the blade goes into the belly and kills (0.3 s); it is out (0.6 s), when running on may break off the rest. */
     public static final int FINISH_KILL = 6, FINISH_OUT = 12;
+    /** The bow's finisher: the shove (0.18 s), the arrow (0.6 s); the crossbow's: the arrow (0.6 s). round11.py's keys. */
+    public static final int BOW_SHOVE = 4, BOW_KILL = 12, XBOW_KILL = 12;
+    /** The bow's finisher shoves the mob back this fast (blocks a tick, about 2.2 times that). [default] */
+    static final double BOW_SHOVE_SPEED = 0.32;
     /** The axe's finisher: the axe comes down onto the mob by the neck and kills it (0.58 s: the first
      *  tick after it), and is wrenched out of it (0.9 s), when running on may break off the rest. */
     public static final int CHOP_HIT = 12, CHOP_OUT = 18;
@@ -116,7 +123,7 @@ public final class Strikes {
      * not a boss; a sword or an axe in hand. {@code strict}: the client deciding; the server is looser, for lag.
      */
     public static LivingEntity finisherTarget(Player p, Entity looked, boolean strict) {
-        if (!finisherWeapon(p) || p.isUsingItem()) return null;
+        if (!(finisherWeapon(p) || rangedFinisher(p)) || p.isUsingItem()) return null;
         if (looked instanceof LivingEntity le && finishable(p, le, strict)) return le;
         double range = MovesConfig.finisherRange() + (strict ? 0 : 1.0);
         Vec3 look = flat(p.getViewVector(1f));
@@ -131,6 +138,19 @@ public final class Strikes {
             bestDist = dist;
         }
         return best;
+    }
+
+    /** A bow or a crossbow in hand and an arrow to finish with (author, after 0.9.1: "only when there is at least 1 arrow"). */
+    public static boolean rangedFinisher(Player p) {
+        return (Bow.isBow(p.getMainHandItem()) || Crossbow.held(p)) && Crossbow.arrows(p) > 0;
+    }
+
+    /** The finisher the weapon in hand makes: the sword's stab, the axe's chop, the bow's shot, the crossbow's. */
+    public static Move finisherOf(Player p) {
+        if (axe(p)) return Move.FINISHER_AXE;
+        if (Bow.isBow(p.getMainHandItem())) return Move.FINISHER_BOW;
+        if (Crossbow.held(p)) return Move.FINISHER_XBOW;
+        return Move.FINISHER;
     }
 
     /** Close enough, weak enough, not a boss, not a player. */
@@ -271,6 +291,8 @@ public final class Strikes {
 
     /** The tick a finisher kills on: the sword's stab, the axe's blow. */
     static int killTick(Move move) {
+        if (move == Move.FINISHER_BOW) return BOW_KILL + 1;
+        if (move == Move.FINISHER_XBOW) return XBOW_KILL + 1;
         return move == Move.FINISHER_AXE ? CHOP_HIT : FINISH_KILL;
     }
 
@@ -283,8 +305,19 @@ public final class Strikes {
         int kill = killTick(s.move);
         if (s.moveTick > kill) return;
         Vec3 v = mob.getDeltaMovement();
-        mob.setDeltaMovement(0, Math.min(v.y, 0), 0);
+        boolean bow = s.move == Move.FINISHER_BOW;
+        if (bow && s.moveTick == BOW_SHOVE) {
+            // the bow's finisher: both hands shove it back a block
+            Vec3 away = flat(mob.position().subtract(p.position()));
+            away = away.lengthSqr() < 1.0E-4 ? flat(p.getViewVector(1f)) : away.normalize();
+            mob.setDeltaMovement(away.x * BOW_SHOVE_SPEED, Math.min(v.y, 0), away.z * BOW_SHOVE_SPEED);
+            p.serverLevel().playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.PLAYERS, 0.9f, 1.0f);
+        } else if (!bow || s.moveTick < BOW_SHOVE || s.moveTick > BOW_SHOVE + 3) {
+            mob.setDeltaMovement(0, Math.min(v.y, 0), 0);
+        }
         mob.hurtMarked = true;
+        // the bow's and the crossbow's arrow leaves a tick before the kill (it is seen going in)
+        if ((bow || s.move == Move.FINISHER_XBOW) && s.moveTick == kill - 1) finishingArrow(p, mob, !bow);
         if (mob instanceof Mob m) {
             m.getNavigation().stop();
             m.getLookControl().setLookAt(p, 30f, 30f);
@@ -304,6 +337,30 @@ public final class Strikes {
             p.getMainHandItem().hurtAndBreak(1, p, e -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
             p.setLastHurtMob(mob);
             s.combatTicks = MovesConfig.combatTicks();
+        }
+    }
+
+    /**
+     * The finisher's arrow from the bow or the crossbow in hand, one of the player's (its kind), into the mob's body (the
+     * bow's) or its head (the crossbow's), at point blank.
+     */
+    static void finishingArrow(ServerPlayer p, LivingEntity mob, boolean head) {
+        ItemStack weapon = p.getMainHandItem();
+        ItemStack ammo = p.getProjectile(weapon);
+        boolean creative = p.getAbilities().instabuild;
+        boolean own = !ammo.isEmpty() && ammo.getItem() instanceof ArrowItem;
+        ItemStack kind = own ? ammo : new ItemStack(Items.ARROW);
+        AbstractArrow a = ((ArrowItem) kind.getItem()).createArrow(p.level(), kind, p);
+        Vec3 to = mob.position().add(0, mob.getBbHeight() * (head ? 0.85 : 0.5), 0).subtract(p.getEyePosition());
+        a.setCritArrow(true);
+        if (head) a.setShotFromCrossbow(true);
+        a.shoot(to.x, to.y, to.z, 3.0f, 0f);
+        if (!own || creative) a.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
+        p.level().addFreshEntity(a);
+        p.level().playSound(null, p.getX(), p.getY(), p.getZ(), head ? SoundEvents.CROSSBOW_SHOOT : SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 1f, 1.1f);
+        if (own && !creative) {
+            ammo.shrink(1);
+            if (ammo.isEmpty()) p.getInventory().removeItem(ammo);
         }
     }
 

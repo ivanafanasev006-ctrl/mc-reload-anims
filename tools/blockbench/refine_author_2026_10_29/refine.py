@@ -57,6 +57,7 @@ import round6
 import round7
 import round8
 import round10
+import round11
 import round9
 from kit import L
 
@@ -226,10 +227,10 @@ def main():
     mbow['name'] = 'bow_2026-10-31'
     set_visible(mbow, 'right_item_sword', False)
     set_visible(mbow, 'right_item_bow', True)
-    write_set(mbow, [round8.bow_slide_shot()], DST_BOW, bow=True)
+    write_set(mbow, [round8.bow_slide_shot()] + round11.bow_made(), DST_BOW, bow=True)
 
     # --- the message of 2026-11-08: the crossbow's chain on the left button ---
-    round9.write(round9.made() + round10.made())
+    round9.write(round11.crossbow_all())
 
     # --- the ledge set ---
     lm = copy.deepcopy(src)

@@ -759,8 +759,8 @@ def write(made, dst=DST):
 
 
 def main():
-    import round10     # the crossbow's G, G held and rolls share the file
-    write(made() + round10.made())
+    import round11     # the crossbow's G, G held, rolls (round10) and finisher (round11) share the file
+    write(round11.crossbow_all())
 
 
 if __name__ == '__main__':

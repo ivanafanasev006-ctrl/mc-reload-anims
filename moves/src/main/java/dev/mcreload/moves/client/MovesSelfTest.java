@@ -217,6 +217,8 @@ public final class MovesSelfTest {
         // its second half: G (loaded, then not), G held (the fan), the right button held and R (the rolls)
         crossbowSkills("96l_crossbow_g_fan_rolls", CameraType.THIRD_PERSON_BACK);
         crossbowSkills("96m_crossbow_g_first_person", CameraType.FIRST_PERSON);
+        rangedFinisher("96n_bow_finisher", Items.BOW, CameraType.THIRD_PERSON_BACK);
+        rangedFinisher("96o_crossbow_finisher", Items.CROSSBOW, CameraType.THIRD_PERSON_BACK);
         plungeSplash("99b_plunge_splash");
         // celebrate is Kinetrix's now: its emote (played as the emote menu plays it) and its music, then broken off
         SCENARIOS.add(new Scenario("45_kinetrix_celebrate", 205, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
@@ -667,18 +669,13 @@ public final class MovesSelfTest {
         }, (mc, t) -> {
             camera(mc, camera);
             if (t == 1) Stamina.of(mc.player).dashCooldown = 0;
-            // author, 2026-10-30: the left and the right button held together.
-            // The buttons go down without a click: a real press reaches the moves' tick handler before
-            // vanilla's keys, here it would come after them and vanilla would swing first.
-            mc.options.keyAttack.setDown(t >= 7 && t < 12);
-            if (t == 10) {
+            // author, after 0.9.1: the lunge is G tapped with a sword (it was the left and the right button held together)
+            if (t == 9) {
                 startPos = mc.player.position();
-                mc.options.keyUse.setDown(true);
+                KeyMapping.click(MovesClient.ABILITY.getKey());
             }
-            if (t == 11) {
-                mc.options.keyUse.setDown(false);
-                note("dash: move " + Stamina.of(mc.player).move + ", cooldown " + Stamina.of(mc.player).dashCooldown / 20 + " s");
-            }
+            MovesClient.ABILITY.setDown(t == 9);
+            if (t == 11) note("dash: move " + Stamina.of(mc.player).move + ", cooldown " + Stamina.of(mc.player).dashCooldown / 20 + " s");
             if (t == 22) note(String.format(Locale.ROOT, "dash: went %.2f blocks to the lunge",
                     mc.player.position().subtract(startPos).horizontalDistance()));
             if (t == 24 || t == 46) dummyReport(mc, "dash", t == 46);
@@ -866,7 +863,8 @@ public final class MovesSelfTest {
                 startPos = mc.player.position();
                 KeyMapping.click(MovesClient.ABILITY.getKey());
             }
-            MovesClient.ABILITY.setDown(held && t >= 8 && t < 30);
+            // G held: the turns (author, after 0.9.1: tapped it is the lunge); held 6 ticks, one turn, held on, up to 3
+            MovesClient.ABILITY.setDown(t >= 8 && t < (held ? 30 : 14));
             (held ? mc.options.keyLeft : mc.options.keyUp).setDown(t >= 8 && t < 30);
             if (t == 9) note(name + ": move " + Stamina.of(mc.player).move);
             if (t == 20) note(name + ": at 0.6 s " + Stamina.of(mc.player).move + " tick " + Stamina.of(mc.player).moveTick);
@@ -915,6 +913,26 @@ public final class MovesSelfTest {
             }
         }, new int[]{10, 12, 14, 17, 19, 21, 22, 24, 28, 31, 34, 36, 37, 39, 43, 46, 49, 52, 55, 60},
                 camera != CameraType.FIRST_PERSON));
+    }
+
+    /**
+     * The bow's and the crossbow's finishers (author, after 0.9.1): a weak zombie at point blank, an arrow in the inventory,
+     * the left button: the bow shoves it and shoots it in the body, the crossbow turns and shoots it in the head.
+     */
+    private static void rangedFinisher(String name, net.minecraft.world.item.Item weapon, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 50, sp -> {
+            place(sp, 0, new ItemStack(weapon));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 4));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.0, 3f);    // point blank, as the sword's
+        }, (mc, t) -> {
+            camera(mc, camera);
+            mc.options.keyAttack.setDown(t == 8);
+            if (t == 10) note(name + ": move " + Stamina.of(mc.player).move + ", arrows " + Crossbow.arrows(mc.player));
+            if (t == 40) {
+                note(name + ": arrows after " + Crossbow.arrows(mc.player));
+                dummyReport(mc, name, true);
+            }
+        }, new int[]{11, 13, 17, 20, 22, 26}, true));
     }
 
     /**
