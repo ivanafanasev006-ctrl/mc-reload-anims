@@ -23,6 +23,9 @@ writes tools/blockbench/refined/author_2026-10-29.bbmodel     (hop_on_kick, slid
                                                               edge, the pull-up's knee forward; round7.py)
        tools/blockbench/refined/bow_2026-10-31.bbmodel        (the message of 2026-10-31: the bow's shot out
                                                               of a slide, C + RMB, bow_slide_shot; round8.py)
+       tools/blockbench/refined/crossbow_2026-11-08.bbmodel   (the message of 2026-11-08: the crossbow's chain
+                                                              on LMB, crossbow_*; round9.py, which also runs
+                                                              by itself and writes only this file)
 
 After that video the rolls' blade lies along the forearm (round7.tuck_blade; the rolls of 2026-10-27
 too, refine_author_2026_10_27.py).
@@ -52,6 +55,7 @@ import round5
 import round6
 import round7
 import round8
+import round9
 from kit import L
 
 DST = os.path.join(kit.BB, 'refined', 'author_2026-10-29.bbmodel')
@@ -221,6 +225,9 @@ def main():
     set_visible(mbow, 'right_item_sword', False)
     set_visible(mbow, 'right_item_bow', True)
     write_set(mbow, [round8.bow_slide_shot()], DST_BOW, bow=True)
+
+    # --- the message of 2026-11-08: the crossbow's chain on the left button ---
+    round9.write(round9.made())
 
     # --- the ledge set ---
     lm = copy.deepcopy(src)

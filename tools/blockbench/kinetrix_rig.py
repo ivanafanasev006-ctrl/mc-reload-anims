@@ -413,6 +413,14 @@ BOW_PIECES = [("bow_upper_1", "bow", -1.5, 6.0, 9.2, 1.2), ("bow_upper_2", "bow"
               ("bow_upper_3", "bow", -3.8, 1.0, 3.0, 1.2), ("bow_grip", "handle", -3.9, -2.5, 1.0, 1.6),
               ("bow_lower_1", "bow", -3.4, -5.0, -2.5, 1.2), ("bow_lower_2", "bow", -2.0, -7.5, -5.0, 1.2),
               ("bow_lower_3", "bow", 0.0, -9.2, -7.5, 1.2), ("bow_string", "string", 0.3, -8.0, 8.0, 0.3)]
+# The crossbow's sprite lies across the other diagonal: the stock from the prod at the upper left to the
+# butt at the lower right (sprite-local -x to +x), the prod's limbs out along the diagonal, the string
+# between their tips.
+CROSSBOW_PIECES = [("xbow_stock", "handle", 1.8, -1.1, 1.4, 15.0), ("xbow_prod_1", "bow", -7.0, -2.4, 2.4, 1.6),
+                   ("xbow_prod_2a", "bow", -5.2, 2.4, 4.8, 1.6), ("xbow_prod_2b", "bow", -5.2, -4.8, -2.4, 1.6),
+                   ("xbow_prod_3a", "bow", -3.3, 4.8, 6.8, 1.6), ("xbow_prod_3b", "bow", -3.3, -6.8, -4.8, 1.6),
+                   ("xbow_prod_4a", "bow", -1.6, 6.8, 8.4, 1.4), ("xbow_prod_4b", "bow", -1.6, -8.4, -6.8, 1.4),
+                   ("xbow_string", "string", -0.7, -8.0, 8.0, 0.3)]
 
 
 def sword_cubes(origin, scale):
@@ -421,6 +429,13 @@ def sword_cubes(origin, scale):
 
 def bow_cubes(origin, scale):
     return sprite_cubes(origin, scale, BOW_PIECES)
+
+
+def crossbow_cubes(origin, scale):
+    return sprite_cubes(origin, scale, CROSSBOW_PIECES)
+
+
+ITEM_CUBES = {"sword": sword_cubes, "bow": bow_cubes, "crossbow": crossbow_cubes}
 
 
 # ----------------------------------------------------------------------------------------------
@@ -488,7 +503,7 @@ def build_rig():
         g = {"name": item, "origin": [round(v, 4) for v in origin], "rotation": [round(v, 3) for v in rot],
              "color": 3, "uuid": uid(), "export": False, "mirror_uv": False, "isOpen": False, "locked": False,
              "visibility": visible, "autouv": 0, "children": []}
-        cubes_fn = sword_cubes if spec["shape"] == "sword" else bow_cubes
+        cubes_fn = ITEM_CUBES[spec["shape"]]
         for cname, tex, lo, hi in cubes_fn(origin, fr["scale"]):
             u, v = PROP_COLORS[tex]
             faces = {f: [u, v, u + 4, v + 4] for f in ("north", "south", "east", "west", "up", "down")}
@@ -512,6 +527,8 @@ ITEMS = {
     "right_item_sword": dict(side="right", shape="sword", display=((0, -90, 55), (0, 4, 0.5), 0.85, -45), visible=True),
     "right_item_bow": dict(side="right", shape="bow", display=((-80, 260, -40), (-1, -2, 2.5), 0.9, -45), visible=False),
     "left_item_sword": dict(side="left", shape="sword", display=((0, 90, -55), (0, 4, 0.5), 0.85, -45), visible=False),
+    # item/crossbow.json: the game holds it along the forearm, the prod beyond the fist
+    "right_item_crossbow": dict(side="right", shape="crossbow", display=((-90, 0, -60), (2, 0.1, -3), 0.9, -45), visible=False),
 }
 
 
