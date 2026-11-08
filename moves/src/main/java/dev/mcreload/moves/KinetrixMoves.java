@@ -42,6 +42,7 @@ public final class KinetrixMoves {
         MinecraftForge.EVENT_BUS.register(Plunge.class);
         MinecraftForge.EVENT_BUS.register(Ledge.class);
         MinecraftForge.EVENT_BUS.register(Bow.class);
+        MinecraftForge.EVENT_BUS.register(WaterArrows.class);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, HudConfig.SPEC, MODID + "-client.toml");
             // Only touched on the client, so these classes (and playerAnimator) never load on a server.

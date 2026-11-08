@@ -55,7 +55,7 @@ public final class Crossbow {
     /** From these ticks the next click goes on into the next blow (each followed through); a click before is kept for then. */
     public static final int THRUST_CHAIN = 6, SLAP_CHAIN = 10, SPINE_CHAIN = 14;
     /** The hop and the dash: moving breaks off the rest from here (the shot out, up out of the crouch). */
-    public static final int LEAP_UP = 15, DASH_UP = 10;
+    public static final int LEAP_UP = LEAP_SHOT + 1, DASH_UP = 9;
     /** How far either side of the look each blow finds its mobs (degrees): the push straight, the slap's sweep wide. [default] */
     static final double THRUST_HALF = 40, SLAP_HALF = 80, SPINE_HALF = 50;
     /**
@@ -77,7 +77,7 @@ public final class Crossbow {
 
     // ---- G, G held and the rolls (author, 2026-11-08, the second half; round10.py's keys)
     /** The hop with three arrows: they leave at the top (0.3 s); moving breaks off the rest from VOLLEY_UP (0.7 s). */
-    public static final int VOLLEY_SHOT = 6, VOLLEY_UP = 14;
+    public static final int VOLLEY_SHOT = 6, VOLLEY_UP = 11;
     /** The turn: the crossbow sweeps through every mob about the player (0.25 s), the shove (0.5 s), free from SPIN_UP. */
     public static final int SPIN_SWEEP = 5, SPIN_SHOVE = 10, SPIN_UP = 13;
     /**
@@ -86,7 +86,9 @@ public final class Crossbow {
      */
     public static final int FAN_LOOP_FROM = 6, FAN_LOOP_TO = 16, FAN_SHOT_FROM = 16, FAN_SHOT = 2, FAN_UP = 8;
     /** A roll: the arrow (0.65 s, up on the knee), the next roll from ROLL_NEXT (0.75 s), moving breaks off the rest from ROLL_UP. */
-    public static final int ROLL_SHOT = 13, ROLL_NEXT = 15, ROLL_UP = 16;
+    public static final int ROLL_SHOT = 16, ROLL_NEXT = 19, ROLL_UP = 20;
+    /** The rolls play this fast (author, after 0.9.1: "a little slower"): their ticks above are the animation's slowed so. [default] */
+    public static final float ROLL_SPEED = 0.8f;
     /** The rolls end on the server this many ticks after the last one did, none after it (the client stopped). */
     static final int ROLLS_GAP = 8;
     /** The fan's arrow count the server lets the client be ahead by (ticks: its G reaches it late). */
@@ -294,13 +296,34 @@ public final class Crossbow {
     static void volley(ServerPlayer p) {
         ItemStack crossbow = p.getMainHandItem();
         if (!(crossbow.getItem() instanceof CrossbowItem) || !CrossbowItem.isCharged(crossbow)) return;
-        shoot(p);
-        float spread = MovesConfig.crossbowVolleySpread();
-        for (int side = -1; side <= 1; side += 2) {
-            float yaw = p.getYRot() + side * spread + (p.getRandom().nextFloat() * 2 - 1) * 2f;
-            float pitch = p.getXRot() + (p.getRandom().nextFloat() * 2 - 1) * 1.5f;
-            arrow(p, crossbow, Vec3.directionFromRotation(pitch, yaw), true);
+        ItemStack charged = chargedArrow(crossbow);
+        if (charged == null) {
+            shoot(p);       // a rocket: vanilla's own shot
+            return;
         }
+        // the crossbow's bolt in the middle (picked up again as it was loaded), two free ones beside it; all three hit
+        // through the moment of invulnerability the one before gave the mob (in 0.9.1 two of three bounced off)
+        crossbow.getOrCreateTag().remove("ChargedProjectiles");
+        CrossbowItem.setCharged(crossbow, false);
+        float spread = MovesConfig.crossbowVolleySpread();
+        for (int i = -1; i <= 1; i++) {
+            float yaw = p.getYRot() + i * spread + (i == 0 ? 0f : (p.getRandom().nextFloat() * 2 - 1) * 2f);
+            float pitch = p.getXRot() + (i == 0 ? 0f : (p.getRandom().nextFloat() * 2 - 1) * 1.5f);
+            AbstractArrow a = arrow(p, crossbow, Vec3.directionFromRotation(pitch, yaw), true, i == 0 ? charged : null);
+            if (a != null) a.getPersistentData().putBoolean(Bow.VOLLEY_ARROW, true);
+        }
+        crossbow.hurtAndBreak(1, p, e -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
+        Stamina.of(p).combatTicks = MovesConfig.combatTicks();
+    }
+
+    /** The arrow a loaded crossbow holds (its kind: tipped, spectral), or null (a rocket, or nothing). */
+    private static ItemStack chargedArrow(ItemStack crossbow) {
+        net.minecraft.nbt.CompoundTag tag = crossbow.getTag();
+        if (tag == null || !tag.contains("ChargedProjectiles", 9)) return null;
+        net.minecraft.nbt.ListTag list = tag.getList("ChargedProjectiles", 10);
+        if (list.isEmpty()) return null;
+        ItemStack it = ItemStack.of(list.getCompound(0));
+        return it.getItem() instanceof ArrowItem ? it : null;
     }
 
     /** The turn's sweep: every mob about the player within reach hit and flung away from them. */
@@ -366,11 +389,16 @@ public final class Crossbow {
      * {@code free} (multishot's extras) or in creative, a plain one that cannot be picked up. Null: none to shoot.
      */
     static AbstractArrow arrow(ServerPlayer p, ItemStack crossbow, Vec3 dir, boolean free) {
+        return arrow(p, crossbow, dir, free, null);
+    }
+
+    /** The same; {@code loaded}: the arrow the crossbow held (its kind, picked up again as any arrow). */
+    static AbstractArrow arrow(ServerPlayer p, ItemStack crossbow, Vec3 dir, boolean free, ItemStack loaded) {
         boolean creative = p.getAbilities().instabuild;
         ItemStack ammo = free ? ItemStack.EMPTY : p.getProjectile(crossbow);
         boolean own = !ammo.isEmpty() && ammo.getItem() instanceof ArrowItem && !creative;
         if (!own && !free && !creative) return null;
-        ItemStack kind = own ? ammo : new ItemStack(Items.ARROW);
+        ItemStack kind = loaded != null ? loaded : own ? ammo : new ItemStack(Items.ARROW);
         AbstractArrow a = ((ArrowItem) kind.getItem()).createArrow(p.level(), kind, p);
         a.setCritArrow(true);
         a.setSoundEvent(SoundEvents.CROSSBOW_HIT);
@@ -378,7 +406,7 @@ public final class Crossbow {
         int pierce = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.PIERCING, crossbow);
         if (pierce > 0) a.setPierceLevel((byte) pierce);
         a.shoot(dir.x, dir.y, dir.z, 3.15f, 1f);
-        if (!own) a.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
+        if (!own && (loaded == null || creative)) a.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
         p.level().addFreshEntity(a);
         p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, 1f,
                 1f / (p.getRandom().nextFloat() * 0.5f + 1.8f) + 0.5f);

@@ -112,12 +112,33 @@ def design(name, length, keys):
     return d
 
 
-def arm_to(pose, side, targets, limits=None, reg=(0.01, 0.03, 0.01, 0.01)):
+#: The crossbow's prod is held at this roll about the stock (degrees: the left tip over the right), as in Kinetrix's carry
+#: (22) and aim (16) (author, 2026-11-08, after trying 0.9.1: "the blows go crooked with the hand: the crossbow must
+#: not turn about its axis, it is always in one position in the hand"; in 0.9.1 the arm's turn about its own length
+#: rolled the prod from +40 to -60 degrees within a blow).
+PROD_ROLL = 20.0
+#: How hard the roll is held (a weight against the targets' px).
+PROD_HOLD = 0.6
+
+
+def arm_to(pose, side, targets, limits=None, reg=(0.01, 0.03, 0.01, 0.01), level=True):
     """The arm of `side` solved so its points reach the targets [(point, world xyz, weight)], its
-    designed angles preferred a little (the turn about its own length more). Returns (pose, miss px)."""
+    designed angles preferred a little (the turn about its own length more). The right arm (the crossbow's)
+    keeps the prod at PROD_ROLL unless `level` is False. Returns (pose, miss px: of the targets only)."""
     b = dict(kit.arm_bounds(side))
     b.update(limits or {})
-    q, err, _ = kit.solve(pose, [(n, np.asarray(x, float), w) for n, x, w in targets], kit.arm_vary(side), b, reg=list(reg))
+    tg = [(n, np.asarray(x, float), w) for n, x, w in targets]
+    q, err, _ = kit.solve(pose, tg, kit.arm_vary(side), b, reg=list(reg))
+    if side != 'right' or not level:
+        return q, err
+    # the prod's tips put level about where they are, at the roll: their heights apart as PROD_ROLL says
+    W = kit.fk(q)
+    a, c = kit.pt(W, 'xtip_a'), kit.pt(W, 'xtip_b')
+    mid, half = (a[1] + c[1]) / 2, np.linalg.norm(a - c) / 2 * math.sin(math.radians(PROD_ROLL))
+    q, _, _ = kit.solve(q, tg + [('xtip_a', 1, mid + half, PROD_HOLD), ('xtip_b', 1, mid - half, PROD_HOLD)], kit.arm_vary(side), b,
+                        reg=list(reg))
+    W = kit.fk(q)
+    err = float(np.sqrt(np.mean([np.sum((kit.pt(W, n) - x) ** 2) for n, x, _ in tg])))
     return q, err
 
 
@@ -211,16 +232,27 @@ def mob_design(length, keys):
     return lambda t: kit.design(d, t)
 
 
-def bake(name, length, design_, feet, mob=None, body=None, lift=None, extra=()):
+def level_crossbow(p):
+    """The right arm turned about its length so the crossbow's prod is at PROD_ROLL again, the fist and the
+    crossbow's front where they were (between two keys the arm's angles blend, and its turn with them)."""
+    W = kit.fk(p)
+    q, _ = arm_to(p, 'right', [('rhand', kit.pt(W, 'rhand'), 1.0), ('xfront', kit.pt(W, 'xfront'), 1.0)])
+    return q
+
+
+def bake(name, length, design_, feet, mob=None, body=None, lift=None, extra=(), level=True):
     """The animation: every frame of the design (an animlib design, or the pose as a function of t; body:
-    the whole body's turn at t, overriding the design's), the planted legs solved onto the feet, the
-    lowest point of the legs on the floor (or `lift` px over it), the mob beside it."""
+    the whole body's turn at t, overriding the design's), the crossbow's prod level in every frame (unless
+    `level` is False: a roll head over heels), the planted legs solved onto the feet, the lowest point of
+    the legs on the floor (or `lift` px over it), the mob beside it."""
     a = L.Anim(name, length, 'once')
     prev, worst, last, last2 = {}, 0.0, None, None
     for t in sorted(set(kit.frames(0, length)) | set(extra)):
         p = design_(t) if callable(design_) else kit.design(design_, t)
         if body is not None:
             p['body'] = tuple(body(t))
+        if level:
+            p = level_crossbow(p)
         p, miss = legs_on(p, feet, t, prev)
         worst = max(worst, miss)
         p = kit.grounded(p, clearance=lift(t) if lift else 0.0, bones=LEGS)

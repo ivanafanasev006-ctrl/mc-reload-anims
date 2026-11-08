@@ -161,11 +161,8 @@ public final class Bow {
 
     // ------------------------------------------------------------------ the volley, the hail, the marked
 
-    /**
-     * Ticks of drawing the server lets the full draw go short: the server hears of the draw that much
-     * after the client (ping, a busy tick).
-     */
-    private static final int SERVER_DRAW_SLACK = 8;
+    /** The client's word that the release is the volley at the marked's holds this many ticks (it comes just before it). */
+    private static final int MARKED_RELEASE_TICKS = 5;
 
     /** G with a bow can be made: a bow in the main hand and something to shoot (drawn or not: the move takes the bow over). */
     public static boolean volleyReady(Player p) {
@@ -291,7 +288,13 @@ public final class Bow {
             s.shotDraw = p.getTicksUsingItem();
             return;
         }
-        if (p.getTicksUsingItem() >= 20 - SERVER_DRAW_SLACK && !s.marks.isEmpty() && Marks.volleyReady(p, s)) event.setCanceled(true);
+        // the volley at the marked only when the client said so just before (author, after 0.9.1: a bow let go short of the
+        // full draw with marked mobs about, or in water, must shoot as ever; it was this end's guess by the draw, and the
+        // arrow was lost when it guessed the volley and the client did not make it)
+        if (p.tickCount - s.markedReleaseAt <= MARKED_RELEASE_TICKS) {
+            s.markedReleaseAt = -1000;
+            event.setCanceled(true);
+        }
     }
 
     /** An arrow of a volley hits through the moment of invulnerability the hit before gave the mob (it would bounce off). */

@@ -821,6 +821,9 @@ public final class MovesClient {
         }
     }
 
+    /** The keys walk this fast in the crossbow's blows on LMB. [default] */
+    private static final float XBOW_WALK = 0.6f;
+
     /** During a move the keys do not walk (the move does); a jump still breaks off a slide. */
     private static void movementInput(MovementInputUpdateEvent event) {
         BowStance.movementInput(event.getEntity(), event.getInput());
@@ -829,6 +832,13 @@ public final class MovesClient {
         // On the knee in the shot out of a slide: the keys creep, very slowly (author, 2026-10-31)
         if (s.move == Move.SLIDE_SHOT && s.moveTick >= Move.SLIDE_SHOT_SPIN) {
             BowStance.creep(event.getInput());
+            return;
+        }
+        // The crossbow's blows on LMB: the keys walk, a little slower (author, after 0.9.1: "when you attack you are stunned
+        // in place, not free to move"); walking on past a blow's follow-through ends its animation, as ever
+        if (s.move == Move.XBOW_THRUST || s.move == Move.XBOW_SLAP || s.move == Move.XBOW_SPINE) {
+            event.getInput().forwardImpulse *= XBOW_WALK;
+            event.getInput().leftImpulse *= XBOW_WALK;
             return;
         }
         // Loading the fan of arrows: the keys creep, as on the knee

@@ -186,12 +186,22 @@ public final class MovesNet {
 
     /** Client -> server: the mark on this mob made or taken off (Marks.toggle); -1: all of them taken off. */
     public record Mark(int entity) {
+        /**
+         * Not a mob: the bow about to be let go (the client, just before vanilla's release) is the volley at the marked's:
+         * the release looses no arrow of the bow's own (Bow.released).
+         */
+        public static final int RELEASE = -2;
+
         static void write(Mark m, FriendlyByteBuf b) { b.writeVarInt(m.entity + 1); }
         static Mark read(FriendlyByteBuf b) { return new Mark(b.readVarInt() - 1); }
         static void handle(Mark m, Supplier<NetworkEvent.Context> ctx) {
             ServerPlayer p = ctx.get().getSender();
             if (p != null) ctx.get().enqueueWork(() -> {
                 dev.mcreload.moves.Stamina s = dev.mcreload.moves.Stamina.of(p);
+                if (m.entity == RELEASE) {
+                    s.markedReleaseAt = p.tickCount;
+                    return;
+                }
                 if (m.entity < 0) {
                     s.marks.clear();
                     return;

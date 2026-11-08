@@ -970,6 +970,41 @@ public final class MovesGameTests {
         }).run(over + 1);
     }
 
+    /**
+     * A player's arrow in water keeps most of its speed (author, after 0.9.1: "in water the bow is useless"): shot along
+     * a channel of water it goes on far past a skeleton's (vanilla's: 3 blocks a tick slowed to a crawl within 4 ticks).
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 100)
+    public static void arrowsInWater(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        net.minecraft.world.entity.projectile.Arrow[] a = new net.minecraft.world.entity.projectile.Arrow[2];
+        net.minecraft.world.phys.Vec3[] from = new net.minecraft.world.phys.Vec3[1];
+        t.at(2, () -> {
+            for (int x = 0; x < 2; x++) for (int z = 0; z < 8; z++) for (int y = 2; y < 4; y++)
+                h.setBlock(new net.minecraft.core.BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.WATER);
+            for (int i = 0; i < 2; i++) {
+                // (setOwner(null) leaves the owner: the other one is made with none)
+                a[i] = i == 0 ? new net.minecraft.world.entity.projectile.Arrow(h.getLevel(), p)
+                        : new net.minecraft.world.entity.projectile.Arrow(EntityType.ARROW, h.getLevel());
+                net.minecraft.world.phys.Vec3 at = h.absoluteVec(new net.minecraft.world.phys.Vec3(i + 0.5, 2.5, 0.5));
+                a[i].moveTo(at.x, at.y, at.z, 0f, 0f);
+                a[i].shoot(0, 0, 1, 3.0f, 0f);
+                a[i].setNoGravity(true);
+                h.getLevel().addFreshEntity(a[i]);
+            }
+            from[0] = a[0].position();
+        });
+        t.at(4, () -> t.check(a[1].isInWater() && a[0].isInWater(), "the arrows not in the water: " + a[1].position() + " "
+                + h.getLevel().getBlockState(a[1].blockPosition()) + " " + h.relativeVec(a[1].position())));
+        t.at(10, () -> {
+            double ours = a[0].position().z - from[0].z, vanilla = a[1].position().z - from[0].z;
+            t.check(ours > vanilla + 5.0, "the player's arrow in water went " + ours + ", a skeleton's " + vanilla);
+            a[0].discard();
+            a[1].discard();
+        }).run(11);
+    }
+
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
     private static void blow(Script t, float lost, float damage, String what) {
         t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);

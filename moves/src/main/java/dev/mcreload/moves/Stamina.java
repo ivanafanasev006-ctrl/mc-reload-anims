@@ -95,6 +95,8 @@ public final class Stamina {
     public int bowCooldown;
     /** Ticks before the next volley at the marked (both ends, as the dash's). */
     public int markedCooldown;
+    /** When the client said its next release of the bow is the volley at the marked's (server; Bow.released). */
+    public int markedReleaseAt = -1000;
     /** The volley at the marked (server): the mobs shot at in it so far, and whether the step going on has shot its arrow. */
     public final java.util.Set<Integer> markedShot = new java.util.HashSet<>();
     public boolean stepShot;

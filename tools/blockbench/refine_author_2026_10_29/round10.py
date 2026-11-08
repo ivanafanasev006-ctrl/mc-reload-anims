@@ -304,7 +304,7 @@ def crossbow_roll(side):
         return q
 
     name = 'crossbow_roll_' + side
-    a = bake(name, RL_LEN, pose_at, Feet().designed(0.0, RL_KNEEL), extra=(RL_SHOT,))
+    a = bake(name, RL_LEN, pose_at, Feet().designed(0.0, RL_KNEEL), extra=(RL_SHOT,), level=False)
     a.errors = (e1, e2)
     return a
 

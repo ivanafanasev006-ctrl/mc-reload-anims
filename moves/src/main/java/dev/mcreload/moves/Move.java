@@ -239,11 +239,11 @@ public enum Move {
      * LMB 4, loaded: the hop back (about 2 blocks, 0.1-0.4 s, untouchable off the floor, as a side dodge) into a
      * crouch, the shot at 0.55 s (LEAP_SHOT), up (1.15 s). [default] distance
      */
-    XBOW_SHOT("crossbow_leap_shot", 1f, 26, 2, 7, -1, -1, Side.BACK, MovesConfig::costCrossbowHop,
-            0.42f, 0.42f, 0.40f, 0.36f, 0.28f, 0.16f),
+    XBOW_SHOT("crossbow_leap_shot", 1f, 26, 2, 9, -1, -1, Side.BACK, MovesConfig::costCrossbowHop,
+            0.62f, 0.62f, 0.58f, 0.52f, 0.44f, 0.34f, 0.24f, 0.14f),
     /** LMB 4, not loaded: the dash back, low along the floor (about 2.7 blocks, 0.1-0.45 s, untouchable meanwhile), up (0.72 s). [default] distance */
-    XBOW_DASH("crossbow_dash_back", 1f, 17, 2, 8, -1, -1, Side.BACK, MovesConfig::costCrossbowHop,
-            0.62f, 0.56f, 0.48f, 0.40f, 0.30f, 0.20f, 0.10f),
+    XBOW_DASH("crossbow_dash_back", 1f, 17, 2, 9, -1, -1, Side.BACK, MovesConfig::costCrossbowHop,
+            0.70f, 0.66f, 0.60f, 0.52f, 0.42f, 0.32f, 0.20f, 0.10f),
 
     // ---- the crossbow's G and the rolls (author, 2026-11-08, the second half; Crossbow): their animations from
     // tools/blockbench/refine_author_2026_10_29/round10.py, every number a [default] in the server config
@@ -251,8 +251,8 @@ public enum Move {
      * G tapped, loaded: the hop back (about 2.6 blocks, untouchable off the floor) and three arrows spread at its top
      * at 0.3 s (Crossbow.VOLLEY_SHOT), down into a crouch, up (1.05 s).
      */
-    XBOW_VOLLEY("crossbow_hop_volley", 1f, 24, 2, 9, -1, -1, Side.BACK, MovesConfig::costCrossbowVolley,
-            0.46f, 0.46f, 0.44f, 0.40f, 0.34f, 0.27f, 0.19f, 0.10f),
+    XBOW_VOLLEY("crossbow_hop_volley", 1f, 24, 2, 10, -1, -1, Side.BACK, MovesConfig::costCrossbowVolley,
+            0.62f, 0.62f, 0.58f, 0.52f, 0.44f, 0.34f, 0.24f, 0.14f),
     /**
      * G tapped, not loaded: a whole turn clockwise with the crossbow out at arm's length, every mob about the player
      * hit and flung away at 0.25 s (Crossbow.SPIN_SWEEP), then a shove forward with both hands at 0.5 s
@@ -268,17 +268,18 @@ public enum Move {
     XBOW_FAN_SHOT("crossbow_fan", 1f, 17, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /**
      * The rolls (the right button held, R; it ends when the button is let go or the crossbow put away): a roll the
-     * way the keys point (back with none; about 2.5 blocks, untouchable and low in it), up on one knee, an arrow
-     * along the look at 0.65 s (Crossbow.ROLL_SHOT); the next roll from 0.75 s (ROLL_NEXT).
+     * way the keys point (back with none; about 2.4 blocks, untouchable and low in it), up on one knee, an arrow
+     * along the look (Crossbow.ROLL_SHOT); the next roll once it is out (ROLL_NEXT). Played at Crossbow.ROLL_SPEED
+     * (author, after 0.9.1: "a little slower, he rolls but not super fast"): its ticks are the animation's slowed.
      */
-    XBOW_ROLL_BACK("crossbow_roll_back", 1f, 24, 2, 9, 2, 10, Side.BACK, MovesConfig::costCrossbowRoll,
-            0.42f, 0.42f, 0.40f, 0.36f, 0.31f, 0.25f, 0.19f, 0.12f, 0.06f),
-    XBOW_ROLL_FRONT("crossbow_roll_front", 1f, 24, 2, 9, 2, 10, Side.FRONT, MovesConfig::costCrossbowRoll,
-            0.42f, 0.42f, 0.40f, 0.36f, 0.31f, 0.25f, 0.19f, 0.12f, 0.06f),
-    XBOW_ROLL_LEFT("crossbow_roll_left", 1f, 24, 2, 9, 2, 10, Side.LEFT, MovesConfig::costCrossbowRoll,
-            0.42f, 0.42f, 0.40f, 0.36f, 0.31f, 0.25f, 0.19f, 0.12f, 0.06f),
-    XBOW_ROLL_RIGHT("crossbow_roll_right", 1f, 24, 2, 9, 2, 10, Side.RIGHT, MovesConfig::costCrossbowRoll,
-            0.42f, 0.42f, 0.40f, 0.36f, 0.31f, 0.25f, 0.19f, 0.12f, 0.06f),
+    XBOW_ROLL_BACK("crossbow_roll_back", Crossbow.ROLL_SPEED, 29, 2, 11, 2, 12, Side.BACK, MovesConfig::costCrossbowRoll,
+            0.34f, 0.34f, 0.32f, 0.30f, 0.27f, 0.23f, 0.19f, 0.15f, 0.11f, 0.07f, 0.04f),
+    XBOW_ROLL_FRONT("crossbow_roll_front", Crossbow.ROLL_SPEED, 29, 2, 11, 2, 12, Side.FRONT, MovesConfig::costCrossbowRoll,
+            0.34f, 0.34f, 0.32f, 0.30f, 0.27f, 0.23f, 0.19f, 0.15f, 0.11f, 0.07f, 0.04f),
+    XBOW_ROLL_LEFT("crossbow_roll_left", Crossbow.ROLL_SPEED, 29, 2, 11, 2, 12, Side.LEFT, MovesConfig::costCrossbowRoll,
+            0.34f, 0.34f, 0.32f, 0.30f, 0.27f, 0.23f, 0.19f, 0.15f, 0.11f, 0.07f, 0.04f),
+    XBOW_ROLL_RIGHT("crossbow_roll_right", Crossbow.ROLL_SPEED, 29, 2, 11, 2, 12, Side.RIGHT, MovesConfig::costCrossbowRoll,
+            0.34f, 0.34f, 0.32f, 0.30f, 0.27f, 0.23f, 0.19f, 0.15f, 0.11f, 0.07f, 0.04f),
 
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */

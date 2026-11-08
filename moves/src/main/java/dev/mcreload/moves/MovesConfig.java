@@ -28,7 +28,7 @@ public final class MovesConfig {
             VAULT_MIN_WIDTH, VAULT_MIN_HEIGHT, VAULT_MAX_HEIGHT, VAULT_SHOVE, DASH_CRIT, FINISH_HEALTH, FINISH_RANGE, FINISH_MAX_HEALTH;
     private static final ForgeConfigSpec.IntValue DASH_COOLDOWN, SLIDE_ATTACK_COOLDOWN;
     private static final ForgeConfigSpec.DoubleValue DASH_WIDTH, SLIDE_ATTACK_CRIT, SLIDE_ATTACK_REACH, KICK_DAMAGE, KICK_STRENGTH,
-            FALL_CUT;
+            FALL_CUT, WATER_ARROWS;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
     private static final ForgeConfigSpec.DoubleValue LEAP_REACH, LEAP_UP, LEAP_DOWN;
     private static final ForgeConfigSpec.DoubleValue FAST_RUN_SPEED, FAST_RUN_COST, PLUNGE_CUT, PLUNGE_FROM, WHIRL_DAMAGE, WHIRL_REACH,
@@ -373,6 +373,9 @@ public final class MovesConfig {
                 .defineInRange("fanMax", 8, 1, 32);
         XBOW_FAN_EVERY = b.comment("The fan of arrows: ticks to load each arrow while G is held (author: about 0.5 s, 10 ticks).")
                 .defineInRange("fanEveryTicks", 10, 1, 200);
+        WATER_ARROWS = b.comment("Players' arrows (a bow's, a crossbow's) in water keep this much of their speed a tick (vanilla: 0.6, a full",
+                        "draw crawls after 4 ticks; a trident 0.99). Author, after 0.9.1: \"in water the bow is useless\". [default]")
+                .defineInRange("waterArrowInertia", 0.9, 0.6, 0.99);
         XBOW_FAN_SPREAD = b.comment("The fan of arrows: how far its arrows scatter about the look, degrees to each side (a shotgun). [default]")
                 .defineInRange("fanSpread", 12.0, 0.0, 45.0);
         b.pop();
@@ -498,6 +501,7 @@ public final class MovesConfig {
     public static int crossbowFanMax() { return get(XBOW_FAN_MAX, 8); }
     public static int crossbowFanEvery() { return get(XBOW_FAN_EVERY, 10); }
     public static float crossbowFanSpread() { return f(XBOW_FAN_SPREAD, 12.0); }
+    public static float waterArrowInertia() { return f(WATER_ARROWS, 0.9); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

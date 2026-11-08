@@ -93,6 +93,7 @@ public final class MovesSelfTest {
 
     public static void init() {
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onTick);
+        MinecraftForge.EVENT_BUS.addListener(net.minecraftforge.eventbus.api.EventPriority.HIGHEST, MovesSelfTest::beforeTick);
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onGui);
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onScreen);
         if (Boolean.getBoolean("kinetrix_moves.selftest.probe")) MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::probe);
@@ -436,7 +437,7 @@ public final class MovesSelfTest {
                         dev.mcreload.moves.Marks.inSight(p, Stamina.of(p)).size(), p.getTicksUsingItem()));
                 arrowsWere = p.getInventory().countItem(Items.ARROW);
             }
-            if (t == 30) mc.options.keyUse.setDown(false);
+            if (t == 29) BEFORE.add(() -> mc.options.keyUse.setDown(false));     // let go between two ticks, as the hand does
             if (t == 32) note("marked volley: " + Stamina.of(p).move + ", the volley's wait " + Stamina.of(p).markedCooldown / 20 + " s");
             if (t >= 30 && t <= 50) {
                 Stamina st = Stamina.of(p);
@@ -454,6 +455,76 @@ public final class MovesSelfTest {
                 dummyReport(mc, "marked volley", true);
             }
         }, new int[]{20, 26, 31, 33, 35, 37, 39, 41, 44, 60}, true));
+
+        // ---- a marked mob about (author, after 0.9.1): the bow let go short of the full draw shoots as ever; at the full
+        // draw the volley at the marked; in water a plain arrow again (no volley there), which goes on through the water
+        SCENARIOS.add(new Scenario("86b_bow_marks_short_draw_water", 175, sp -> {
+            place(sp, 0, new ItemStack(Items.BOW));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 20));
+            Stamina.of(sp).markedCooldown = 0;
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 0, 9, 40f);
+            // the pillar of 86 (the zombie behind it) would stand in between
+            for (int y = Y + 1; y <= Y + 3; y++) sp.serverLevel().setBlock(BlockPos.containing(sp.getX(), y, sp.getZ() + 8), Blocks.AIR.defaultBlockState(), 2);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            LocalPlayer p = mc.player;
+            Stamina st = Stamina.of(p);
+            List<net.minecraft.world.entity.Entity> mobs = dummies(mc);
+            if (t == 1) {
+                // the scenarios before may have left marks and the volley's wait
+                st.marks.clear();
+                dev.mcreload.moves.net.MovesNet.CHANNEL.sendToServer(new dev.mcreload.moves.net.MovesNet.Mark(-1));
+                st.markedCooldown = 0;
+            }
+            // marked once the client has this scenario's zombie, 9 blocks in front (the last scenario's may still be about)
+            if (t == 4) {
+                net.minecraft.world.phys.Vec3 at = p.position().add(0, 0, 9);
+                mobs.stream().filter(e -> e.isAlive() && e.position().distanceTo(at) < 1.5).findFirst().ifPresent(e -> {
+                    dev.mcreload.moves.Marks.toggle(p, st, e);
+                    dev.mcreload.moves.net.MovesNet.CHANNEL.sendToServer(new dev.mcreload.moves.net.MovesNet.Mark(e.getId()));
+                });
+                arrowsWere = p.getInventory().countItem(Items.ARROW);
+            }
+            if (t == 95) {
+                // water round the player, two deep
+                IntegratedServer srv = mc.getSingleplayerServer();
+                BlockPos at = p.blockPosition();
+                srv.execute(() -> {
+                    for (int x = -2; x <= 2; x++) for (int z = -2; z <= 12; z++) for (int y = 0; y < 2; y++)
+                        srv.overworld().setBlock(at.offset(x, y, z), Blocks.WATER.defaultBlockState(), 2);
+                });
+            }
+            // three draws: short (12 ticks), full (26), full in water (26)
+            int[][] draws = {{6, 18}, {35, 61}, {110, 136}};
+            for (int[] d : draws) {
+                if (t == d[0]) {
+                    mc.options.keyUse.setDown(true);
+                    KeyMapping.click(mc.options.keyUse.getKey());
+                }
+                // let go between two ticks, as the hand does: the mod sees it before vanilla lets go of the bow
+                if (t == d[1] - 1) BEFORE.add(() -> mc.options.keyUse.setDown(false));
+                if (t == d[1] + 4) {
+                    note(String.format(Locale.ROOT, "86b: let go after %d ticks%s: %d arrows used so far, move %s, marks %d", d[1] - d[0],
+                            p.isInWater() ? " in water" : "", arrowsWere - p.getInventory().countItem(Items.ARROW), st.move, st.marks.size()));
+                }
+            }
+            if (t == 150) {
+                net.minecraft.world.entity.projectile.AbstractArrow far = null;
+                for (var e : p.level().getEntitiesOfClass(net.minecraft.world.entity.projectile.AbstractArrow.class, p.getBoundingBox().inflate(30))) {
+                    if (far == null || e.distanceTo(p) > far.distanceTo(p)) far = e;
+                }
+                note(String.format(Locale.ROOT, "86b: the farthest arrow %.1f blocks off", far == null ? -1f : far.distanceTo(p)));
+                dummyReport(mc, "86b", true);
+            }
+            if (t == 160) {
+                IntegratedServer srv = mc.getSingleplayerServer();
+                BlockPos at = p.blockPosition();
+                srv.execute(() -> {
+                    for (int x = -3; x <= 3; x++) for (int z = -3; z <= 13; z++) for (int y = 0; y < 2; y++)
+                        srv.overworld().setBlock(at.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+                });
+            }
+        }, new int[]{22, 65, 140}, true));
 
         // ---- G at two marked mobs: the volley's arrows at them in turn, the player turned to each
         SCENARIOS.add(new Scenario("87_bow_g_marked", 70, sp -> {
@@ -1668,6 +1739,16 @@ public final class MovesSelfTest {
     }
 
     // ------------------------------------------------------------------ the run
+
+    /** Key changes made before the mod's own tick handler (as a real key let go between two ticks is), once. */
+    private static final List<Runnable> BEFORE = new ArrayList<>();
+
+    private static void beforeTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.START || BEFORE.isEmpty()) return;
+        List<Runnable> now = new ArrayList<>(BEFORE);
+        BEFORE.clear();
+        now.forEach(Runnable::run);
+    }
 
     private static void onTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END && phase == Phase.RUNNING && Boolean.getBoolean("kinetrix_moves.selftest.probe")) probeTick();

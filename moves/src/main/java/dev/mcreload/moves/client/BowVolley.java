@@ -45,6 +45,9 @@ public final class BowVolley {
     private static final Move[] ROUND = {Move.MARKED_SPIN_LEFT, Move.MARKED_CROUCH, Move.MARKED_SPIN_RIGHT, Move.MARKED_STAND,
             Move.MARKED_SPIN_LEFT, Move.MARKED_KNEEL, Move.MARKED_SPIN_RIGHT, Move.MARKED_CROUCH};
 
+    /** The server was told this tick that the bow's release coming is the volley at the marked's. */
+    private static boolean releaseSent;
+
     /** Ticks G has been down since it was pressed with a bow (0: not waiting). */
     private static int gDown;
     /** The volley at the marked going on: the mobs still to shoot at, the step it is at, the mob of the step. */
@@ -74,6 +77,13 @@ public final class BowVolley {
         if (!bow) {
             reset();
             return false;
+        }
+        // ---- the right button let go at the full draw with marked mobs in sight and the volley ready (vanilla lets go of
+        // the bow after this tick's handler): the server is told first, so the release looses no arrow of its own there
+        releaseSent = false;
+        if (p.isUsingItem() && Bow.isBow(p.getUseItem()) && !MovesClient.held(mc, mc.options.keyUse) && markedRelease(p, s)) {
+            MovesNet.CHANNEL.sendToServer(new MovesNet.Mark(MovesNet.Mark.RELEASE));
+            releaseSent = true;
         }
         // ---- G: tapped, the volley; held, the hail
         if (abilityPressed && s.move == null && gDown == 0 && HudConfig.Moves.VOLLEY.on() && Bow.volleyReady(p)
@@ -165,12 +175,25 @@ public final class BowVolley {
             event.setCanceled(true);
             return;
         }
-        if (queue != null || !HudConfig.Moves.MARKS.on()) return;
-        if (p.getTicksUsingItem() < 20 || (s.move != null && !s.move.drawnBow()) || !Marks.volleyReady(p, s)) return;
+        // the volley at the marked only when the server was told just before (markedRelease): else vanilla's own arrow,
+        // whatever the draw, the marks or the water
+        if (!releaseSent) return;
+        releaseSent = false;
+        if (queue != null) return;
         event.setCanceled(true);
         queue = new ArrayList<>();
         for (LivingEntity e : Marks.inSight(p, s)) queue.add(e.getId());
         step = 0;
+    }
+
+    /**
+     * Letting go of the bow now makes the volley at the marked: the full draw, marked mobs in sight, its wait over, its
+     * first step allowed (on the ground, not in water: author, after 0.9.1, "in water the bow is useless now").
+     */
+    private static boolean markedRelease(LocalPlayer p, Stamina s) {
+        if (queue != null || !HudConfig.Moves.MARKS.on() || p.getTicksUsingItem() < 20) return false;
+        if (s.move != null && !s.move.drawnBow()) return false;
+        return Marks.volleyReady(p, s) && dev.mcreload.moves.MoveServer.allowed(p, s, ROUND[0]);
     }
 
     /** The next step of the volley at the marked: the next mob still there and in sight, or the end. */
