@@ -1,0 +1,15 @@
+Archive:  mc/resourcepacks/FreshMoves.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  2025-01-19 23:40   assets/
+        0  2025-01-19 23:40   assets/minecraft/
+        0  2025-01-19 23:40   assets/minecraft/optifine/
+        0  2025-01-19 23:40   assets/minecraft/optifine/cem/
+     1766  2025-01-19 21:15   assets/minecraft/optifine/cem/elytra.jem
+    17155  2025-01-19 20:14   assets/minecraft/optifine/cem/player.jem
+      673  2025-01-03 21:00   assets/minecraft/optifine/cem/player_cape.jem
+    17415  2025-01-19 20:38   assets/minecraft/optifine/cem/player_slim.jem
+      178  2025-01-19 23:48   pack.mcmeta
+   242801  2024-04-23 10:12   pack.png
+---------                     -------
+   279988                     10 files
