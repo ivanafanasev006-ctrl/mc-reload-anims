@@ -217,6 +217,8 @@ public final class MovesSelfTest {
         // its second half: G (loaded, then not), G held (the fan), the right button held and R (the rolls)
         crossbowSkills("96l_crossbow_g_fan_rolls", CameraType.THIRD_PERSON_BACK);
         crossbowSkills("96m_crossbow_g_first_person", CameraType.FIRST_PERSON);
+        throwPull("97b_throw_sword", Items.IRON_SWORD);
+        throwPull("97c_throw_axe", Items.IRON_AXE);
         rangedFinisher("96n_bow_finisher", Items.BOW, CameraType.THIRD_PERSON_BACK);
         rangedFinisher("96o_crossbow_finisher", Items.CROSSBOW, CameraType.THIRD_PERSON_BACK);
         plungeSplash("99b_plunge_splash");
@@ -913,6 +915,60 @@ public final class MovesSelfTest {
             }
         }, new int[]{10, 12, 14, 17, 19, 21, 22, 24, 28, 31, 34, 36, 37, 39, 43, 46, 49, 52, 55, 60},
                 camera != CameraType.FIRST_PERSON));
+    }
+
+    /**
+     * The throw (author, after 0.9.1): the left and the right button held (the aim), the left let go (the throw): the
+     * weapon flies, drawn as itself, and sticks in the zombie 4 blocks off; up close, the left button pulls it out, and the
+     * zombie, weak by then, is finished right after (the sword's stab, the axe's chop).
+     */
+    private static void throwPull(String name, net.minecraft.world.item.Item weapon) {
+        SCENARIOS.add(new Scenario(name, 90, sp -> {
+            place(sp, 0, new ItemStack(weapon));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 4.0, 20f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            LocalPlayer p = mc.player;
+            Stamina st = Stamina.of(p);
+            // both buttons held (kept down every tick, as the game lets go of keys set once), the left let go first
+            if (t < 38) {
+                mc.options.keyUse.setDown(t >= 6 && t < 23);
+                mc.options.keyAttack.setDown(t >= 6 && t < 19);
+            }
+            if (t == 12 || t == 21) note(name + " t=" + t + ": " + st.move + ", in hand " + p.getMainHandItem().getItem());
+            if (t == 31) {
+                // a look from the side at the weapon in the zombie
+                net.minecraft.world.entity.Entity mob = nearestDummy(mc);
+                IntegratedServer srv = mc.getSingleplayerServer();
+                java.util.UUID id = p.getUUID();
+                if (mob != null) {
+                    double mx = mob.getX(), my = mob.getY(), mz = mob.getZ();
+                    srv.execute(() -> srv.getPlayerList().getPlayer(id).teleportTo(srv.overworld(), mx + 3.2, my, mz, 90f, 15f));
+                }
+            }
+            if (t == 38) {
+                net.minecraft.world.entity.Entity mob = nearestDummy(mc);
+                note(String.format(Locale.ROOT, "%s: the mob's health %.1f, weapon stuck in it %s", name,
+                        mob instanceof net.minecraft.world.entity.LivingEntity le ? le.getHealth() : -1f,
+                        mob != null && ThrownClient.pullable(p, mob) >= 0 ? "no (too far)" : "-"));
+                // up to it, weak: the pull, then the finisher
+                IntegratedServer srv = mc.getSingleplayerServer();
+                java.util.UUID id = p.getUUID();
+                if (mob != null) {
+                    int mobId = mob.getId();
+                    srv.execute(() -> {
+                        ServerPlayer sp = srv.getPlayerList().getPlayer(id);
+                        net.minecraft.world.entity.Entity m = sp.level().getEntity(mobId);
+                        if (m instanceof net.minecraft.world.entity.LivingEntity le) le.setHealth(4f);
+                        if (m != null) sp.teleportTo(sp.serverLevel(), m.getX(), m.getY(), m.getZ() - 1.3, 0f, 10f);
+                    });
+                }
+            }
+            if (t == 44) note(name + ": weapon to pull " + ThrownClient.pullable(p, nearestDummy(mc)));
+            if (t >= 38) mc.options.keyAttack.setDown(t == 46);
+            if (t == 48 || t == 54 || t == 60) note(name + " t=" + t + ": " + st.move + " tick " + st.moveTick + ", in hand " + p.getMainHandItem().getItem());
+            if (t == 80) dummyReport(mc, name, true);
+        }, new int[]{12, 21, 23, 25, 36, 44, 50, 56, 62}, true));
     }
 
     /**

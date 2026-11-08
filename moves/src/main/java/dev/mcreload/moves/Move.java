@@ -295,6 +295,14 @@ public enum Move {
     XBOW_ROLL_RIGHT("crossbow_roll_right", Crossbow.ROLL_SPEED, 29, 2, 11, 2, 12, Side.RIGHT, MovesConfig::costCrossbowRoll,
             0.34f, 0.34f, 0.32f, 0.30f, 0.27f, 0.23f, 0.19f, 0.15f, 0.11f, 0.07f, 0.04f),
 
+    // ---- the sword and the axe thrown (author, after 0.9.1; Thrown): weapon_throw_aim, weapon_throw, weapon_pull (round12.py)
+    /** The left and the right button held with a sword or an axe: the weapon drawn back over the shoulder, held while they are. */
+    THROW_AIM("weapon_throw_aim", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** The left button let go: the throw over the top, the weapon gone at 0.1 s (Thrown.THROW_RELEASE). */
+    THROW("weapon_throw", 1f, 16, -1, -1, -1, -1, Side.FRONT, MovesConfig::costThrow),
+    /** The left or the right button at point blank to a mob with the player's weapon in it: pulled out at 0.3 s (Thrown.PULL_TICK). */
+    WEAPON_PULL("weapon_pull", 1f, 17, -1, -1, -1, -1, Side.FRONT, () -> 0),
+
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
     LEDGE_HANG("ledge_hang", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeGrab),
@@ -443,7 +451,7 @@ public enum Move {
 
     /** A move made at someone (the vault, the kick, the finisher, a friend's hand): the client names them, the server checks them. */
     public boolean targeted() {
-        return this == HOP || this == KICK || this == ROLL_KICK || finisher() || this == LEDGE_HELP;
+        return this == HOP || this == KICK || this == ROLL_KICK || finisher() || this == LEDGE_HELP || this == WEAPON_PULL;
     }
 
     /** The finisher: the sword's stab or the axe's chop. */
@@ -456,7 +464,12 @@ public enum Move {
      * nothing of vanilla's (no swing, no block dug, the crossbow not loaded mid-blow).
      */
     public boolean strike() {
-        return this == DASH || finisher() || this == SLIDE_ATTACK || turning() || crossbow() || crossbowSkill();
+        return this == DASH || finisher() || this == SLIDE_ATTACK || turning() || crossbow() || crossbowSkill() || thrown();
+    }
+
+    /** The throw (its aim, the throw itself) and the pull. */
+    public boolean thrown() {
+        return this == THROW_AIM || this == THROW || this == WEAPON_PULL;
     }
 
     /** G's moves: the sword's turns, the whirlwind, and their endings. */
@@ -539,6 +552,9 @@ public enum Move {
             case XBOW_SHOT, XBOW_DASH -> now == XBOW_SPINE;
             // the fan's shot out of its loading (each roll goes on from the one before once its arrow is out: freeFrom)
             case XBOW_FAN_SHOT -> now == XBOW_FAN;
+            // the throw out of its aim; the finisher right after the pull (the author's "pulling it out, he drives it in again")
+            case THROW -> now == THROW_AIM;
+            case FINISHER, FINISHER_AXE -> now == WEAPON_PULL;
             default -> false;
         };
     }
@@ -567,7 +583,7 @@ public enum Move {
     public boolean firstPerson() {
         return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
                 || turning() || ledge() || volley() || marked() || this == SLIDE_SHOT || crossbow()
-                || this == XBOW_VOLLEY || this == XBOW_SPIN || this == XBOW_FAN;
+                || this == XBOW_VOLLEY || this == XBOW_SPIN || this == XBOW_FAN || thrown();
     }
 
     /**
@@ -592,6 +608,8 @@ public enum Move {
             case FALL_ROLL -> Fall.STAND;
             case FINISHER -> Strikes.FINISH_OUT;
             case FINISHER_BOW -> Strikes.BOW_KILL + 4;
+            case THROW -> Thrown.THROW_RELEASE + 4;
+            case WEAPON_PULL -> Thrown.PULL_TICK + 4;
             case FINISHER_XBOW -> Strikes.XBOW_KILL + 5;
             case FINISHER_AXE -> Strikes.CHOP_OUT;
             // the crossbow's blows from where the next one may follow; the hop once the shot is out, the dash once up

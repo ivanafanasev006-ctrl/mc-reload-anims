@@ -87,8 +87,9 @@ public final class MoveAnimator {
         layer.speed.speed = move.animSpeed;
         // The hail: the volley's draw and release over and over (MoveAnimator.pace sets the pace).
         if (move == Move.HAIL) anim = hailLoop(anim);
-        // The fan of arrows: its loading over and over while G is held (an arrow a loop)
+        // The fan of arrows: its loading over and over while G is held (an arrow a loop); the throw's aim held
         if (move == Move.XBOW_FAN) anim = fanLoop(anim);
+        if (move == Move.THROW_AIM) anim = looped(anim, dev.mcreload.moves.Thrown.AIM_LOOP_FROM, dev.mcreload.moves.Thrown.AIM_LOOP_TO);
         // Bow moves may play a part of their animation (a half of bow_walk_around) and hold its last frame.
         // The ending of the shot out of a slide plays bow_slide_shot from the knee.
         int from = move.shot != null ? move.shot.animStart() : move == Move.SLIDE_SHOT_END ? Move.SLIDE_SHOT_SPIN
@@ -120,6 +121,20 @@ public final class MoveAnimator {
             hailOf = anim;
         }
         return hailLoop;
+    }
+
+    /** Animations looped over a part of them (from, to: ticks), made once each. */
+    private static final java.util.Map<KeyframeAnimation, KeyframeAnimation> LOOPED = new java.util.WeakHashMap<>();
+
+    private static KeyframeAnimation looped(KeyframeAnimation anim, int from, int to) {
+        return LOOPED.computeIfAbsent(anim, a -> {
+            KeyframeAnimation.AnimationBuilder b = a.mutableCopy();
+            b.isLooped = true;
+            b.returnTick = from;
+            b.endTick = to;
+            b.stopTick = to + 1;
+            return b.build();
+        });
     }
 
     /** crossbow_fan looped over its loading from Crossbow.FAN_LOOP_FROM to FAN_LOOP_TO, made once. */
@@ -453,7 +468,8 @@ public final class MoveAnimator {
         @Override
         public Vec3f get3DTransform(String part, TransformType type, float tickDelta, Vec3f value0) {
             Vec3f v = inner.get3DTransform(part, type, tickDelta, value0);
-            if (!"body".equals(part) || type != TransformType.ROTATION) return v;
+            // every part's turns (a throw's arm goes a whole turn round, weapon_throw), not only the body's
+            if (type != TransformType.ROTATION) return v;
             return new Vec3f(Mth.wrapDegrees(v.getX() * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD,
                     Mth.wrapDegrees(v.getY() * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD,
                     Mth.wrapDegrees(v.getZ() * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD);

@@ -128,5 +128,8 @@
   "kinetrix_moves.settings.move.crossbowRolls.tip": "Зажать ПКМ с арбалетом и нажать R: кувырок за кувырком с выстрелом после каждого — туда, куда нажата клавиша WASD (без клавиш — назад). Отпустить ПКМ или сменить оружие — конец. Перезарядка 12 с с конца.",
   "kinetrix_moves.settings.move.crossbowRolls.keys": "%5$s + %2$s с арбалетом",
   "kinetrix_moves.crossbow.fan": "Веер из стрел: %s из %s",
-  "kinetrix_moves.crossbow.no_arrows": "Нет стрел"
+  "kinetrix_moves.crossbow.no_arrows": "Нет стрел",
+  "kinetrix_moves.settings.move.throw": "Метание меча и топора",
+  "kinetrix_moves.settings.move.throw.tip": "Меч или топор в руке: зажать ЛКМ и ПКМ — замах, отпустить ЛКМ — бросок, летит как трезубец. Попал в моба — застревает в нём; ЛКМ или ПКМ впритык — вытащить (немного урона, короткий стан), а если моб слабый — сразу добивание: мечом под дых, топором сверху. Убил броском — оружие падает и втыкается в землю; подбирается само, когда подходишь.",
+  "kinetrix_moves.settings.move.throw.keys": "%4$s + %5$s, отпустить %4$s"
 }

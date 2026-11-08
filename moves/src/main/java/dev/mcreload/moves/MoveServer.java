@@ -69,6 +69,7 @@ public final class MoveServer {
         Crossbow.started(p, s, move);
         if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
+        if (move == Move.WEAPON_PULL) s.target = target;
         if (move == Move.DASH) {
             s.dashCooldown = s.cooled(MovesConfig.dashCooldownTicks());
             s.dashHit = false;
@@ -125,6 +126,7 @@ public final class MoveServer {
         if (move == Move.HOP) return Hop.valid(p, e);
         if (move == Move.KICK || move == Move.ROLL_KICK) return Kick.valid(p, e);
         if (move == Move.LEDGE_HELP) return e instanceof Player;
+        if (move == Move.WEAPON_PULL) return Thrown.valid(p, e);
         if (move.finisher()) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;
     }
@@ -137,7 +139,7 @@ public final class MoveServer {
         // The bow's G and the volley at the marked take the bow over, drawn or not; the shot out of a slide
         // draws it (vanilla's draw, started by the same right click), and its ending looses it.
         boolean hands = move.ledge() || move == Move.FALL_TUCK || move == Move.FALL_ROLL || move == Move.PLUNGE_FALL || move == Move.PLUNGE
-                || move == Move.SLIDE_SHOT_END || move.crossbowSkill();
+                || move == Move.SLIDE_SHOT_END || move.crossbowSkill() || move.thrown();
         boolean bow = move.volley() || move.marked() || move == Move.SLIDE_SHOT;
         if (bow && !Bow.volleyReady(p)) return false;
         if (!hands && !bow && (move.drawnBow() ? !Bow.drawing(p) : p.isUsingItem())) return false;
@@ -180,6 +182,11 @@ public final class MoveServer {
             if (move == Move.XBOW_SHOT && !Crossbow.loaded(p)) return false;
             return ground;
         }
+        // The throw (author, after 0.9.1): a sword or an axe in hand, its aim from the ground, the throw out of the aim; the
+        // pull with any hand (its weapon is the target, MoveServer.validTarget)
+        if (move == Move.THROW_AIM) return Thrown.throwable(p) && ground;
+        if (move == Move.THROW) return Thrown.throwable(p) && s.move == Move.THROW_AIM;
+        if (move == Move.WEAPON_PULL) return true;
         // The crossbow's G (author, 2026-11-08): from the ground once its wait is over, the hop with three arrows only loaded,
         // the turn with the shove only not; the fan's shot out of its loading. The rolls (the right button held, R) from
         // the ground once their wait (from the last rolls' end) is over; each from the one before once its arrow is out.

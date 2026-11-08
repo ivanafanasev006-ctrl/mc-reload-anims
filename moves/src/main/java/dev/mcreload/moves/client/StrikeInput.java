@@ -41,6 +41,8 @@ public final class StrikeInput {
 
     /** The mob the finisher would be made on now (for the hint), or null. */
     private static LivingEntity finisherTarget;
+    /** The mob a pull is taking the weapon out of (for the finisher right after it), -1: none. */
+    private static int pulledFrom = -1;
     /** G held this long with a sword makes its turns; let go before, the lunge. */
     private static final int HOLD_G = 4;
     /** Ticks G has been down since it was pressed with a sword (0: not waiting). */
@@ -118,6 +120,41 @@ public final class StrikeInput {
                 else MovesClient.start(p, s, sword ? Move.SPIN_END : Move.WHIRL_END, -1);
             }
             return true;
+        }
+        // The throw (author, after 0.9.1): a sword or an axe, the left and the right button held together, the weapon drawn
+        // back; the left let go, it is thrown; the right let go, the aim is put down
+        if (s.move == Move.THROW_AIM) {
+            finisherTarget = null;
+            swallow(mc);
+            LedgeInput.swallowUse(mc);
+            if (!rmb) MovesClient.cancel(p, s, 4);
+            else if (!lmb) MovesClient.start(p, s, Move.THROW, -1);
+            return true;
+        }
+        if (lmb && rmb && s.move == null && dev.mcreload.moves.Thrown.throwable(p) && HudConfig.Moves.THROW.on()
+                && MoveServer.allowed(p, s, Move.THROW_AIM)) {
+            GuardInput.lowerLocal(p, s, true);
+            LedgeInput.swallowUse(mc);
+            if (begin(mc, p, s, Move.THROW_AIM)) return true;
+        }
+        // The pull: the left or the right button at point blank to a mob with the player's weapon in it; a finisher right
+        // after it if the mob is weak (the author: "he pulls it out, then drives it in under the ribs ... / chops from above")
+        if ((lmbPressed || rmbPressed) && s.move == null && HudConfig.Moves.THROW.on()) {
+            int weapon = ThrownClient.pullable(p, looked(mc));
+            if (weapon >= 0 && MovesClient.start(p, s, Move.WEAPON_PULL, weapon)) {
+                pulledFrom = ThrownClient.stuckIn(weapon);
+                swallow(mc);
+                LedgeInput.swallowUse(mc);
+                return true;
+            }
+        }
+        if (s.move == Move.WEAPON_PULL && s.moveTick >= dev.mcreload.moves.Thrown.PULL_TICK + 2 && pulledFrom >= 0) {
+            if (p.level().getEntity(pulledFrom) instanceof LivingEntity mob && Strikes.finisherWeapon(p) && HudConfig.Moves.FINISHER.on()
+                    && Strikes.finishable(p, mob, false)) {
+                Move fin = Strikes.axe(p) ? Move.FINISHER_AXE : Move.FINISHER;
+                if (MovesClient.start(p, s, fin, mob.getId())) pulledFrom = -1;
+            }
+            if (s.moveTick >= dev.mcreload.moves.Thrown.PULL_TICK + 9) pulledFrom = -1;     // the weapon reaches the hand a tick or two after the pull
         }
         // The crossbow's finisher before its chain (author, after 0.9.1): a click at a weak mob at point blank, an arrow in hand
         if (lmbPressed && s.move == null && !rmb && Crossbow.held(p) && HudConfig.Moves.FINISHER.on() && MoveServer.allowed(p, s, Move.FINISHER_XBOW)) {

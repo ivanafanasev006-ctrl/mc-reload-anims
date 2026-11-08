@@ -95,6 +95,9 @@ public final class MovesClient {
     public static void init(IEventBus modBus) {
         modBus.addListener(MovesClient::registerKeys);
         modBus.addListener(MovesHud::register);
+        // a trident carrying a thrown sword or axe is drawn as the weapon (Thrown)
+        modBus.addListener((net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers e) ->
+                e.registerEntityRenderer(net.minecraft.world.entity.EntityType.TRIDENT, ThrownClient.Renderer::new));
         MoveAnimator.init();
         MinecraftForge.EVENT_BUS.addListener(MovesClient::clientTick);
         MinecraftForge.EVENT_BUS.addListener(MovesClient::playerTick);
@@ -153,6 +156,7 @@ public final class MovesClient {
             LedgeInput.reset();
             BowVolley.reset();
             CrossbowInput.reset();
+            if (p == null) ThrownClient.reset();
             if (p != null) Cutscene.tick(mc, p, Stamina.of(p));
             return;
         }

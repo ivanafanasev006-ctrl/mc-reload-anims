@@ -1092,6 +1092,53 @@ public final class MovesGameTests {
         }).run(after + 1);
     }
 
+    /**
+     * The throw (author, after 0.9.1): the sword leaves the hand as a trident carrying it, hits the zombie in front with the
+     * sword's damage and sticks in it; the pull gives it back to the hand, hurting and slowing the zombie a little. A weak
+     * zombie killed by the throw lets the sword fall.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 300)
+    public static void throwStickAndPull(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        noSun(zombie);
+        net.minecraft.world.entity.projectile.ThrownTrident[] tr = new net.minecraft.world.entity.projectile.ThrownTrident[1];
+        float[] hp = new float[1];
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.THROW_AIM, false), "the aim refused");
+        });
+        t.at(4, () -> t.check(MoveServer.request(p, Move.THROW, false), "the throw refused"));
+        t.at(5 + dev.mcreload.moves.Thrown.THROW_RELEASE, () -> {
+            t.check(p.getMainHandItem().isEmpty(), "the sword still in hand");
+            var list = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.projectile.ThrownTrident.class, p.getBoundingBox().inflate(16));
+            t.check(list.size() == 1 && dev.mcreload.moves.Thrown.state(list.get(0)) != null, "no thrown sword: " + list.size());
+            tr[0] = list.get(0);
+        });
+        t.at(16, () -> {
+            var st = dev.mcreload.moves.Thrown.state(tr[0]);
+            t.check(zombie.getHealth() < 15f, "the throw did not hurt as a sword: " + zombie.getHealth());
+            t.check(st != null && st.stuckIn == zombie.getId(), "the sword not stuck in the zombie: " + (st == null ? "gone" : st.stuckIn));
+            hp[0] = zombie.getHealth();
+            // up close to it
+            p.teleportTo(zombie.getX(), zombie.getY(), zombie.getZ() - 1.4);
+        });
+        t.at(24, () -> {
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.WEAPON_PULL, false, tr[0].getId()), "the pull refused: " + s.move
+                    + ", valid " + dev.mcreload.moves.Thrown.valid(p, tr[0]));
+        });
+        t.at(25 + dev.mcreload.moves.Thrown.PULL_TICK, () -> {
+            t.check(p.getMainHandItem().is(Items.IRON_SWORD), "the sword not back in hand: " + p.getMainHandItem());
+            t.check(tr[0].isRemoved(), "the thrown sword still there");
+            t.check(zombie.getHealth() < hp[0] - 1f, "the pull did not hurt: " + hp[0] + " -> " + zombie.getHealth());
+            t.check(zombie.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN), "the pull did not stun");
+        }).run(26 + dev.mcreload.moves.Thrown.PULL_TICK);
+    }
+
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
     private static void blow(Script t, float lost, float damage, String what) {
         t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);

@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "11";
+    public static final String VERSION = "12";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -44,6 +44,28 @@ public final class MovesNet {
         CHANNEL.registerMessage(id++, Stoop.class, Stoop::write, Stoop::read, Stoop::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, Run.class, Run::write, Run::read, Run::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, Mark.class, Mark::write, Mark::read, Mark::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++, ThrownInfo.class, ThrownInfo::write, ThrownInfo::read, ThrownInfo::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    }
+
+    /**
+     * A thrown weapon (Thrown): who sees the thrower ({@code self}, at the throw: the weapon is not tracked yet) or the
+     * weapon learn what it is and where it is stuck; their clients draw it in place of the trident it flies as.
+     */
+    public static void thrown(net.minecraft.world.entity.projectile.ThrownTrident t, dev.mcreload.moves.Thrown.State st, ServerPlayer self) {
+        ThrownInfo m = ThrownInfo.of(t, st);
+        if (self != null) CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> self), m);
+        else CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> t), m);
+    }
+
+    /** The same to one player (coming near it). */
+    public static void thrownTo(ServerPlayer p, net.minecraft.world.entity.projectile.ThrownTrident t, dev.mcreload.moves.Thrown.State st) {
+        if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), ThrownInfo.of(t, st));
+    }
+
+    /** A thrown weapon taken back: its clients forget it. */
+    public static void thrownGone(net.minecraft.world.entity.projectile.ThrownTrident t) {
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> t),
+                new ThrownInfo(t.getId(), -1, net.minecraft.world.item.ItemStack.EMPTY, -1, 0f, 0f, 0f, 0f, 0f));
     }
 
     // ------------------------------------------------------------------ server -> clients
@@ -253,6 +275,37 @@ public final class MovesNet {
         static void handle(Stoop m, Supplier<NetworkEvent.Context> ctx) {
             ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> dev.mcreload.moves.client.StoopFx.stoop(m.entity, m.delay, m.ticks, m.lean)));
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** What a thrown weapon is (empty: forget it), whose, what it is stuck in (-1: none), where on it and how turned. */
+    public record ThrownInfo(int entity, int owner, net.minecraft.world.item.ItemStack item, int stuckIn, float ox, float oy, float oz,
+                             float yaw, float pitch) {
+        static ThrownInfo of(net.minecraft.world.entity.projectile.ThrownTrident t, dev.mcreload.moves.Thrown.State st) {
+            return new ThrownInfo(t.getId(), st.owner, st.item, st.stuckIn, (float) st.offset.x, (float) st.offset.y, (float) st.offset.z,
+                    st.yaw, st.pitch);
+        }
+
+        static void write(ThrownInfo m, FriendlyByteBuf b) {
+            b.writeVarInt(m.entity);
+            b.writeVarInt(m.owner + 1);
+            b.writeItem(m.item);
+            b.writeVarInt(m.stuckIn + 1);
+            b.writeFloat(m.ox);
+            b.writeFloat(m.oy);
+            b.writeFloat(m.oz);
+            b.writeFloat(m.yaw);
+            b.writeFloat(m.pitch);
+        }
+
+        static ThrownInfo read(FriendlyByteBuf b) {
+            return new ThrownInfo(b.readVarInt(), b.readVarInt() - 1, b.readItem(), b.readVarInt() - 1, b.readFloat(), b.readFloat(),
+                    b.readFloat(), b.readFloat(), b.readFloat());
+        }
+
+        static void handle(ThrownInfo m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.mcreload.moves.client.ThrownClient.info(m)));
             ctx.get().setPacketHandled(true);
         }
     }

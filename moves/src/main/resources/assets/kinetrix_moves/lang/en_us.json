@@ -128,5 +128,8 @@
   "kinetrix_moves.settings.move.crossbowRolls.tip": "Hold the right button with a crossbow and press R: roll after roll with a shot after each, the way WASD points (back with none). Let go of the right button or put the crossbow away to stop. 12 s cooldown from the end.",
   "kinetrix_moves.settings.move.crossbowRolls.keys": "%5$s + %2$s with a crossbow",
   "kinetrix_moves.crossbow.fan": "Fan of arrows: %s of %s",
-  "kinetrix_moves.crossbow.no_arrows": "No arrows"
+  "kinetrix_moves.crossbow.no_arrows": "No arrows",
+  "kinetrix_moves.settings.move.throw": "Sword and axe throw",
+  "kinetrix_moves.settings.move.throw.tip": "A sword or an axe in hand: hold the left and the right button to draw back, let go of the left to throw; it flies as a trident. A hit mob has it stuck in it: the left or the right button at point blank pulls it out (a little damage, a short stun), and a weak mob is finished at once: the sword under the ribs, the axe from above. Killed by the throw, the weapon falls and sticks in the ground; walk over it to pick it up.",
+  "kinetrix_moves.settings.move.throw.keys": "%4$s + %5$s, let go of %4$s"
 }

@@ -469,6 +469,7 @@ public final class Stamina {
                 Spin.serverTick(sp, s);
                 Strikes.serverTick(sp, s);
                 Crossbow.serverTick(sp, s);
+                Thrown.serverTick(sp, s);
                 Deflect.serverTick(sp, s);
                 Bow.serverTick(sp, s);
                 MoveServer.afterTick(sp, s);
