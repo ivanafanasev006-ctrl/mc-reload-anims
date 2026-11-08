@@ -846,6 +846,12 @@ public final class MovesClient {
         // in place"; after 0.9.6: "a little slowed in the attack, there should be more freedom, as with the sword");
         // walking on past a blow's follow-through ends its animation, as ever
         if (s.move == Move.XBOW_THRUST || s.move == Move.XBOW_SLAP || s.move == Move.XBOW_SPINE) return;
+        // The throw's aim: walking slowly, as with a trident or a bow drawn (author, after 0.9.7: "he just stands in place")
+        if (s.move == Move.THROW_AIM) {
+            event.getInput().forwardImpulse *= 0.2f;
+            event.getInput().leftImpulse *= 0.2f;
+            return;
+        }
         // Loading the fan of arrows: the keys creep, as on the knee
         if (s.move == Move.XBOW_FAN) {
             BowStance.creep(event.getInput());

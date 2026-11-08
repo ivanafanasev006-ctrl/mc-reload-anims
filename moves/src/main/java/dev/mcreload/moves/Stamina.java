@@ -219,7 +219,7 @@ public final class Stamina {
         server = !p.level().isClientSide;
         // On the ledge the player stays upright whatever touches their hitbox (the climb goes through
         // the edge's corner; vanilla would make them crouch or crawl there, the eyes in the block).
-        if (m.ledge() && p.getForcedPose() == null) {
+        if (m.ledge() && p.getForcedPose() == null && ownPose(p)) {
             p.setForcedPose(net.minecraft.world.entity.Pose.STANDING);
             forcedStanding = true;
             p.refreshDimensions();
@@ -232,7 +232,17 @@ public final class Stamina {
         move = null;
         moveTick = 0;
         held = false;
-        if (wasLow || forcedStanding) stand(p);
+        if ((wasLow || forcedStanding) && ownPose(p)) stand(p);
+    }
+
+    /**
+     * This end decides the player's pose: the server, and the player's own client (it moves them). Another player's pose on a
+     * client is the server's alone (author's video of 2026-11-08, 23:28: a friend seen lying on his back and turning: this
+     * client had found no room for him to stand where its smoothed copy of him was, in the leaves, laid him down to crawl,
+     * and the server, its own pose unchanged, never sent his again).
+     */
+    private static boolean ownPose(Player p) {
+        return !p.level().isClientSide || p.isLocalPlayer();
     }
 
     /** Counts the move on; at the edges of its low frames the hitbox changes. Every tick, both ends. */
@@ -261,6 +271,7 @@ public final class Stamina {
             return;
         }
         boolean nowLow = low();
+        if (!ownPose(p)) return;
         if (nowLow && !wasLow) {
             // Keep the standing pose (vanilla would switch to the crawl under a low ceiling and lay the
             // model flat under the animation); the 0.6-block hitbox comes from onSize.

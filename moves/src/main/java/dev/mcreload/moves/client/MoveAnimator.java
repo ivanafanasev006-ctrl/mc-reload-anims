@@ -104,7 +104,8 @@ public final class MoveAnimator {
         // On the ledge the moves follow each other quickly: a longer blend, the hands do not jump.
         int fade = move.ledge() && was != null && was.ledge() ? 4 : 2;
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(fade, Ease.INOUTSINE), unwound(layer, anim, from, played));
-        KinetrixBridge.wholeBody(p.getUUID(), move.length * 50L + 100L);
+        // the throw's aim is walked with: Kinetrix keeps its legs walking under it (not the whole body the move's)
+        KinetrixBridge.wholeBody(p.getUUID(), move == Move.THROW_AIM ? 0L : move.length * 50L + 100L);
     }
 
     /** bow_barrage looped over its draw and release from Bow.HAIL_LOOP_FROM to HAIL_LOOP_TO, made once. */
