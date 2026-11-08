@@ -19,7 +19,7 @@ public final class MovesConfig {
             COST_KICK, COST_SLIDE_ATTACK, COST_LEDGE_HOP, COST_DIVE, COST_FALL_ROLL, COST_LEDGE_GRAB, COST_LEDGE_CLIMB,
             COST_LEDGE_DOWN, COST_LEDGE_HELP, COST_LEDGE_LEAP, COST_ROLL_KICK, COST_PLUNGE, COST_WHIRL, COST_SWORD_SPIN,
             COST_SPIN_EXTRA, COST_WHIRL_EXTRA, COST_HAIL_EXTRA, COST_MARKED, COST_MARKED_EACH, COST_SLIDE_SHOT, ENCHANTED_COOLDOWN,
-            COST_XBOW_BLOW, COST_XBOW_HOP;
+            COST_XBOW_BLOW, COST_XBOW_HOP, COST_XBOW_VOLLEY, COST_XBOW_SPIN, COST_XBOW_FAN, COST_XBOW_ROLL;
     private static final ForgeConfigSpec.IntValue COMBAT_SECONDS, APPLE_INFINITE, APPLE_BOOST_SECONDS, ENCHANTED_INFINITE,
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
@@ -38,7 +38,9 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue MARK_RANGE, SLIDE_SHOT_BLOCKS, SLIDE_SHOT_SPREAD;
     private static final ForgeConfigSpec.DoubleValue XBOW_THRUST_DAMAGE, XBOW_SLAP_DAMAGE, XBOW_SPINE_DAMAGE, XBOW_REACH, XBOW_THRUST_PUSH,
             XBOW_STEP_REACH;
-    private static final ForgeConfigSpec.IntValue XBOW_CHAIN;
+    private static final ForgeConfigSpec.IntValue XBOW_CHAIN, XBOW_G_COOLDOWN, XBOW_FAN_COOLDOWN, XBOW_ROLLS_COOLDOWN, XBOW_FAN_MAX,
+            XBOW_FAN_EVERY;
+    private static final ForgeConfigSpec.DoubleValue XBOW_SPIN_DAMAGE, XBOW_SPIN_REACH, XBOW_SPIN_PUSH, XBOW_VOLLEY_SPREAD, XBOW_FAN_SPREAD;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -156,6 +158,15 @@ public final class MovesConfig {
                 .defineInRange("crossbowBlow", 0.0, 0.0, 10000.0);
         COST_XBOW_HOP = b.comment("The crossbow's fourth: the hop back with the shot, or the dash back (a dodge). [default]")
                 .defineInRange("crossbowHop", 5.0, 0.0, 10000.0);
+        // Author, 2026-11-08, the second half: the crossbow's G, G held and the rolls; no numbers given.
+        COST_XBOW_VOLLEY = b.comment("G with a crossbow, loaded: the hop back with three arrows (as the bow's volley). [default]")
+                .defineInRange("crossbowVolley", 10.0, 0.0, 10000.0);
+        COST_XBOW_SPIN = b.comment("G with a crossbow, not loaded: the turn with the crossbow out and the shove. [default]")
+                .defineInRange("crossbowSpin", 8.0, 0.0, 10000.0);
+        COST_XBOW_FAN = b.comment("G held with a crossbow: the fan of arrows (once, whatever it loads). [default]")
+                .defineInRange("crossbowFan", 15.0, 0.0, 10000.0);
+        COST_XBOW_ROLL = b.comment("Each roll of the crossbow's rolls (the right button held, R), its arrow with it (as a roll). [default]")
+                .defineInRange("crossbowRoll", 5.0, 0.0, 10000.0);
         b.pop();
 
         b.comment("How the moves behave.").push("moves");
@@ -337,6 +348,33 @@ public final class MovesConfig {
         XBOW_CHAIN = b.comment("Ticks after a blow in which the next click is the next blow of the chain; later it starts over from the",
                         "push (20 ticks = 1 s). [default]")
                 .defineInRange("chainTicks", 12, 0, 200);
+        // Author, 2026-11-08, the second half: "the crossbow's moves on G: a hop back and a shot of 3 arrows (spread) if it was
+        // loaded; if not, one turn round himself and a shove; the damage a little more than the bow's LMB. G+ loads the fan of
+        // arrows: all at once with one shot, like a shotgun; an arrow loads in about 0.5 s, 8 at most. Instead of the Legolas
+        // stance: the right button held and R, rolls with an arrow each, the way WASD points".
+        XBOW_G_COOLDOWN = b.comment("G tapped with a crossbow (the hop with three arrows, or the turn with the shove): seconds before G can be",
+                        "used again (the bow's: 10). [default]")
+                .defineInRange("abilityCooldown", 10, 0, 3600);
+        XBOW_FAN_COOLDOWN = b.comment("G held with a crossbow (the fan of arrows): seconds before G can be used again (the bow's hail: 40). [default]")
+                .defineInRange("fanCooldown", 40, 0, 3600);
+        XBOW_ROLLS_COOLDOWN = b.comment("The rolls (the right button held, R): seconds from their end (the button let go) before they can be",
+                        "taken again (the Legolas stance's: 12). [default]")
+                .defineInRange("rollsCooldown", 12, 0, 3600);
+        XBOW_SPIN_DAMAGE = b.comment("The turn with the crossbow out: damage to every mob about the player (the bow's blow on the left",
+                        "button: 4; author: a little more). [default]")
+                .defineInRange("spinDamage", 5.0, 0.0, 1000.0);
+        XBOW_SPIN_REACH = b.comment("The turn: how far the crossbow reaches round the player (blocks from the middle to a mob's side). [default]")
+                .defineInRange("spinReach", 2.8, 1.0, 8.0);
+        XBOW_SPIN_PUSH = b.comment("The turn flings every mob it hits away from the player (blocks a tick; it goes about 2.2 times that). [default]")
+                .defineInRange("spinPush", 0.6, 0.0, 3.0);
+        XBOW_VOLLEY_SPREAD = b.comment("The hop's three arrows: degrees between them, a little scattered (vanilla's multishot: 10). [default]")
+                .defineInRange("volleySpread", 9.0, 0.0, 45.0);
+        XBOW_FAN_MAX = b.comment("The fan of arrows: the most it loads (author: 8).")
+                .defineInRange("fanMax", 8, 1, 32);
+        XBOW_FAN_EVERY = b.comment("The fan of arrows: ticks to load each arrow while G is held (author: about 0.5 s, 10 ticks).")
+                .defineInRange("fanEveryTicks", 10, 1, 200);
+        XBOW_FAN_SPREAD = b.comment("The fan of arrows: how far its arrows scatter about the look, degrees to each side (a shotgun). [default]")
+                .defineInRange("fanSpread", 12.0, 0.0, 45.0);
         b.pop();
         SPEC = b.build();
     }
@@ -446,6 +484,20 @@ public final class MovesConfig {
     public static float crossbowThrustPush() { return f(XBOW_THRUST_PUSH, 0.45); }
     public static float crossbowStepReach() { return f(XBOW_STEP_REACH, 4.0); }
     public static int crossbowChainTicks() { return get(XBOW_CHAIN, 12); }
+    public static float costCrossbowVolley() { return f(COST_XBOW_VOLLEY, 10.0); }
+    public static float costCrossbowSpin() { return f(COST_XBOW_SPIN, 8.0); }
+    public static float costCrossbowFan() { return f(COST_XBOW_FAN, 15.0); }
+    public static float costCrossbowRoll() { return f(COST_XBOW_ROLL, 5.0); }
+    public static int crossbowAbilityCooldownTicks() { return get(XBOW_G_COOLDOWN, 10) * 20; }
+    public static int crossbowFanCooldownTicks() { return get(XBOW_FAN_COOLDOWN, 40) * 20; }
+    public static int crossbowRollsCooldownTicks() { return get(XBOW_ROLLS_COOLDOWN, 12) * 20; }
+    public static float crossbowSpinDamage() { return f(XBOW_SPIN_DAMAGE, 5.0); }
+    public static float crossbowSpinReach() { return f(XBOW_SPIN_REACH, 2.8); }
+    public static float crossbowSpinPush() { return f(XBOW_SPIN_PUSH, 0.6); }
+    public static float crossbowVolleySpread() { return f(XBOW_VOLLEY_SPREAD, 9.0); }
+    public static int crossbowFanMax() { return get(XBOW_FAN_MAX, 8); }
+    public static int crossbowFanEvery() { return get(XBOW_FAN_EVERY, 10); }
+    public static float crossbowFanSpread() { return f(XBOW_FAN_SPREAD, 12.0); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

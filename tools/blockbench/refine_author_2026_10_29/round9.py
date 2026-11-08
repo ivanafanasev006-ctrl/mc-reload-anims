@@ -541,13 +541,25 @@ def _mob_after(length, struck=None):
     return mob
 
 
-def _aim(pose, low):
-    """Both hands on the crossbow, held out level at the mob: the right fist on the stock, its butt by
-    the chest, the front ahead at the eyes' height; the left hand under it behind the prod."""
-    eye = 26.5 - low
-    q, e1 = arm_to(pose, 'right', [('xbutt', (2.6, eye - 6.0, -2.5), 0.7), ('xfront', (1.2, eye - 6.0, -17.0), 1.0)])
-    fore = kit.pt(kit.fk(q), 'xfore') + np.array((-0.6, -1.6, 0.0))
-    q, e2 = arm_to(q, 'left', [('lhand', fore, 1.0)])
+#: Kinetrix's crossbow aimed (CombatModule with a loaded crossbow: up a little from the carry, level and
+#: ready) as the rig's keys, fitted to its arms to 0.0 px as CARRY is (author, 2026-11-08: "for Kinetrix's
+#: animations, not vanilla's, so it does not look different"): every shot of the crossbow's moves is
+#: aimed so, not at the eyes as vanilla's loaded crossbow.
+AIM = {**CARRY, 'right_arm': (66.0, 53.2, 27.3), 'right_forearm': (44.1, 0.0, 0.0), 'left_arm': (74.8, -12.6, -11.5),
+       'left_forearm': (5.7, 0.0, 0.0)}
+_AIMED = {}
+
+
+def _aim(pose, low=0.0):
+    """Both hands on the crossbow as Kinetrix aims it (AIM), carried with the neck (down in a crouch, up in
+    a hop, forward in a lean): where it is at the chest standing, level, the front ahead. `low` is not used
+    (it was the drop of an aim at the eyes)."""
+    if not _AIMED:
+        _AIMED.update(kit.at(AIM, 'xfront', 'xbutt', 'lhand', 'neck'))
+    q = {**pose, **{k: AIM[k] for k in ('right_arm', 'right_forearm', 'left_arm', 'left_forearm')}}
+    d = kit.pt(kit.fk(q), 'neck') - _AIMED['neck']
+    q, e1 = arm_to(q, 'right', [('xfront', _AIMED['xfront'] + d, 1.0), ('xbutt', _AIMED['xbutt'] + d, 0.7)])
+    q, e2 = arm_to(q, 'left', [('lhand', _AIMED['lhand'] + d, 1.0)])
     return q, max(e1, e2)
 
 
@@ -622,9 +634,17 @@ def crossbow_dash_back():
     return a
 
 
+#: Every frame smoothed over this much (s) once baked (author, 2026-11-08: "smoother"): the quickest parts
+#: of the turns (the arms whipping round at the slap and over the head into the blow onto the spine) had
+#: half as much again of a jolt as the sword's turn (sword_spin) the author called ideal; now about as much.
+SOFTEN = 0.035
+
+
 def made():
     """The five, in the order of the chain."""
     a = [crossbow_thrust(), crossbow_slap(), crossbow_spine(), crossbow_leap_shot(), crossbow_dash_back()]
+    for x in a:
+        kit.soften(x, SOFTEN, LEGS)
     # the head follows the look where the body does not turn round (the push, the hop, the dash)
     for x in (a[0], a[3], a[4]):
         x.tracks.pop(('head', 'rotation'), None)
@@ -701,7 +721,8 @@ def write(made, dst=DST):
 
 
 def main():
-    write(made())
+    import round10     # the crossbow's G, G held and rolls share the file
+    write(made() + round10.made())
 
 
 if __name__ == '__main__':

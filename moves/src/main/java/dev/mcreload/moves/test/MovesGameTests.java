@@ -861,6 +861,115 @@ public final class MovesGameTests {
         }).run(after + 1);
     }
 
+    /**
+     * G with a crossbow (author, 2026-11-08): loaded, the hop back with three arrows at its top, the crossbow empty
+     * after, untouchable off the floor; then G waits. Not loaded, the turn: every mob about the player hit (in front
+     * and behind) and flung away; the hop refused with it empty.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200)
+    public static void crossbowAbility(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie[] z = new Zombie[2];
+        float[] was = new float[4];
+        t.at(2, () -> {
+            ItemStack crossbow = new ItemStack(Items.CROSSBOW);
+            loaded(crossbow);
+            p.setItemInHand(InteractionHand.MAIN_HAND, crossbow);
+            p.setXRot(60f);     // into the floor close by
+            t.check(!MoveServer.request(p, Move.XBOW_SPIN, false), "the turn with the crossbow loaded");
+            t.check(MoveServer.request(p, Move.XBOW_VOLLEY, false), "the hop with three arrows refused");
+            t.check(s.xbowCooldown > 0, "no wait after G");
+        });
+        t.at(5, () -> t.check(s.untouchable(), "not untouchable in the hop"));
+        t.at(3 + Crossbow.VOLLEY_SHOT, () -> {
+            t.check(!net.minecraft.world.item.CrossbowItem.isCharged(p.getMainHandItem()), "still loaded after the hop's shot");
+            t.check(arrows(h, p).size() == 3, "the hop's arrows: " + arrows(h, p).size());
+        });
+        t.at(4 + Move.XBOW_VOLLEY.length, () -> {
+            t.check(s.move == null, "still in " + s.move);
+            t.check(!MoveServer.request(p, Move.XBOW_SPIN, false), "G again before its wait");
+            s.xbowCooldown = 0;
+            t.check(!MoveServer.request(p, Move.XBOW_VOLLEY, false), "the hop with the crossbow empty");
+            // two zombies about the player: one in front, one behind
+            net.minecraft.world.phys.Vec3 look = net.minecraft.world.phys.Vec3.directionFromRotation(0f, p.getYRot());
+            for (int i = 0; i < 2; i++) {
+                z[i] = h.spawnWithNoFreeWill(EntityType.ZOMBIE, h.relativeVec(p.position().add(look.scale(i == 0 ? 1.6 : -1.6))));
+                noSun(z[i]);
+            }
+            was[0] = z[0].getHealth();
+            was[1] = z[1].getHealth();
+            was[2] = z[0].distanceTo(p);
+            was[3] = z[1].distanceTo(p);
+            t.check(MoveServer.request(p, Move.XBOW_SPIN, false), "the turn refused, not loaded");
+        });
+        int sweep = 5 + Move.XBOW_VOLLEY.length + Crossbow.SPIN_SWEEP;
+        t.at(sweep, () -> {
+            blow(t, was[0] - z[0].getHealth(), MovesConfig.crossbowSpinDamage(), "the turn's damage in front");
+            blow(t, was[1] - z[1].getHealth(), MovesConfig.crossbowSpinDamage(), "the turn's damage behind");
+        });
+        t.at(sweep + 8, () -> {
+            t.check(z[0].distanceTo(p) > was[2] + 0.5f, "the one in front not flung away: " + was[2] + " -> " + z[0].distanceTo(p));
+            t.check(z[1].distanceTo(p) > was[3] + 0.5f, "the one behind not flung away: " + was[3] + " -> " + z[1].distanceTo(p));
+        }).run(sweep + 9);
+    }
+
+    /**
+     * G held: the fan loads an arrow every FAN_EVERY ticks, its shot fires as many as it loaded (no more than asked,
+     * than it loaded and than there are), all at once, each one of the player's arrows. The rolls: an arrow each, the
+     * next from the one before once it is out; when they stop, their wait.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 300)
+    public static void crossbowFanAndRolls(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        int[] n = new int[1];
+        int loading = 2 + Crossbow.FAN_LOOP_FROM + 3 * MovesConfig.crossbowFanEvery() + 2;
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CROSSBOW));
+            p.getInventory().add(new ItemStack(Items.ARROW, 6));
+            p.setXRot(60f);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.XBOW_FAN, false), "the fan refused");
+            t.check(s.xbowCooldown > MovesConfig.crossbowAbilityCooldownTicks(), "the fan's wait: " + s.xbowCooldown);
+        });
+        t.at(loading, () -> {
+            int loaded = Crossbow.fanLoaded(s.moveTick);
+            t.check(loaded == 4, "loaded by now: " + loaded + " at " + s.moveTick);
+            t.check(MoveServer.request(p, Move.XBOW_FAN_SHOT, false, 8), "the fan's shot refused");
+            n[0] = s.fanArrows;
+            t.check(n[0] >= 4 && n[0] <= 5, "the fan's arrows: " + n[0]);
+        });
+        t.at(loading + 1 + Crossbow.FAN_SHOT, () -> {
+            t.check(arrows(h, p).size() == n[0], "the fan shot " + arrows(h, p).size() + " of " + n[0]);
+            t.check(Crossbow.arrows(p) == 6 - n[0], "arrows left: " + Crossbow.arrows(p));
+            arrows(h, p).forEach(net.minecraft.world.entity.Entity::discard);
+            s.energy = 100f;
+        });
+        int roll = loading + 2 + Move.XBOW_FAN_SHOT.length;
+        t.at(roll, () -> {
+            t.check(s.move == null, "still in " + s.move);
+            t.check(MoveServer.request(p, Move.XBOW_ROLL_BACK, false), "the back roll refused");
+            t.close(s.energy, 100f - MovesConfig.costCrossbowRoll(), "energy after a roll");
+        });
+        t.at(roll + 3, () -> t.check(s.untouchable() && s.low(), "not untouchable and low in the roll"));
+        t.at(roll + Crossbow.ROLL_NEXT - 2, () -> t.check(!MoveServer.request(p, Move.XBOW_ROLL_LEFT, false), "the next roll before the arrow"));
+        t.at(roll + Crossbow.ROLL_NEXT, () -> {
+            t.check(arrows(h, p).size() == 1, "the roll's arrow: " + arrows(h, p).size());
+            t.check(MoveServer.request(p, Move.XBOW_ROLL_LEFT, false), "the next roll refused");
+        });
+        // (the arrows in the floor at the player's feet are picked up again: the new one by its age)
+        t.at(roll + Crossbow.ROLL_NEXT + 1 + Crossbow.ROLL_SHOT, () -> t.check(arrows(h, p).stream().anyMatch(a -> a.tickCount <= 1),
+                "the second roll's arrow"));
+        int over = roll + Crossbow.ROLL_NEXT + Move.XBOW_ROLL_LEFT.length + 12;
+        t.at(over, () -> {
+            t.check(!s.xbowRollsLive && s.xbowRollsCooldown > 0, "no wait after the rolls: " + s.xbowRollsCooldown);
+            t.check(!MoveServer.request(p, Move.XBOW_ROLL_BACK, false), "the rolls again before their wait");
+        }).run(over + 1);
+    }
+
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
     private static void blow(Script t, float lost, float damage, String what) {
         t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);

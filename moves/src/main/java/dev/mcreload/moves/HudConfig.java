@@ -46,7 +46,11 @@ public final class HudConfig {
         MARKS("bowMarks", "The bow's marks (the right button held, the left one on a mob) and the volley at the marked (the right button let go)."),
         LEGOLAS("legolas", "The Legolas stance: R with the bow fully drawn (12 s cooldown from its end)."),
         CROSSBOW("crossbow", "The crossbow's attacks on the left button: the push, the slap with a turn, onto the spine with a turn, the hop",
-                "back with the shot (loaded) or the dash back; each click the next.");
+                "back with the shot (loaded) or the dash back; each click the next."),
+        CROSSBOW_G("crossbowAbility", "G with a crossbow: the hop back with three arrows (loaded) or a turn with a shove (not), 10 s cooldown;",
+                "held: the fan of arrows, an arrow loaded every 0.5 s (8 at most), all at once when G is let go, 40 s."),
+        CROSSBOW_ROLLS("crossbowRolls", "The crossbow's rolls: the right button held, R: rolls the way WASD points (back with none), an arrow",
+                "each; the button let go or the crossbow put away ends them (12 s cooldown from their end).");
 
         /** The key in the file and in the language files (kinetrix_moves.settings.move.<key>). */
         public final String key;

@@ -66,7 +66,8 @@ public final class FirstPersonArms {
     /** The mod's move is an attack whose arms are drawn in first person, its whole-body turn left out. */
     private static boolean attack(Move m) {
         return m == Move.DASH || m.finisher() || m == Move.SLIDE_ATTACK || m == Move.PLUNGE || m == Move.PLUNGE_FALL
-                || m.turning() || bow(m) || m.crossbow();
+                || m.turning() || bow(m) || m.crossbow()
+                || m == Move.XBOW_VOLLEY || m == Move.XBOW_SPIN || m == Move.XBOW_FAN;
     }
 
     /** A move with the bow drawn or about to shoot: the bow stays ahead. */

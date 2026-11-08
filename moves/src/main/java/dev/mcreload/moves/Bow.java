@@ -73,7 +73,7 @@ public final class Bow {
     /** The arrows of the volleys and the hail fly as from a full draw at the marked mobs (straighter, further). */
     public static final float AIMED_POWER = 1f;
     /** An arrow of a volley: it hits through the mob's moment of invulnerability after a hit. */
-    private static final String VOLLEY_ARROW = "kinetrix_moves.volley";
+    static final String VOLLEY_ARROW = "kinetrix_moves.volley";
     /** Vanilla's ids for an item's own damage and speed, so the tooltip shows them like a sword's. */
     private static final UUID DAMAGE_ID = UUID.fromString("CB3F55D3-645C-4F38-A497-9C13A33DB5CF"),
             SPEED_ID = UUID.fromString("FA233E1C-4180-4865-B01B-BCCE9785ACA3");

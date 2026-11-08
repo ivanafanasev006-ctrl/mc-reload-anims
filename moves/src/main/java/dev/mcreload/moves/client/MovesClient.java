@@ -152,6 +152,7 @@ public final class MovesClient {
             StrikeInput.reset();
             LedgeInput.reset();
             BowVolley.reset();
+            CrossbowInput.reset();
             if (p != null) Cutscene.tick(mc, p, Stamina.of(p));
             return;
         }
@@ -275,6 +276,8 @@ public final class MovesClient {
         // arrows and dodges)
         BowVolley.tickLocal(mc, p, s, attackPressed, abilityPressed);
         BowStance.tickLocal(p, s);
+        // the crossbow: G (the hop with three arrows, the turn with the shove; held, the fan of arrows) and the rolls
+        CrossbowInput.tickLocal(mc, p, s, abilityPressed);
         // The left button is the bow's while the bow's moves play, the bow is drawn, in the Legolas stance
         // (between two arrows the bow is not drawn) and on the knee after G: it swings nothing, not even
         // Better Combat's blow, which comes before Forge's interaction event that stops vanilla's.
@@ -283,6 +286,7 @@ public final class MovesClient {
 
         // ---- dodges and rolls: R and a direction (R with the bow fully drawn: the Legolas stance)
         if (dodgePressed && BowStance.dodgeKey(p)) dodgePressed = false;
+        if (dodgePressed && CrossbowInput.dodgeKey(mc, p, s)) dodgePressed = false;
         if (dodgePressed) dodgeWait = 4;
         if (dodgeWait > 0) {
             dodgeWait--;
@@ -380,6 +384,8 @@ public final class MovesClient {
         sprinted = p.isSprinting();
         s.start(p, move, held);
         dev.mcreload.moves.Crossbow.started(p, s, move);
+        dev.mcreload.moves.Crossbow.skillStarted(s, move);
+        if (move == Move.XBOW_FAN_SHOT) s.fanArrows = target;
         moveYaw = p.getYRot();
         pushDir = null;
         airTicks = 0;
@@ -805,6 +811,10 @@ public final class MovesClient {
         boolean striking = s != null && s.move != null && s.move.strike() && s.moveTick < s.move.recoverFrom();
         boolean bow = s != null && s.move != null && (s.move.volley() || s.move.marked()
                 || (s.move == Move.SLIDE_SHOT_END && s.moveTick < s.move.recoverFrom()));
+        // the crossbow's G and its rolls: no loading, no swing meanwhile (the fan's loading lasts while G is held)
+        boolean xbow = s != null && ((s.move != null && s.move.crossbowSkill() && (s.move == Move.XBOW_FAN || s.moveTick < s.move.recoverFrom()))
+                || CrossbowInput.rolling());
+        bow |= xbow;
         if (p != null && (bow || striking || (event.isAttack() && BowStance.active(p)))) {
             event.setCanceled(true);
             event.setSwingHand(false);
@@ -818,6 +828,11 @@ public final class MovesClient {
         if (s.move == null || s.moveTick >= s.move.length - 3) return;
         // On the knee in the shot out of a slide: the keys creep, very slowly (author, 2026-10-31)
         if (s.move == Move.SLIDE_SHOT && s.moveTick >= Move.SLIDE_SHOT_SPIN) {
+            BowStance.creep(event.getInput());
+            return;
+        }
+        // Loading the fan of arrows: the keys creep, as on the knee
+        if (s.move == Move.XBOW_FAN) {
             BowStance.creep(event.getInput());
             return;
         }
@@ -993,7 +1008,9 @@ public final class MovesClient {
         s.freeTicks = m.freeTicks();
         s.freeTotal = m.freeTotal();
         // the cooldowns as the server counts them (the tray; after joining the client knows none of its own)
+        int rolls = s.xbowRollsCooldown;
         s.setCooldowns(m.cooldowns());
+        s.xbowRollsCooldown = CrossbowInput.rollsWait(p, rolls, s.xbowRollsCooldown);
         s.hasteTicks = m.hasteTicks();
         s.combatTicks = m.combatTicks();
         maxEnergy = m.maxEnergy();

@@ -245,6 +245,41 @@ public enum Move {
     XBOW_DASH("crossbow_dash_back", 1f, 17, 2, 8, -1, -1, Side.BACK, MovesConfig::costCrossbowHop,
             0.62f, 0.56f, 0.48f, 0.40f, 0.30f, 0.20f, 0.10f),
 
+    // ---- the crossbow's G and the rolls (author, 2026-11-08, the second half; Crossbow): their animations from
+    // tools/blockbench/refine_author_2026_10_29/round10.py, every number a [default] in the server config
+    /**
+     * G tapped, loaded: the hop back (about 2.6 blocks, untouchable off the floor) and three arrows spread at its top
+     * at 0.3 s (Crossbow.VOLLEY_SHOT), down into a crouch, up (1.05 s).
+     */
+    XBOW_VOLLEY("crossbow_hop_volley", 1f, 24, 2, 9, -1, -1, Side.BACK, MovesConfig::costCrossbowVolley,
+            0.46f, 0.46f, 0.44f, 0.40f, 0.34f, 0.27f, 0.19f, 0.10f),
+    /**
+     * G tapped, not loaded: a whole turn clockwise with the crossbow out at arm's length, every mob about the player
+     * hit and flung away at 0.25 s (Crossbow.SPIN_SWEEP), then a shove forward with both hands at 0.5 s
+     * (SPIN_SHOVE), the carry (0.9 s).
+     */
+    XBOW_SPIN("crossbow_spin_push", 1f, 21, -1, -1, -1, -1, Side.FRONT, MovesConfig::costCrossbowSpin),
+    /**
+     * G held: the fan of arrows loading, an arrow every 0.5 s while G is held (Crossbow.FAN_EVERY), 8 at most; the
+     * loading loops (Crossbow.FAN_LOOP_FROM - FAN_LOOP_TO) until G is let go, the player creeping.
+     */
+    XBOW_FAN("crossbow_fan", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, MovesConfig::costCrossbowFan),
+    /** G let go: the fan's shot, all its arrows at once at 0.1 s (Crossbow.FAN_SHOT), the recoil, the carry (0.7 s). */
+    XBOW_FAN_SHOT("crossbow_fan", 1f, 17, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /**
+     * The rolls (the right button held, R; it ends when the button is let go or the crossbow put away): a roll the
+     * way the keys point (back with none; about 2.5 blocks, untouchable and low in it), up on one knee, an arrow
+     * along the look at 0.65 s (Crossbow.ROLL_SHOT); the next roll from 0.75 s (ROLL_NEXT).
+     */
+    XBOW_ROLL_BACK("crossbow_roll_back", 1f, 24, 2, 9, 2, 10, Side.BACK, MovesConfig::costCrossbowRoll,
+            0.42f, 0.42f, 0.40f, 0.36f, 0.31f, 0.25f, 0.19f, 0.12f, 0.06f),
+    XBOW_ROLL_FRONT("crossbow_roll_front", 1f, 24, 2, 9, 2, 10, Side.FRONT, MovesConfig::costCrossbowRoll,
+            0.42f, 0.42f, 0.40f, 0.36f, 0.31f, 0.25f, 0.19f, 0.12f, 0.06f),
+    XBOW_ROLL_LEFT("crossbow_roll_left", 1f, 24, 2, 9, 2, 10, Side.LEFT, MovesConfig::costCrossbowRoll,
+            0.42f, 0.42f, 0.40f, 0.36f, 0.31f, 0.25f, 0.19f, 0.12f, 0.06f),
+    XBOW_ROLL_RIGHT("crossbow_roll_right", 1f, 24, 2, 9, 2, 10, Side.RIGHT, MovesConfig::costCrossbowRoll,
+            0.42f, 0.42f, 0.40f, 0.36f, 0.31f, 0.25f, 0.19f, 0.12f, 0.06f),
+
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
     LEDGE_HANG("ledge_hang", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, MovesConfig::costLedgeGrab),
@@ -406,7 +441,7 @@ public enum Move {
      * nothing of vanilla's (no swing, no block dug, the crossbow not loaded mid-blow).
      */
     public boolean strike() {
-        return this == DASH || finisher() || this == SLIDE_ATTACK || turning() || crossbow();
+        return this == DASH || finisher() || this == SLIDE_ATTACK || turning() || crossbow() || crossbowSkill();
     }
 
     /** G's moves: the sword's turns, the whirlwind, and their endings. */
@@ -419,12 +454,22 @@ public enum Move {
         return this == XBOW_THRUST || this == XBOW_SLAP || this == XBOW_SPINE || this == XBOW_SHOT || this == XBOW_DASH;
     }
 
+    /** The crossbow's G (the hop with three arrows, the turn with the shove, the fan) and its rolls (Crossbow). */
+    public boolean crossbowSkill() {
+        return this == XBOW_VOLLEY || this == XBOW_SPIN || this == XBOW_FAN || this == XBOW_FAN_SHOT || crossbowRoll();
+    }
+
+    /** A roll of the crossbow's rolls (the right button held, R). */
+    public boolean crossbowRoll() {
+        return this == XBOW_ROLL_BACK || this == XBOW_ROLL_FRONT || this == XBOW_ROLL_LEFT || this == XBOW_ROLL_RIGHT;
+    }
+
     /**
      * The whole body turns round in it, and in first person too (the arms go round the camera, the weapon
      * sweeping past the eyes): G's turns, the crossbow's slap and its blow onto the spine.
      */
     public boolean spins() {
-        return turning() || this == XBOW_SLAP || this == XBOW_SPINE;
+        return turning() || this == XBOW_SLAP || this == XBOW_SPINE || this == XBOW_SPIN;
     }
 
     /** On the ledge: hanging, moving along it, climbing onto it or off it, being pulled up (not the friend pulling). */
@@ -477,6 +522,8 @@ public enum Move {
             case XBOW_SLAP -> now == XBOW_THRUST;
             case XBOW_SPINE -> now == XBOW_SLAP;
             case XBOW_SHOT, XBOW_DASH -> now == XBOW_SPINE;
+            // the fan's shot out of its loading (each roll goes on from the one before once its arrow is out: freeFrom)
+            case XBOW_FAN_SHOT -> now == XBOW_FAN;
             default -> false;
         };
     }
@@ -499,11 +546,13 @@ public enum Move {
     /**
      * Seen in first person too (the arms and what they hold), as the sword guard is (author, 2026-10-28;
      * 2026-10-31: "both arms seen in every attack", FirstPersonArms). Not the shot out of a slide's
-     * getting up: its string hand comes back past the eyes; vanilla's bow is seen then.
+     * getting up: its string hand comes back past the eyes; vanilla's bow is seen then. Nor the fan's shot (its recoil
+     * throws the hand up into the eyes) and the crossbow's rolls (the body goes head over heels): vanilla's crossbow.
      */
     public boolean firstPerson() {
         return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
-                || turning() || ledge() || volley() || marked() || this == SLIDE_SHOT || crossbow();
+                || turning() || ledge() || volley() || marked() || this == SLIDE_SHOT || crossbow()
+                || this == XBOW_VOLLEY || this == XBOW_SPIN || this == XBOW_FAN;
     }
 
     /**
@@ -534,12 +583,17 @@ public enum Move {
             case XBOW_SPINE -> Crossbow.SPINE_CHAIN;
             case XBOW_SHOT -> Crossbow.LEAP_UP;
             case XBOW_DASH -> Crossbow.DASH_UP;
+            case XBOW_VOLLEY -> Crossbow.VOLLEY_UP;
+            case XBOW_SPIN -> Crossbow.SPIN_UP;
+            case XBOW_FAN_SHOT -> Crossbow.FAN_UP;
+            case XBOW_ROLL_BACK, XBOW_ROLL_FRONT, XBOW_ROLL_LEFT, XBOW_ROLL_RIGHT -> Crossbow.ROLL_UP;
             default -> -1;
         };
     }
 
     /** The tick from which another move may cut in: once this one has played out (its fade aside), or earlier for some bow moves. */
     public int freeFrom() {
+        if (crossbowRoll()) return Crossbow.ROLL_NEXT;
         return shot != null ? shot.freeFrom() : length - 3;
     }
 

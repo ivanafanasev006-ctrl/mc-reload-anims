@@ -12,10 +12,13 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.item.ArrowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Comparator;
@@ -72,12 +75,51 @@ public final class Crossbow {
     static final int SLAP_STOOP_TICKS = 20, SPINE_STOOP_TICKS = 10;
     static final int SLAP_STOOP = 18, SPINE_STOOP = 36;
 
+    // ---- G, G held and the rolls (author, 2026-11-08, the second half; round10.py's keys)
+    /** The hop with three arrows: they leave at the top (0.3 s); moving breaks off the rest from VOLLEY_UP (0.7 s). */
+    public static final int VOLLEY_SHOT = 6, VOLLEY_UP = 14;
+    /** The turn: the crossbow sweeps through every mob about the player (0.25 s), the shove (0.5 s), free from SPIN_UP. */
+    public static final int SPIN_SWEEP = 5, SPIN_SHOVE = 10, SPIN_UP = 13;
+    /**
+     * The fan: crossbow_fan's loading loops between these ticks of the animation while G is held (an arrow each);
+     * its shot (XBOW_FAN_SHOT) plays the animation from FAN_SHOT_FROM, the arrows leave FAN_SHOT ticks into it.
+     */
+    public static final int FAN_LOOP_FROM = 6, FAN_LOOP_TO = 16, FAN_SHOT_FROM = 16, FAN_SHOT = 2, FAN_UP = 8;
+    /** A roll: the arrow (0.65 s, up on the knee), the next roll from ROLL_NEXT (0.75 s), moving breaks off the rest from ROLL_UP. */
+    public static final int ROLL_SHOT = 13, ROLL_NEXT = 15, ROLL_UP = 16;
+    /** The rolls end on the server this many ticks after the last one did, none after it (the client stopped). */
+    static final int ROLLS_GAP = 8;
+    /** The fan's arrow count the server lets the client be ahead by (ticks: its G reaches it late). */
+    private static final int FAN_SLACK = 6;
+
     public static boolean held(Player p) {
         return p.getMainHandItem().getItem() instanceof CrossbowItem;
     }
 
     public static boolean loaded(Player p) {
         return CrossbowItem.isCharged(p.getMainHandItem());
+    }
+
+    /** The arrows the player has for the crossbow's own shots (any stack of arrows; as good as endless in creative). */
+    public static int arrows(Player p) {
+        if (p.getAbilities().instabuild) return 1000;
+        int n = 0;
+        for (ItemStack it : p.getInventory().items) if (it.getItem() instanceof ArrowItem) n += it.getCount();
+        ItemStack off = p.getOffhandItem();
+        if (off.getItem() instanceof ArrowItem) n += off.getCount();
+        return n;
+    }
+
+    /** The arrows the fan has loaded after {@code tick} ticks of G held (one at once, one more each FAN_EVERY, up to the most). */
+    public static int fanLoaded(int tick) {
+        int n = 1 + Math.max(0, tick - FAN_LOOP_FROM) / Math.max(1, MovesConfig.crossbowFanEvery());
+        return Mth.clamp(n, 1, MovesConfig.crossbowFanMax());
+    }
+
+    /** G, G held or a roll started (both ends): their waits. */
+    public static void skillStarted(Stamina s, Move m) {
+        if (m == Move.XBOW_VOLLEY || m == Move.XBOW_SPIN) s.xbowCooldown = s.cooled(MovesConfig.crossbowAbilityCooldownTicks());
+        if (m == Move.XBOW_FAN) s.xbowCooldown = s.cooled(MovesConfig.crossbowFanCooldownTicks());
     }
 
     /** The place of a move in the chain (1-4), 0 for any other. */
@@ -171,8 +213,9 @@ public final class Crossbow {
 
     // ------------------------------------------------------------------ server
 
-    /** Every server tick: the blows land on their ticks, the hop's shot leaves. */
+    /** Every server tick: the blows land on their ticks, the hop's shot leaves; G's and the rolls' arrows. */
     static void serverTick(ServerPlayer p, Stamina s) {
+        skillTick(p, s);
         if (s.move == null || step(s.move) == 0) return;
         int t = s.moveTick;
         switch (s.move) {
@@ -191,6 +234,159 @@ public final class Crossbow {
             default -> {
             }
         }
+    }
+
+    /** G, G held and the rolls on their ticks; the fan's loading ends if the crossbow is put away; the rolls' end starts their wait. */
+    private static void skillTick(ServerPlayer p, Stamina s) {
+        rollsTick(p, s);
+        if (s.move == null || !s.move.crossbowSkill()) return;
+        int t = s.moveTick;
+        if (!held(p)) {
+            // put away: G's moves and the rolls stop (the client stops them too)
+            s.end(p);
+            MovesNet.stop(p);
+            return;
+        }
+        switch (s.move) {
+            case XBOW_VOLLEY -> {
+                if (t == VOLLEY_SHOT) volley(p);
+            }
+            case XBOW_SPIN -> {
+                if (t == SPIN_SWEEP) spinSweep(p);
+                if (t == SPIN_SHOVE) spinShove(p);
+            }
+            case XBOW_FAN_SHOT -> {
+                if (t == FAN_SHOT) fan(p, s.fanArrows);
+            }
+            case XBOW_ROLL_BACK, XBOW_ROLL_FRONT, XBOW_ROLL_LEFT, XBOW_ROLL_RIGHT -> {
+                if (t == ROLL_SHOT) rollShot(p);
+            }
+            default -> {
+            }
+        }
+    }
+
+    /**
+     * The rolls are on from the first one; when no roll has followed the last one for ROLLS_GAP ticks (the right button
+     * let go, the client stopped), or the crossbow is put away, they are over and their wait starts (as the Legolas stance's).
+     */
+    private static void rollsTick(ServerPlayer p, Stamina s) {
+        if (!s.xbowRollsLive) return;
+        if (s.move != null && s.move.crossbowRoll() && held(p)) {
+            s.xbowRollsGap = 0;
+            return;
+        }
+        if (++s.xbowRollsGap <= ROLLS_GAP && held(p)) return;
+        s.xbowRollsLive = false;
+        s.xbowRollsCooldown = s.cooled(MovesConfig.crossbowRollsCooldownTicks());
+    }
+
+    /** The fan's shot asked for {@code asked} arrows: no more than it had loaded by now (its loading's ticks) and than there are. */
+    public static int fanCount(ServerPlayer p, Stamina s, int asked) {
+        int loaded = s.move == Move.XBOW_FAN ? fanLoaded(s.moveTick + FAN_SLACK) : 1;
+        return Mth.clamp(asked, 1, Math.min(loaded, Math.max(1, arrows(p))));
+    }
+
+    /**
+     * The hop's three arrows, a little scattered: the crossbow's own shot (as vanilla's: its bolt or rocket, multishot,
+     * piercing, its sound and wear; empty after) and two more beside it, free (as multishot's), to either side.
+     */
+    static void volley(ServerPlayer p) {
+        ItemStack crossbow = p.getMainHandItem();
+        if (!(crossbow.getItem() instanceof CrossbowItem) || !CrossbowItem.isCharged(crossbow)) return;
+        shoot(p);
+        float spread = MovesConfig.crossbowVolleySpread();
+        for (int side = -1; side <= 1; side += 2) {
+            float yaw = p.getYRot() + side * spread + (p.getRandom().nextFloat() * 2 - 1) * 2f;
+            float pitch = p.getXRot() + (p.getRandom().nextFloat() * 2 - 1) * 1.5f;
+            arrow(p, crossbow, Vec3.directionFromRotation(pitch, yaw), true);
+        }
+    }
+
+    /** The turn's sweep: every mob about the player within reach hit and flung away from them. */
+    static void spinSweep(ServerPlayer p) {
+        sound(p, SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 0.9f);
+        p.serverLevel().sendParticles(ParticleTypes.SWEEP_ATTACK, p.getX(), p.getY() + 1.2, p.getZ(), 3, 1.0, 0.1, 1.0, 0);
+        for (LivingEntity e : inFront(p, MovesConfig.crossbowSpinReach(), 180)) {
+            Vec3 away = Strikes.flat(e.position().subtract(p.position()));
+            away = away.lengthSqr() < 1.0E-4 ? look(p) : away.normalize();
+            if (hit(p, e, MovesConfig.crossbowSpinDamage())) shove(e, away.scale(MovesConfig.crossbowSpinPush()), 0.15);
+        }
+    }
+
+    /** The shove after the turn: the mobs in front pushed on further (no damage: the sweep has hit them). */
+    static void spinShove(ServerPlayer p) {
+        sound(p, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 0.8f, 1.0f);
+        for (LivingEntity e : inFront(p, MovesConfig.crossbowReach(), THRUST_HALF)) {
+            shove(e, look(p).scale(MovesConfig.crossbowThrustPush()), 0.1);
+        }
+    }
+
+    /**
+     * The fan of arrows: all at once, one shot, fanned across the look and scattered (a shotgun), each an arrow of the
+     * player's (author, 2026-11-08: "as the bow's G+, only those fly one after another and here all at once"). They hit
+     * through the moment a hit before gives a mob (Bow.volleyHit): the whole fan lands on one at point blank.
+     */
+    static void fan(ServerPlayer p, int n) {
+        ItemStack crossbow = p.getMainHandItem();
+        if (!(crossbow.getItem() instanceof CrossbowItem)) return;
+        float spread = MovesConfig.crossbowFanSpread();
+        int shot = 0;
+        for (int i = 0; i < n; i++) {
+            float across = n == 1 ? 0f : -spread + 2f * spread * i / (n - 1);
+            float yaw = p.getYRot() + across + (p.getRandom().nextFloat() * 2 - 1) * spread / Math.max(2, n);
+            float pitch = p.getXRot() + (p.getRandom().nextFloat() * 2 - 1) * spread * 0.35f;
+            AbstractArrow a = arrow(p, crossbow, Vec3.directionFromRotation(pitch, yaw), false);
+            if (a == null) break;
+            a.getPersistentData().putBoolean(Bow.VOLLEY_ARROW, true);
+            shot++;
+        }
+        if (shot > 0) {
+            sound(p, SoundEvents.GENERIC_EXPLODE, 0.35f, 1.8f);
+            crossbow.hurtAndBreak(shot, p, e -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
+            Stamina.of(p).combatTicks = MovesConfig.combatTicks();
+        }
+    }
+
+    /** A roll's arrow, along the look (none left: a dry click). */
+    static void rollShot(ServerPlayer p) {
+        ItemStack crossbow = p.getMainHandItem();
+        if (!(crossbow.getItem() instanceof CrossbowItem)) return;
+        if (arrow(p, crossbow, p.getLookAngle(), false) == null) {
+            sound(p, SoundEvents.DISPENSER_FAIL, 0.6f, 1.4f);
+            return;
+        }
+        crossbow.hurtAndBreak(1, p, e -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
+        Stamina.of(p).combatTicks = MovesConfig.combatTicks();
+    }
+
+    /**
+     * One arrow from the crossbow as vanilla's crossbow shoots one (CrossbowItem.getArrow: a crit, its hit sound,
+     * piercing; 3.15 blocks a tick), along {@code dir}: one of the player's arrows (its kind: tipped, spectral), or, if
+     * {@code free} (multishot's extras) or in creative, a plain one that cannot be picked up. Null: none to shoot.
+     */
+    static AbstractArrow arrow(ServerPlayer p, ItemStack crossbow, Vec3 dir, boolean free) {
+        boolean creative = p.getAbilities().instabuild;
+        ItemStack ammo = free ? ItemStack.EMPTY : p.getProjectile(crossbow);
+        boolean own = !ammo.isEmpty() && ammo.getItem() instanceof ArrowItem && !creative;
+        if (!own && !free && !creative) return null;
+        ItemStack kind = own ? ammo : new ItemStack(Items.ARROW);
+        AbstractArrow a = ((ArrowItem) kind.getItem()).createArrow(p.level(), kind, p);
+        a.setCritArrow(true);
+        a.setSoundEvent(SoundEvents.CROSSBOW_HIT);
+        a.setShotFromCrossbow(true);
+        int pierce = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.PIERCING, crossbow);
+        if (pierce > 0) a.setPierceLevel((byte) pierce);
+        a.shoot(dir.x, dir.y, dir.z, 3.15f, 1f);
+        if (!own) a.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
+        p.level().addFreshEntity(a);
+        p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, 1f,
+                1f / (p.getRandom().nextFloat() * 0.5f + 1.8f) + 0.5f);
+        if (own) {
+            ammo.shrink(1);
+            if (ammo.isEmpty()) p.getInventory().removeItem(ammo);
+        }
+        return a;
     }
 
     /** The push: the crossbow's front into the nearest mob in front, shoving it back along the look. */

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.mcreload.moves.HudConfig;
 import dev.mcreload.moves.KinetrixMoves;
+import dev.mcreload.moves.Crossbow;
 import dev.mcreload.moves.Move;
 import dev.mcreload.moves.Stamina;
 import net.minecraft.client.CameraType;
@@ -212,6 +213,9 @@ public final class MovesSelfTest {
         crossbowChain("96i_crossbow_chain_front", true, CameraType.THIRD_PERSON_FRONT);
         crossbowChain("96j_crossbow_dash_back", false, CameraType.THIRD_PERSON_BACK);
         crossbowChain("96k_crossbow_first_person", true, CameraType.FIRST_PERSON);
+        // its second half: G (loaded, then not), G held (the fan), the right button held and R (the rolls)
+        crossbowSkills("96l_crossbow_g_fan_rolls", CameraType.THIRD_PERSON_BACK);
+        crossbowSkills("96m_crossbow_g_first_person", CameraType.FIRST_PERSON);
         plungeSplash("99b_plunge_splash");
         // celebrate is Kinetrix's now: its emote (played as the emote menu plays it) and its music, then broken off
         SCENARIOS.add(new Scenario("45_kinetrix_celebrate", 205, sp -> place(sp, 0, ItemStack.EMPTY), (mc, t) -> {
@@ -839,6 +843,53 @@ public final class MovesSelfTest {
                 dummyReport(mc, name, true);
             }
         }, new int[]{10, 12, 14, 17, 19, 21, 22, 24, 28, 31, 34, 36, 37, 39, 43, 46, 49, 52, 55, 60},
+                camera != CameraType.FIRST_PERSON));
+    }
+
+    /**
+     * The crossbow's G, G held and the rolls (author, 2026-11-08, the second half): G tapped loaded (the hop with three
+     * arrows), G tapped empty (the turn with the shove; G's wait undone between), G held 2 s (the fan: about four
+     * arrows, all at once when let go), then the right button held and R: rolls back, A held for one to the left, the
+     * button let go: they end and wait.
+     */
+    private static void crossbowSkills(String name, CameraType camera) {
+        SCENARIOS.add(new Scenario(name, 215, sp -> {
+            ItemStack crossbow = new ItemStack(Items.CROSSBOW);
+            net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+            list.add(new ItemStack(Items.ARROW).save(new net.minecraft.nbt.CompoundTag()));
+            crossbow.getOrCreateTag().put("ChargedProjectiles", list);
+            net.minecraft.world.item.CrossbowItem.setCharged(crossbow, true);
+            place(sp, 0, crossbow);
+            sp.getInventory().add(new ItemStack(Items.ARROW, 32));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 2.2, 40f);
+        }, (mc, t) -> {
+            camera(mc, camera);
+            Stamina s = Stamina.of(mc.player);
+            // G: tapped at 8 and at 44, held from 80 to 120
+            if (t == 8 || t == 44 || t == 80) KeyMapping.click(MovesClient.ABILITY.getKey());
+            MovesClient.ABILITY.setDown(t == 8 || t == 44 || (t >= 80 && t < 120));
+            if (t == 40 || t == 76) {
+                s.xbowCooldown = 0;
+                IntegratedServer srv = mc.getSingleplayerServer();
+                java.util.UUID id = mc.player.getUUID();
+                srv.execute(() -> Stamina.of(srv.getPlayerList().getPlayer(id)).xbowCooldown = 0);
+                s.energy = 100f;
+            }
+            if (t == 11 || t == 47 || t == 100 || t == 123) {
+                note(String.format(Locale.ROOT, "%s t=%d: %s, loaded %s, fan %d, arrows %d", name, t, s.move,
+                        net.minecraft.world.item.CrossbowItem.isCharged(mc.player.getMainHandItem()),
+                        s.move == Move.XBOW_FAN ? Crossbow.fanLoaded(s.moveTick) : s.fanArrows, Crossbow.arrows(mc.player)));
+            }
+            // the right button held from 145 to 195, R at 148, A held 165-175
+            mc.options.keyUse.setDown(t >= 145 && t < 195);
+            if (t == 148) KeyMapping.click(MovesClient.DODGE.getKey());
+            mc.options.keyLeft.setDown(t >= 165 && t < 175);
+            if (t == 150 || t == 166 || t == 182 || t == 205) {
+                note(String.format(Locale.ROOT, "%s t=%d: %s (tick %d), rolling %s, rolls' wait %d, arrows %d", name, t, s.move, s.moveTick,
+                        CrossbowInput.rolling(), s.xbowRollsCooldown, Crossbow.arrows(mc.player)));
+            }
+            if (t == 210) dummyReport(mc, name, true);
+        }, new int[]{12, 14, 46, 49, 52, 90, 118, 123, 125, 152, 157, 160, 170, 175},
                 camera != CameraType.FIRST_PERSON));
     }
 

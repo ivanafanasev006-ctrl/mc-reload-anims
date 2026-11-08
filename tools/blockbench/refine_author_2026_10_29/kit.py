@@ -348,3 +348,42 @@ def design(a, t):
         v = a.curve((bone, ch))(t)[0]
         out[bone + ('@p' if ch == 'position' else '')] = tuple(v)
     return out
+
+
+def soften(anim, sigma, bones=None):
+    """A baked animation (whole poses keyed at its frames) smoothed in time: every track of the player
+    (not the partner's) through a Gaussian of `sigma` seconds, the poses before the start and after the
+    end held as they are, so it still starts and ends exactly where it did. The body is then put back at
+    the height over the floor it had at each frame (a hop's lift too); `bones`: what stands on the floor."""
+    ts = np.array(sorted({t for lst in anim.tracks.values() for t, _, _ in lst}))
+    own = [tk for tk in anim.tracks if not tk[0].endswith('2')]
+    vals = {}
+    for tk in own:
+        by_t = {round(t, 6): v for t, v, _ in anim.tracks[tk]}
+        vals[tk] = np.array([by_t.get(round(t, 6), np.nan * np.ones(3)) for t in ts], float)
+        # a track keyed only at some frames: the gaps from its curve
+        bad = np.isnan(vals[tk][:, 0])
+        if bad.any():
+            c = anim.curve(tk)
+            vals[tk][bad] = [c(t)[0] for t in ts[bad]]
+
+    def pose(i, src):
+        return {(b + '@p' if ch == 'position' else b): tuple(src[(b, ch)][i]) for b, ch in own}
+
+    clear = [lowest(pose(i, vals), bones) for i in range(len(ts))]
+    n = int(np.ceil(4 * sigma * 24)) + 1
+    step = 1 / 24.0
+    ext_t = np.concatenate([ts[0] - step * np.arange(n, 0, -1), ts, ts[-1] + step * np.arange(1, n + 1)])
+    dt = np.gradient(ext_t)
+    out = {}
+    for tk, v in vals.items():
+        ext = np.concatenate([np.repeat(v[:1], n, 0), v, np.repeat(v[-1:], n, 0)])
+        sm = np.empty_like(v)
+        for i, t in enumerate(ts):
+            w = np.exp(-0.5 * ((ext_t - t) / sigma) ** 2) * dt
+            sm[i] = (ext * w[:, None]).sum(0) / w.sum()
+        out[tk] = sm
+    for i, t in enumerate(ts):
+        p = grounded(pose(i, out), clearance=clear[i], bones=bones)
+        anim.key(float(t), p)
+    return anim

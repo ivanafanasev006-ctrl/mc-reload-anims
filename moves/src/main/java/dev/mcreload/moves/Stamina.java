@@ -123,6 +123,15 @@ public final class Stamina {
     /** The crossbow's chain (both ends): the last blow made in it (1-3; 0: none, the next click is the push) and
      *  the ticks left in which a click is the next one (Crossbow.started). */
     public int chainStep, chainTicks;
+    /** The crossbow's G (both ends): ticks before G again (10 s after the hop or the turn, 40 s after the fan). */
+    public int xbowCooldown;
+    /** The crossbow's rolls (both ends): ticks before they can be taken again (from their end). */
+    public int xbowRollsCooldown;
+    /** The crossbow's rolls are on (server): a roll of them was made; ticks since the last one ended (Crossbow.rollsTick). */
+    public boolean xbowRollsLive;
+    public int xbowRollsGap;
+    /** The fan's shot (both ends): how many arrows it fires (the client says, the server holds it to its own count). */
+    public int fanArrows;
     /** The ledge being held (both ends): which way its wall is from the player (Ledge.dir) and the height of its top. */
     public int ledgeDir = -1;
     public double ledgeTop;
@@ -154,7 +163,7 @@ public final class Stamina {
     /** The attacks' cooldowns, in the order the server sends them (MovesNet.Bars). */
     public int[] cooldowns() {
         return new int[]{dashCooldown, whirlCooldown, spinCooldown, slideAttackCooldown, markedCooldown, bowCooldown,
-                slideShotCooldown, legolasCooldown};
+                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown};
     }
 
     public void setCooldowns(int[] c) {
@@ -166,6 +175,8 @@ public final class Stamina {
         bowCooldown = c[5];
         slideShotCooldown = c[6];
         legolasCooldown = c[7];
+        xbowCooldown = c[8];
+        xbowRollsCooldown = c[9];
     }
 
     public boolean canAfford(Move m, Player p) {
@@ -230,6 +241,8 @@ public final class Stamina {
         if (bowCooldown > 0) bowCooldown--;
         if (slideShotCooldown > 0) slideShotCooldown--;
         if (legolasCooldown > 0) legolasCooldown--;
+        if (xbowCooldown > 0) xbowCooldown--;
+        if (xbowRollsCooldown > 0) xbowRollsCooldown--;
         if (hasteTicks > 0) hasteTicks--;
         if (chainTicks > 0 && --chainTicks == 0) chainStep = 0;
         if (p.level().isClientSide && combatTicks > 0) combatTicks--;     // the server's own counts down in serverTick

@@ -62,6 +62,8 @@ public final class StrikeInput {
         if (Strikes.axe(p)) return HudConfig.Moves.WHIRL.on() ? Move.WHIRL : null;
         // the bow's: the volley, held the hail (BowVolley makes them)
         if (dev.mcreload.moves.Bow.isBow(p.getMainHandItem())) return HudConfig.Moves.VOLLEY.on() ? Move.BARRAGE : null;
+        // the crossbow's: the hop with three arrows or the turn, held the fan (CrossbowInput makes them)
+        if (Crossbow.held(p)) return HudConfig.Moves.CROSSBOW_G.on() ? Move.XBOW_VOLLEY : null;
         return null;
     }
 
@@ -78,6 +80,9 @@ public final class StrikeInput {
             case SLIDE_SHOT -> s.slideShotCooldown;
             // the Legolas stance, in the tray by its dodge
             case LEGOLAS_LEFT -> s.legolasCooldown;
+            // the crossbow's G (one wait for the hop, the turn and the fan), its rolls (in the tray by the back roll)
+            case XBOW_VOLLEY, XBOW_SPIN, XBOW_FAN -> s.xbowCooldown;
+            case XBOW_ROLL_BACK -> s.xbowRollsCooldown;
             default -> 0;
         };
     }
@@ -123,7 +128,7 @@ public final class StrikeInput {
         // G: the sword's turn with a sword, the whirlwind with an axe
         if (abilityPressed && s.move == null) {
             Move move = ability(p);
-            if (move != null && !move.volley() && begin(mc, p, s, move)) return true;
+            if (move != null && !move.volley() && !move.crossbowSkill() && begin(mc, p, s, move)) return true;
         }
         // the finisher: the stab with a sword, the chop with an axe (author, 2026-10-30); not with the
         // right button down too (that is the dash)
@@ -215,6 +220,8 @@ public final class StrikeInput {
             case SLIDE_SHOT -> HudConfig.Moves.SLIDE_SHOT.key;
             case LEGOLAS_LEFT -> HudConfig.Moves.LEGOLAS.key;
             case XBOW_THRUST, XBOW_SLAP, XBOW_SPINE, XBOW_SHOT, XBOW_DASH -> HudConfig.Moves.CROSSBOW.key;
+            case XBOW_VOLLEY, XBOW_SPIN, XBOW_FAN -> HudConfig.Moves.CROSSBOW_G.key;
+            case XBOW_ROLL_BACK -> HudConfig.Moves.CROSSBOW_ROLLS.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }

@@ -120,5 +120,13 @@
   "kinetrix_moves.settings.move.bowMarks.tip": "ПКМ зажата, ЛКМ по мобу — метка (до 8, на минуту; ещё раз — снять, с Shift — снять все). Отпустил ПКМ на полном натяге — стрела в каждого помеченного, кого видно; раз в 25 с.",
   "kinetrix_moves.settings.move.bowMarks.keys": "%5$s + %4$s по мобу, отпустить %5$s",
   "kinetrix_moves.marks.cleared": "Метки сняты",
-  "kinetrix_moves.marks.count": "Метки: %s из %s"
+  "kinetrix_moves.marks.count": "Метки: %s из %s",
+  "kinetrix_moves.settings.move.crossbowAbility": "Арбалет: G и «Веер из стрел»",
+  "kinetrix_moves.settings.move.crossbowAbility.tip": "G с арбалетом: заряжен — отскок назад и 3 стрелы в разброс; разряжен — проворот вокруг себя с арбалетом на вытянутой руке (бьёт всех вокруг и отбрасывает) и толчок. Перезарядка 10 с. Зажать G — «Веер из стрел»: каждые 0.5 с заряжается стрела (до 8), отпустить — все разом дробью. Перезарядка 40 с.",
+  "kinetrix_moves.settings.move.crossbowAbility.keys": "%1$s с арбалетом, зажать — веер",
+  "kinetrix_moves.settings.move.crossbowRolls": "Арбалет: кувырки с выстрелом",
+  "kinetrix_moves.settings.move.crossbowRolls.tip": "Зажать ПКМ с арбалетом и нажать R: кувырок за кувырком с выстрелом после каждого — туда, куда нажата клавиша WASD (без клавиш — назад). Отпустить ПКМ или сменить оружие — конец. Перезарядка 12 с с конца.",
+  "kinetrix_moves.settings.move.crossbowRolls.keys": "%5$s + %2$s с арбалетом",
+  "kinetrix_moves.crossbow.fan": "Веер из стрел: %s из %s",
+  "kinetrix_moves.crossbow.no_arrows": "Нет стрел"
 }

@@ -53,8 +53,15 @@ public final class MoveServer {
             s.spend(MovesConfig.costMarkedEach(), p);
         }
         Guard.lower(p, s);
-        if (move.ledge() || move == Move.FALL_TUCK) p.stopUsingItem();
+        if (move.ledge() || move == Move.FALL_TUCK || move.crossbowSkill()) p.stopUsingItem();
+        // the fan's shot: the arrows the client says, no more than it has loaded (as this end counts) and there are
+        if (move == Move.XBOW_FAN_SHOT) s.fanArrows = Crossbow.fanCount(p, s, target);
         s.start(p, move, held);
+        Crossbow.skillStarted(s, move);
+        if (move.crossbowRoll()) {
+            s.xbowRollsLive = true;
+            s.xbowRollsGap = 0;
+        }
         if (move == Move.HOP) Hop.started(p, s, enemy);
         if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
         if (move == Move.WHIRL) Whirl.started(p, s);
@@ -130,7 +137,7 @@ public final class MoveServer {
         // The bow's G and the volley at the marked take the bow over, drawn or not; the shot out of a slide
         // draws it (vanilla's draw, started by the same right click), and its ending looses it.
         boolean hands = move.ledge() || move == Move.FALL_TUCK || move == Move.FALL_ROLL || move == Move.PLUNGE_FALL || move == Move.PLUNGE
-                || move == Move.SLIDE_SHOT_END;
+                || move == Move.SLIDE_SHOT_END || move.crossbowSkill();
         boolean bow = move.volley() || move.marked() || move == Move.SLIDE_SHOT;
         if (bow && !Bow.volleyReady(p)) return false;
         if (!hands && !bow && (move.drawnBow() ? !Bow.drawing(p) : p.isUsingItem())) return false;
@@ -172,6 +179,18 @@ public final class MoveServer {
             if (!Crossbow.held(p) || !Crossbow.follows(move, s, p.level().isClientSide)) return false;
             if (move == Move.XBOW_SHOT && !Crossbow.loaded(p)) return false;
             return ground;
+        }
+        // The crossbow's G (author, 2026-11-08): from the ground once its wait is over, the hop with three arrows only loaded,
+        // the turn with the shove only not; the fan's shot out of its loading. The rolls (the right button held, R) from
+        // the ground once their wait (from the last rolls' end) is over; each from the one before once its arrow is out.
+        if (move.crossbowSkill()) {
+            if (!Crossbow.held(p)) return false;
+            int slack = p.level().isClientSide ? 0 : 5;
+            if (move == Move.XBOW_FAN_SHOT) return s.move == Move.XBOW_FAN;
+            if (move == Move.XBOW_VOLLEY && !Crossbow.loaded(p)) return false;
+            if (move == Move.XBOW_SPIN && Crossbow.loaded(p)) return false;
+            if (move.crossbowRoll()) return ground && s.xbowRollsCooldown <= slack;
+            return ground && s.xbowCooldown <= slack;
         }
         // The strikes: the dash with a sword (the left and the right button held); on G the sword's turn
         // with a sword, the whirlwind with an axe; the finisher: the stab with a sword, the chop with an

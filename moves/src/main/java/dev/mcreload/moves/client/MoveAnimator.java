@@ -87,9 +87,12 @@ public final class MoveAnimator {
         layer.speed.speed = move.animSpeed;
         // The hail: the volley's draw and release over and over (MoveAnimator.pace sets the pace).
         if (move == Move.HAIL) anim = hailLoop(anim);
+        // The fan of arrows: its loading over and over while G is held (an arrow a loop)
+        if (move == Move.XBOW_FAN) anim = fanLoop(anim);
         // Bow moves may play a part of their animation (a half of bow_walk_around) and hold its last frame.
         // The ending of the shot out of a slide plays bow_slide_shot from the knee.
-        int from = move.shot != null ? move.shot.animStart() : move == Move.SLIDE_SHOT_END ? Move.SLIDE_SHOT_SPIN : 0;
+        int from = move.shot != null ? move.shot.animStart() : move == Move.SLIDE_SHOT_END ? Move.SLIDE_SHOT_SPIN
+                : move == Move.XBOW_FAN_SHOT ? dev.mcreload.moves.Crossbow.FAN_SHOT_FROM : 0;
         if (move == Move.LEDGE_HANG && was != null && was.ledge()) from = HANG_LOOP;
         KeyframeAnimationPlayer keyframes = new KeyframeAnimationPlayer(anim, from);
         if (move.firstPerson()) firstPerson(keyframes);
@@ -117,6 +120,22 @@ public final class MoveAnimator {
             hailOf = anim;
         }
         return hailLoop;
+    }
+
+    /** crossbow_fan looped over its loading from Crossbow.FAN_LOOP_FROM to FAN_LOOP_TO, made once. */
+    private static KeyframeAnimation fanLoop, fanOf;
+
+    private static KeyframeAnimation fanLoop(KeyframeAnimation anim) {
+        if (fanOf != anim) {
+            KeyframeAnimation.AnimationBuilder b = anim.mutableCopy();
+            b.isLooped = true;
+            b.returnTick = dev.mcreload.moves.Crossbow.FAN_LOOP_FROM;
+            b.endTick = dev.mcreload.moves.Crossbow.FAN_LOOP_TO;
+            b.stopTick = dev.mcreload.moves.Crossbow.FAN_LOOP_TO + 1;
+            fanLoop = b.build();
+            fanOf = anim;
+        }
+        return fanLoop;
     }
 
     /**

@@ -120,5 +120,13 @@
   "kinetrix_moves.settings.move.bowMarks.tip": "The right button held, the left one on a mob: a mark (up to 8, for a minute; again to take it off, with Shift all of them). Let go of the right button at the full draw: an arrow at each marked mob in sight; once in 25 s.",
   "kinetrix_moves.settings.move.bowMarks.keys": "%5$s + %4$s on a mob, let go of %5$s",
   "kinetrix_moves.marks.cleared": "Marks taken off",
-  "kinetrix_moves.marks.count": "Marks: %s of %s"
+  "kinetrix_moves.marks.count": "Marks: %s of %s",
+  "kinetrix_moves.settings.move.crossbowAbility": "Crossbow: G and the fan of arrows",
+  "kinetrix_moves.settings.move.crossbowAbility.tip": "G with a crossbow: loaded, a hop back and 3 arrows spread; not loaded, a turn round with the crossbow at arm's length (hits everyone about and flings them away) and a shove. 10 s cooldown. Hold G for the fan of arrows: an arrow loads every 0.5 s (8 at most), let go and they all fly at once like a shotgun. 40 s cooldown.",
+  "kinetrix_moves.settings.move.crossbowAbility.keys": "%1$s with a crossbow, held: the fan",
+  "kinetrix_moves.settings.move.crossbowRolls": "Crossbow: rolls with a shot",
+  "kinetrix_moves.settings.move.crossbowRolls.tip": "Hold the right button with a crossbow and press R: roll after roll with a shot after each, the way WASD points (back with none). Let go of the right button or put the crossbow away to stop. 12 s cooldown from the end.",
+  "kinetrix_moves.settings.move.crossbowRolls.keys": "%5$s + %2$s with a crossbow",
+  "kinetrix_moves.crossbow.fan": "Fan of arrows: %s of %s",
+  "kinetrix_moves.crossbow.no_arrows": "No arrows"
 }
