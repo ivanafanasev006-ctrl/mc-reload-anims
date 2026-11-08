@@ -141,7 +141,9 @@ public enum Move {
      * or the head"; an arrow needed): the turn, the arm out, the arrow into its head at 0.6 s (XBOW_KILL) kills it
      * (crossbow_finisher, round11.py).
      */
-    FINISHER_XBOW("crossbow_finisher", 1f, 25, 0, Strikes.XBOW_KILL + 1, -1, -1, Side.FRONT, MovesConfig::costFinisher),
+    FINISHER_XBOW("crossbow_finisher", 1f, 25, 0, Strikes.XBOW_KILL + 1, -1, -1, Side.BACK, MovesConfig::costFinisher,
+            // the recoil carries the player back about 2 blocks from the shot (author, after 0.9.6: "a little further back")
+            0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0.50f, 0.45f, 0.38f, 0.30f, 0.22f, 0.14f, 0.07f),
 
     // ---- the author's second message of 2026-10-29
     /**

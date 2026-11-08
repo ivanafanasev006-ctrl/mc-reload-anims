@@ -87,13 +87,13 @@ def crossbow_finisher():
     wind, e1 = arm_to(wind, 'right', [('rhand', round9.yawed(CF_YAW(CF_WIND), (2.0, 19.0, -5.5)), 1.0),
                                       ('xfront', round9.yawed(CF_YAW(CF_WIND), (-6.0, 22.0, -7.0)), 0.6)])
     tuck = dict(wind, torso=(0, -6, 0))
+    # the arm straight out at the mob, no bend at the elbow (author, after 0.9.6: "the arm straight forward at the target,
+    # not bent"); the prod lies level that way (its tips across, as the arm hangs)
     aim = {**CARRY, 'torso': (0, -18, 0), 'chest': (-2, 0, 0), 'head': (0, 18, 0), 'body@p': (0, -0.6, 0),
-           'left_arm': (-12, 0, -18), 'left_forearm': (35, 0, 0)}
-    aim, e2 = arm_to(aim, 'right', [('rhand', (3.0, 21.5, -12.0), 1.0), ('xfront', (2.0, 22.5, -22.0), 1.0)],
-                     {('right_forearm', 0): (0.0, 12.0)})
+           'left_arm': (-12, 0, -18), 'left_forearm': (35, 0, 0), 'right_arm': (90.0, 14.0, 0.0), 'right_forearm': (0.0, 0.0, 0.0)}
+    e2 = 0.0
     kick = dict(aim)
-    x, y, z = kick['right_arm']
-    kick['right_arm'] = (x + 16, y, z)
+    kick['right_arm'] = (104.0, 14.0, 0.0)
     kick['head'] = (-5, 18, 0)
     keys = [(0, CARRY), (CF_WIND, wind, 'inout'), (0.3, tuck), (CF_ROUND, tuck), (CF_AIM, aim, 'out'), (CF_SHOT, aim),
             (CF_KICK, kick, 'out2'), (CF_HOLD, aim, 'inout'), (CF_LEN, CARRY, 'inout')]
@@ -111,7 +111,8 @@ def crossbow_finisher():
             .step('left', CF_AIM - 0.04, CF_AIM + 0.04, -2.2, 2.0, 16, lift=0.0)
             .step('right', CF_HOLD + 0.04, CF_LEN - 0.04, 1.9, 0.0, 0, lift=1.2)
             .step('left', CF_HOLD + 0.06, CF_LEN - 0.02, -1.9, 0.0, 0, lift=0.0))
-    a = bake('crossbow_finisher', CF_LEN, pose_at, feet, body=lambda t: (0.0, CF_YAW(t), 0.0), extra=(CF_SHOT,))
+    # the arm is set by hand (straight): not levelled again frame by frame, which would bend it
+    a = bake('crossbow_finisher', CF_LEN, pose_at, feet, body=lambda t: (0.0, CF_YAW(t), 0.0), extra=(CF_SHOT,), level=False)
     a.errors = (e1, e2)
     return a
 
