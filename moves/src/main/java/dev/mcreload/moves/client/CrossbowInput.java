@@ -68,7 +68,8 @@ public final class CrossbowInput {
                 Move move = held ? Move.XBOW_FAN : Crossbow.loaded(p) ? Move.XBOW_VOLLEY : Move.XBOW_SPIN;
                 if (move == Move.XBOW_FAN && Crossbow.arrows(p) <= 0) {
                     p.displayClientMessage(Component.translatable("kinetrix_moves.crossbow.no_arrows"), true);
-                } else if (s.move == null && MovesClient.start(p, s, move, -1)) {
+                } else if (s.move == null && (move == Move.XBOW_SPIN ? MovesClient.start(p, s, move, Crossbow.pushOff(p))
+                        : MovesClient.start(p, s, move, -1))) {
                     if (p.isUsingItem()) p.stopUsingItem();     // G takes the crossbow over from the loading
                     StrikeInput.swallow(mc);
                     LedgeInput.swallowUse(mc);

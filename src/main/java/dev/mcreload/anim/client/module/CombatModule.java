@@ -17,8 +17,8 @@ import net.minecraft.util.Mth;
  *   <li>Fighting stance with a melee weapon; two-handed samurai grip when the other hand is empty.</li>
  *   <li>Keyframed strikes: sword combo (forehand, backhand, overhead, spinning finisher), heavy axe
  *       chops, pickaxe / shovel / hoe / tree-chopping loops, fists on blocks, item throws.</li>
- *   <li>Bow: side-on archer's stance, alternating classic and horizontal bow. Crossbow: carried at
- *       the chest, shouldered like a rifle when loaded, string pulled by hand when loading.</li>
+ *   <li>Bow: side-on archer's stance, alternating classic and horizontal bow. Crossbow: on the
+ *       shoulder in one hand, in both hands level and ready when loaded, string pulled by hand when loading.</li>
  *   <li>Shield: staggered half-squat, recoil on every blocked hit. Food raised to the mouth.</li>
  * </ul>
  * With Better Combat installed, its weapons do not use the vanilla swing, so this module stays
@@ -221,10 +221,9 @@ final class CombatModule implements AnimModule {
             Rigging.legsOut(f, 0.08f * bow * still);
         }
 
-        // Crossbow: both hands on it, held at the body like a shotgun: the trigger hand at the
-        // hip, the other hand forward under the front, the shoulders turned a little behind it
-        // (arm angles solved for the crossbow's grip and front). Loaded, it comes up a little,
-        // level and ready, and the feet set when standing.
+        // Crossbow: not loaded, on the shoulder in one hand; loaded, both hands on it, level and
+        // ready, and the feet set when standing (arm angles solved for the crossbow's grip and
+        // front on the jointed rig, tools/blockbench/refine_author_2026_10_29/round9.py).
         float carry = m.crossCarryW.v * gate;
         float aimC = m.crossAimW.v * gate;
         float hold = Math.max(carry, aimC);
@@ -233,14 +232,16 @@ final class CombatModule implements AnimModule {
             PartPose grip = cs > 0 ? f.rightArm() : f.leftArm();
             PartPose fore = cs > 0 ? f.leftArm() : f.rightArm();
             float up = aimC / hold;
-            // Held still: no breathing or swinging on the arms (they would rattle the crossbow).
-            grip.override(Mth.lerp(up, -0.78f, -0.94f), cs * Mth.lerp(up, -0.63f, -0.56f),
-                    cs * Mth.lerp(up, 0.43f, 0.33f), hold);
-            grip.overrideBend(s.elbow() * Mth.lerp(up, 0.84f, 0.77f), hold);
-            fore.override(Mth.lerp(up, -0.92f, -1.40f), cs * Mth.lerp(up, 0.35f, 0.61f),
-                    cs * Mth.lerp(up, 0.46f, -0.24f), hold);
-            fore.overrideBend(s.elbow() * 0.10f, hold);
-            Rigging.twistShoulders(f, cs * 0.40f * hold);
+            // Not loaded it rests on the shoulder, one hand on it, as a shotgun is carried (author, 2026-11-08: "held like a
+            // shotgun laid on the shoulder with one hand, not thrown all the way back": tilted back about 45 degrees, the
+            // prod over the shoulder behind the head), the other hand free; loaded it comes down into both hands, level and
+            // ready, the shoulders turned a little behind it. Held still: no breathing or swinging on the arm with it.
+            grip.override(Mth.lerp(up, -1.911f, -0.94f), cs * Mth.lerp(up, -0.710f, -0.56f),
+                    cs * Mth.lerp(up, 0.876f, 0.33f), hold);
+            grip.overrideBend(s.elbow() * Mth.lerp(up, 2.356f, 0.77f), hold);
+            fore.override(-1.40f, cs * 0.61f, cs * -0.24f, hold * up);
+            fore.overrideBend(s.elbow() * 0.10f, hold * up);
+            Rigging.twistShoulders(f, cs * 0.40f * hold * up);
             float still = (1f - m.moveF()) * aimC;
             PartPose lead = cs > 0 ? f.leftLeg() : f.rightLeg();
             PartPose rear = cs > 0 ? f.rightLeg() : f.leftLeg();

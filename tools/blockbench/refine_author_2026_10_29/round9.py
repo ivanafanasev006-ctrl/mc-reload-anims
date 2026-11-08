@@ -30,7 +30,7 @@ the last one left the body). Five animations, one file (refined/crossbow_2026-11
 
 The model does not travel: the mechanic pushes the player in the hop and the dash (Move.XBOW_SHOT,
 XBOW_DASH); every frame the lowest point of the legs is put on the floor. Each starts and ends in the
-pose Kinetrix holds a crossbow in (CombatModule, the carry: the trigger hand at the hip, the other under
+pose Kinetrix holds a crossbow in (CombatModule, the carry: since Kinetrix 1.1.2 on the shoulder; it was the trigger hand at the hip, the other under
 the front), so the chain flows and Kinetrix takes over without a jump. The crossbow is not turned in
 the fist: the game holds it as vanilla does, along the forearm (author, 2026-10-28, of the bow: it does
 not twirl in the hand). The grey figure is the mob, at the reach the blows are made at; it never reaches
@@ -84,8 +84,14 @@ for _n, _p in {'xfront': _sprite(-7.8, 0.0), 'xbutt': _sprite(9.2, 0.6), 'xtip_a
 # Kinetrix's own angles to 0.0 px (its arms, playerAnimator's convention, through kinetrix_rig)
 # --------------------------------------------------------------------------------------------
 
-CARRY = {'torso': (0.0, -22.9, 0.0), 'right_arm': (61.5, 56.0, 37.0), 'right_forearm': (48.1, 0.0, 0.0),
-         'left_arm': (62.7, 0.7, 24.6), 'left_forearm': (5.7, 0.0, 0.0)}
+CARRY = {'torso': (0.0, 0.0, 0.0), 'right_arm': (109.5, 40.7, 50.2), 'right_forearm': (135.0, 0.0, 0.0),
+         'left_arm': (0.0, 0.0, 0.0), 'left_forearm': (0.0, 0.0, 0.0)}
+#: The carry before (Kinetrix 1.1.1: the trigger hand at the hip, the other under the front, the shoulders turned):
+#: the author, after 0.9.1, wanted the crossbow "held like a shotgun laid on the shoulder with one hand, not thrown
+#: all the way back" when it is not loaded. Kinetrix 1.1.2 carries it so (CombatModule: the fist by the shoulder, the
+#: crossbow up over it tilted back about 45 degrees, the prod behind the head, the other arm free), CARRY above.
+HIP_CARRY = {'torso': (0.0, -22.9, 0.0), 'right_arm': (61.5, 56.0, 37.0), 'right_forearm': (48.1, 0.0, 0.0),
+             'left_arm': (62.7, 0.7, 24.6), 'left_forearm': (5.7, 0.0, 0.0)}
 
 #: The mob: in front, at the reach of the blows (its middle this far, px), facing the player.
 MOB_AT = (0.0, 0.0, -27.0)
@@ -577,8 +583,8 @@ def _mob_after(length, struck=None):
 #: ready) as the rig's keys, fitted to its arms to 0.0 px as CARRY is (author, 2026-11-08: "for Kinetrix's
 #: animations, not vanilla's, so it does not look different"): every shot of the crossbow's moves is
 #: aimed so, not at the eyes as vanilla's loaded crossbow.
-AIM = {**CARRY, 'right_arm': (66.0, 53.2, 27.3), 'right_forearm': (44.1, 0.0, 0.0), 'left_arm': (74.8, -12.6, -11.5),
-       'left_forearm': (5.7, 0.0, 0.0)}
+AIM = {**CARRY, 'torso': (0.0, -22.9, 0.0), 'right_arm': (66.0, 53.2, 27.3), 'right_forearm': (44.1, 0.0, 0.0),
+       'left_arm': (74.8, -12.6, -11.5), 'left_forearm': (5.7, 0.0, 0.0)}
 _AIMED = {}
 
 

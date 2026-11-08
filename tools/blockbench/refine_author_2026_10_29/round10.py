@@ -20,8 +20,8 @@ shooting from its aim (AIM, carried with the neck, round9._aim), smoothed the sa
                            crouch, up.
     crossbow_spin_push     G, not loaded: wound up to the left, a whole turn clockwise with the crossbow
                            out at arm's length, sweeping round at the chest's height (SP_SWEEP: every
-                           mob about him hit and flung away), then both hands on it and a shove forward
-                           with a step (SP_SHOVE), back into the carry.
+                           mob about him hit), then both hands shove it into the nearest mob and off it he
+                           springs back, away from it (SP_SHOVE; author, after 0.9.1), a crouch, up.
     crossbow_fan           G held, the fan of arrows: into a braced stance, the crossbow at the aim; one
                            loading a FAN_EVERY (the free hand back to the string, an arrow laid, back to
                            the front: the game loops FAN_LOOP_FROM - FAN_LOOP_TO while G is held, an arrow
@@ -110,12 +110,13 @@ def crossbow_hop_volley():
 # --------------------------------------------------------------------------------------------
 
 #: Times (s): wound up (WIND), the crossbow sweeping through the back half (SWEEP: Crossbow.SPIN_SWEEP, tick 5),
-#: round to the front (ROUND), the shove (SHOVE: Crossbow.SPIN_SHOVE, tick 10), its follow-through (FOLLOW),
-#: the stance (LEN).
-SP_WIND, SP_SWEEP, SP_ROUND, SP_SHOVE, SP_FOLLOW, SP_LEN = 0.1, 0.25, 0.4, 0.5, 0.58, 0.9
-#: The body's turn (degrees, clockwise is -): wound up to the left, a whole turn round.
+#: round to the front (ROUND), both hands shoving off the nearest mob (SHOVE: Crossbow.SPIN_SHOVE, tick 9), off the
+#: floor backwards (OFF: the push from tick 10), the top of the hop (TOP), the feet down (LAND), up (UP), the stance (LEN).
+SP_WIND, SP_SWEEP, SP_ROUND, SP_SHOVE, SP_OFF, SP_TOP, SP_LAND, SP_UP, SP_LEN = 0.1, 0.25, 0.4, 0.46, 0.5, 0.6, 0.75, 0.98, 1.15
+#: The body's turn (degrees, clockwise is -): wound up to the left, a whole turn round, facing the mob at the shove.
 SPIN_YAW = kit.keys((0.0, 0.0), (SP_WIND, 22.0), (0.18, -60.0), (SP_SWEEP, -160.0), (0.33, -265.0), (SP_ROUND, -330.0),
-                    (SP_SHOVE, -356.0), (0.6, -360.0), (SP_LEN, -360.0))
+                    (SP_SHOVE, -358.0), (0.52, -360.0), (SP_LEN, -360.0))
+SPIN_LIFT = kit.keys((0.0, 0.0), (SP_OFF, 0.0), (SP_TOP, 5.0, 'out'), (SP_LAND, 0.0, 'in'), (SP_LEN, 0.0))
 
 
 def _out(pose, yaw, reach=1.0):
@@ -130,10 +131,11 @@ def _out(pose, yaw, reach=1.0):
 
 
 def crossbow_spin_push():
-    """Wound up to the left, the crossbow across the chest; the hips lead a whole turn to the right, the
-    arm opening out at the shoulder's height, the crossbow at arm's length sweeping round behind and to
-    the side (every mob about him hit); coming round to the front the free hand takes the crossbow and
-    both arms shove it forward with a step of the right foot; back into the carry."""
+    """Wound up to the left, the crossbow off the shoulder across the chest; the hips lead a whole turn to the right,
+    the arm opening out at the shoulder's height, the crossbow at arm's length sweeping round (every mob about him
+    hit); coming round to the mob the free hand takes the crossbow and both arms shove it into the mob, and off it
+    the player springs back (author, after 0.9.1: "not just a turn round himself but a push off the nearest enemy,
+    away from it"), the knees up, down into a crouch, up with the crossbow onto the shoulder again."""
     wind = {**CARRY, 'body@p': (-0.4, -1.0, 0.0), 'chest': (-4, 0, 0), 'torso': (0, 18, 0),
             'right_leg': (-4, 0, 3), 'right_shin': (-10, 0, 0), 'left_leg': (2, 0, -2), 'left_shin': (-10, 0, 0)}
     y = SPIN_YAW(SP_WIND)
@@ -152,36 +154,49 @@ def crossbow_spin_push():
     late, e5 = _out(late, y, 0.85)
     # round to the front: the arm folds in, the free hand on the crossbow, both drawn back to the chest
     y = SPIN_YAW(SP_ROUND)
-    gather = {**late, 'torso': (0, -8, 0), 'body': (0, y, 0), 'body@p': (0, -1.6, 0.6), 'chest': (-2, 0, 0)}
+    gather = {**late, 'torso': (0, -8, 0), 'body': (0, y, 0), 'body@p': (0, -1.8, 0.6), 'chest': (-2, 0, 0)}
     gather, e6 = arm_to(gather, 'right', [('rhand', round9.yawed(y, (3.5, 18.0, -3.5)), 1.0),
                                           ('xfront', round9.yawed(y, (2.0, 19.0, -12.0)), 0.6)])
     gather, e7 = arm_to(gather, 'left', [('lhand', kit.pt(kit.fk(gather), 'xfore') + np.array((-0.6, -1.4, 0.0)), 1.0)])
-    y = SPIN_YAW(SP_SHOVE)
-    shove = {**gather, 'torso': (0, 4, 0), 'body': (0, y, 0), 'body@p': (0, -1.6, -2.2), 'chest': (-8, 0, 0), 'head': (6, 0, 0)}
-    shove, e8 = arm_to(shove, 'right', [('rhand', round9.yawed(y, (2.5, 19.5, -11.5)), 1.0),
-                                        ('xfront', round9.yawed(y, (1.5, 20.0, -20.0)), 0.6)],
-                       {('right_forearm', 0): (0.0, 30.0)})
+    # the shove: both arms out, the crossbow flat on the mob's chest, the body leaning into it, about to spring off
+    shove = {**gather, 'torso': (0, 2, 0), 'body': (0, 0, 0), 'body@p': (0, -2.4, -1.6), 'chest': (-6, 0, 0), 'head': (4, 0, 0),
+             'right_leg': (22, 0, 3), 'right_shin': (-36, 0, 0), 'left_leg': (8, 0, -3), 'left_shin': (-26, 0, 0)}
+    shove, e8 = arm_to(shove, 'right', [('rhand', (2.5, 19.0, -11.0), 1.0), ('xfront', (1.5, 19.5, -19.5), 0.6)],
+                       {('right_forearm', 0): (0.0, 35.0)})
     shove, e9 = arm_to(shove, 'left', [('lhand', kit.pt(kit.fk(shove), 'xfore') + np.array((-0.6, -1.4, 0.0)), 1.0)])
-    follow = {**shove, 'body@p': (0, -1.4, -2.4), 'chest': (-9, 0, 0)}
-    for p in (wind, open_, sweep, late, gather, shove, follow):
+    # off it backwards: the arms drawing the crossbow back in, the knees up
+    air = {**shove, 'body': (-6, 0, 0), 'body@p': (0, 0, 0), 'chest': (-2, 0, 0), 'head': (2, 0, 0),
+           'right_leg': (-26, 0, 4), 'right_shin': (-50, 0, 0), 'left_leg': (26, 0, -3), 'left_shin': (-70, 0, 0)}
+    air, e10 = arm_to(air, 'right', [('rhand', (4.0, 17.0, -6.0), 1.0), ('xfront', (3.0, 18.5, -15.0), 0.6)])
+    air, e11 = arm_to(air, 'left', [('lhand', kit.pt(kit.fk(air), 'xfore') + np.array((-0.6, -1.4, 0.0)), 1.0)])
+    land = {**air, 'body': (-3, 0, 0), 'body@p': (0, -5.0, 0), 'chest': (-6, 0, 0), 'head': (0, 0, 0)}
+    up = L.mix(land, CARRY, 0.5)
+    up['body@p'] = (0, -2.0, 0)
+    for p in (wind, open_, sweep, late, gather):
         p.pop('body', None)
     keys = [(0, CARRY), (SP_WIND, wind, 'inout'), (0.18, open_), (SP_SWEEP, sweep), (0.33, late), (SP_ROUND, gather),
-            (SP_SHOVE, shove, 'out'), (SP_FOLLOW, follow, 'out'), (SP_LEN, CARRY, 'inout')]
+            (SP_SHOVE, shove, 'out'), (SP_TOP, air, 'out'), (SP_LAND, land, 'in'), (0.85, land),
+            (SP_UP, up, 'inout'), (SP_LEN, CARRY, 'inout')]
     dsg = design('spin_push', SP_LEN, keys)
+    tilt = kit.keys(*[(k[0], k[1].get('body', (0, 0, 0))[0]) for k in keys])
 
     def pose_at(t):
         p = kit.design(dsg, t)
         yaw = SPIN_YAW(t)
-        p['head'] = (p['head'][0], round9.spotting(-(yaw + p['torso'][1]), -1), p['head'][2])
+        if t < SP_ROUND:
+            p['head'] = (p['head'][0], round9.spotting(-(yaw + p['torso'][1]), -1), p['head'][2])
+        p['body'] = (float(tilt(t)), yaw, 0.0)
         return stepping(p, yaw, kit.span(t, SP_WIND, SP_WIND + 0.04) * (1 - kit.span(t, 0.36, SP_SHOVE - 0.02)))
 
-    feet = (Feet().designed(SP_WIND - 0.01, SP_SHOVE - 0.08)
-            .step('right', SP_SHOVE - 0.08, SP_SHOVE, 2.2, -5.0, -8, lift=1.4)
-            .step('left', SP_SHOVE - 0.08, SP_SHOVE, -1.9, 0.8, 10, lift=0.0)
-            .step('right', 0.66, 0.8, 1.9, 0.0, 0, lift=1.2)
-            .step('left', 0.68, 0.82, -1.9, 0.0, 0, lift=0.0))
-    a = bake('crossbow_spin_push', SP_LEN, pose_at, feet, body=lambda t: (0.0, SPIN_YAW(t), 0.0), extra=(SP_SWEEP, SP_SHOVE))
-    a.errors = (e1, e2, e3, e4, e5, e6, e7, e8, e9)
+    feet = (Feet().designed(SP_WIND - 0.01, SP_SHOVE - 0.06)
+            .step('right', SP_SHOVE - 0.06, SP_SHOVE, 2.2, -4.0, -8, lift=1.2)
+            .step('left', SP_SHOVE - 0.06, SP_SHOVE, -1.9, 0.8, 10, lift=0.0)
+            .off(SP_OFF, SP_LAND).step('left', SP_OFF, SP_LAND, -2.4, -3.5, 4, lift=0.0)
+            .step('right', SP_OFF, SP_LAND, 2.3, 3.8, -14, lift=0.0)
+            .step('right', SP_UP - 0.1, SP_UP + 0.04, 1.9, 0.0, 0, lift=1.2)
+            .step('left', SP_UP, SP_LEN - 0.03, -1.9, 0.0, 0, lift=1.2))
+    a = bake('crossbow_spin_push', SP_LEN, pose_at, feet, lift=SPIN_LIFT, extra=(SP_SWEEP, SP_SHOVE))
+    a.errors = (e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)
     return a
 
 

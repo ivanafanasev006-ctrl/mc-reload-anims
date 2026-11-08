@@ -78,8 +78,8 @@ public final class Crossbow {
     // ---- G, G held and the rolls (author, 2026-11-08, the second half; round10.py's keys)
     /** The hop with three arrows: they leave at the top (0.3 s); moving breaks off the rest from VOLLEY_UP (0.7 s). */
     public static final int VOLLEY_SHOT = 6, VOLLEY_UP = 11;
-    /** The turn: the crossbow sweeps through every mob about the player (0.25 s), the shove (0.5 s), free from SPIN_UP. */
-    public static final int SPIN_SWEEP = 5, SPIN_SHOVE = 10, SPIN_UP = 13;
+    /** The turn: the crossbow sweeps through every mob about the player (0.25 s), the push off the nearest (0.46 s), free from SPIN_UP. */
+    public static final int SPIN_SWEEP = 5, SPIN_SHOVE = 9, SPIN_UP = 17;
     /**
      * The fan: crossbow_fan's loading loops between these ticks of the animation while G is held (an arrow each);
      * its shot (XBOW_FAN_SHOT) plays the animation from FAN_SHOT_FROM, the arrows leave FAN_SHOT ticks into it.
@@ -337,12 +337,27 @@ public final class Crossbow {
         }
     }
 
-    /** The shove after the turn: the mobs in front pushed on further (no damage: the sweep has hit them). */
+    /** The push off after the turn: the nearest mob shoved away as the player springs off it (no damage: the sweep has hit it). */
     static void spinShove(ServerPlayer p) {
         sound(p, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 0.8f, 1.0f);
-        for (LivingEntity e : inFront(p, MovesConfig.crossbowReach(), THRUST_HALF)) {
-            shove(e, look(p).scale(MovesConfig.crossbowThrustPush()), 0.1);
-        }
+        LivingEntity e = nearest(p, MovesConfig.crossbowReach());
+        if (e != null) shove(e, Strikes.flat(e.position().subtract(p.position())).normalize().scale(MovesConfig.crossbowThrustPush()), 0.1);
+    }
+
+    /** The nearest mob about the player (any side) within {@code reach} blocks of their middle to its side, or null. */
+    public static LivingEntity nearest(Player p, double reach) {
+        return p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(reach + 1, 1.0, reach + 1),
+                        e -> e != p && e.isAlive() && e.isPickable() && !p.isAlliedTo(e) && !(e instanceof ArmorStand)
+                                && Math.abs(e.getY() - p.getY()) < 2.0 && Strikes.flat(e.position().subtract(p.position())).length() - e.getBbWidth() / 2 <= reach)
+                .stream().min(Comparator.comparingDouble(e -> e.distanceToSqr(p))).orElse(null);
+    }
+
+    /** The way the turn's push off goes: away from the nearest mob within MovesConfig.crossbowStepReach (flat, unit), else null (back). */
+    public static Vec3 pushOff(Player p) {
+        LivingEntity e = nearest(p, MovesConfig.crossbowStepReach());
+        if (e == null) return null;
+        Vec3 away = Strikes.flat(p.position().subtract(e.position()));
+        return away.lengthSqr() < 1.0E-4 ? null : away.normalize();
     }
 
     /**

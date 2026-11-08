@@ -255,10 +255,12 @@ public enum Move {
             0.62f, 0.62f, 0.58f, 0.52f, 0.44f, 0.34f, 0.24f, 0.14f),
     /**
      * G tapped, not loaded: a whole turn clockwise with the crossbow out at arm's length, every mob about the player
-     * hit and flung away at 0.25 s (Crossbow.SPIN_SWEEP), then a shove forward with both hands at 0.5 s
-     * (SPIN_SHOVE), the carry (0.9 s).
+     * hit and flung away at 0.25 s (Crossbow.SPIN_SWEEP), then both hands shove off the nearest mob at 0.46 s
+     * (SPIN_SHOVE) and the player springs back away from it, about 3.4 blocks (author, after 0.9.1: "a push off the
+     * nearest enemy, away from it"; the client pushes the way from it), untouchable in the air; up (1.15 s).
      */
-    XBOW_SPIN("crossbow_spin_push", 1f, 21, -1, -1, -1, -1, Side.FRONT, MovesConfig::costCrossbowSpin),
+    XBOW_SPIN("crossbow_spin_push", 1f, 26, 10, 15, -1, -1, Side.BACK, MovesConfig::costCrossbowSpin,
+            0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0.66f, 0.64f, 0.58f, 0.50f, 0.40f, 0.30f, 0.20f, 0.10f),
     /**
      * G held: the fan of arrows loading, an arrow every 0.5 s while G is held (Crossbow.FAN_EVERY), 8 at most; the
      * loading loops (Crossbow.FAN_LOOP_FROM - FAN_LOOP_TO) until G is let go, the player creeping.
