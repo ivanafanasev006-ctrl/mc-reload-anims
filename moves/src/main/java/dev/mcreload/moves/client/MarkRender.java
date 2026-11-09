@@ -25,6 +25,8 @@ import org.joml.Matrix4f;
  */
 public final class MarkRender {
     private static final ResourceLocation MARK = new ResourceLocation(KinetrixMoves.MODID, "textures/misc/mark.png");
+    /** The throw's auto-aim: a red cross on the mob (author, 2026-11-09: "a cross, not a square, while aiming"). */
+    private static final ResourceLocation CROSS = new ResourceLocation(KinetrixMoves.MODID, "textures/misc/aim_cross.png");
     /** Half the mark's side and how high over the head it hangs (blocks). */
     private static final float HALF = 0.22f, ABOVE = 0.55f;
 
@@ -33,13 +35,16 @@ public final class MarkRender {
     }
 
     private static void render(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+            aim(event);
+            return;
+        }
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         if (p == null || mc.options.hideGui) return;
         Stamina s = Stamina.of(p);
-        int aimed = ThrownClient.aimed;
-        if (s.marks.isEmpty() && aimed < 0) return;
+        if (s.marks.isEmpty()) return;
         Camera camera = event.getCamera();
         Vec3 cam = camera.getPosition();
         float pt = event.getPartialTick();
@@ -63,20 +68,36 @@ public final class MarkRender {
             quad(v, m, half, alpha, true);
             ps.popPose();
         }
-        // the throw's auto-aim: a smaller one on the mob's middle, where the weapon will go
-        if (aimed >= 0 && p.level().getEntity(aimed) instanceof LivingEntity e && e.isAlive()) {
-            double x = Mth.lerp(pt, e.xo, e.getX()) - cam.x, y = Mth.lerp(pt, e.yo, e.getY()) + e.getBbHeight() * 0.55 - cam.y,
-                    z = Mth.lerp(pt, e.zo, e.getZ()) - cam.z;
-            float half = HALF * 0.6f * (1f + Math.min(1.5f, (float) Math.sqrt(x * x + y * y + z * z) / 32f));
-            ps.pushPose();
-            ps.translate(x, y, z);
-            ps.mulPose(camera.rotation());
-            ps.scale(-1f, -1f, 1f);
-            Matrix4f m = ps.last().pose();
-            quad(v, m, half, 255, false);
-            quad(v, m, half, 255, true);
-            ps.popPose();
-        }
+        buffers.endBatch(type);
+    }
+
+    /**
+     * The throw's auto-aim: a red cross on the mob's middle, where the weapon will go, drawn last (over the player's own
+     * model, which hid it in the third person) and through walls.
+     */
+    private static void aim(RenderLevelStageEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer p = mc.player;
+        int aimed = ThrownClient.aimed;
+        if (p == null || mc.options.hideGui || aimed < 0 || !(p.level().getEntity(aimed) instanceof LivingEntity e) || !e.isAlive()) return;
+        Camera camera = event.getCamera();
+        Vec3 cam = camera.getPosition();
+        float pt = event.getPartialTick();
+        double x = Mth.lerp(pt, e.xo, e.getX()) - cam.x, y = Mth.lerp(pt, e.yo, e.getY()) + e.getBbHeight() * 0.55 - cam.y,
+                z = Mth.lerp(pt, e.zo, e.getZ()) - cam.z;
+        float half = HALF * 0.7f * (1f + Math.min(1.5f, (float) Math.sqrt(x * x + y * y + z * z) / 32f));
+        PoseStack ps = event.getPoseStack();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        RenderType type = RenderType.textSeeThrough(CROSS);
+        VertexConsumer v = buffers.getBuffer(type);
+        ps.pushPose();
+        ps.translate(x, y, z);
+        ps.mulPose(camera.rotation());
+        ps.scale(-1f, -1f, 1f);
+        Matrix4f m = ps.last().pose();
+        quad(v, m, half, 255, false);
+        quad(v, m, half, 255, true);
+        ps.popPose();
         buffers.endBatch(type);
     }
 

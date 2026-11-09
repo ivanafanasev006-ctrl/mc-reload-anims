@@ -981,7 +981,7 @@ public final class MovesSelfTest {
             place(sp, 0, new ItemStack(weapon));
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 4.0, 20f);
         }, (mc, t) -> {
-            camera(mc, CameraType.THIRD_PERSON_BACK);
+            camera(mc, t >= 9 && t < 19 ? CameraType.FIRST_PERSON : CameraType.THIRD_PERSON_BACK);     // the aim seen as the author plays it
             LocalPlayer p = mc.player;
             Stamina st = Stamina.of(p);
             // both buttons held (kept down every tick, as the game lets go of keys set once), the left let go first
@@ -989,7 +989,7 @@ public final class MovesSelfTest {
                 mc.options.keyUse.setDown(t >= 6 && t < 23);
                 mc.options.keyAttack.setDown(t >= 6 && t < 19);
             }
-            if (t == 12 || t == 21) note(name + " t=" + t + ": " + st.move + ", in hand " + p.getMainHandItem().getItem());
+            if (t == 12 || t == 21) note(name + " t=" + t + ": " + st.move + ", in hand " + p.getMainHandItem().getItem() + ", aimed at " + ThrownClient.aimed);
             if (t == 31) {
                 // a look from the side at the weapon in the zombie
                 net.minecraft.world.entity.Entity mob = nearestDummy(mc);
