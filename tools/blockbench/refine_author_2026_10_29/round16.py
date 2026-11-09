@@ -31,6 +31,9 @@ RISE = 0.3
 ARMS_LOW = {'right_arm': (8.0, 0.0, 12.0), 'left_arm': (8.0, 0.0, -12.0), 'right_forearm': (14.0, 0.0, 0.0),
             'left_forearm': (14.0, 0.0, 0.0)}
 ARMS_IN = 0.15
+#: 02:17: "turning the other way; on landing not bent back": the body's turn about Y the other way round; from the landing
+#: the body a little forward (his leant back about 20 degrees), the chest straight (None: as his).
+LAND_LEAN = {'body': (-8.0, None, None), 'chest': (0.0, None, None)}
 
 
 def source(t):
@@ -62,18 +65,30 @@ def main():
             if c not in ch:
                 continue
             land = sum(d for d, _, _ in PIECES[:3])
-            low = ARMS_LOW.get(bone) if c == 'rotation' else None
-            last = list(low) if low else kr.sample(ch[c], PIECES[-1][2])
+            low = (ARMS_LOW.get(bone) or LAND_LEAN.get(bone)) if c == 'rotation' else None
+            flip = bone == 'body' and c == 'rotation'
+
+            def at(src):
+                v = [float(x) for x in kr.sample(ch[c], src)]
+                if flip:
+                    v[1] = -v[1]
+                return v
+
+            def lowered(v):
+                # the landing pose, each angle at the whole turn nearest the take's
+                return [x if y is None else y + round((x - y) / 360.0) * 360.0 for x, y in zip(v, low)]
+
+            last = lowered(at(PIECES[-1][2])) if low else at(PIECES[-1][2])
             # up: from the kneel to the stance, plainly (the angles to the nearest whole turn of standing)
             stand = [round(float(x) / 360.0) * 360.0 if c == 'rotation' else 0.0 for x in last]
             for i in range(n + 1):
                 t = i / FPS
                 src = source(t)
                 if src is not None:
-                    v = kr.sample(ch[c], src)
+                    v = at(src)
                     if low and t > land:
                         w = 0.5 - 0.5 * math.cos(math.pi * min(1.0, (t - land) / ARMS_IN))
-                        v = [float(x) + (y - float(x)) * w for x, y in zip(v, low)]
+                        v = [x + (y - x) * w for x, y in zip(v, lowered(v))]
                 else:
                     w = 0.5 - 0.5 * math.cos(math.pi * min(1.0, (t - kneel) / RISE))
                     v = [float(x) + (y - float(x)) * w for x, y in zip(last, stand)]
