@@ -62,9 +62,13 @@ public final class MovesNet {
         if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), ThrownInfo.of(t, st));
     }
 
-    /** A thrown weapon taken back: its clients forget it. */
+    /**
+     * A thrown weapon taken back (or gone): its clients forget it. To all near, not to the entity's trackers: once it is
+     * removed it has none, and the word never came (author's video, 2026-11-09: the hint "pull the sword out" stayed, the
+     * buttons only jerked the arms).
+     */
     public static void thrownGone(net.minecraft.world.entity.projectile.ThrownTrident t) {
-        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> t),
+        CHANNEL.send(PacketDistributor.NEAR.with(PacketDistributor.TargetPoint.p(t.getX(), t.getY(), t.getZ(), 128, t.level().dimension())),
                 new ThrownInfo(t.getId(), -1, net.minecraft.world.item.ItemStack.EMPTY, -1, 0f, 0f, 0f, 0f, 0f));
     }
 

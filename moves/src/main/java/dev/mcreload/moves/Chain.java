@@ -25,26 +25,44 @@ import net.minecraft.world.phys.Vec3;
  * kills it then (KILL), and keeps the fall from hurting.</p>
  */
 public final class Chain {
-    /** The flip (round14.py's chain_flip): off the shoulders (0.15 s), the feet down (0.9 s). */
-    public static final int FLIP_OFF = 3, FLIP_LAND = 18;
+    /** The flip (round15.py's chain_flip): off the mob (0.1 s), the feet down (0.85 s), the back roll on the ground (as the roll kick's). */
+    public static final int FLIP_OFF = 2, FLIP_LAND = 17, ROLL_FROM = 19, ROLL_TO = 27;
+    /** The flip's jump off (blocks a tick back and up) and the roll's speed along the ground (1.5 blocks, as the roll kick's). [default] */
+    public static final double FLIP_BACK = 0.28, FLIP_UP = 0.42, ROLL_SPEED = 0.19;
     /** The first mob may be this far (blocks, from the player); the leap is a jump of about that. [default] */
     public static final double FIRST_REACH = 7.0;
     /** The fewest weak mobs about for the chain (author, 2026-11-09: "from 2 to 6"; the most is MovesConfig.chainMax). */
     public static final int FEWEST = 2;
 
-    /** Off the ground (the leap: 0.2 s) or the shoulders (the hop: 0.1 s), round14.py's keys. */
+    /** Off the ground (the leap: 0.25 s) or the mob before (the hops: 0.15 s), round15.py's keys. */
     public static int off(Move m) {
-        return m == Move.CHAIN_LEAP ? 4 : 2;
+        return m == Move.CHAIN_LEAP ? 5 : 3;
     }
 
-    /** On the mob's shoulders: the leap at 0.5 s, the hop at 0.55 s. */
+    /** On the mob: the leap at 0.5 s, the hops at 0.7 s. */
     public static int land(Move m) {
-        return m == Move.CHAIN_LEAP ? 10 : 11;
+        return m == Move.CHAIN_LEAP ? 10 : 14;
     }
 
-    /** The blade into the head, the mob dead: the leap at 0.8 s, the hop at 0.75 s. */
+    /** The blade in, the mob dead: the leap's into the back at 0.8 s, a hop's into the head at 0.85 s, into the back at 1.05 s. */
     public static int kill(Move m) {
-        return m == Move.CHAIN_LEAP ? 16 : 15;
+        return m == Move.CHAIN_LEAP ? 16 : front(m) ? 21 : 17;
+    }
+
+    /** Taken from the front (face to face, the blade over its shoulder into its back), not from behind (into its head). */
+    public static boolean front(Move m) {
+        return m == Move.CHAIN_LEAP || m == Move.CHAIN_HOP_STAB || m == Move.CHAIN_HOP_STAB_CCW;
+    }
+
+    /**
+     * Where the player is on the mob, as in the author's take (the mob's root to the player's, his figures of a zombie's
+     * size): in front of it 0.55 blocks, the feet 0.65 up (at its hips), or behind it 0.4, the feet a block up; at its size.
+     */
+    public static Vec3 contact(LivingEntity mob, boolean front) {
+        float k = net.minecraft.util.Mth.clamp(mob.getBbHeight() / 1.95f, 0.5f, 1.6f);
+        float r = mob.getYRot() * net.minecraft.util.Mth.DEG_TO_RAD;
+        Vec3 facing = new Vec3(-net.minecraft.util.Mth.sin(r), 0, net.minecraft.util.Mth.cos(r));
+        return mob.position().add(facing.scale((front ? 0.55 : -0.40) * k)).add(0, (front ? 0.65 : 1.0) * k, 0);
     }
 
     /** The blade out again, the arms up: the next leap (or the flip) may start (the leap's and the hop's last ticks). */

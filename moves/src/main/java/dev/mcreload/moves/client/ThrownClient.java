@@ -44,6 +44,8 @@ public final class ThrownClient {
     static int pullable(LocalPlayer p, Entity looked) {
         int best = -1;
         double bestDist = Double.MAX_VALUE;
+        // one whose weapon this client no longer has is forgotten (picked up, gone, out of sight: told again on coming near)
+        INFO.keySet().removeIf(id -> p.level().getEntity(id) == null);
         for (MovesNet.ThrownInfo m : INFO.values()) {
             if (m.owner() != p.getId() || m.stuckIn() < 0) continue;
             if (!(p.level().getEntity(m.stuckIn()) instanceof LivingEntity mob) || !mob.isAlive()) continue;

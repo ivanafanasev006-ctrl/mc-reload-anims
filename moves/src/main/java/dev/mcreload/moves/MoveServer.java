@@ -58,7 +58,7 @@ public final class MoveServer {
         if (move == Move.XBOW_FAN_SHOT) s.fanArrows = Crossbow.fanCount(p, s, target);
         // the throw: as far as the aim was held (author, 2026-11-09: "the longer held, the further, as a trident"); its wait
         if (move == Move.THROW) {
-            s.throwHeld = s.move == Move.THROW_AIM ? s.moveTick : 0;
+            s.throwHeld = s.move == Move.THROW_AIM ? s.moveTick : MovesConfig.throwFullTicks();     // its aim not seen: as held
             s.throwCooldown = s.cooled(MovesConfig.throwCooldownTicks());
         }
         s.start(p, move, held);
@@ -191,8 +191,13 @@ public final class MoveServer {
         }
         // The throw (author, after 0.9.1): a sword or an axe in hand, its aim from the ground, the throw out of the aim; the
         // pull with any hand (its weapon is the target, MoveServer.validTarget)
-        if (move == Move.THROW_AIM) return Thrown.throwable(p) && ground && s.throwCooldown <= (p.level().isClientSide ? 0 : 5);
-        if (move == Move.THROW) return Thrown.throwable(p) && s.move == Move.THROW_AIM;
+        // (the server lets the aim be a moment off the ground and the throw come with its aim lost on the way: the author's
+        // video, 2026-11-09, the weapon drawn back again and again and not thrown)
+        if (move == Move.THROW_AIM) {
+            boolean near = ground || (!p.level().isClientSide && p.tickCount - lastGround(p) <= JUMP_GRACE + GROUND_GRACE);
+            return Thrown.throwable(p) && near && s.throwCooldown <= (p.level().isClientSide ? 0 : 5);
+        }
+        if (move == Move.THROW) return Thrown.throwable(p) && (s.move == Move.THROW_AIM || !p.level().isClientSide && s.move == null);
         if (move == Move.WEAPON_PULL) return true;
         // The chain finisher (author, after 0.9.1): a sword, from the ground or a jump just begun (or the sword's finisher
         // ending), once its wait is over, two weak mobs about at least (2026-11-09); each next leap (or the flip) once the

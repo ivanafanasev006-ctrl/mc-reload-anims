@@ -11,8 +11,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashSet;
@@ -20,8 +18,9 @@ import java.util.Set;
 
 /**
  * The chain finisher on the player's side (Chain): Ctrl, W and Space down with a sword, the left button (or the sword's
- * finisher just over), two weak mobs about at least: a leap onto the shoulders of the weak mob in front (from behind it),
- * the blade into its head; then onto the next weak one near, up to MovesConfig.chainMax; then the back flip down. The player is carried along an arc onto each mob's shoulders, turned
+ * finisher just over), two weak mobs about at least: a leap onto the weak mob in front, the blade over its shoulder into
+ * its back; then onto the next weak one near, onto its back, the blade into its head, and so on in turn, up to
+ * MovesConfig.chainMax; then the back flip off and a back roll. The player is carried along an arc onto each mob's shoulders, turned
  * with it to the way the mob faces (the camera too), and held there until the next leap.
  */
 public final class ChainInput {
@@ -96,14 +95,17 @@ public final class ChainInput {
     }
 
     private static boolean leap(LocalPlayer p, Stamina s, Move move, LivingEntity mob) {
-        // behind it, facing the way it faces: the turn the shorter way, a whole turn more if it is short (author: "180-360");
-        // the hop's take turning that way (clockwise from above: the yaw growing)
+        // the first, the third, the fifth from the front (face to face, the blade into the back), the others from behind
+        // (into the head), in turn (author, 2026-11-09); the hop's take turning the way the player turns (clockwise from
+        // above: the yaw growing), a whole turn more if the turn is short (author: "180-360")
+        boolean first = move == Move.CHAIN_LEAP, f = first || DONE.size() % 2 == 0;
         float yaw = p.getYRot();
-        float d = Mth.wrapDegrees(mob.getYRot() - yaw);
-        if (Math.abs(d) < 120) d += d < 0 ? -360 : 360;
-        if (move.chainHop()) move = d >= 0 ? Move.CHAIN_HOP : Move.CHAIN_HOP_CCW;
+        float d = Mth.wrapDegrees(mob.getYRot() + (f ? 180f : 0f) - yaw);
+        if (!first && Math.abs(d) < 120) d += d < 0 ? -360 : 360;
+        if (!first) move = f ? (d >= 0 ? Move.CHAIN_HOP_STAB : Move.CHAIN_HOP_STAB_CCW) : (d >= 0 ? Move.CHAIN_HOP : Move.CHAIN_HOP_CCW);
         if (!MovesClient.start(p, s, move, mob.getId())) return false;
         DONE.add(mob.getId());
+        front = f;
         from = p.position();
         yawFrom = yaw;
         yawWas = yawFrom;
@@ -111,18 +113,10 @@ public final class ChainInput {
         return true;
     }
 
-    /** Where the player stands on the mob: on its shoulders, a little behind its middle. */
-    private static Vec3 shoulders(LivingEntity mob) {
-        float r = mob.getYRot() * Mth.DEG_TO_RAD;
-        Vec3 back = new Vec3(Mth.sin(r), 0, -Mth.cos(r)).scale(0.25);
-        return mob.position().add(back).add(0, Math.max(0.6, mob.getBbHeight() - 0.35), 0);
-    }
-
     /** Every client tick after moving: the player carried by the chain; the next leap or the flip once the blade is in. */
     static void tick(LocalPlayer p, Stamina s) {
-        Move m = s.move;
         afterFinisher(p, s);
-        m = s.move;
+        Move m = s.move;
         if (m == null || !m.chain()) {
             if (m == null) from = null;
             return;
@@ -131,22 +125,29 @@ public final class ChainInput {
         int t = s.moveTick;
         p.fallDistance = 0f;
         if (m == Move.CHAIN_FLIP) {
-            float f = Mth.clamp((t - Chain.FLIP_OFF) / (float) (Chain.FLIP_LAND - Chain.FLIP_OFF), 0f, 1f);
-            if (f >= 1f) return;
-            Vec3 to = flipTo(p);
-            Vec3 at = from.lerp(to, f).add(0, 1.2 * Math.sin(Math.PI * f), 0);
-            p.setPos(at);
-            p.setDeltaMovement(Vec3.ZERO);
+            // off the mob backwards and down by itself (author, 2026-11-09: "as with Ctrl + W + Space + R"), a back roll on
+            // the ground once down
+            float r = p.getYRot() * Mth.DEG_TO_RAD;
+            Vec3 back = new Vec3(Mth.sin(r), 0, -Mth.cos(r));
+            if (t < Chain.FLIP_OFF) {
+                p.setPos(from);
+                p.setDeltaMovement(Vec3.ZERO);
+            } else if (t == Chain.FLIP_OFF) {
+                p.setDeltaMovement(back.scale(Chain.FLIP_BACK).add(0, Chain.FLIP_UP, 0));
+            } else if (t >= Chain.ROLL_FROM && t <= Chain.ROLL_TO && p.onGround()) {
+                p.setDeltaMovement(back.scale(Chain.ROLL_SPEED).add(0, p.getDeltaMovement().y, 0));
+            }
             return;
         }
         Entity e = p.level().getEntity(s.target);
         LivingEntity mob = e instanceof LivingEntity le ? le : null;
         if (mob != null && (mob.isAlive() || t <= Chain.kill(m) + 1)) {
-            Vec3 top = shoulders(mob);
+            // on the mob itself, as in the author's take (it was a block over its head): in front of it or on its back
+            Vec3 top = Chain.contact(mob, front);
             if (t <= Chain.land(m)) {
                 int off = Chain.off(m);
                 float f = Mth.clamp((t - off) / (float) (Chain.land(m) - off), 0f, 1f);
-                double h = 1.0 + Math.max(0, top.y - from.y) * 0.3;
+                double h = 0.45 + Math.max(0, top.y - from.y) * 0.3;
                 p.setPos(from.lerp(top, f).add(0, h * Math.sin(Math.PI * f), 0));
                 float yaw = Mth.lerp(f, yawFrom, yawTo);
                 p.setYRot(p.getYRot() + (yaw - yawWas));
@@ -160,32 +161,19 @@ public final class ChainInput {
             p.setPos(lastTop);
         }
         p.setDeltaMovement(Vec3.ZERO);
-        // the blade is in: on to the next weak one near, or the flip down
+        // the blade is in and out: on to the next weak one near, or the flip down
         if (t >= Chain.next(m)) {
             LivingEntity next = DONE.size() < MovesConfig.chainMax() ? next(p, p.position(), MovesConfig.chainRange(), 180) : null;
             if (next == null || !leap(p, s, Move.CHAIN_HOP, next)) {
                 Vec3 was = p.position();
-                if (MovesClient.start(p, s, Move.CHAIN_FLIP, -1)) {
-                    from = was;
-                    flipTo = null;
-                }
+                if (MovesClient.start(p, s, Move.CHAIN_FLIP, -1)) from = was;
             }
         }
     }
 
-    private static Vec3 lastTop, flipTo;
-
-    /** Where the flip comes down: 2.5 blocks behind, on the floor below (or as low as the chain began). */
-    private static Vec3 flipTo(LocalPlayer p) {
-        if (flipTo != null) return flipTo;
-        float r = p.getYRot() * Mth.DEG_TO_RAD;
-        Vec3 back = from.add(new Vec3(Mth.sin(r), 0, -Mth.cos(r)).scale(2.5));
-        HitResult hit = p.level().clip(new ClipContext(back.add(0, 1.0, 0), back.add(0, -6.0, 0), ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.NONE, p));
-        double y = hit.getType() == HitResult.Type.BLOCK ? hit.getLocation().y : groundY;
-        flipTo = new Vec3(back.x, y, back.z);
-        return flipTo;
-    }
+    private static Vec3 lastTop;
+    /** This leap's mob is taken from the front (else from behind). */
+    private static boolean front;
 
     private ChainInput() {}
 }

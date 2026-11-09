@@ -473,10 +473,12 @@ public final class MovesGameTests {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Zombie zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 4);
-        Zombie other = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 2, 3);
+        // (the other one apart: right beside the player it pushed it and the zombie about, out of the finisher's reach now and then)
+        Zombie other = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 2);
         Stamina s = Stamina.of(p);
         t.at(2, () -> {
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            zombie.teleportTo(p.getX(), p.getY(), p.getZ() + 1.0);
             zombie.setHealth(zombie.getMaxHealth() * 0.2f);
             s.energy = 100f;
             t.check(MoveServer.request(p, Move.FINISHER, false, zombie.getId()), "finisher refused on a weak zombie at point blank");

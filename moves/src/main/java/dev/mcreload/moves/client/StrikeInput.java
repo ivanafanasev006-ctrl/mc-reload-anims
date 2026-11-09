@@ -135,11 +135,12 @@ public final class StrikeInput {
             finisherTarget = null;
             swallow(mc);
             LedgeInput.swallowUse(mc);
-            if (!rmb) MovesClient.cancel(p, s, 4);
-            else if (!lmb) MovesClient.start(p, s, Move.THROW, -1);
+            // the left let go: thrown, or (it cannot be: no energy, the weapon gone) the aim put down, not held on and on
+            if (!rmb || !lmb && !MovesClient.start(p, s, Move.THROW, -1)) MovesClient.cancel(p, s, 4);
             return true;
         }
-        if (lmb && rmb && s.move == null && dev.mcreload.moves.Thrown.throwable(p) && HudConfig.Moves.THROW.on()
+        if (!lmb || !rmb) aimRefused = false;
+        if (lmb && rmb && s.move == null && !aimRefused && dev.mcreload.moves.Thrown.throwable(p) && HudConfig.Moves.THROW.on()
                 && MoveServer.allowed(p, s, Move.THROW_AIM)) {
             GuardInput.lowerLocal(p, s, true);
             LedgeInput.swallowUse(mc);
@@ -303,6 +304,9 @@ public final class StrikeInput {
     }
 
     /** Lets go of the left button: its clicks this tick are used up and it reads as up until pressed again. */
+    /** The server said no to the aim: not drawn back again until the buttons are let go (it was, over and over). */
+    static boolean aimRefused;
+
     static void swallow(Minecraft mc) {
         while (mc.options.keyAttack.consumeClick()) {
             // used up

@@ -305,16 +305,20 @@ public enum Move {
     /** The left or the right button at point blank to a mob with the player's weapon in it: pulled out at 0.3 s (Thrown.PULL_TICK). */
     WEAPON_PULL("weapon_pull", 1f, 17, -1, -1, -1, -1, Side.FRONT, () -> 0),
 
-    // ---- the chain finisher (author, after 0.9.1; Chain, ChainInput): chain_leap, chain_hop(_ccw), chain_flip (round14.py, the
-    // author's takes of 2026-11-09)
-    /** Ctrl + W + Space + LMB with a sword: the leap onto the shoulders of a weak mob, the blade into its head at 0.8 s (Chain.kill). */
-    CHAIN_LEAP("chain_leap", 1f, 24, 0, 22, -1, -1, Side.FRONT, MovesConfig::costChain),
-    /** On to the next weak mob near, turning clockwise: over, the blade in at 0.75 s (each kill 10 energy). */
-    CHAIN_HOP("chain_hop", 1f, 21, 0, 19, -1, -1, Side.FRONT, MovesConfig::costChain),
-    /** The same, turning the other way (the shorter way round to behind the next one). */
-    CHAIN_HOP_CCW("chain_hop_ccw", 1f, 21, 0, 19, -1, -1, Side.FRONT, MovesConfig::costChain),
-    /** None left (or six done): the back flip off the last one, down on the feet at 0.9 s. */
-    CHAIN_FLIP("chain_flip", 1f, 32, 0, 18, -1, -1, Side.BACK, () -> 0),
+    // ---- the chain finisher (author, after 0.9.1; Chain, ChainInput): round15.py, the author's parts of 2026-11-09; the mobs
+    // taken from the front (the blade over the shoulder into the back) and from behind (into the head) in turn
+    /** Ctrl + W + Space + LMB with a sword: onto the first weak mob from the front, the blade into its back at 0.8 s (Chain.kill). */
+    CHAIN_LEAP("chain_leap", 1f, 22, 0, 20, -1, -1, Side.FRONT, MovesConfig::costChain),
+    /** On to the next weak mob near, turning clockwise, onto its back: the blade into its head at 0.85 s (each kill 10 energy). */
+    CHAIN_HOP("chain_hop", 1f, 25, 0, 23, -1, -1, Side.FRONT, MovesConfig::costChain),
+    /** The same, turning the other way (the shorter way round). */
+    CHAIN_HOP_CCW("chain_hop_ccw", 1f, 25, 0, 23, -1, -1, Side.FRONT, MovesConfig::costChain),
+    /** On to the one after, clockwise, in front of it: the blade into its back at 1.05 s. */
+    CHAIN_HOP_STAB("chain_hop_stab", 1f, 28, 0, 26, -1, -1, Side.FRONT, MovesConfig::costChain),
+    /** The same, turning the other way. */
+    CHAIN_HOP_STAB_CCW("chain_hop_stab_ccw", 1f, 28, 0, 26, -1, -1, Side.FRONT, MovesConfig::costChain),
+    /** None left (or six done): the back flip off the last one, down on the feet at 0.85 s, a back roll on the ground (as the roll kick's), up. */
+    CHAIN_FLIP("chain_flip", 1f, 36, 0, 17, -1, -1, Side.BACK, () -> 0),
 
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */
@@ -486,9 +490,9 @@ public enum Move {
         return this == CHAIN_LEAP || chainHop() || this == CHAIN_FLIP;
     }
 
-    /** The chain's leap on to the next mob, either way round. */
+    /** The chain's leap on to the next mob, either way round, from behind or from the front. */
     public boolean chainHop() {
-        return this == CHAIN_HOP || this == CHAIN_HOP_CCW;
+        return this == CHAIN_HOP || this == CHAIN_HOP_CCW || this == CHAIN_HOP_STAB || this == CHAIN_HOP_STAB_CCW;
     }
 
     /** The throw (its aim, the throw itself) and the pull. */
@@ -578,7 +582,7 @@ public enum Move {
             case XBOW_FAN_SHOT -> now == XBOW_FAN;
             // the throw out of its aim; the finisher right after the pull (the author's "pulling it out, he drives it in again")
             case THROW -> now == THROW_AIM;
-            case CHAIN_HOP, CHAIN_HOP_CCW, CHAIN_FLIP -> now == CHAIN_LEAP || now.chainHop();
+            case CHAIN_HOP, CHAIN_HOP_CCW, CHAIN_HOP_STAB, CHAIN_HOP_STAB_CCW, CHAIN_FLIP -> now == CHAIN_LEAP || now.chainHop();
             // the chain on its own after the sword's finisher, more weak mobs about (author, 2026-11-09)
             case CHAIN_LEAP -> now == FINISHER;
             case FINISHER, FINISHER_AXE -> now == WEAPON_PULL;
@@ -636,7 +640,7 @@ public enum Move {
             case FINISHER -> Strikes.FINISH_OUT;
             case FINISHER_BOW -> Strikes.BOW_KILL + 4;
             case THROW -> Thrown.THROW_RELEASE + 4;
-            case CHAIN_FLIP -> Chain.FLIP_LAND + 4;
+            case CHAIN_FLIP -> Chain.ROLL_TO + 3;
             case WEAPON_PULL -> Thrown.PULL_TICK + 4;
             case FINISHER_XBOW -> Strikes.XBOW_KILL + 5;
             case FINISHER_AXE -> Strikes.CHOP_OUT;

@@ -1013,6 +1013,7 @@ public final class MovesClient {
         LocalPlayer p = Minecraft.getInstance().player;
         if (p == null) return;
         Stamina s = Stamina.of(p);
+        if (move == Move.THROW_AIM || move == Move.THROW) StrikeInput.aimRefused = true;
         if (s.move != move) return;
         s.end(p);
         MoveAnimator.stop(p, 3);

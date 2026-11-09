@@ -180,6 +180,7 @@ public final class Thrown {
             State st = en.getValue();
             if (t.isRemoved()) {
                 if (t.getOwner() instanceof ServerPlayer p) toHand(p, st.item);
+                MovesNet.thrownGone(t);
                 return true;
             }
             if (st.stuckIn < 0) return false;
