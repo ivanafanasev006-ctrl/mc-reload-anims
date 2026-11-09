@@ -2268,7 +2268,9 @@ public final class MovesGameTests {
          * another one choking in a wall).
          */
         private void strays(boolean all) {
-            // the floor template: 7 by 7 (relative 0 to 7), its air 4 high over the test block
+            // the floor: 7 by 7 (relative 0 to 7), its air 4 high over the test block (the template is 13 by 13, 6 blocks of air
+            // on the +X and +Z sides, so that the tests stand 11 blocks apart: a mob flung or an arrow off one hit the next now
+            // and then, a different test failing on CI each run)
             net.minecraft.world.phys.AABB floor = new net.minecraft.world.phys.AABB(h.absoluteVec(Vec3.ZERO), h.absoluteVec(new Vec3(7, 5, 7)))
                     .inflate(0.5, 3, 0.5);
             for (net.minecraft.world.entity.projectile.AbstractArrow a : h.getLevel().getEntitiesOfClass(
