@@ -240,9 +240,9 @@ public enum Move {
     SWORD_SPIN("sword_spin", 1f, 26, -1, -1, -1, -1, Side.FRONT, MovesConfig::costSwordSpin),
     /**
      * W + Space + G held with a sword (author, 2026-11-10): straight over head down, five turns of the blade along the look (no
-     * steering), down on the knees at 1.55 s sliding a couple of blocks, up (round16.py, his example remade). Spin.AIR_* its keys.
+     * steering), down on the knees at 1.65 s sliding a couple of blocks, up (round16.py, his example remade). Spin.AIR_* its keys.
      */
-    AIR_SPIN("sword_air_spin", 1f, 46, -1, -1, -1, -1, Side.FRONT, MovesConfig::costAirSpin, Spin.airPush()),
+    AIR_SPIN("sword_air_spin", 1f, 48, -1, -1, -1, -1, Side.FRONT, MovesConfig::costAirSpin, Spin.airPush()),
     /** The sword's turn's ending, in place of its next turn when G is up: the slow-down and the stance (0.45 s). */
     SPIN_END("sword_spin_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
 

@@ -23,8 +23,14 @@ FPS = 24
 #: "the hop at the start is useless, straight into the turns; the turns and the run 1.5-1.7 times quicker; down on the
 #: knees, sliding a couple of blocks as on Ctrl + C, then he just gets up, no show". His jump cut to its last 0.3 s (over
 #: head down), the turns and the drop 1.6 times faster, his kneel (3.25 s) held for the slide, then up into the stance.
-PIECES = [(0.15, 0.45, 0.75), (1.75 / 1.6, 0.75, 2.5), (0.5 / 1.6, 2.5, 3.0), (0.1, 3.0, 3.25), (0.35, 3.25, 3.6)]
+#: 01:45: "1.5 times, not 1.6; at the end the arms not spread out, down (or a little apart), not up".
+SPEED = 1.5
+PIECES = [(0.15, 0.45, 0.75), (1.75 / SPEED, 0.75, 2.5), (0.5 / SPEED, 2.5, 3.0), (0.1, 3.0, 3.25), (0.35, 3.25, 3.6)]
 RISE = 0.3
+#: The arms from the landing on: down at the sides, a little apart (his were spread out and up), over ARMS_IN seconds.
+ARMS_LOW = {'right_arm': (8.0, 0.0, 12.0), 'left_arm': (8.0, 0.0, -12.0), 'right_forearm': (14.0, 0.0, 0.0),
+            'left_forearm': (14.0, 0.0, 0.0)}
+ARMS_IN = 0.15
 
 
 def source(t):
@@ -55,7 +61,9 @@ def main():
         for c in ('rotation', 'position'):
             if c not in ch:
                 continue
-            last = kr.sample(ch[c], PIECES[-1][2])
+            land = sum(d for d, _, _ in PIECES[:3])
+            low = ARMS_LOW.get(bone) if c == 'rotation' else None
+            last = list(low) if low else kr.sample(ch[c], PIECES[-1][2])
             # up: from the kneel to the stance, plainly (the angles to the nearest whole turn of standing)
             stand = [round(float(x) / 360.0) * 360.0 if c == 'rotation' else 0.0 for x in last]
             for i in range(n + 1):
@@ -63,6 +71,9 @@ def main():
                 src = source(t)
                 if src is not None:
                     v = kr.sample(ch[c], src)
+                    if low and t > land:
+                        w = 0.5 - 0.5 * math.cos(math.pi * min(1.0, (t - land) / ARMS_IN))
+                        v = [float(x) + (y - float(x)) * w for x, y in zip(v, low)]
                 else:
                     w = 0.5 - 0.5 * math.cos(math.pi * min(1.0, (t - kneel) / RISE))
                     v = [float(x) + (y - float(x)) * w for x, y in zip(last, stand)]
