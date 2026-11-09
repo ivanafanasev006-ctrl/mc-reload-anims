@@ -39,11 +39,16 @@ import java.util.UUID;
  */
 @GameTestHolder(KinetrixMoves.MODID)
 @PrefixGameTestTemplate(false)
+/*
+ * Each test in a batch of its own (batch = its name): the batches run one after another, so no test stands beside
+ * another. Side by side, a mob flung, an arrow or a thrown sword from one now and then hit the next, a different test
+ * failing on CI each run (2026-11-09: five runs of 0.9.9 and 0.9.10 in a row).
+ */
 public final class MovesGameTests {
     private static final String FLOOR = "floor";
 
     /** A dodge costs its energy; a second one during the first is refused and costs nothing. */
-    @GameTest(template = FLOOR)
+    @GameTest(template = FLOOR, batch = "dodgeCostsEnergy")
     public static void dodgeCostsEnergy(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer p = t.player();
@@ -58,7 +63,7 @@ public final class MovesGameTests {
     }
 
     /** Not enough energy: no move, nothing spent. */
-    @GameTest(template = FLOOR)
+    @GameTest(template = FLOOR, batch = "noEnergyNoMove")
     public static void noEnergyNoMove(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer p = t.player();
@@ -72,7 +77,7 @@ public final class MovesGameTests {
     }
 
     /** The slide needs a sprint. */
-    @GameTest(template = FLOOR)
+    @GameTest(template = FLOOR, batch = "slideNeedsSprint")
     public static void slideNeedsSprint(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer p = t.player();
@@ -84,7 +89,7 @@ public final class MovesGameTests {
     }
 
     /** A blow in the dodge's untouchable frames misses; one after them lands. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "dodgeFramesMissBlows")
     public static void dodgeFramesMissBlows(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -109,7 +114,7 @@ public final class MovesGameTests {
     }
 
     /** An arrow flies through a player in their untouchable frames. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "arrowsFlyThroughDodge")
     public static void arrowsFlyThroughDodge(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -127,7 +132,7 @@ public final class MovesGameTests {
     }
 
     /** A roll is 0.6 block high while tucked, then the player stands again. */
-    @GameTest(template = FLOOR)
+    @GameTest(template = FLOOR, batch = "rollIsLow")
     public static void rollIsLow(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer p = t.player();
@@ -142,7 +147,7 @@ public final class MovesGameTests {
     }
 
     /** Energy refills from food; with an empty hunger bar it does not. */
-    @GameTest(template = FLOOR)
+    @GameTest(template = FLOOR, batch = "energyRefillsFromFood")
     public static void energyRefillsFromFood(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer fed = t.player();
@@ -162,7 +167,7 @@ public final class MovesGameTests {
     }
 
     /** Golden apple: moves are free for a while; enchanted: full bar too. */
-    @GameTest(template = FLOOR)
+    @GameTest(template = FLOOR, batch = "goldenApples")
     public static void goldenApples(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer p = t.player();
@@ -184,7 +189,7 @@ public final class MovesGameTests {
      * as long meanwhile: the ones running when it is eaten (not again by a second apple), and the ones
      * started while it works; after it, whole again.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "enchantedAppleHalvesCooldowns")
     public static void enchantedAppleHalvesCooldowns(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -210,7 +215,7 @@ public final class MovesGameTests {
     }
 
     /** Cooked food gives back a little energy (author: 25 of 100), raw food none; a golden apple frees moves for 15 s. */
-    @GameTest(template = FLOOR)
+    @GameTest(template = FLOOR, batch = "cookedFoodGivesEnergy")
     public static void cookedFoodGivesEnergy(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer p = t.player();
@@ -236,7 +241,7 @@ public final class MovesGameTests {
     }
 
     /** Shields refill half a shield at a time, paid with energy. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "shieldsRefill")
     public static void shieldsRefill(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer p = t.player();
@@ -252,7 +257,7 @@ public final class MovesGameTests {
     // ------------------------------------------------------------------ the sword block
 
     /** A sword held across: a blow from the front loses 75 %, the sword 1 durability, the player 1 shield. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardOneSword")
     public static void guardOneSword(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -270,7 +275,7 @@ public final class MovesGameTests {
     }
 
     /** Two swords crossed: 90 % held, each sword 1 durability, 1.5 shields. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardTwoSwords")
     public static void guardTwoSwords(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -292,7 +297,7 @@ public final class MovesGameTests {
     }
 
     /** A blow right after the blade is up does not land; nothing is spent. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardPerfectParry")
     public static void guardPerfectParry(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -310,7 +315,7 @@ public final class MovesGameTests {
     }
 
     /** Tapping the button: no new parry window until the guard has been down a moment. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardTapNoParry")
     public static void guardTapNoParry(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -328,7 +333,7 @@ public final class MovesGameTests {
     }
 
     /** Blows from behind are not blocked. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardNotFromBehind")
     public static void guardNotFromBehind(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -344,7 +349,7 @@ public final class MovesGameTests {
     }
 
     /** No guard with a shield in the other hand, nor without shields; the last shield drops it. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardNeedsShieldsAndNoShield")
     public static void guardNeedsShieldsAndNoShield(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -377,7 +382,7 @@ public final class MovesGameTests {
      * player until the landing, a later blow lands; it is shoved back 1-2 blocks; Speed I at the
      * end; the vault's energy.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 240)
+    @GameTest(template = FLOOR, timeoutTicks = 240, batch = "hopOverZombie")
     public static void hopOverZombie(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -426,7 +431,7 @@ public final class MovesGameTests {
      * Who can be vaulted (author): a zombie (even a calm one), a pig, a sheep; not a chicken, a baby
      * zombie (too small), an iron golem (too tall), nobody. R + W rolls instead.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "vaultNeedsAMobOfSomeSize")
     public static void vaultNeedsAMobOfSomeSize(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -468,7 +473,7 @@ public final class MovesGameTests {
      * not land, nor anyone else's: the player stands still, so they are untouchable), hurt but
      * alive after the stab, dead when the blade comes out; it costs its energy.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "finisherKillsAWeakMob")
     public static void finisherKillsAWeakMob(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -505,7 +510,7 @@ public final class MovesGameTests {
      * The finisher with an axe (author, 2026-10-28; its own chop, 2026-10-30): the chop, not the stab;
      * the zombie is held and alive until the blow and dead at it; a pickaxe makes none, a sword no chop.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "finisherWithAnAxe")
     public static void finisherWithAnAxe(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -529,7 +534,7 @@ public final class MovesGameTests {
     }
 
     /** No finisher on a healthy mob, without a sword, on a boss (by the tag or by its health), too far. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "finisherRules")
     public static void finisherRules(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -560,7 +565,7 @@ public final class MovesGameTests {
      * Dash strike: sprinting with a sword, the blade finds the zombie in front as the lunge starts
      * (the hitbox moves with the player from 0.25 s), a crit; no dash walking.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "dashStrikeCrits")
     public static void dashStrikeCrits(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -595,7 +600,7 @@ public final class MovesGameTests {
     }
 
     /** The dash's blade reaches a mob a block to the side of its line (author: a bigger hitbox), not one two blocks off. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "dashStrikeWideHitbox")
     public static void dashStrikeWideHitbox(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -621,7 +626,7 @@ public final class MovesGameTests {
      * The vault with a kick: over the zombie, its blows do not land, the kick takes 1 heart and flings
      * it back the way the player came, even though it resists knockback; its energy.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 240)
+    @GameTest(template = FLOOR, timeoutTicks = 240, batch = "kickFlingsTheMob")
     public static void kickFlingsTheMob(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -660,7 +665,7 @@ public final class MovesGameTests {
      * zombie behind (the one slid past) takes a crit, the one ahead nothing; then 15 s (author: half
      * the dash's 30).
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "slideAttackCrits")
     public static void slideAttackCrits(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -692,7 +697,7 @@ public final class MovesGameTests {
     }
 
     /** The attack out of a slide with a bow (author, 2026-10-31: "as with the sword and the axe"): its close-combat blow, a crit. */
-    @GameTest(template = FLOOR, timeoutTicks = 100)
+    @GameTest(template = FLOOR, timeoutTicks = 100, batch = "slideAttackWithABow")
     public static void slideAttackWithABow(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -716,7 +721,7 @@ public final class MovesGameTests {
      * cooldown"): out of the slide only, the bow drawn on the knee; let go, no arrow of the bow's own,
      * then three at once, spread side by side; again within 20 s refused.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "slideShot")
     public static void slideShot(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -780,7 +785,7 @@ public final class MovesGameTests {
      * next from the blow's chain tick, not before); the fourth, the crossbow loaded, is the hop back and its own
      * shot (an arrow, the crossbow empty after), untouchable off the floor, for its energy.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 300)
+    @GameTest(template = FLOOR, timeoutTicks = 300, batch = "crossbowChain")
     public static void crossbowChain(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -838,7 +843,7 @@ public final class MovesGameTests {
      * Not loaded, the fourth is the dash back (untouchable while it carries the player), never the shot; a pause
      * longer than the chain's wait starts it over from the push.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "crossbowDashAndPause")
     public static void crossbowDashAndPause(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -868,7 +873,7 @@ public final class MovesGameTests {
      * after, untouchable off the floor; then G waits. Not loaded, the turn: every mob about the player hit (in front
      * and behind) and flung away; the hop refused with it empty.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "crossbowAbility")
     public static void crossbowAbility(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -924,7 +929,7 @@ public final class MovesGameTests {
      * than it loaded and than there are), all at once, each one of the player's arrows. The rolls: an arrow each, the
      * next from the one before once it is out; when they stop, their wait.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 300)
+    @GameTest(template = FLOOR, timeoutTicks = 300, batch = "crossbowFanAndRolls")
     public static void crossbowFanAndRolls(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -979,7 +984,7 @@ public final class MovesGameTests {
      * a channel of water it flies on much faster than a skeleton's (vanilla's: 3 blocks a tick slowed to a crawl within 4
      * ticks).
      */
-    @GameTest(template = FLOOR, timeoutTicks = 100)
+    @GameTest(template = FLOOR, timeoutTicks = 100, batch = "arrowsInWater")
     public static void arrowsInWater(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1017,7 +1022,7 @@ public final class MovesGameTests {
      * The bow's and the crossbow's finishers (author, after 0.9.1): only with an arrow; the bow's shoves the weak zombie back
      * and its arrow kills it, one arrow used; the crossbow's kills with an arrow into the head.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "rangedFinishers")
     public static void rangedFinishers(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1060,7 +1065,7 @@ public final class MovesGameTests {
      * The sword's turns parry (author, after 0.9.1): a zombie's blow does not hurt while the player turns, an arrow shot
      * at them flies back; once the turns are over the blow hurts again.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "swordTurnsParry")
     public static void swordTurnsParry(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1105,7 +1110,7 @@ public final class MovesGameTests {
      * sword's damage and sticks in it; the pull gives it back to the hand, hurting and slowing the zombie a little. A weak
      * zombie killed by the throw lets the sword fall.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 300)
+    @GameTest(template = FLOOR, timeoutTicks = 300, batch = "throwStickAndPull")
     public static void throwStickAndPull(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1161,7 +1166,7 @@ public final class MovesGameTests {
      * leap onto the first kills it as the blade goes in, the hop onto the second the same, then the flip; 10 energy each, 90 s
      * to wait. A zombie at full health is no target; one weak zombie alone is not enough.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "chainFinisher")
     public static void chainFinisher(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1207,7 +1212,7 @@ public final class MovesGameTests {
     }
 
     /** R held in a fall: tucked, the landing hurts 70 % less (another player's the same fall does not); then the roll. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "fallRollCutsDamage")
     public static void fallRollCutsDamage(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1235,7 +1240,7 @@ public final class MovesGameTests {
      * W + Space + R (author, 2026-10-29, fourth message): the kick and the deep jump start from the
      * ground or a jump already begun, not out of a fall; the deep jump's energy, its low untouchable roll.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "kickAndDiveFromAJump")
     public static void kickAndDiveFromAJump(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1269,7 +1274,7 @@ public final class MovesGameTests {
      * player slid off the top of a two-block wall, two blocks out and below its top, catches the edge
      * behind them; it costs energy, so do the hops along it, the hang after them does not; too far out, nothing.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "ledgeCaughtAfterSlidingOff")
     public static void ledgeCaughtAfterSlidingOff(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1310,7 +1315,7 @@ public final class MovesGameTests {
      * round the end of a one-block pillar to its side, into the wall of an inside corner, onto the
      * next block a step up; the server takes the new edge from the hop's request.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "ledgeCornersAndSteps")
     public static void ledgeCornersAndSteps(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1352,7 +1357,7 @@ public final class MovesGameTests {
     }
 
     /** Round a one-block pillar by its corners: four hops to the right go round it and back to the face it started on. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "ledgeRoundAPillar")
     public static void ledgeRoundAPillar(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1384,13 +1389,13 @@ public final class MovesGameTests {
      * where the client asks for it with G up), one turn hitting every mob round once (in front, behind, at
      * the side), not the one out of reach, the base energy; then 20 s.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "swordSpinHitsAllRound")
     public static void swordSpinHitsAllRound(GameTestHelper h) {
         spinTest(h, false);
     }
 
     /** G held (author, 2026-10-30, after the video): three turns, every mob round hit three times, the extra turns paid. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "swordSpinHeldTurnsThrice")
     public static void swordSpinHeldTurnsThrice(GameTestHelper h) {
         spinTest(h, true);
     }
@@ -1467,7 +1472,7 @@ public final class MovesGameTests {
      * The splash of the blade driven into the ground (author, 2026-10-30): 1 HP to everything on the
      * player's block and the 8 round it (armour or not), nothing to a mob two blocks off.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "plungeSplashHurtsRound")
     public static void plungeSplashHurtsRound(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1504,7 +1509,7 @@ public final class MovesGameTests {
      * (the speed attribute), a hundredth of the bar a second, no refill meanwhile; without the key, the
      * vanilla sprint and the bar refills.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "fastRun")
     public static void fastRun(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1539,7 +1544,7 @@ public final class MovesGameTests {
      * ready; the landing hurts 20 % less, drives it in (energy), a short stun; bare-handed or in a
      * short drop, nothing.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "plungeCutsDamage")
     public static void plungeCutsDamage(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1571,13 +1576,13 @@ public final class MovesGameTests {
      * three turns, each hitting every mob round the player once (the one behind too), not the one out
      * of reach; then 45 s.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 240)
+    @GameTest(template = FLOOR, timeoutTicks = 240, batch = "whirlwindHitsAllRound")
     public static void whirlwindHitsAllRound(GameTestHelper h) {
         whirlTest(h, false);
     }
 
     /** G held (author, 2026-10-30, after the video): five turns, the two more paid for. */
-    @GameTest(template = FLOOR, timeoutTicks = 240)
+    @GameTest(template = FLOOR, timeoutTicks = 240, batch = "whirlwindHeldTurnsFive")
     public static void whirlwindHeldTurnsFive(GameTestHelper h) {
         whirlTest(h, true);
     }
@@ -1642,7 +1647,7 @@ public final class MovesGameTests {
     }
 
     /** The roll kick (Ctrl, W, Space, R at a mob): its energy, the kick into the mob at RK_HIT, nothing hurts the player until the landing. */
-    @GameTest(template = FLOOR, timeoutTicks = 240)
+    @GameTest(template = FLOOR, timeoutTicks = 240, batch = "rollKickFlingsTheMob")
     public static void rollKickFlingsTheMob(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1674,7 +1679,7 @@ public final class MovesGameTests {
      * The ledge: a two-block wall in front; caught (the edge's top remembered), a hop along it, up
      * onto it, the climb passing through the edge's corner; nothing to catch in the open.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "ledgeCatchAndClimb")
     public static void ledgeCatchAndClimb(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1712,7 +1717,7 @@ public final class MovesGameTests {
      * pull-up ends standing on it; another edge looked at, a block higher across a gap, is found and
      * within the leap's reach, and the leap there is taken; one too far is not.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "ledgeCarpetAndLeap")
     public static void ledgeCarpetAndLeap(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1769,7 +1774,7 @@ public final class MovesGameTests {
      * it does not reach): 0.2 block from the wall, caught; 0.6 away, not; the automatic hang only
      * with the toes at the drop.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "ledgeOnlyAtTheEdge")
     public static void ledgeOnlyAtTheEdge(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1797,7 +1802,7 @@ public final class MovesGameTests {
     }
 
     /** A friend on the top pulls up a player hanging below: both moves start; nobody else (on the floor below) can. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "ledgeFriendPullsUp")
     public static void ledgeFriendPullsUp(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer hanging = t.player();
@@ -1827,7 +1832,7 @@ public final class MovesGameTests {
     }
 
     /** A side dodge with a sword knocks an arrow off to the sword's side, for 1.5 shields. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "deflectArrowWithSword")
     public static void deflectArrowWithSword(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1851,7 +1856,7 @@ public final class MovesGameTests {
     }
 
     /** Without a sword or a bow the dodge only lets the arrow fly past (no shields spent). */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "noDeflectBareHanded")
     public static void noDeflectBareHanded(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1872,7 +1877,7 @@ public final class MovesGameTests {
     // ------------------------------------------------------------------ the bow
 
     /** The bow lasts half as long again, and hits like a sword in the hand: 4 damage, 1.6 a second. */
-    @GameTest(template = FLOOR)
+    @GameTest(template = FLOOR, batch = "bowAsWeapon")
     public static void bowAsWeapon(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer p = t.player();
@@ -1885,7 +1890,7 @@ public final class MovesGameTests {
     }
 
     /** A full-strength bow blow on the ground sweeps whoever stands by the target. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "bowSweeps")
     public static void bowSweeps(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1908,7 +1913,7 @@ public final class MovesGameTests {
      * G with a bow: the volley, the bow need not be drawn, not without arrows; its arrows 0.55 s apart
      * (author, 2026-10-30, 23:01: "a fraction of a second slower"), each wearing the bow; its energy.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "bowVolley")
     public static void bowVolley(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1944,7 +1949,7 @@ public final class MovesGameTests {
      * G held: the hail (author: "5 to 10 arrows the way he looks, with a spread"): five arrows 4 ticks
      * apart, spread about the look; G let go after the fifth, no more; each after the third costs more.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "bowHail")
     public static void bowHail(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -1990,7 +1995,7 @@ public final class MovesGameTests {
      * into the first again); the hail at one, 4 ticks apart, hurts it with each arrow (they used to
      * bounce off it after the first).
      */
-    @GameTest(template = FLOOR, timeoutTicks = 300)
+    @GameTest(template = FLOOR, timeoutTicks = 300, batch = "bowMarksInTurn")
     public static void bowMarksInTurn(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -2038,7 +2043,7 @@ public final class MovesGameTests {
     }
 
     /** The marks: on and off again, 8 at most (another one takes the first's place), gone after a minute. */
-    @GameTest(template = FLOOR, timeoutTicks = 100)
+    @GameTest(template = FLOOR, timeoutTicks = 100, batch = "bowMarkRules")
     public static void bowMarkRules(GameTestHelper h) {
         Script t = new Script(h);
         ServerPlayer p = t.player();
@@ -2065,7 +2070,7 @@ public final class MovesGameTests {
      * The volley at the marked: a step at each marked mob in sight, one arrow each; not at one behind a
      * wall, not twice at the same; the first step pays and starts the 25 s, a new volley waits them out.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 300)
+    @GameTest(template = FLOOR, timeoutTicks = 300, batch = "bowMarkedVolley")
     public static void bowMarkedVolley(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -2111,7 +2116,7 @@ public final class MovesGameTests {
      * its dodges need the drawn bow; one dodge after another while the bow is drawn; once it is let go
      * the cooldown starts (12 s) and a new stance waits it out.
      */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "legolasCooldown")
     public static void legolasCooldown(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -2145,7 +2150,7 @@ public final class MovesGameTests {
     }
 
     /** A Legolas dodge: the bow drawn, its energy, untouchable like a side dodge. */
-    @GameTest(template = FLOOR, timeoutTicks = 200)
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "legolasDodge")
     public static void legolasDodge(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
