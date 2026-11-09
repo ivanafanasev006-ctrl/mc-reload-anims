@@ -2265,7 +2265,7 @@ public final class MovesGameTests {
         }
 
         /**
-         * The players' arrows out of the test's floor and away from them (or all, the test over) are taken away: the tests stand a few
+         * The players' arrows and thrown weapons out of the test's floor and away from them (or all, the test over) are taken away: the tests stand a few
          * blocks apart, and one flying on hit another test's mobs now and then (a marked zombie out of the volley's sight,
          * another one choking in a wall).
          */
@@ -2277,7 +2277,7 @@ public final class MovesGameTests {
                     .inflate(0.5, 3, 0.5);
             for (net.minecraft.world.entity.projectile.AbstractArrow a : h.getLevel().getEntitiesOfClass(
                     net.minecraft.world.entity.projectile.AbstractArrow.class, floor.inflate(48),
-                    a -> !(a instanceof net.minecraft.world.entity.projectile.ThrownTrident) && players.contains(a.getOwner()))) {
+                    a -> players.contains(a.getOwner()))) {     // the thrown swords too (one off the floor took 7 from a zombie elsewhere)
                 // (near a player it was just shot: a hop back may take the player to the floor's edge)
                 if (all || !floor.contains(a.position()) && players.stream().noneMatch(p -> p.distanceTo(a) < 2.5f)) a.discard();
             }
