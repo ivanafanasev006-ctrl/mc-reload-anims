@@ -1851,7 +1851,8 @@ public final class MovesGameTests {
             h.getLevel().addFreshEntity(arrow[0]);
         });
         // Hold the dodge in its deflect frames while the arrow arrives.
-        for (int i = 4; i < 10; i++) t.at(i, () -> s.moveTick = Move.DEFLECT_TO - 1);    // deflect frames and untouchable both
+        // (from the dodge's own tick on: an arrow there a tick early on CI met the dodge before its frames, 1.17 taken)
+        for (int i = 3; i < 10; i++) t.at(i, () -> s.moveTick = Move.DEFLECT_TO - 1);    // deflect frames and untouchable both
         t.at(10, () -> {
             t.close(p.getHealth(), 20f, "health after a deflected arrow");
             t.close(s.shields, 10f - MovesConfig.deflectShields(), "shields after a deflected arrow");
@@ -1871,7 +1872,8 @@ public final class MovesGameTests {
             arrow.shoot(0, 0, -1, 1.2f, 0f);
             h.getLevel().addFreshEntity(arrow);
         });
-        for (int i = 4; i < 10; i++) t.at(i, () -> s.moveTick = Move.DEFLECT_TO - 1);    // deflect frames and untouchable both
+        // (from the dodge's own tick on: an arrow there a tick early on CI met the dodge before its frames, 1.17 taken)
+        for (int i = 3; i < 10; i++) t.at(i, () -> s.moveTick = Move.DEFLECT_TO - 1);    // deflect frames and untouchable both
         t.at(10, () -> {
             t.close(p.getHealth(), 20f, "health after an arrow through the dodge");
             t.close(s.shields, 10f, "shields spent without a weapon");
