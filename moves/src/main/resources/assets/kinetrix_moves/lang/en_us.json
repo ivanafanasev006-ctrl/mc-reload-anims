@@ -61,7 +61,7 @@
   "kinetrix_moves.hint.finisher": "[%s] Finish off",
   "kinetrix_moves.hint.pull_sword": "[%s] — pull the sword out",
   "kinetrix_moves.hint.pull_axe": "[%s] — pull the axe out",
-  "kinetrix_moves.key.space": "␣",
+  "kinetrix_moves.key.space": "Space",
   "kinetrix_moves.slide_attack.cooldown": "Slide attack ready in %s s",
   "kinetrix_moves.ledge.no_room": "No room to climb up there",
   "kinetrix_moves.settings.move.fastRun": "Fast run",

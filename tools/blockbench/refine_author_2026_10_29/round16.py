@@ -1,4 +1,5 @@
-"""The author, 2026-11-10: W + Space + G held with a sword, the turns in the air (air_spin_2026-11-10.bbmodel, his example).
+"""The author, 2026-11-10: W + Space + G held with a sword, the turns in the air (air_spin_2026-11-10.bbmodel, his example;
+remade after his video of 01:19, PIECES).
 
 "He jumps head down and does what G+ does, but 5 turns, and lands as after C + LMB; work it over, a proper landing in
 the fighting style at the end." His take (4.9 s): up and over head down (0.75 s), five turns head down with the blade out
@@ -17,13 +18,22 @@ import kinetrix_rig as kr
 
 SRC = os.path.join(kit.BB, 'animations', 'air_spin_2026-11-10.bbmodel')
 DST = os.path.join(kit.BB, 'refined', 'air_spin_2026-11-10.bbmodel')
-FPS, CUT, FAST, LAND = 24, 3.0, 1.3, 2.2
+FPS = 24
+#: (seconds made, author's from, author's to): a piece of his take played in that time. The author, 2026-11-10, 01:19:
+#: "the hop at the start is useless, straight into the turns; the turns and the run 1.5-1.7 times quicker; down on the
+#: knees, sliding a couple of blocks as on Ctrl + C, then he just gets up, no show". His jump cut to its last 0.3 s (over
+#: head down), the turns and the drop 1.6 times faster, his kneel (3.25 s) held for the slide, then up into the stance.
+PIECES = [(0.15, 0.45, 0.75), (1.75 / 1.6, 0.75, 2.5), (0.5 / 1.6, 2.5, 3.0), (0.1, 3.0, 3.25), (0.35, 3.25, 3.6)]
+RISE = 0.3
 
 
 def source(t):
-    """The author's time for the made one's t."""
-    edge = CUT / FAST
-    return t * FAST if t <= edge else CUT + (t - edge) * LAND
+    """The author's time for the made one's t (None: the rise after his pieces)."""
+    for d, a, b in PIECES:
+        if t <= d + 1e-9:
+            return a + (b - a) * t / d
+        t -= d
+    return None
 
 
 def main():
@@ -32,8 +42,10 @@ def main():
     m = kr.Model(SRC)
     a = m.animations[0]
     chans = m.channels(a)
-    length = CUT / FAST + (a['length'] - CUT) / LAND
+    length = sum(d for d, _, _ in PIECES) + RISE
     n = int(round(length * FPS))
+    import math
+    kneel = sum(d for d, _, _ in PIECES)
     out = {'uuid': str(uuid.uuid4()), 'name': 'sword_air_spin', 'loop': 'once', 'override': False,
            'length': round(n / FPS, 4), 'snapping': FPS, 'selected': True, 'anim_time_update': '', 'blend_weight': '',
            'start_delay': '', 'loop_delay': '', 'animators': {}}
@@ -43,8 +55,17 @@ def main():
         for c in ('rotation', 'position'):
             if c not in ch:
                 continue
+            last = kr.sample(ch[c], PIECES[-1][2])
+            # up: from the kneel to the stance, plainly (the angles to the nearest whole turn of standing)
+            stand = [round(float(x) / 360.0) * 360.0 if c == 'rotation' else 0.0 for x in last]
             for i in range(n + 1):
-                v = kr.sample(ch[c], min(source(i / FPS), a['length']))
+                t = i / FPS
+                src = source(t)
+                if src is not None:
+                    v = kr.sample(ch[c], src)
+                else:
+                    w = 0.5 - 0.5 * math.cos(math.pi * min(1.0, (t - kneel) / RISE))
+                    v = [float(x) + (y - float(x)) * w for x, y in zip(last, stand)]
                 keys.append({'channel': c, 'data_points': [{'x': round(float(v[0]), 3), 'y': round(float(v[1]), 3),
                                                             'z': round(float(v[2]), 3)}],
                              'uuid': str(uuid.uuid4()), 'time': round(i / FPS, 4), 'color': -1, 'interpolation': 'catmullrom'})

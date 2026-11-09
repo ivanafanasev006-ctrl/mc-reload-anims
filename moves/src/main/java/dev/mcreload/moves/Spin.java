@@ -53,15 +53,19 @@ public final class Spin {
         return BLADE_FROM - FIRST_SWEEP - after * (tick - TURN_ENDS[0]);
     }
 
-    /** The turns in the air (round16.py's sword_air_spin): off the ground at tick 5, the five turns over ticks 12-38, down at 46. */
-    public static final int AIR_OFF = 5, AIR_FROM = 12, AIR_TO = 38, AIR_TURNS = 5, AIR_LAND = 46;
-    /** Its run along the look (blocks a tick), off the ground to the landing. [default] */
-    public static final float AIR_SPEED = 0.2f;
+    /**
+     * The turns in the air (round16.py's sword_air_spin, after the author's video of 2026-11-10, 01:19: no hop, 1.6 times
+     * quicker, down on the knees sliding): the five turns over ticks 3-25, down on the knees at 31.
+     */
+    public static final int AIR_FROM = 3, AIR_TO = 25, AIR_TURNS = 5, AIR_LAND = 31;
+    /** Its run along the look (blocks a tick; was 0.2, "1.5-1.7 times quicker"), then the knees' slide (about 2 blocks). [default] */
+    public static final float AIR_SPEED = 0.32f;
+    private static final float[] KNEE_SLIDE = {0.34f, 0.31f, 0.27f, 0.23f, 0.19f, 0.15f, 0.11f, 0.07f};
 
-    /** The air turns' pushes from Move.PUSH_TICK: none on the ground, AIR_SPEED in the air. */
+    /** The air turns' pushes from Move.PUSH_TICK: AIR_SPEED to the landing, then the slide on the knees. */
     static float[] airPush() {
-        float[] p = new float[AIR_LAND - Move.PUSH_TICK];
-        for (int i = 0; i < p.length; i++) p[i] = i + Move.PUSH_TICK >= AIR_OFF ? AIR_SPEED : 0f;
+        float[] p = new float[AIR_LAND - Move.PUSH_TICK + KNEE_SLIDE.length];
+        for (int i = 0; i < p.length; i++) p[i] = i + Move.PUSH_TICK < AIR_LAND ? AIR_SPEED : KNEE_SLIDE[i + Move.PUSH_TICK - AIR_LAND];
         return p;
     }
 

@@ -340,7 +340,7 @@ public final class MovesHud {
             g.drawString(font, keys, tx, y + 3, waiting ? 0xA0A0A0 : 0xFFFFFF, true);
         } else {
             // too long for the bar (the chain's four keys): smaller, down to 2/3, cut only past that
-            float sc = Math.max(0.65f, TRAY_BAR / (float) kw);
+            float sc = Math.max(0.55f, TRAY_BAR / (float) kw);
             g.pose().pushPose();
             g.pose().translate(tx, y + 3 + (1f - sc) * 8f, 0);
             g.pose().scale(sc, sc, 1f);
