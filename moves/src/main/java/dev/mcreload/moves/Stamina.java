@@ -133,6 +133,8 @@ public final class Stamina {
     public int chainCooldown;
     /** The throw's wait (author, 2026-11-09: 2.5 s, "not to spam it by chance"); how long its aim was held (ticks). */
     public int throwCooldown, throwHeld;
+    /** The mob the throw is aimed at (the client's auto-aim; -1: along the look). */
+    public int throwTarget = -1;
     /** The crossbow's rolls are on (server): a roll of them was made; ticks since the last one ended (Crossbow.rollsTick). */
     public boolean xbowRollsLive;
     public int xbowRollsGap;

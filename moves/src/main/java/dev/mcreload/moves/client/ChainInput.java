@@ -43,21 +43,25 @@ public final class ChainInput {
         if (!HudConfig.Moves.CHAIN.on() || !Strikes.sword(p) || s.move != null) return false;
         if (!mc.options.keySprint.isDown() || !mc.options.keyUp.isDown() || !jumped) return false;
         if (StrikeInput.waits(p, s, Move.CHAIN_LEAP)) return true;
-        return begin(p, s, Chain.FIRST_REACH, 50);
+        return begin(p, s, Chain.FIRST_REACH, 50, -1);
     }
 
     /**
      * The chain from the ground: the weak mob nearest within {@code reach} (and {@code half} degrees of the look), another one
      * near it at least (author, 2026-11-09: "only with 2 to 6 about").
      */
-    private static boolean begin(LocalPlayer p, Stamina s, double reach, double half) {
+    private static boolean begin(LocalPlayer p, Stamina s, double reach, double half, int finished) {
         DONE.clear();
+        kills = 0;
         groundY = p.getY();
+        // (the finisher's mob not again: on this client it may not have died yet, and the server refused the leap at it)
+        if (finished >= 0) DONE.add(finished);
         LivingEntity mob = next(p, p.position(), reach, half);
         if (mob == null) return false;
         DONE.add(mob.getId());
         LivingEntity second = next(p, mob.position(), MovesConfig.chainRange(), 180);
         DONE.clear();
+        if (finished >= 0) DONE.add(finished);
         return second != null && leap(p, s, Move.CHAIN_LEAP, mob);
     }
 
@@ -68,7 +72,7 @@ public final class ChainInput {
     private static void afterFinisher(LocalPlayer p, Stamina s) {
         if (s.move != Move.FINISHER || s.moveTick != Strikes.FINISH_OUT || !HudConfig.Moves.CHAIN.on() || !Strikes.sword(p)) return;
         if (s.chainCooldown > 0) return;
-        begin(p, s, MovesConfig.chainRange(), 180);
+        begin(p, s, MovesConfig.chainRange(), 180, s.target);
     }
 
     /** The weak mob nearest {@code at} within {@code reach} (and {@code half} degrees of the look, for the first), not landed on yet. */
@@ -98,13 +102,14 @@ public final class ChainInput {
         // the first, the third, the fifth from the front (face to face, the blade into the back), the others from behind
         // (into the head), in turn (author, 2026-11-09); the hop's take turning the way the player turns (clockwise from
         // above: the yaw growing), a whole turn more if the turn is short (author: "180-360")
-        boolean first = move == Move.CHAIN_LEAP, f = first || DONE.size() % 2 == 0;
+        boolean first = move == Move.CHAIN_LEAP, f = first || kills % 2 == 0;
         float yaw = p.getYRot();
         float d = Mth.wrapDegrees(mob.getYRot() + (f ? 180f : 0f) - yaw);
         if (!first && Math.abs(d) < 120) d += d < 0 ? -360 : 360;
         if (!first) move = f ? (d >= 0 ? Move.CHAIN_HOP_STAB : Move.CHAIN_HOP_STAB_CCW) : (d >= 0 ? Move.CHAIN_HOP : Move.CHAIN_HOP_CCW);
         if (!MovesClient.start(p, s, move, mob.getId())) return false;
         DONE.add(mob.getId());
+        kills++;
         front = f;
         from = p.position();
         yawFrom = yaw;
@@ -163,17 +168,19 @@ public final class ChainInput {
         p.setDeltaMovement(Vec3.ZERO);
         // the blade is in and out: on to the next weak one near, or the flip down
         if (t >= Chain.next(m)) {
-            LivingEntity next = DONE.size() < MovesConfig.chainMax() ? next(p, p.position(), MovesConfig.chainRange(), 180) : null;
+            LivingEntity next = kills < MovesConfig.chainMax() ? next(p, p.position(), MovesConfig.chainRange(), 180) : null;
             if (next == null || !leap(p, s, Move.CHAIN_HOP, next)) {
                 Vec3 was = p.position();
                 if (MovesClient.start(p, s, Move.CHAIN_FLIP, -1)) from = was;
+                else dev.mcreload.moves.KinetrixMoves.LOG.info("chain: no hop ({}) nor flip at {} tick {}", next, m, t);
             }
         }
     }
 
     private static Vec3 lastTop;
-    /** This leap's mob is taken from the front (else from behind). */
+    /** This leap's mob is taken from the front (else from behind); the mobs of this chain so far (not the finisher's before it). */
     private static boolean front;
+    private static int kills;
 
     private ChainInput() {}
 }

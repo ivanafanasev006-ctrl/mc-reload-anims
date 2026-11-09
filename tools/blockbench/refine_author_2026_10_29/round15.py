@@ -34,6 +34,8 @@ DST = os.path.join(kit.BB, 'refined', 'chain_2026-11-09b.bbmodel')
 BONES = ('body', 'torso', 'chest', 'head', 'right_arm', 'right_forearm', 'left_arm', 'left_forearm', 'right_leg',
          'right_shin', 'left_leg', 'left_shin', 'right_item_sword')
 FPS, SIGMA, BLEND, ITEM_BLEND = 24, 0.03, 0.12, 0.3
+#: Played this much faster than the parts (author, 2026-11-09, 21:55: "very good, but a little quicker: too long for fights").
+SPEED = 1.25
 OUT = [('chain_leap', [('air_kill_jump', 0, None), ('air_kill_stab', 0, None)]),
        ('chain_hop', [('air_kill_hop', 0, None), ('air_kill_head', 0, None)]),
        ('chain_hop_ccw', [('air_kill_hop_ccw', 0, None), ('air_kill_head', 0, None)]),
@@ -94,7 +96,7 @@ def build(chans, name, parts):
         s, _ = _seg(chans, src, t0, t1)
         seq = s if seq is None else _join(seq, s)
     n = len(next(iter(seq.values())))
-    anim = {'uuid': str(uuid.uuid4()), 'name': name, 'loop': 'once', 'override': False, 'length': round((n - 1) / FPS, 4),
+    anim = {'uuid': str(uuid.uuid4()), 'name': name, 'loop': 'once', 'override': False, 'length': round((n - 1) / FPS / SPEED, 4),
             'snapping': FPS, 'selected': False, 'anim_time_update': '', 'blend_weight': '', 'start_delay': '', 'loop_delay': '',
             'animators': {}}
     for (bone, c), x in seq.items():
@@ -106,7 +108,7 @@ def build(chans, name, parts):
         for i, v in enumerate(x):
             keys.append({'channel': c, 'data_points': [{'x': round(float(v[0]), 3), 'y': round(float(v[1]), 3),
                                                         'z': round(float(v[2]), 3)}],
-                         'uuid': str(uuid.uuid4()), 'time': round(i / FPS, 4), 'color': -1, 'interpolation': 'catmullrom'})
+                         'uuid': str(uuid.uuid4()), 'time': round(i / FPS / SPEED, 4), 'color': -1, 'interpolation': 'catmullrom'})
     return anim
 
 

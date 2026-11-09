@@ -38,7 +38,8 @@ public final class MarkRender {
         LocalPlayer p = mc.player;
         if (p == null || mc.options.hideGui) return;
         Stamina s = Stamina.of(p);
-        if (s.marks.isEmpty()) return;
+        int aimed = ThrownClient.aimed;
+        if (s.marks.isEmpty() && aimed < 0) return;
         Camera camera = event.getCamera();
         Vec3 cam = camera.getPosition();
         float pt = event.getPartialTick();
@@ -60,6 +61,20 @@ public final class MarkRender {
             Matrix4f m = ps.last().pose();
             quad(v, m, half, alpha, false);
             quad(v, m, half, alpha, true);
+            ps.popPose();
+        }
+        // the throw's auto-aim: a smaller one on the mob's middle, where the weapon will go
+        if (aimed >= 0 && p.level().getEntity(aimed) instanceof LivingEntity e && e.isAlive()) {
+            double x = Mth.lerp(pt, e.xo, e.getX()) - cam.x, y = Mth.lerp(pt, e.yo, e.getY()) + e.getBbHeight() * 0.55 - cam.y,
+                    z = Mth.lerp(pt, e.zo, e.getZ()) - cam.z;
+            float half = HALF * 0.6f * (1f + Math.min(1.5f, (float) Math.sqrt(x * x + y * y + z * z) / 32f));
+            ps.pushPose();
+            ps.translate(x, y, z);
+            ps.mulPose(camera.rotation());
+            ps.scale(-1f, -1f, 1f);
+            Matrix4f m = ps.last().pose();
+            quad(v, m, half, 255, false);
+            quad(v, m, half, 255, true);
             ps.popPose();
         }
         buffers.endBatch(type);

@@ -30,6 +30,8 @@ import java.util.Map;
  */
 public final class ThrownClient {
     private static final Map<Integer, MovesNet.ThrownInfo> INFO = new HashMap<>();
+    /** The mob the throw's aim is on (its red square), -1: none. */
+    static int aimed = -1;
 
     public static void info(MovesNet.ThrownInfo m) {
         if (m.item().isEmpty()) INFO.remove(m.entity());

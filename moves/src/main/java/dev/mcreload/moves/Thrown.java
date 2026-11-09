@@ -87,7 +87,15 @@ public final class Thrown {
         ItemStack item = p.getMainHandItem().copy();
         p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         ThrownTrident t = new ThrownTrident(p.level(), p, item);
-        t.shootFromRotation(p, p.getXRot(), p.getYRot(), 0f, MovesConfig.throwSpeed() * power(Stamina.of(p).throwHeld), 1f);
+        float speed = MovesConfig.throwSpeed() * power(Stamina.of(p).throwHeld);
+        LivingEntity at = aimedAt(p, Stamina.of(p).throwTarget);
+        if (at != null) {
+            // at the mob the auto-aim had (author, 2026-11-09: "as the bow's: the crosshair a little off, it still flies at it")
+            Vec3 dir = Marks.aim(p, at, speed);
+            t.shoot(dir.x, dir.y, dir.z, speed, 0f);
+        } else {
+            t.shootFromRotation(p, p.getXRot(), p.getYRot(), 0f, speed, 1f);
+        }
         // seen through walls wherever it is, to be found again (author, 2026-11-09)
         t.setGlowingTag(true);
         t.pickup = AbstractArrow.Pickup.ALLOWED;
@@ -101,6 +109,43 @@ public final class Thrown {
     }
 
     /** The weapon's own damage thrown: its attack damage (the player's 1 and its modifiers), enchantments, MovesConfig.throwDamage. */
+    /** The auto-aim's half angle (degrees about the look) and reach (blocks). [default] */
+    public static final double AIM_CONE = 9.0, AIM_REACH = 24.0;
+
+    /**
+     * The mob the throw goes at: the first along the look whose box, grown by AIM_CONE degrees at its distance, the look
+     * goes through (within AIM_REACH, alive, in sight): the crosshair a little off it still takes it.
+     */
+    public static LivingEntity aim(Player p, double cone) {
+        Vec3 eye = p.getEyePosition(), end = eye.add(p.getViewVector(1f).scale(AIM_REACH));
+        double tan = Math.tan(Math.toRadians(cone)), best = Double.MAX_VALUE;
+        LivingEntity found = null;
+        for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(AIM_REACH),
+                e -> e != p && e.isAlive() && !e.isSpectator() && !(e instanceof net.minecraft.world.entity.decoration.ArmorStand))) {
+            double d = eye.distanceTo(e.position());
+            if (d > AIM_REACH) continue;
+            net.minecraft.world.phys.AABB box = e.getBoundingBox().inflate(d * tan);
+            java.util.Optional<Vec3> hit = box.contains(eye) ? java.util.Optional.of(eye) : box.clip(eye, end);
+            if (hit.isEmpty() || !Marks.seen(p, e)) continue;
+            double along = eye.distanceToSqr(hit.get());
+            if (along < best) {
+                best = along;
+                found = e;
+            }
+        }
+        return found;
+    }
+
+    /** The client's pick, if it is near enough the look still (a little wider than the pick). */
+    private static LivingEntity aimedAt(Player p, int id) {
+        if (id < 0 || !(p.level().getEntity(id) instanceof LivingEntity e) || !e.isAlive() || e == p) return null;
+        double d = p.getEyePosition().distanceTo(e.position());
+        net.minecraft.world.phys.AABB box = e.getBoundingBox().inflate(d * Math.tan(Math.toRadians(AIM_CONE + 6)));
+        Vec3 eye = p.getEyePosition();
+        boolean near = box.contains(eye) || box.clip(eye, eye.add(p.getViewVector(1f).scale(AIM_REACH + 2))).isPresent();
+        return d <= AIM_REACH + 2 && near && Marks.seen(p, e) ? e : null;
+    }
+
     /**
      * The share of the full speed for an aim held so long (author, 2026-11-09: "the longer held, the further, not to send it
      * into space by chance"): a bow's draw over MovesConfig.throwFullTicks, a fifth at the least.
@@ -247,14 +292,23 @@ public final class Thrown {
         if (s.move == Move.WEAPON_PULL && s.moveTick == PULL_TICK) pull(p, s);
     }
 
+    /**
+     * The weapon back in the main hand: whatever the empty hand picked up meanwhile goes into the inventory (else the pulled
+     * sword went there, and the finisher after the pull had no blade; the self-test, rotten flesh picked up).
+     */
+    private static void backToHand(ServerPlayer p, ItemStack item) {
+        ItemStack held = p.getMainHandItem();
+        p.setItemInHand(InteractionHand.MAIN_HAND, item);
+        if (!held.isEmpty() && !p.getInventory().add(held)) p.drop(held, false);
+    }
+
     /** Out of the mob: the weapon back in the hand (or the inventory), the mob hurt a little and stunned a moment. */
     static void pull(ServerPlayer p, Stamina s) {
         if (!(p.level().getEntity(s.target) instanceof ThrownTrident t) || !LIVE.containsKey(t)) return;
         State st = LIVE.remove(t);
         Entity mob = p.level().getEntity(st.stuckIn);
         t.discard();
-        if (p.getMainHandItem().isEmpty()) p.setItemInHand(InteractionHand.MAIN_HAND, st.item);
-        else if (!p.getInventory().add(st.item)) p.drop(st.item, false);
+        backToHand(p, st.item);
         MovesNet.thrownGone(t);
         if (!(mob instanceof LivingEntity le) || !le.isAlive()) return;
         le.invulnerableTime = 0;

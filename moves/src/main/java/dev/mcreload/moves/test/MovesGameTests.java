@@ -1129,7 +1129,11 @@ public final class MovesGameTests {
         t.at(go, () -> {
             t.check(dev.mcreload.moves.Thrown.power(2) < 0.25f && dev.mcreload.moves.Thrown.power(MovesConfig.throwFullTicks()) == 1f,
                     "the throw's speed by the aim: " + dev.mcreload.moves.Thrown.power(2));
-            t.check(MoveServer.request(p, Move.THROW, false), "the throw refused");
+            // the look 7 degrees off the zombie: the auto-aim's pick still takes the sword into it (author, 2026-11-09)
+            p.setYRot(p.getYRot() + 7f);
+            p.setYHeadRot(p.getYRot());
+            t.check(dev.mcreload.moves.Thrown.aim(p, dev.mcreload.moves.Thrown.AIM_CONE) == zombie, "the auto-aim did not pick the zombie");
+            t.check(MoveServer.request(p, Move.THROW, false, zombie.getId()), "the throw refused");
             t.check(s.throwHeld >= MovesConfig.throwFullTicks() - 1, "the aim held " + s.throwHeld);
             t.check(s.throwCooldown == MovesConfig.throwCooldownTicks(), "the throw's wait: " + s.throwCooldown);
         });

@@ -307,18 +307,18 @@ public enum Move {
 
     // ---- the chain finisher (author, after 0.9.1; Chain, ChainInput): round15.py, the author's parts of 2026-11-09; the mobs
     // taken from the front (the blade over the shoulder into the back) and from behind (into the head) in turn
-    /** Ctrl + W + Space + LMB with a sword: onto the first weak mob from the front, the blade into its back at 0.8 s (Chain.kill). */
-    CHAIN_LEAP("chain_leap", 1f, 22, 0, 20, -1, -1, Side.FRONT, MovesConfig::costChain),
+    /** Ctrl + W + Space + LMB with a sword: onto the first weak mob from the front, the blade into its back at 0.65 s (Chain.kill). */
+    CHAIN_LEAP("chain_leap", 1f, 18, 0, 16, -1, -1, Side.FRONT, MovesConfig::costChain),
     /** On to the next weak mob near, turning clockwise, onto its back: the blade into its head at 0.85 s (each kill 10 energy). */
-    CHAIN_HOP("chain_hop", 1f, 25, 0, 23, -1, -1, Side.FRONT, MovesConfig::costChain),
+    CHAIN_HOP("chain_hop", 1f, 20, 0, 18, -1, -1, Side.FRONT, MovesConfig::costChain),
     /** The same, turning the other way (the shorter way round). */
-    CHAIN_HOP_CCW("chain_hop_ccw", 1f, 25, 0, 23, -1, -1, Side.FRONT, MovesConfig::costChain),
+    CHAIN_HOP_CCW("chain_hop_ccw", 1f, 20, 0, 18, -1, -1, Side.FRONT, MovesConfig::costChain),
     /** On to the one after, clockwise, in front of it: the blade into its back at 1.05 s. */
-    CHAIN_HOP_STAB("chain_hop_stab", 1f, 28, 0, 26, -1, -1, Side.FRONT, MovesConfig::costChain),
+    CHAIN_HOP_STAB("chain_hop_stab", 1f, 22, 0, 20, -1, -1, Side.FRONT, MovesConfig::costChain),
     /** The same, turning the other way. */
-    CHAIN_HOP_STAB_CCW("chain_hop_stab_ccw", 1f, 28, 0, 26, -1, -1, Side.FRONT, MovesConfig::costChain),
+    CHAIN_HOP_STAB_CCW("chain_hop_stab_ccw", 1f, 22, 0, 20, -1, -1, Side.FRONT, MovesConfig::costChain),
     /** None left (or six done): the back flip off the last one, down on the feet at 0.85 s, a back roll on the ground (as the roll kick's), up. */
-    CHAIN_FLIP("chain_flip", 1f, 36, 0, 17, -1, -1, Side.BACK, () -> 0),
+    CHAIN_FLIP("chain_flip", 1f, 29, 0, 14, -1, -1, Side.BACK, () -> 0),
 
     // ---- the ledge (Ledge): the mechanic carries the player, the animations hold on to the edge
     /** Hanging by one hand, swinging (ledge_hang, looped from 1.25 s). */

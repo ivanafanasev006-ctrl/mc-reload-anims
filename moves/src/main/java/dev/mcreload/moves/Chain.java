@@ -26,27 +26,30 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class Chain {
     /** The flip (round15.py's chain_flip): off the mob (0.1 s), the feet down (0.85 s), the back roll on the ground (as the roll kick's). */
-    public static final int FLIP_OFF = 2, FLIP_LAND = 17, ROLL_FROM = 19, ROLL_TO = 27;
+    public static final int FLIP_OFF = 2, FLIP_LAND = 14, ROLL_FROM = 15, ROLL_TO = 22;
     /** The flip's jump off (blocks a tick back and up) and the roll's speed along the ground (1.5 blocks, as the roll kick's). [default] */
-    public static final double FLIP_BACK = 0.28, FLIP_UP = 0.42, ROLL_SPEED = 0.19;
+    public static final double FLIP_BACK = 0.3, FLIP_UP = 0.42, ROLL_SPEED = 0.21;
     /** The first mob may be this far (blocks, from the player); the leap is a jump of about that. [default] */
     public static final double FIRST_REACH = 7.0;
     /** The fewest weak mobs about for the chain (author, 2026-11-09: "from 2 to 6"; the most is MovesConfig.chainMax). */
     public static final int FEWEST = 2;
 
-    /** Off the ground (the leap: 0.25 s) or the mob before (the hops: 0.15 s), round15.py's keys. */
+    /**
+     * Off the ground (the leap: 0.2 s) or the mob before (the hops: 0.1 s), round15.py's keys (the author's parts played 1.25
+     * times faster: 2026-11-09, 21:55, "a little quicker, too long for fights").
+     */
     public static int off(Move m) {
-        return m == Move.CHAIN_LEAP ? 5 : 3;
+        return m == Move.CHAIN_LEAP ? 4 : 2;
     }
 
-    /** On the mob: the leap at 0.5 s, the hops at 0.7 s. */
+    /** On the mob: the leap at 0.4 s, the hops at 0.55 s. */
     public static int land(Move m) {
-        return m == Move.CHAIN_LEAP ? 10 : 14;
+        return m == Move.CHAIN_LEAP ? 8 : 11;
     }
 
-    /** The blade in, the mob dead: the leap's into the back at 0.8 s, a hop's into the head at 0.85 s, into the back at 1.05 s. */
+    /** The blade in, the mob dead: the leap's into the back at 0.65 s, a hop's into the head at 0.65 s, into the back at 0.85 s. */
     public static int kill(Move m) {
-        return m == Move.CHAIN_LEAP ? 16 : front(m) ? 21 : 17;
+        return m == Move.CHAIN_LEAP ? 13 : front(m) ? 17 : 13;
     }
 
     /** Taken from the front (face to face, the blade over its shoulder into its back), not from behind (into its head). */
@@ -72,7 +75,7 @@ public final class Chain {
 
     /** A mob the chain may land on: a mob (not a player, not a boss), alive, at MovesConfig.chainHealth of its health or under. */
     public static boolean weak(LivingEntity e) {
-        return e instanceof Mob && e.isAlive() && !e.isInvulnerable() && !Strikes.boss(e)
+        return e instanceof Mob && e.isAlive() && e.deathTime == 0 && e.getHealth() > 0 && !e.isInvulnerable() && !Strikes.boss(e)
                 && e.getHealth() <= e.getMaxHealth() * MovesConfig.chainHealth() + 0.01f;
     }
 

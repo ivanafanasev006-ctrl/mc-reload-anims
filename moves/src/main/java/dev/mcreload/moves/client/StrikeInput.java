@@ -135,10 +135,20 @@ public final class StrikeInput {
             finisherTarget = null;
             swallow(mc);
             LedgeInput.swallowUse(mc);
-            // the left let go: thrown, or (it cannot be: no energy, the weapon gone) the aim put down, not held on and on
-            if (!rmb || !lmb && !MovesClient.start(p, s, Move.THROW, -1)) MovesClient.cancel(p, s, 4);
+            // the auto-aim (author, 2026-11-09: "as the bow's, a little red square on the mob: the crosshair a little off, it
+            // still flies at it"): the mob nearest the look, its square drawn (MarkRender)
+            LivingEntity aimed = dev.mcreload.moves.Thrown.aim(p, dev.mcreload.moves.Thrown.AIM_CONE);
+            ThrownClient.aimed = aimed == null ? -1 : aimed.getId();
+            // either button let go: thrown (the left only threw: both let go at once, or the right first, put the aim down,
+            // "held long and it would not throw"); a moment's aim, or a throw that cannot be (no energy), put down
+            if (!lmb || !rmb) {
+                boolean thrown = s.moveTick >= AIM_MIN && MovesClient.start(p, s, Move.THROW, ThrownClient.aimed);
+                if (!thrown) MovesClient.cancel(p, s, 4);
+                ThrownClient.aimed = -1;
+            }
             return true;
         }
+        ThrownClient.aimed = -1;
         if (!lmb || !rmb) aimRefused = false;
         if (lmb && rmb && s.move == null && !aimRefused && dev.mcreload.moves.Thrown.throwable(p) && HudConfig.Moves.THROW.on()
                 && MoveServer.allowed(p, s, Move.THROW_AIM)) {
@@ -304,6 +314,9 @@ public final class StrikeInput {
     }
 
     /** Lets go of the left button: its clicks this tick are used up and it reads as up until pressed again. */
+    /** An aim shorter than this (ticks) let go is put down, not thrown (a slip of the fingers). */
+    private static final int AIM_MIN = 3;
+
     /** The server said no to the aim: not drawn back again until the buttons are let go (it was, over and over). */
     static boolean aimRefused;
 

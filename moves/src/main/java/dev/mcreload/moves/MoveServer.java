@@ -59,6 +59,7 @@ public final class MoveServer {
         // the throw: as far as the aim was held (author, 2026-11-09: "the longer held, the further, as a trident"); its wait
         if (move == Move.THROW) {
             s.throwHeld = s.move == Move.THROW_AIM ? s.moveTick : MovesConfig.throwFullTicks();     // its aim not seen: as held
+            s.throwTarget = target;
             s.throwCooldown = s.cooled(MovesConfig.throwCooldownTicks());
         }
         s.start(p, move, held);
