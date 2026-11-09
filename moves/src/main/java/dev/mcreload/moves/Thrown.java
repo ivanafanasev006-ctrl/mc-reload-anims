@@ -87,7 +87,9 @@ public final class Thrown {
         ItemStack item = p.getMainHandItem().copy();
         p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         ThrownTrident t = new ThrownTrident(p.level(), p, item);
-        t.shootFromRotation(p, p.getXRot(), p.getYRot(), 0f, MovesConfig.throwSpeed(), 1f);
+        t.shootFromRotation(p, p.getXRot(), p.getYRot(), 0f, MovesConfig.throwSpeed() * power(Stamina.of(p).throwHeld), 1f);
+        // seen through walls wherever it is, to be found again (author, 2026-11-09)
+        t.setGlowingTag(true);
         t.pickup = AbstractArrow.Pickup.ALLOWED;
         t.getPersistentData().put(TAG, item.save(new CompoundTag()));
         p.level().addFreshEntity(t);
@@ -99,6 +101,15 @@ public final class Thrown {
     }
 
     /** The weapon's own damage thrown: its attack damage (the player's 1 and its modifiers), enchantments, MovesConfig.throwDamage. */
+    /**
+     * The share of the full speed for an aim held so long (author, 2026-11-09: "the longer held, the further, not to send it
+     * into space by chance"): a bow's draw over MovesConfig.throwFullTicks, a fifth at the least.
+     */
+    public static float power(int held) {
+        float f = Math.min(1f, held / (float) MovesConfig.throwFullTicks());
+        return Math.max(0.2f, (f * f + 2f * f) / 3f);
+    }
+
     static float damage(ItemStack item, LivingEntity target) {
         double d = 1.0;
         for (AttributeModifier m : item.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_DAMAGE)) {
@@ -134,9 +145,8 @@ public final class Thrown {
     }
 
     private static void stick(ThrownTrident t, State st, LivingEntity mob, Vec3 at) {
-        // a little into the body along the way it flew
-        Vec3 dir = t.getDeltaMovement().lengthSqr() > 1.0E-6 ? t.getDeltaMovement().normalize() : Vec3.ZERO;
-        Vec3 in = at.add(dir.scale(0.2));
+        // its middle where it went in: half of it in the body, half out to be seen (author, 2026-11-09)
+        Vec3 in = at;
         st.stuckIn = mob.getId();
         st.offset = in.subtract(mob.position());
         st.yaw = t.getYRot();

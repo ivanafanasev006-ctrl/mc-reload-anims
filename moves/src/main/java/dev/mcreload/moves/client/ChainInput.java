@@ -19,9 +19,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * The chain finisher on the player's side (Chain): Ctrl, W and Space down with a sword, the left button: a leap onto the
- * shoulders of the weak mob in front (from behind it), the blade into its head; then onto the next weak one near, up to
- * MovesConfig.chainMax; then the back flip down. The player is carried along an arc onto each mob's shoulders, turned
+ * The chain finisher on the player's side (Chain): Ctrl, W and Space down with a sword, the left button (or the sword's
+ * finisher just over), two weak mobs about at least: a leap onto the shoulders of the weak mob in front (from behind it),
+ * the blade into its head; then onto the next weak one near, up to MovesConfig.chainMax; then the back flip down. The player is carried along an arc onto each mob's shoulders, turned
  * with it to the way the mob faces (the camera too), and held there until the next leap.
  */
 public final class ChainInput {
@@ -44,12 +44,32 @@ public final class ChainInput {
         if (!HudConfig.Moves.CHAIN.on() || !Strikes.sword(p) || s.move != null) return false;
         if (!mc.options.keySprint.isDown() || !mc.options.keyUp.isDown() || !jumped) return false;
         if (StrikeInput.waits(p, s, Move.CHAIN_LEAP)) return true;
+        return begin(p, s, Chain.FIRST_REACH, 50);
+    }
+
+    /**
+     * The chain from the ground: the weak mob nearest within {@code reach} (and {@code half} degrees of the look), another one
+     * near it at least (author, 2026-11-09: "only with 2 to 6 about").
+     */
+    private static boolean begin(LocalPlayer p, Stamina s, double reach, double half) {
         DONE.clear();
         groundY = p.getY();
-        LivingEntity mob = next(p, p.position(), Chain.FIRST_REACH, 50);
+        LivingEntity mob = next(p, p.position(), reach, half);
         if (mob == null) return false;
-        if (!leap(p, s, Move.CHAIN_LEAP, mob)) return false;
-        return true;
+        DONE.add(mob.getId());
+        LivingEntity second = next(p, mob.position(), MovesConfig.chainRange(), 180);
+        DONE.clear();
+        return second != null && leap(p, s, Move.CHAIN_LEAP, mob);
+    }
+
+    /**
+     * The sword's finisher on LMB just over (its blade out): two weak mobs about or more, the chain goes on by itself
+     * (author, 2026-11-09), from where the player stands, at the nearest of them.
+     */
+    private static void afterFinisher(LocalPlayer p, Stamina s) {
+        if (s.move != Move.FINISHER || s.moveTick != Strikes.FINISH_OUT || !HudConfig.Moves.CHAIN.on() || !Strikes.sword(p)) return;
+        if (s.chainCooldown > 0) return;
+        begin(p, s, MovesConfig.chainRange(), 180);
     }
 
     /** The weak mob nearest {@code at} within {@code reach} (and {@code half} degrees of the look, for the first), not landed on yet. */
@@ -76,14 +96,17 @@ public final class ChainInput {
     }
 
     private static boolean leap(LocalPlayer p, Stamina s, Move move, LivingEntity mob) {
+        // behind it, facing the way it faces: the turn the shorter way, a whole turn more if it is short (author: "180-360");
+        // the hop's take turning that way (clockwise from above: the yaw growing)
+        float yaw = p.getYRot();
+        float d = Mth.wrapDegrees(mob.getYRot() - yaw);
+        if (Math.abs(d) < 120) d += d < 0 ? -360 : 360;
+        if (move.chainHop()) move = d >= 0 ? Move.CHAIN_HOP : Move.CHAIN_HOP_CCW;
         if (!MovesClient.start(p, s, move, mob.getId())) return false;
         DONE.add(mob.getId());
         from = p.position();
-        yawFrom = p.getYRot();
+        yawFrom = yaw;
         yawWas = yawFrom;
-        // behind it, facing the way it faces: the turn the shorter way, a whole turn more if it is short (author: "180-360")
-        float d = Mth.wrapDegrees(mob.getYRot() - yawFrom);
-        if (Math.abs(d) < 120) d += d < 0 ? -360 : 360;
         yawTo = yawFrom + d;
         return true;
     }
@@ -98,7 +121,9 @@ public final class ChainInput {
     /** Every client tick after moving: the player carried by the chain; the next leap or the flip once the blade is in. */
     static void tick(LocalPlayer p, Stamina s) {
         Move m = s.move;
-        if (m != Move.CHAIN_LEAP && m != Move.CHAIN_HOP && m != Move.CHAIN_FLIP) {
+        afterFinisher(p, s);
+        m = s.move;
+        if (m == null || !m.chain()) {
             if (m == null) from = null;
             return;
         }
@@ -116,10 +141,11 @@ public final class ChainInput {
         }
         Entity e = p.level().getEntity(s.target);
         LivingEntity mob = e instanceof LivingEntity le ? le : null;
-        if (mob != null && (mob.isAlive() || t <= Chain.KILL + 1)) {
+        if (mob != null && (mob.isAlive() || t <= Chain.kill(m) + 1)) {
             Vec3 top = shoulders(mob);
-            if (t <= Chain.LAND) {
-                float f = Mth.clamp(t / (float) Chain.LAND, 0f, 1f);
+            if (t <= Chain.land(m)) {
+                int off = Chain.off(m);
+                float f = Mth.clamp((t - off) / (float) (Chain.land(m) - off), 0f, 1f);
                 double h = 1.0 + Math.max(0, top.y - from.y) * 0.3;
                 p.setPos(from.lerp(top, f).add(0, h * Math.sin(Math.PI * f), 0));
                 float yaw = Mth.lerp(f, yawFrom, yawTo);
@@ -135,7 +161,7 @@ public final class ChainInput {
         }
         p.setDeltaMovement(Vec3.ZERO);
         // the blade is in: on to the next weak one near, or the flip down
-        if (t >= Chain.NEXT) {
+        if (t >= Chain.next(m)) {
             LivingEntity next = DONE.size() < MovesConfig.chainMax() ? next(p, p.position(), MovesConfig.chainRange(), 180) : null;
             if (next == null || !leap(p, s, Move.CHAIN_HOP, next)) {
                 Vec3 was = p.position();

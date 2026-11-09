@@ -131,6 +131,8 @@ public final class Stamina {
     public int xbowRollsCooldown;
     /** The chain finisher (both ends): ticks before it can be made again. */
     public int chainCooldown;
+    /** The throw's wait (author, 2026-11-09: 2.5 s, "not to spam it by chance"); how long its aim was held (ticks). */
+    public int throwCooldown, throwHeld;
     /** The crossbow's rolls are on (server): a roll of them was made; ticks since the last one ended (Crossbow.rollsTick). */
     public boolean xbowRollsLive;
     public int xbowRollsGap;
@@ -167,7 +169,7 @@ public final class Stamina {
     /** The attacks' cooldowns, in the order the server sends them (MovesNet.Bars). */
     public int[] cooldowns() {
         return new int[]{dashCooldown, whirlCooldown, spinCooldown, slideAttackCooldown, markedCooldown, bowCooldown,
-                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown};
+                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown, throwCooldown};
     }
 
     public void setCooldowns(int[] c) {
@@ -182,6 +184,7 @@ public final class Stamina {
         xbowCooldown = c[8];
         xbowRollsCooldown = c[9];
         chainCooldown = c[10];
+        throwCooldown = c[11];
     }
 
     public boolean canAfford(Move m, Player p) {
@@ -259,6 +262,7 @@ public final class Stamina {
         if (xbowCooldown > 0) xbowCooldown--;
         if (xbowRollsCooldown > 0) xbowRollsCooldown--;
         if (chainCooldown > 0) chainCooldown--;
+        if (throwCooldown > 0) throwCooldown--;
         if (hasteTicks > 0) hasteTicks--;
         if (chainTicks > 0 && --chainTicks == 0) chainStep = 0;
         if (p.level().isClientSide && combatTicks > 0) combatTicks--;     // the server's own counts down in serverTick

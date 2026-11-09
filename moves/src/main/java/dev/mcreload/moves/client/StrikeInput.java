@@ -91,6 +91,7 @@ public final class StrikeInput {
             case XBOW_VOLLEY, XBOW_SPIN, XBOW_FAN -> s.xbowCooldown;
             case XBOW_ROLL_BACK -> s.xbowRollsCooldown;
             case CHAIN_LEAP -> s.chainCooldown;
+            case THROW -> s.throwCooldown;
             default -> 0;
         };
     }
@@ -291,12 +292,13 @@ public final class StrikeInput {
             case XBOW_VOLLEY, XBOW_SPIN, XBOW_FAN -> HudConfig.Moves.CROSSBOW_G.key;
             case XBOW_ROLL_BACK -> HudConfig.Moves.CROSSBOW_ROLLS.key;
             case CHAIN_LEAP -> HudConfig.Moves.CHAIN.key;
+            case THROW -> HudConfig.Moves.THROW.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }
 
     /** The entity under the crosshair, if any. */
-    private static Entity looked(Minecraft mc) {
+    static Entity looked(Minecraft mc) {
         return mc.hitResult instanceof EntityHitResult hit ? hit.getEntity() : mc.crosshairPickEntity;
     }
 

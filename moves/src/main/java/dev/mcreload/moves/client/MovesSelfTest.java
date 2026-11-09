@@ -218,6 +218,7 @@ public final class MovesSelfTest {
         crossbowSkills("96l_crossbow_g_fan_rolls", CameraType.THIRD_PERSON_BACK);
         crossbowSkills("96m_crossbow_g_first_person", CameraType.FIRST_PERSON);
         chainFinisher("97d_chain_finisher");
+        chainAfterFinisher("97e_chain_after_finisher");
         throwPull("97b_throw_sword", Items.IRON_SWORD);
         throwPull("97c_throw_axe", Items.IRON_AXE);
         rangedFinisher("96n_bow_finisher", Items.BOW, CameraType.THIRD_PERSON_BACK);
@@ -923,7 +924,7 @@ public final class MovesSelfTest {
      * down and the left button: onto each in turn, then the flip; the camera behind.
      */
     private static void chainFinisher(String name) {
-        SCENARIOS.add(new Scenario(name, 100, sp -> {
+        SCENARIOS.add(new Scenario(name, 140, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
             Stamina.of(sp).chainCooldown = 0;
             dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 3.0, 8f);
@@ -938,15 +939,36 @@ public final class MovesSelfTest {
             mc.options.keyUp.setDown(t >= 6 && t < 12);
             mc.options.keyJump.setDown(t >= 8 && t < 12);
             mc.options.keyAttack.setDown(t == 10);
-            if (t == 12 || t == 26 || t == 40 || t == 54 || t == 70) {
+            if (t == 12 || t == 30 || t == 50 || t == 72 || t == 95 || t == 120) {
                 note(String.format(Locale.ROOT, "%s t=%d: %s tick %d, camera %s, at y %.2f, energy %.0f", name, t, st.move, st.moveTick,
                         mc.options.getCameraType(), p.getY(), st.energy));
             }
-            if (t == 90) {
+            if (t == 130) {
                 note(name + ": the chain's wait " + st.chainCooldown / 20 + " s");
                 dummyReport(mc, name, true);
             }
-        }, new int[]{16, 20, 24, 30, 36, 44, 52, 60, 66}, false));
+        }, new int[]{16, 20, 24, 28, 34, 40, 48, 56, 64, 72, 84, 92, 100, 108}, false));
+    }
+
+    /**
+     * The sword's finisher on LMB at a weak zombie at point blank, two more weak ones about (author, 2026-11-09): the chain
+     * goes on by itself once the blade is out, onto both, then the flip.
+     */
+    private static void chainAfterFinisher(String name) {
+        SCENARIOS.add(new Scenario(name, 130, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            Stamina.of(sp).chainCooldown = 0;
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.0, 3f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 2.5, 4.0, 10f);
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, -2.0, 5.0, 9f);
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            Stamina st = Stamina.of(mc.player);
+            if (t == 1) st.chainCooldown = 0;
+            if (t <= 30) mc.options.keyAttack.setDown(t >= 8 && t < 12);
+            if (t == 10 || t == 20 || t == 30 || t == 45 || t == 70 || t == 95) note(name + " t=" + t + ": " + st.move + " tick " + st.moveTick);
+            if (t == 120) dummyReport(mc, name, true);
+        }, new int[]{12, 20, 28, 36, 44, 52, 64, 76, 88}, false));
     }
 
     /**

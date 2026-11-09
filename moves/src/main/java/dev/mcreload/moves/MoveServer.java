@@ -56,6 +56,11 @@ public final class MoveServer {
         if (move.ledge() || move == Move.FALL_TUCK || move.crossbowSkill()) p.stopUsingItem();
         // the fan's shot: the arrows the client says, no more than it has loaded (as this end counts) and there are
         if (move == Move.XBOW_FAN_SHOT) s.fanArrows = Crossbow.fanCount(p, s, target);
+        // the throw: as far as the aim was held (author, 2026-11-09: "the longer held, the further, as a trident"); its wait
+        if (move == Move.THROW) {
+            s.throwHeld = s.move == Move.THROW_AIM ? s.moveTick : 0;
+            s.throwCooldown = s.cooled(MovesConfig.throwCooldownTicks());
+        }
         s.start(p, move, held);
         Crossbow.skillStarted(s, move);
         if (move.crossbowRoll()) {
@@ -69,7 +74,7 @@ public final class MoveServer {
         Crossbow.started(p, s, move);
         if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
-        if (move == Move.WEAPON_PULL || move == Move.CHAIN_LEAP || move == Move.CHAIN_HOP) s.target = target;
+        if (move == Move.WEAPON_PULL || move == Move.CHAIN_LEAP || move.chainHop()) s.target = target;
         if (move == Move.CHAIN_LEAP) s.chainCooldown = s.cooled(MovesConfig.chainCooldownTicks());
         if (move == Move.DASH) {
             s.dashCooldown = s.cooled(MovesConfig.dashCooldownTicks());
@@ -128,7 +133,7 @@ public final class MoveServer {
         if (move == Move.KICK || move == Move.ROLL_KICK) return Kick.valid(p, e);
         if (move == Move.LEDGE_HELP) return e instanceof Player;
         if (move == Move.WEAPON_PULL) return Thrown.valid(p, e);
-        if (move == Move.CHAIN_LEAP || move == Move.CHAIN_HOP) return Chain.valid(p, move, e);
+        if (move == Move.CHAIN_LEAP || move.chainHop()) return Chain.valid(p, move, e);
         if (move.finisher()) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;
     }
@@ -186,18 +191,20 @@ public final class MoveServer {
         }
         // The throw (author, after 0.9.1): a sword or an axe in hand, its aim from the ground, the throw out of the aim; the
         // pull with any hand (its weapon is the target, MoveServer.validTarget)
-        if (move == Move.THROW_AIM) return Thrown.throwable(p) && ground;
+        if (move == Move.THROW_AIM) return Thrown.throwable(p) && ground && s.throwCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.THROW) return Thrown.throwable(p) && s.move == Move.THROW_AIM;
         if (move == Move.WEAPON_PULL) return true;
-        // The chain finisher (author, after 0.9.1): a sword, from the ground or a jump just begun, once its wait is over; each
-        // next leap (or the flip) once the blade is in
+        // The chain finisher (author, after 0.9.1): a sword, from the ground or a jump just begun (or the sword's finisher
+        // ending), once its wait is over, two weak mobs about at least (2026-11-09); each next leap (or the flip) once the
+        // blade is in and out
         if (move == Move.CHAIN_LEAP) {
             int grace = JUMP_GRACE + (p.level().isClientSide ? 0 : GROUND_GRACE);
-            return Strikes.sword(p) && s.chainCooldown <= (p.level().isClientSide ? 0 : 5)
-                    && p.fallDistance < Fall.TUCK_FROM && (ground || p.tickCount - lastGround(p) <= grace);
+            boolean finished = s.move == Move.FINISHER && s.moveTick >= Strikes.FINISH_OUT - (p.level().isClientSide ? 0 : 3);
+            return Strikes.sword(p) && s.chainCooldown <= (p.level().isClientSide ? 0 : 5) && Chain.enough(p)
+                    && p.fallDistance < Fall.TUCK_FROM && (finished || ground || p.tickCount - lastGround(p) <= grace);
         }
-        if (move == Move.CHAIN_HOP || move == Move.CHAIN_FLIP) {
-            return (s.move == Move.CHAIN_LEAP || s.move == Move.CHAIN_HOP) && s.moveTick >= Chain.NEXT - (p.level().isClientSide ? 0 : 3);
+        if (move.chainHop() || move == Move.CHAIN_FLIP) {
+            return s.move != null && (s.move == Move.CHAIN_LEAP || s.move.chainHop()) && s.moveTick >= Chain.next(s.move) - (p.level().isClientSide ? 0 : 3);
         }
         // The crossbow's G (author, 2026-11-08): from the ground once its wait is over, the hop with three arrows only loaded,
         // the turn with the shove only not; the fan's shot out of its loading. The rolls (the right button held, R) from

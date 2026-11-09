@@ -1117,14 +1117,23 @@ public final class MovesGameTests {
             s.energy = 100f;
             t.check(MoveServer.request(p, Move.THROW_AIM, false), "the aim refused");
         });
-        t.at(4, () -> t.check(MoveServer.request(p, Move.THROW, false), "the throw refused"));
-        t.at(5 + dev.mcreload.moves.Thrown.THROW_RELEASE, () -> {
+        // the aim held its full second: the full speed (held a moment, a fifth of it)
+        int go = 2 + MovesConfig.throwFullTicks();
+        t.at(go, () -> {
+            t.check(dev.mcreload.moves.Thrown.power(2) < 0.25f && dev.mcreload.moves.Thrown.power(MovesConfig.throwFullTicks()) == 1f,
+                    "the throw's speed by the aim: " + dev.mcreload.moves.Thrown.power(2));
+            t.check(MoveServer.request(p, Move.THROW, false), "the throw refused");
+            t.check(s.throwHeld >= MovesConfig.throwFullTicks() - 1, "the aim held " + s.throwHeld);
+            t.check(s.throwCooldown == MovesConfig.throwCooldownTicks(), "the throw's wait: " + s.throwCooldown);
+        });
+        t.at(go + 1 + dev.mcreload.moves.Thrown.THROW_RELEASE, () -> {
             t.check(p.getMainHandItem().isEmpty(), "the sword still in hand");
             var list = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.projectile.ThrownTrident.class, p.getBoundingBox().inflate(16));
             t.check(list.size() == 1 && dev.mcreload.moves.Thrown.state(list.get(0)) != null, "no thrown sword: " + list.size());
             tr[0] = list.get(0);
+            t.check(tr[0].hasGlowingTag(), "the thrown sword does not glow");
         });
-        t.at(16, () -> {
+        t.at(go + 12, () -> {
             var st = dev.mcreload.moves.Thrown.state(tr[0]);
             t.check(zombie.getHealth() < 15f, "the throw did not hurt as a sword: " + zombie.getHealth());
             t.check(st != null && st.stuckIn == zombie.getId(), "the sword not stuck in the zombie: " + (st == null ? "gone" : st.stuckIn));
@@ -1132,23 +1141,23 @@ public final class MovesGameTests {
             // up close to it
             p.teleportTo(zombie.getX(), zombie.getY(), zombie.getZ() - 1.4);
         });
-        t.at(24, () -> {
+        t.at(go + 20, () -> {
             s.energy = 100f;
             t.check(MoveServer.request(p, Move.WEAPON_PULL, false, tr[0].getId()), "the pull refused: " + s.move
                     + ", valid " + dev.mcreload.moves.Thrown.valid(p, tr[0]));
         });
-        t.at(25 + dev.mcreload.moves.Thrown.PULL_TICK, () -> {
+        t.at(go + 21 + dev.mcreload.moves.Thrown.PULL_TICK, () -> {
             t.check(p.getMainHandItem().is(Items.IRON_SWORD), "the sword not back in hand: " + p.getMainHandItem());
             t.check(tr[0].isRemoved(), "the thrown sword still there");
             t.check(zombie.getHealth() < hp[0] - 1f, "the pull did not hurt: " + hp[0] + " -> " + zombie.getHealth());
             t.check(zombie.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN), "the pull did not stun");
-        }).run(26 + dev.mcreload.moves.Thrown.PULL_TICK);
+        }).run(go + 22 + dev.mcreload.moves.Thrown.PULL_TICK);
     }
 
     /**
-     * The chain finisher (author, after 0.9.1): two zombies under half their health, three blocks apart: the leap onto the
-     * first kills it as the blade goes in, the hop onto the second the same, then the flip; 10 energy each, 120 s to wait.
-     * A zombie at full health is no target.
+     * The chain finisher (author, after 0.9.1; 2026-11-09): two zombies at half their health or under, two blocks apart: the
+     * leap onto the first kills it as the blade goes in, the hop onto the second the same, then the flip; 10 energy each, 90 s
+     * to wait. A zombie at full health is no target; one weak zombie alone is not enough.
      */
     @GameTest(template = FLOOR, timeoutTicks = 200)
     public static void chainFinisher(GameTestHelper h) {
@@ -1160,24 +1169,26 @@ public final class MovesGameTests {
         noSun(a, b, strong);
         t.at(2, () -> {
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
-            a.setHealth(8f);
-            b.setHealth(9f);
+            a.setHealth(10f);     // half of 20 exactly: weak enough (author: "10 of 20 and it works")
             s.energy = 100f;
+            t.check(!MoveServer.request(p, Move.CHAIN_LEAP, false, a.getId()), "the chain with one weak zombie alone");
+            b.setHealth(9f);
             t.check(!MoveServer.request(p, Move.CHAIN_LEAP, false, strong.getId()), "the chain onto a zombie at full health");
             t.check(MoveServer.request(p, Move.CHAIN_LEAP, false, a.getId()), "the chain refused");
-            t.check(s.chainCooldown > 20 * 100, "the chain's wait: " + s.chainCooldown);
+            t.check(s.chainCooldown == MovesConfig.chainCooldownTicks(), "the chain's wait: " + s.chainCooldown);
         });
-        t.at(3 + dev.mcreload.moves.Chain.KILL, () -> t.check(!a.isAlive(), "the first not killed: " + a.getHealth()));
-        t.at(3 + dev.mcreload.moves.Chain.NEXT, () -> t.check(MoveServer.request(p, Move.CHAIN_HOP, false, b.getId()), "the hop refused"));
-        int second = 4 + dev.mcreload.moves.Chain.NEXT;
-        t.at(second + dev.mcreload.moves.Chain.KILL, () -> {
+        int leap = dev.mcreload.moves.Chain.next(Move.CHAIN_LEAP);
+        t.at(3 + dev.mcreload.moves.Chain.kill(Move.CHAIN_LEAP), () -> t.check(!a.isAlive(), "the first not killed: " + a.getHealth()));
+        t.at(2 + leap, () -> t.check(MoveServer.request(p, Move.CHAIN_HOP_CCW, false, b.getId()), "the hop refused: " + s.move + " " + s.moveTick));
+        int second = 3 + leap;
+        t.at(second + dev.mcreload.moves.Chain.kill(Move.CHAIN_HOP_CCW), () -> {
             t.check(!b.isAlive(), "the second not killed: " + b.getHealth());
             t.check(strong.isAlive() && strong.getHealth() > 19f, "the strong one hurt");
             // (it refills a little meanwhile)
-            t.check(s.energy < 100f - 2 * MovesConfig.costChain() + 5f, "energy after two: " + s.energy);
+            t.check(s.energy < 100f - 2 * MovesConfig.costChain() + 8f, "energy after two: " + s.energy);
         });
-        t.at(second + dev.mcreload.moves.Chain.NEXT, () -> t.check(MoveServer.request(p, Move.CHAIN_FLIP, false), "the flip refused"))
-                .run(second + dev.mcreload.moves.Chain.NEXT + 1);
+        int out = second - 1 + dev.mcreload.moves.Chain.next(Move.CHAIN_HOP_CCW);
+        t.at(out, () -> t.check(MoveServer.request(p, Move.CHAIN_FLIP, false), "the flip refused")).run(out + 1);
     }
 
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */

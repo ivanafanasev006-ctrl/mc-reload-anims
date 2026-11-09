@@ -59,6 +59,9 @@
   "kinetrix_moves.settings.move.firstPersonArms": "Arms in first person",
   "kinetrix_moves.settings.move.firstPersonArms.tip": "In first person both arms are seen in every attack, as on a ledge: the mod's attacks, the left button's blows (Better Combat's too), G's spins as before. Off: vanilla's view of the held item.",
   "kinetrix_moves.hint.finisher": "[%s] Finish off",
+  "kinetrix_moves.hint.pull_sword": "[%s] — pull the sword out",
+  "kinetrix_moves.hint.pull_axe": "[%s] — pull the axe out",
+  "kinetrix_moves.key.space": "␣",
   "kinetrix_moves.slide_attack.cooldown": "Slide attack ready in %s s",
   "kinetrix_moves.ledge.no_room": "No room to climb up there",
   "kinetrix_moves.settings.move.fastRun": "Fast run",
@@ -130,9 +133,9 @@
   "kinetrix_moves.crossbow.fan": "Fan of arrows: %s of %s",
   "kinetrix_moves.crossbow.no_arrows": "No arrows",
   "kinetrix_moves.settings.move.throw": "Sword and axe throw",
-  "kinetrix_moves.settings.move.throw.tip": "A sword or an axe in hand: hold the left and the right button to draw back, let go of the left to throw; it flies as a trident. A hit mob has it stuck in it: the left or the right button at point blank pulls it out (a little damage, a short stun), and a weak mob is finished at once: the sword under the ribs, the axe from above. Killed by the throw, the weapon falls and sticks in the ground; walk over it to pick it up.",
+  "kinetrix_moves.settings.move.throw.tip": "A sword or an axe in hand: hold the left and the right button to draw back (walking slowly), let go of the left to throw; it flies as a trident, the further the longer it was drawn (up to 1 s). The thrown weapon glows, to be found. A hit mob has it stuck half in: the left or the right button at point blank pulls it out (a little damage, a short stun), and a weak mob is finished at once: the sword under the ribs, the axe from above. Killed by the throw, the weapon falls and sticks in the ground; walk over it to pick it up. 2.5 s cooldown.",
   "kinetrix_moves.settings.move.throw.keys": "%4$s + %5$s, let go of %4$s",
   "kinetrix_moves.settings.move.chainFinisher": "Chain finisher",
-  "kinetrix_moves.settings.move.chainFinisher.tip": "A sword in hand, Ctrl + W + Space + LMB: a leap onto the shoulders of a mob under half its health from behind and the blade into its head; another one near (within 5 blocks): over onto it turning round, up to 5; then a back flip. The camera from behind. 10 energy each, 120 s cooldown.",
+  "kinetrix_moves.settings.move.chainFinisher.tip": "A sword in hand, 2 to 6 mobs about at half their health or under. Ctrl + W + Space + LMB: a leap onto the shoulders of one from behind and the blade into its head; the next one within 7 blocks: over onto it turning round, up to 6; then a back flip. After the usual finisher on LMB the chain goes on by itself if such mobs are about. The camera from behind. 10 energy each, 90 s cooldown.",
   "kinetrix_moves.settings.move.chainFinisher.keys": "Ctrl + W + Space + %4$s, a sword"
 }

@@ -50,6 +50,8 @@ public final class MovesHud {
 
     /** How visible the finisher hint is, 0..1 (it fades in and out instead of blinking). */
     private static float hint;
+    /** The weapon the hint is for (pulled out), -1: the finisher's. */
+    private static int pull = -1;
     private static long hintFrame;
 
     /**
@@ -61,13 +63,19 @@ public final class MovesHud {
         long now = net.minecraft.Util.getMillis();
         float dt = hintFrame == 0 ? 0f : Math.min(0.1f, (now - hintFrame) / 1000f);
         hintFrame = now;
-        boolean on = !mc.options.hideGui && mc.player != null && mc.screen == null && StrikeInput.finisherTarget() != null;
+        boolean finish = mc.player != null && StrikeInput.finisherTarget() != null;
+        // the weapon in the mob looked at, close enough to pull it out (author, 2026-11-09: "a hint as for the finisher")
+        int weapon = finish || mc.player == null ? -1 : ThrownClient.pullable(mc.player, StrikeInput.looked(mc));
+        boolean on = !mc.options.hideGui && mc.screen == null && (finish || weapon >= 0);
+        if (on) pull = weapon;
         hint = Mth.clamp(hint + (on ? dt / 0.15f : -dt / 0.25f), 0f, 1f);
         if (hint <= 0f) return;
         float pulse = 0.85f + 0.15f * Mth.sin(now / 1000f * Mth.TWO_PI * 1.5f);
         int alpha = Math.max(8, Math.round(255 * hint * pulse));
-        net.minecraft.network.chat.Component text = net.minecraft.network.chat.Component.translatable(
-                "kinetrix_moves.hint.finisher", mc.options.keyAttack.getTranslatedKeyMessage());
+        net.minecraft.network.chat.Component text = pull < 0
+                ? net.minecraft.network.chat.Component.translatable("kinetrix_moves.hint.finisher", mc.options.keyAttack.getTranslatedKeyMessage())
+                : net.minecraft.network.chat.Component.translatable(ThrownClient.axe(pull) ? "kinetrix_moves.hint.pull_axe" : "kinetrix_moves.hint.pull_sword",
+                        shortKey(mc.options.keyAttack) + "/" + shortKey(mc.options.keyUse));
         int y = height / 2 + 10;
         int w = gui.getFont().width(text);
         g.fill(width / 2 - w / 2 - 3, y - 2, width / 2 + (w + 1) / 2 + 3, y + 10, (Math.round(0x90 * hint) << 24));
@@ -228,6 +236,8 @@ public final class MovesHud {
         if (bow && HudConfig.Moves.LEGOLAS.on()) out.add(Move.LEGOLAS_LEFT);
         // the chain finisher with a sword
         if (Strikes.sword(p) && HudConfig.Moves.CHAIN.on()) out.add(Move.CHAIN_LEAP);
+        // the throw's wait (author, 2026-11-09: "2.5 s, a row of its own")
+        if (dev.mcreload.moves.Thrown.throwable(p) && HudConfig.Moves.THROW.on()) out.add(Move.THROW);
         // the crossbow's rolls (by the back roll)
         if (dev.mcreload.moves.Crossbow.held(p) && HudConfig.Moves.CROSSBOW_ROLLS.on()) out.add(Move.XBOW_ROLL_BACK);
         return out;
@@ -247,6 +257,7 @@ public final class MovesHud {
             case XBOW_VOLLEY -> MovesConfig.crossbowAbilityCooldownTicks();
             case XBOW_ROLL_BACK -> MovesConfig.crossbowRollsCooldownTicks();
             case CHAIN_LEAP -> MovesConfig.chainCooldownTicks();
+            case THROW -> MovesConfig.throwCooldownTicks();
             default -> 0;
         };
     }
@@ -322,7 +333,18 @@ public final class MovesHud {
         }
         if (glint > 0f) g.fill(x + 1, y + 1, x + SLOT - 1, y + SLOT - 1, (Math.round(0x90 * glint) << 24) | 0xFFFFFF);
         int tx = x + SLOT + 3;
-        g.drawString(font, font.plainSubstrByWidth(keys, TRAY_BAR), tx, y + 3, waiting ? 0xA0A0A0 : 0xFFFFFF, true);
+        int kw = font.width(keys);
+        if (kw <= TRAY_BAR) {
+            g.drawString(font, keys, tx, y + 3, waiting ? 0xA0A0A0 : 0xFFFFFF, true);
+        } else {
+            // too long for the bar (the chain's four keys): smaller, down to 2/3, cut only past that
+            float sc = Math.max(0.65f, TRAY_BAR / (float) kw);
+            g.pose().pushPose();
+            g.pose().translate(tx, y + 3 + (1f - sc) * 8f, 0);
+            g.pose().scale(sc, sc, 1f);
+            g.drawString(font, font.plainSubstrByWidth(keys, Math.round(TRAY_BAR / sc)), 0, 0, waiting ? 0xA0A0A0 : 0xFFFFFF, true);
+            g.pose().popPose();
+        }
         int by = y + 14;
         if (flash) g.setColor(1f, 0.45f, 0.45f, 1f);
         shortBar(g, tex("energy_bar_bg"), tx, by, TRAY_BAR);
@@ -352,7 +374,9 @@ public final class MovesHud {
             case SLIDE_SHOT -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyUse);
             case MARKED_SPIN_LEFT -> "↑" + shortKey(mc.options.keyUse);
             case LEGOLAS_LEFT, XBOW_ROLL_BACK -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.DODGE);
-            case CHAIN_LEAP -> shortKey(mc.options.keySprint) + "+" + shortKey(mc.options.keyJump) + "+" + shortKey(mc.options.keyAttack);
+            case CHAIN_LEAP -> shortKey(mc.options.keySprint) + "+" + shortKey(mc.options.keyUp) + "+" + shortKey(mc.options.keyJump) + "+"
+                    + shortKey(mc.options.keyAttack);
+            case THROW -> shortKey(mc.options.keyUse) + "+" + shortKey(mc.options.keyAttack);
             default -> {
                 String g = shortKey(MovesClient.ABILITY);
                 yield g + "(" + g + "+)";
@@ -365,6 +389,16 @@ public final class MovesHud {
         com.mojang.blaze3d.platform.InputConstants.Key k = key.getKey();
         if (k.getType() == com.mojang.blaze3d.platform.InputConstants.Type.MOUSE && k.getValue() >= 0 && k.getValue() <= 2) {
             return net.minecraft.network.chat.Component.translatable("kinetrix_moves.key.mouse" + k.getValue()).getString();
+        }
+        // the long names short, so a row's keys fit ("Left Control" was all of the chain's that was seen)
+        if (k.getType() == com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM) {
+            switch (k.getValue()) {
+                case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL -> { return "Ctrl"; }
+                case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT -> { return "Shift"; }
+                case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_ALT, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_ALT -> { return "Alt"; }
+                case org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE -> { return net.minecraft.network.chat.Component.translatable("kinetrix_moves.key.space").getString(); }
+                default -> { }
+            }
         }
         return key.getTranslatedKeyMessage().getString();
     }

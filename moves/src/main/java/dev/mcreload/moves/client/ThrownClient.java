@@ -102,7 +102,6 @@ public final class ThrownClient {
             pose.mulPose(Axis.YP.rotationDegrees(y - 90f));
             pose.mulPose(Axis.ZP.rotationDegrees(x));
             pose.mulPose(Axis.ZP.rotationDegrees(-45f));
-            if (mob != null) pose.translate(0.12, 0.12, 0);     // a little further in
             items.renderStatic(m.item(), ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY, pose, buffers, t.level(), t.getId());
             pose.popPose();
         }
@@ -117,6 +116,12 @@ public final class ThrownClient {
             // stuck in a mob it is drawn where the mob is
             return INFO.containsKey(t.getId()) || super.shouldRender(t, frustum, x, y, z);
         }
+    }
+
+    /** The weapon (its id) is an axe: for the pull's hint. */
+    static boolean axe(int weapon) {
+        MovesNet.ThrownInfo m = INFO.get(weapon);
+        return m != null && m.item().getItem() instanceof net.minecraft.world.item.AxeItem;
     }
 
     /** Whether the weapon is out of the hand (a throw going on or its weapon in the world): for the hint. */
