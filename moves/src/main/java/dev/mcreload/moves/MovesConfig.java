@@ -30,7 +30,8 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue DASH_WIDTH, SLIDE_ATTACK_CRIT, SLIDE_ATTACK_REACH, KICK_DAMAGE, KICK_STRENGTH,
             FALL_CUT, WATER_ARROWS, THROW_SPEED, THROW_DAMAGE, PULL_DAMAGE, COST_THROW, COST_CHAIN, CHAIN_RANGE, CHAIN_HEALTH;
     private static final ForgeConfigSpec.IntValue CHAIN_COOLDOWN, CHAIN_MAX, THROW_FULL;
-    private static final ForgeConfigSpec.DoubleValue THROW_WAIT;
+    private static final ForgeConfigSpec.DoubleValue THROW_WAIT, COST_AIR_SPIN;
+    private static final ForgeConfigSpec.IntValue AIR_SPIN_WAIT;
     private static final ForgeConfigSpec.IntValue PULL_STUN;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
     private static final ForgeConfigSpec.DoubleValue LEAP_REACH, LEAP_UP, LEAP_DOWN;
@@ -398,6 +399,9 @@ public final class MovesConfig {
         CHAIN_HEALTH = b.comment("The chain finisher: mobs at this share of their health or under (author: 50 %).")
                 .defineInRange("chainHealth", 0.5, 0.0, 1.0);
         COST_THROW = b.comment("The throw of a sword or an axe: energy. [default]").defineInRange("throwCost", 5.0, 0.0, 10000.0);
+        AIR_SPIN_WAIT = b.comment("The turns in the air (W + Space + G held with a sword): seconds before the next (author: 45).")
+                .defineInRange("airSpinWait", 45, 0, 3600);
+        COST_AIR_SPIN = b.comment("The turns in the air: energy (author: 25 of 100).").defineInRange("airSpinCost", 25.0, 0.0, 10000.0);
         THROW_WAIT = b.comment("The throw of a sword or an axe: seconds before the next (author, 2026-11-09: 2.5).")
                 .defineInRange("throwWait", 2.5, 0.0, 600.0);
         THROW_FULL = b.comment("The throw: ticks of the aim held for the full speed; held less it flies slower, as a bow's",
@@ -532,6 +536,8 @@ public final class MovesConfig {
     public static float crossbowFanSpread() { return f(XBOW_FAN_SPREAD, 12.0); }
     public static float waterArrowInertia() { return f(WATER_ARROWS, 0.9); }
     public static float throwSpeed() { return f(THROW_SPEED, 2.5); }
+    public static int airSpinCooldownTicks() { return get(AIR_SPIN_WAIT, 45) * 20; }
+    public static float costAirSpin() { return f(COST_AIR_SPIN, 25.0); }
     public static int throwCooldownTicks() { return Math.round(f(THROW_WAIT, 2.5) * 20f); }
     public static int throwFullTicks() { return get(THROW_FULL, 20); }
     public static float throwDamage() { return f(THROW_DAMAGE, 1.0); }

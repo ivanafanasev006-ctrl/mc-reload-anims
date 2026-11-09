@@ -53,6 +53,24 @@ public final class Spin {
         return BLADE_FROM - FIRST_SWEEP - after * (tick - TURN_ENDS[0]);
     }
 
+    /** The turns in the air (round16.py's sword_air_spin): off the ground at tick 5, the five turns over ticks 12-38, down at 46. */
+    public static final int AIR_OFF = 5, AIR_FROM = 12, AIR_TO = 38, AIR_TURNS = 5, AIR_LAND = 46;
+    /** Its run along the look (blocks a tick), off the ground to the landing. [default] */
+    public static final float AIR_SPEED = 0.2f;
+
+    /** The air turns' pushes from Move.PUSH_TICK: none on the ground, AIR_SPEED in the air. */
+    static float[] airPush() {
+        float[] p = new float[AIR_LAND - Move.PUSH_TICK];
+        for (int i = 0; i < p.length; i++) p[i] = i + Move.PUSH_TICK >= AIR_OFF ? AIR_SPEED : 0f;
+        return p;
+    }
+
+    /** The air turn at this tick (0-4), -1 outside them. */
+    public static int airTurn(int tick) {
+        if (tick < AIR_FROM || tick > AIR_TO) return -1;
+        return Math.min(AIR_TURNS - 1, (tick - AIR_FROM) * AIR_TURNS / (AIR_TO - AIR_FROM + 1));
+    }
+
     static void started(ServerPlayer p, Stamina s) {
         s.spinCooldown = s.cooled(MovesConfig.swordSpinCooldownTicks());
         s.attackYaw = p.getYRot();
@@ -61,6 +79,10 @@ public final class Spin {
 
     /** Every server tick of the turns: the blade meets whoever is within reach, as it sweeps past them, once a turn. */
     static void serverTick(ServerPlayer p, Stamina s) {
+        if (s.move == Move.AIR_SPIN) {
+            airTick(p, s);
+            return;
+        }
         if (s.move != Move.SWORD_SPIN) return;
         int turn = turn(s.moveTick);
         if (turn < 0) return;
@@ -87,6 +109,31 @@ public final class Spin {
             e.invulnerableTime = 0;
             Strikes.blow(p, e, MovesConfig.swordSpinDamage(), false);
             Strikes.shove(e, to.lengthSqr() > 1.0E-4 ? to : Move.SWORD_SPIN.direction(yaw), THROW);
+            Vec3 at = e.position().add(0, e.getBbHeight() * 0.5, 0);
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+        }
+    }
+
+    /** The turns in the air: each turn the blade meets everyone within reach once, the sword's turns' blow. */
+    private static void airTick(ServerPlayer p, Stamina s) {
+        p.fallDistance = 0f;
+        int turn = airTurn(s.moveTick);
+        if (turn < 0) return;
+        ServerLevel level = p.serverLevel();
+        if (airTurn(s.moveTick - 1) != turn) {
+            level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1f, 1.1f + 0.08f * turn);
+        }
+        double reach = MovesConfig.swordSpinReach();
+        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(reach + 1, 1.5, reach + 1),
+                e -> e != p && e.isAlive() && e.isPickable() && !p.isAlliedTo(e) && !(e instanceof ArmorStand))) {
+            Integer last = s.whirlHits.get(e.getId());
+            if (last != null && last >= turn) continue;
+            Vec3 to = Strikes.flat(e.position().subtract(p.position()));
+            if (to.length() - e.getBbWidth() / 2 > reach) continue;
+            s.whirlHits.put(e.getId(), turn);
+            e.invulnerableTime = 0;
+            Strikes.blow(p, e, MovesConfig.swordSpinDamage(), false);
+            Strikes.shove(e, to.lengthSqr() > 1.0E-4 ? to : Move.AIR_SPIN.direction(s.attackYaw), THROW);
             Vec3 at = e.position().add(0, e.getBbHeight() * 0.5, 0);
             level.sendParticles(ParticleTypes.SWEEP_ATTACK, at.x, at.y, at.z, 1, 0, 0, 0, 0);
         }

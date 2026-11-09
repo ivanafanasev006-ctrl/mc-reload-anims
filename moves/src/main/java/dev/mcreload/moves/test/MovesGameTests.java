@@ -1202,6 +1202,34 @@ public final class MovesGameTests {
         t.at(out, () -> t.check(MoveServer.request(p, Move.CHAIN_FLIP, false), "the flip refused")).run(out + 1);
     }
 
+    /**
+     * The turns in the air (author, 2026-11-10): W + Space + G held with a sword: 25 energy, 45 s to wait; the turns hit the
+     * zombie ahead; nothing without a sword.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "airSpin")
+    public static void airSpin(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie z = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5);
+        noSun(z);
+        float[] was = new float[2];
+        t.at(2, () -> {
+            t.check(!MoveServer.request(p, Move.AIR_SPIN, false), "the turns in the air with an empty hand");
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            s.energy = 100f;
+            was[0] = (float) p.getZ();
+            was[1] = z.getHealth();
+            t.check(MoveServer.request(p, Move.AIR_SPIN, false), "the turns in the air refused");
+            t.close(s.energy, 100f - MovesConfig.costAirSpin(), "energy after the turns in the air");
+            t.check(s.airSpinCooldown == MovesConfig.airSpinCooldownTicks(), "their wait: " + s.airSpinCooldown);
+        });
+        t.at(3 + dev.mcreload.moves.Spin.AIR_TO, () -> {
+            // (the run along the look is the client's, as every push: not here)
+            t.check(z.getHealth() < was[1] - 3f || !z.isAlive(), "the turns did not hit the zombie ahead: " + z.getHealth());
+        }).run(4 + dev.mcreload.moves.Spin.AIR_TO);
+    }
+
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
     private static void blow(Script t, float lost, float damage, String what) {
         t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);

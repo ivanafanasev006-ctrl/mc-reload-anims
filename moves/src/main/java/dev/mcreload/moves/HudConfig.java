@@ -50,6 +50,8 @@ public final class HudConfig {
                 "back with the shot (loaded) or the dash back; each click the next."),
         CHAIN("chainFinisher", "The chain finisher: Ctrl + W + Space + LMB with a sword (or the finisher on LMB), 2 to 6 mobs at half their health",
                 "or under about: onto their shoulders, the blade into each head, 7 blocks apart at most, then a back flip (90 s, 10 energy a kill)."),
+        AIR_SPIN("airSpin", "The turns in the air: W + Space + G held with a sword: up head down, five turns of the blade along the look,",
+                "down in a fighting crouch (45 s cooldown, 25 energy)."),
         THROW("throw", "The throw of a sword or an axe: the left and the right button held, the left let go; at point blank to the mob it",
                 "stuck in, the left or the right button pulls it out (a finisher right after, if the mob is weak)."),
         CROSSBOW_G("crossbowAbility", "G with a crossbow: the hop back with three arrows (loaded) or a turn with a shove (not), 10 s cooldown;",

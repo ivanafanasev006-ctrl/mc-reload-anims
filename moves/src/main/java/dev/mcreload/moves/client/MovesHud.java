@@ -236,6 +236,7 @@ public final class MovesHud {
         if (bow && HudConfig.Moves.LEGOLAS.on()) out.add(Move.LEGOLAS_LEFT);
         // the chain finisher with a sword
         if (Strikes.sword(p) && HudConfig.Moves.CHAIN.on()) out.add(Move.CHAIN_LEAP);
+        if (Strikes.sword(p) && HudConfig.Moves.AIR_SPIN.on()) out.add(Move.AIR_SPIN);
         // the throw's wait (author, 2026-11-09: "2.5 s, a row of its own")
         if (dev.mcreload.moves.Thrown.throwable(p) && HudConfig.Moves.THROW.on()) out.add(Move.THROW);
         // the crossbow's rolls (by the back roll)
@@ -258,6 +259,7 @@ public final class MovesHud {
             case XBOW_ROLL_BACK -> MovesConfig.crossbowRollsCooldownTicks();
             case CHAIN_LEAP -> MovesConfig.chainCooldownTicks();
             case THROW -> MovesConfig.throwCooldownTicks();
+            case AIR_SPIN -> MovesConfig.airSpinCooldownTicks();
             default -> 0;
         };
     }
@@ -377,6 +379,7 @@ public final class MovesHud {
             case CHAIN_LEAP -> shortKey(mc.options.keySprint) + "+" + shortKey(mc.options.keyUp) + "+" + shortKey(mc.options.keyJump) + "+"
                     + shortKey(mc.options.keyAttack);
             case THROW -> shortKey(mc.options.keyUse) + "+" + shortKey(mc.options.keyAttack);
+            case AIR_SPIN -> shortKey(mc.options.keyUp) + "+" + shortKey(mc.options.keyJump) + "+" + shortKey(MovesClient.ABILITY) + "+";
             default -> {
                 String g = shortKey(MovesClient.ABILITY);
                 yield g + "(" + g + "+)";

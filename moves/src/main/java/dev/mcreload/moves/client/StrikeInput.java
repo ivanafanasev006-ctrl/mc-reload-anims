@@ -92,6 +92,7 @@ public final class StrikeInput {
             case XBOW_ROLL_BACK -> s.xbowRollsCooldown;
             case CHAIN_LEAP -> s.chainCooldown;
             case THROW -> s.throwCooldown;
+            case AIR_SPIN -> s.airSpinCooldown;
             default -> 0;
         };
     }
@@ -206,6 +207,11 @@ public final class StrikeInput {
                 swordG = 0;
                 Move move = down ? Move.SWORD_SPIN : Move.DASH;
                 boolean on = down ? HudConfig.Moves.SWORD_SPIN.on() : HudConfig.Moves.DASH.on();
+                // W and Space with it: the turns in the air (author, 2026-11-10)
+                if (down && HudConfig.Moves.AIR_SPIN.on() && mc.options.keyUp.isDown()
+                        && (mc.options.keyJump.isDown() || MovesClient.sinceJump() <= 8) && MoveServer.allowed(p, s, Move.AIR_SPIN)) {
+                    move = Move.AIR_SPIN;
+                }
                 if (on && s.move == null && begin(mc, p, s, move)) {
                     if (move == Move.DASH) GuardInput.lowerLocal(p, s, true);
                     return true;
@@ -304,6 +310,7 @@ public final class StrikeInput {
             case XBOW_ROLL_BACK -> HudConfig.Moves.CROSSBOW_ROLLS.key;
             case CHAIN_LEAP -> HudConfig.Moves.CHAIN.key;
             case THROW -> HudConfig.Moves.THROW.key;
+            case AIR_SPIN -> HudConfig.Moves.AIR_SPIN.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }

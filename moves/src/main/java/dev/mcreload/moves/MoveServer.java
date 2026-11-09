@@ -72,6 +72,11 @@ public final class MoveServer {
         if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
         if (move == Move.WHIRL) Whirl.started(p, s);
         if (move == Move.SWORD_SPIN) Spin.started(p, s);
+        if (move == Move.AIR_SPIN) {
+            s.airSpinCooldown = s.cooled(MovesConfig.airSpinCooldownTicks());
+            s.attackYaw = p.getYRot();
+            s.whirlHits.clear();
+        }
         Crossbow.started(p, s, move);
         if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
@@ -247,6 +252,12 @@ public final class MoveServer {
         if (move == Move.DASH) return ground && s.dashCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.WHIRL) return ground && s.whirlCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.SWORD_SPIN) return ground && s.spinCooldown <= (p.level().isClientSide ? 0 : 5);
+        // W + Space + G held with a sword (author, 2026-11-10): from the ground or a jump just begun, once its wait is over
+        if (move == Move.AIR_SPIN) {
+            int grace = JUMP_GRACE + (p.level().isClientSide ? 0 : GROUND_GRACE);
+            return Strikes.sword(p) && s.airSpinCooldown <= (p.level().isClientSide ? 0 : 5) && p.fallDistance < Fall.TUCK_FROM
+                    && (ground || p.tickCount - lastGround(p) <= grace);
+        }
         return ground || !MovesConfig.dodgeOnlyOnGround();
     }
 

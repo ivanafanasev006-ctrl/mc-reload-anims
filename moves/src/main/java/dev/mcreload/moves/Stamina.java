@@ -133,6 +133,8 @@ public final class Stamina {
     public int chainCooldown;
     /** The throw's wait (author, 2026-11-09: 2.5 s, "not to spam it by chance"); how long its aim was held (ticks). */
     public int throwCooldown, throwHeld;
+    /** The turns in the air's wait (author, 2026-11-10: 45 s). */
+    public int airSpinCooldown;
     /** The mob the throw is aimed at (the client's auto-aim; -1: along the look). */
     public int throwTarget = -1;
     /** The crossbow's rolls are on (server): a roll of them was made; ticks since the last one ended (Crossbow.rollsTick). */
@@ -171,7 +173,7 @@ public final class Stamina {
     /** The attacks' cooldowns, in the order the server sends them (MovesNet.Bars). */
     public int[] cooldowns() {
         return new int[]{dashCooldown, whirlCooldown, spinCooldown, slideAttackCooldown, markedCooldown, bowCooldown,
-                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown, throwCooldown};
+                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown, throwCooldown, airSpinCooldown};
     }
 
     public void setCooldowns(int[] c) {
@@ -187,6 +189,7 @@ public final class Stamina {
         xbowRollsCooldown = c[9];
         chainCooldown = c[10];
         throwCooldown = c[11];
+        airSpinCooldown = c[12];
     }
 
     public boolean canAfford(Move m, Player p) {
@@ -265,6 +268,7 @@ public final class Stamina {
         if (xbowRollsCooldown > 0) xbowRollsCooldown--;
         if (chainCooldown > 0) chainCooldown--;
         if (throwCooldown > 0) throwCooldown--;
+        if (airSpinCooldown > 0) airSpinCooldown--;
         if (hasteTicks > 0) hasteTicks--;
         if (chainTicks > 0 && --chainTicks == 0) chainStep = 0;
         if (p.level().isClientSide && combatTicks > 0) combatTicks--;     // the server's own counts down in serverTick
