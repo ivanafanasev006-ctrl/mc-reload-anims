@@ -222,15 +222,17 @@ public final class StrikeInput {
                 }
             }
         }
-        // G with an axe: tapped the whirlwind (4 turns), held the combo with 3 to 6 mobs about (else the whirlwind)
+        // G with an axe: the whirlwind (4 turns); the right button held too and G held, the combo with 3 to 6 mobs about
+        // (author, 2026-11-10, evening: "the G+ skill on RMB + G+, the plain spinning on G"; else the whirlwind)
         if (!Strikes.axe(p)) axeG = 0;
         if (abilityPressed && s.move == null && axeG == 0 && Strikes.axe(p)) axeG = 1;
         if (axeG > 0) {
             axeG++;
-            boolean down = MovesClient.held(mc, MovesClient.ABILITY);
-            if (!down || axeG > HOLD_G) {
+            boolean down = MovesClient.held(mc, MovesClient.ABILITY), use = MovesClient.held(mc, mc.options.keyUse);
+            if (!down || !use || axeG > HOLD_G) {
                 axeG = 0;
-                // the combo: a blow for each mob about (AxeComboInput), else the whirlwind; mobs enough about but its wait not
+                down = down && use;
+                // the combo: a blow for each mob about (AxeComboInput), else the whirlwind; mobs enough in sight but its wait not
                 // over: the wait shown, not the whirlwind in its place (author, 2026-11-10, 20:00: "it works every other time")
                 if (down && HudConfig.Moves.AXE_TRIPLE.on() && s.move == null
                         && dev.mcreload.moves.Whirl.tripleTargets(p).size() >= dev.mcreload.moves.Whirl.TRIPLE_FEWEST) {

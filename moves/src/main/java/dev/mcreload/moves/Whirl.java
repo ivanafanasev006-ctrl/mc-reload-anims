@@ -39,10 +39,11 @@ public final class Whirl {
     /**
      * The combo (author, 2026-11-10, evening: "EACH one 70 % of his health", the animation built anew from his example,
      * round19.py; 20:00: each blow a different one, "only 3 of the 3 to 6 were hit"): a blow for each mob, one after another,
-     * a turning one and a chop in turn. Its reach (blocks: the mobs it takes, from where the player stands as each blow
-     * starts) and its fewest and most mobs. [default reach]
+     * a turning one and a chop in turn; the evening after: "at most 8 blocks, further it does not hit them; not through
+     * walls" (Marks.seen, as the bow's auto-aim at the marked). Its reach (blocks: the mobs it takes, from where the player
+     * stands as each blow starts) and its fewest and most mobs.
      */
-    public static final double TRIPLE_REACH = 5.0;
+    public static final double TRIPLE_REACH = 8.0;
     public static final int TRIPLE_FEWEST = 3, TRIPLE_MOST = 6;
 
     /** The tick of this blow of the combo where the axe meets its mob (round19.py: its head passing in front, the fastest). */
@@ -95,14 +96,16 @@ public final class Whirl {
     public static java.util.List<LivingEntity> comboMobs(net.minecraft.world.entity.player.Player p, double reach) {
         java.util.List<LivingEntity> out = new java.util.ArrayList<>(p.level().getEntitiesOfClass(LivingEntity.class,
                 p.getBoundingBox().inflate(reach + 1, 1.5, reach + 1),
-                e -> comboMob(p, e) && Strikes.flat(e.position().subtract(p.position())).length() - e.getBbWidth() / 2 <= reach));
+                e -> comboMob(p, e) && Strikes.flat(e.position().subtract(p.position())).length() - e.getBbWidth() / 2 <= reach
+                        && Marks.seen(p, (LivingEntity) e)));
         out.sort(java.util.Comparator.comparingDouble(e -> e.distanceToSqr(p)));
         return out.size() > TRIPLE_MOST ? out.subList(0, TRIPLE_MOST) : out;
     }
 
     /** The mob a blow of the combo is made at (the client named it): one it may take, near (the player steps to it). */
     public static boolean comboValid(net.minecraft.world.entity.player.Player p, net.minecraft.world.entity.Entity e) {
-        return comboMob(p, e) && Strikes.flat(e.position().subtract(p.position())).length() <= TRIPLE_REACH + 3;
+        return comboMob(p, e) && Strikes.flat(e.position().subtract(p.position())).length() <= TRIPLE_REACH + 2
+                && Marks.seen(p, (LivingEntity) e);
     }
 
     /** Every server tick of the combo: the blow's mob held where it is until the axe meets it, then 70 % of its health off. */
@@ -117,7 +120,7 @@ public final class Whirl {
             if (e instanceof net.minecraft.world.entity.Mob m) m.getNavigation().stop();
             return;
         }
-        if (s.moveTick != hit || e.distanceTo(p) > TRIPLE_REACH + 3) return;
+        if (s.moveTick != hit || e.distanceTo(p) > 4.0) return;     // the axe meets it only if the player got to it
         ServerLevel level = p.serverLevel();
         e.invulnerableTime = 0;
         Vec3 was = e.getDeltaMovement();

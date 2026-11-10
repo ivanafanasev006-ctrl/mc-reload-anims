@@ -83,14 +83,15 @@ public final class Chain {
     public static boolean enough(Player p) {
         double reach = FIRST_REACH + MovesConfig.chainRange();
         return p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(reach),
-                e -> e != p && weak(e) && e.distanceTo(p) <= reach).size() >= FEWEST;
+                e -> e != p && weak(e) && e.distanceTo(p) <= reach && Marks.seen(p, e)).size() >= FEWEST;
     }
 
     /** The mob a leap of the chain is made at: weak, within reach of where the player is (more for the first). */
     public static boolean valid(Player p, Move move, Entity e) {
         if (!(e instanceof LivingEntity le) || !weak(le)) return false;
         double reach = (move == Move.CHAIN_LEAP ? FIRST_REACH : MovesConfig.chainRange()) + 1.5;     // the client is ahead
-        return e.position().distanceTo(p.position()) <= reach;
+        // not through walls (author, 2026-11-10: as the bow's auto-aim at the marked)
+        return e.position().distanceTo(p.position()) <= reach && Marks.seen(p, le);
     }
 
     /** Every server tick of the chain: no fall to hurt; the mob held until the blade goes in, killed then. */

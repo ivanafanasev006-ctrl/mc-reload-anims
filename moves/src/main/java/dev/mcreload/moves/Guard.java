@@ -79,9 +79,11 @@ public final class Guard {
     /** The guard this player could raise now: by what is in their hands. */
     public static Kind kindFor(Player p) {
         ItemStack main = p.getMainHandItem(), off = p.getOffhandItem();
-        if (!isSword(main)) return Kind.NONE;
+        // an axe guards as a sword does (author, 2026-11-10: "the axe too may put up the shield on RMB, as the sword")
+        boolean axe = Strikes.axe(p);
+        if (!isSword(main) && !axe) return Kind.NONE;
         if (!off.isEmpty() && off.canPerformAction(ToolActions.SHIELD_BLOCK)) return Kind.NONE;
-        return isSword(off) ? Kind.DOUBLE : Kind.SINGLE;
+        return !axe && isSword(off) ? Kind.DOUBLE : Kind.SINGLE;
     }
 
     /** Can this player raise (or keep) a guard: a sword in hand, shields left, free to act. */

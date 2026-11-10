@@ -82,7 +82,7 @@ public final class ChainInput {
         Vec3 look = p.getViewVector(1f);
         look = new Vec3(look.x, 0, look.z).normalize();
         for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(reach + 2))) {
-            if (e == p || DONE.contains(e.getId()) || !Chain.weak(e)) continue;
+            if (e == p || DONE.contains(e.getId()) || !Chain.weak(e) || !dev.mcreload.moves.Marks.seen(p, e)) continue;
             Vec3 to = e.position().subtract(at);
             double d = to.length();
             if (d > reach || Math.abs(e.getY() - groundY) > 3) continue;

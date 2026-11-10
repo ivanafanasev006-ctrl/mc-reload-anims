@@ -1175,7 +1175,8 @@ public final class MovesGameTests {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
         Stamina s = Stamina.of(p);
-        Zombie a = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5), b = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 7);
+        // (on the floor: a mob off its edge falls below it, out of sight, and the chain does not take it)
+        Zombie a = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5), b = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 5);
         Zombie strong = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 5);
         noSun(a, b, strong);
         t.at(2, () -> {
@@ -1231,8 +1232,9 @@ public final class MovesGameTests {
     }
 
     /**
-     * The axe's combo (author, 2026-11-10; evening: "EACH one 70 % of his health"): G held with an axe, 3 to 6 mobs about: refused
-     * with two; with three, a blow for each in turn, each taking 70 % of that one's health (through its armour) and no other's.
+     * The axe's combo (author, 2026-11-10; evening: "EACH one 70 % of his health", then 80 %): RMB + G held with an axe, 3 to 6
+     * mobs about: refused with two; with three, a blow for each in turn, each taking 80 % of that one's health (through its armour)
+     * and no other's.
      */
     @GameTest(template = FLOOR, timeoutTicks = 200, batch = "axeTriple")
     public static void axeTriple(GameTestHelper h) {
@@ -1265,7 +1267,7 @@ public final class MovesGameTests {
         t.at(second + dev.mcreload.moves.Whirl.comboHit(Move.AXE_COMBO_CHOP) + 2, () -> {
             blow(t, 20f - z[1].getHealth(), blow, "the second blow");
             t.check(z[2].getHealth() > 18f, "the third zombie hit by the second blow: " + z[2].getHealth());
-            t.check(z[0].getHealth() > 5f, "the first zombie hit again: " + z[0].getHealth());
+            t.check(z[0].getHealth() > 2f, "the first zombie hit again: " + z[0].getHealth());
         });
         float[] was = new float[1];
         t.at(third, () -> {

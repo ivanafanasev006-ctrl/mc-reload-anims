@@ -394,7 +394,8 @@ public final class MovesHud {
     static String trayKeys(Minecraft mc, Move move) {
         return switch (move) {
             case DASH -> shortKey(MovesClient.ABILITY);
-            case SWORD_SPIN, AXE_TRIPLE -> shortKey(MovesClient.ABILITY) + "+";
+            case SWORD_SPIN -> shortKey(MovesClient.ABILITY) + "+";
+            case AXE_TRIPLE -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.ABILITY) + "+";
             case WHIRL -> shortKey(MovesClient.ABILITY);
             case SLIDE_ATTACK -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
             case SLIDE_SHOT -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyUse);

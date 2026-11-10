@@ -36,7 +36,7 @@ public final class HudConfig {
         SWORD_SPIN("swordSpin", "The sword's turns: G held with a sword, up to 3 while held, parrying blows (not a boss's) and sending",
                 "arrows and fireballs back; the keys walk the player meanwhile."),
         WHIRL("whirlwind", "The axe whirlwind: G with an axe, 4 turns the way the camera looks."),
-        AXE_TRIPLE("axeCombo", "The axe's combo: G held with an axe, 3 to 6 mobs about: a blow for each, one after another, 70 % of its health (40 s)."),
+        AXE_TRIPLE("axeCombo", "The axe's combo: the right button and G held with an axe, 3 to 6 mobs within 8 blocks in sight: a blow for each, one after another, 80 % of its health (40 s)."),
         FINISHER("finisher", "The finisher: the left button at point blank to a weakened mob."),
         GUARD("guard", "The sword block: the right button with a sword."),
         FALL_ROLL("fallRoll", "The tuck and the roll: R held while falling."),

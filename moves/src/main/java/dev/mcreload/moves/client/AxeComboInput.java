@@ -24,13 +24,19 @@ public final class AxeComboInput {
     /** The combo's mobs already hit, the yaw turned from, the blows so far. */
     private static final List<Integer> DONE = new ArrayList<>();
     private static float yawFrom, yawWas;
-    /** The quickest step to a mob (blocks a tick; 21:06: "he darts from mob to mob super fast": it was 0.6). [default] */
-    private static final double STEP = 0.4;
+    /**
+     * The quickest step to a mob (blocks a tick): the way to it spread evenly over the ticks to its blow (21:06: "he darts from
+     * mob to mob super fast"; the combo takes them up to 8 blocks off). [default]
+     */
+    private static final double FAR_STEP = 0.9;
+    /** The next blow's mob, picked once this blow's axe has met its own: the player already on the way to it. */
+    private static LivingEntity upcoming;
     private static int blows;
 
     static void reset() {
         DONE.clear();
         blows = 0;
+        upcoming = null;
     }
 
     /** G held long enough with an axe and the combo allowed: its first blow at the mob the nearest the look. */
@@ -65,17 +71,22 @@ public final class AxeComboInput {
         if (!MovesClient.start(p, s, move, mob.getId())) return false;
         DONE.add(mob.getId());
         blows++;
+        upcoming = null;
         yawFrom = p.getYRot();
         yawWas = yawFrom;
         return true;
     }
 
-    /** Every client tick after moving: turned and stepped to this blow's mob until the axe meets it; the next blow or the end. */
+    /**
+     * Every client tick after moving: turned and stepped to this blow's mob until the axe meets it; after that already on the
+     * way to the next one (a far one is not got to in a rush), the next blow at it or the end.
+     */
     static void tick(LocalPlayer p, Stamina s) {
         Move m = s.move;
         if (m == null || !m.axeCombo()) return;
         int t = s.moveTick, hit = Whirl.comboHit(m);
         Vec3 v = p.getDeltaMovement();
+        Vec3 go = Vec3.ZERO;
         if (t <= hit && p.level().getEntity(s.target) instanceof LivingEntity mob && mob.isAlive()) {
             float f = Mth.clamp((t + 1) / (float) (hit + 1), 0f, 1f);
             f = f * f * (3 - 2 * f);
@@ -83,21 +94,28 @@ public final class AxeComboInput {
             p.setYRot(p.getYRot() + (yaw - yawWas));
             p.yBodyRot = yaw;
             yawWas = yaw;
-            Vec3 to = Strikes.flat(mob.position().subtract(p.position()));
-            double d = to.length();
-            double step = d > 1.0E-3 ? Mth.clamp((d - Whirl.comboStand(m)) / Math.max(1, hit - t), -0.2, STEP) : 0;
-            Vec3 go = d > 1.0E-3 ? to.scale(step / d) : Vec3.ZERO;
-            p.setDeltaMovement(go.x, v.y, go.z);
-        } else {
-            p.setDeltaMovement(0, v.y, 0);
+            go = step(p, mob, Whirl.comboStand(m), hit - t);
+        } else if (t > hit && blows < Whirl.TRIPLE_MOST) {
+            if (upcoming == null || !upcoming.isAlive()) upcoming = next(p);
+            Move after = Whirl.comboNext(m);
+            if (upcoming != null) go = step(p, upcoming, Whirl.comboStand(after), m.length - 1 - t + Whirl.comboHit(after));
         }
+        p.setDeltaMovement(go.x, v.y, go.z);
         // the blow over (its ready pose again): on to the next mob, or the end
         if (t >= m.length - 1) {
-            LivingEntity next = blows < Whirl.TRIPLE_MOST ? next(p) : null;
+            LivingEntity next = blows >= Whirl.TRIPLE_MOST ? null : upcoming != null && upcoming.isAlive() ? upcoming : next(p);
             if (next == null || !blow(p, s, Whirl.comboNext(m), next)) {
                 if (!MovesClient.start(p, s, Move.AXE_COMBO_END, -1)) dev.mcreload.moves.KinetrixMoves.LOG.info("axe combo: no end at {} tick {}", m, t);
             }
         }
+    }
+
+    /** The step this tick towards {@code mob}, to stand {@code stand} blocks off it in {@code ticks}, the way spread evenly. */
+    private static Vec3 step(LocalPlayer p, LivingEntity mob, double stand, int ticks) {
+        Vec3 to = Strikes.flat(mob.position().subtract(p.position()));
+        double d = to.length();
+        if (d < 1.0E-3) return Vec3.ZERO;
+        return to.scale(Mth.clamp((d - stand) / Math.max(1, ticks), -0.2, FAR_STEP) / d);
     }
 
     private AxeComboInput() {}
