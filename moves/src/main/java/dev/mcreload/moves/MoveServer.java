@@ -256,10 +256,10 @@ public final class MoveServer {
         // G held with an axe (author, 2026-11-10): 3 to 6 mobs about (the nearest 6 of more), from the ground, once its wait is over
         if (move == Move.AXE_TRIPLE) {
             return Strikes.axe(p) && ground && s.axeTripleCooldown <= (p.level().isClientSide ? 0 : 5)
-                    && Whirl.tripleTargets(p).size() >= Whirl.TRIPLE_FEWEST;
+                    && Whirl.comboMobs(p, Whirl.TRIPLE_REACH + (p.level().isClientSide ? 0 : 1.5)).size() >= Whirl.TRIPLE_FEWEST;
         }
         // its next blows and its end: from the blow before, once that is over (the client a few ticks ahead)
-        if (move == Move.AXE_COMBO_1 || move == Move.AXE_COMBO_2 || move == Move.AXE_COMBO_3 || move == Move.AXE_COMBO_END) {
+        if (move != Move.AXE_TRIPLE && (move.axeCombo() || move == Move.AXE_COMBO_END)) {
             return s.move != null && s.move.axeCombo() && s.moveTick >= s.move.length - 1 - (p.level().isClientSide ? 0 : 3);
         }
         if (move == Move.SWORD_SPIN) return ground && s.spinCooldown <= (p.level().isClientSide ? 0 : 5);

@@ -1254,15 +1254,15 @@ public final class MovesGameTests {
             t.check(s.axeTripleCooldown == MovesConfig.axeTripleCooldownTicks(), "its wait: " + s.axeTripleCooldown);
         });
         float blow = 20f * MovesConfig.axeTripleShare();
-        int open = 3, second = open + Move.AXE_TRIPLE.length - 1, third = second + Move.AXE_COMBO_2.length - 1;
-        int end = third + Move.AXE_COMBO_3.length - 1;
-        t.at(open + dev.mcreload.moves.Whirl.OPEN_HIT + 2, () -> {
+        int open = 3, second = open + Move.AXE_TRIPLE.length - 1, third = second + Move.AXE_COMBO_CHOP.length - 1;
+        int end = third + Move.AXE_COMBO_2.length - 1;
+        t.at(open + dev.mcreload.moves.Whirl.comboHit(Move.AXE_TRIPLE) + 2, () -> {
             blow(t, 20f - z[0].getHealth(), blow, "the first blow");
             t.check(z[1].getHealth() > 18f, "the second zombie hit by the first blow: " + z[1].getHealth());
             t.check(z[2].getHealth() > 18f, "the third zombie hit by the first blow: " + z[2].getHealth());
         });
-        t.at(second, () -> t.check(MoveServer.request(p, Move.AXE_COMBO_2, false, z[1].getId()), "the second blow refused"));
-        t.at(second + dev.mcreload.moves.Whirl.HIT_2 + 2, () -> {
+        t.at(second, () -> t.check(MoveServer.request(p, Move.AXE_COMBO_CHOP, false, z[1].getId()), "the second blow refused"));
+        t.at(second + dev.mcreload.moves.Whirl.comboHit(Move.AXE_COMBO_CHOP) + 2, () -> {
             blow(t, 20f - z[1].getHealth(), blow, "the second blow");
             t.check(z[2].getHealth() > 18f, "the third zombie hit by the second blow: " + z[2].getHealth());
             t.check(z[0].getHealth() > 5f, "the first zombie hit again: " + z[0].getHealth());
@@ -1270,9 +1270,9 @@ public final class MovesGameTests {
         float[] was = new float[1];
         t.at(third, () -> {
             was[0] = z[2].getHealth();
-            t.check(MoveServer.request(p, Move.AXE_COMBO_3, false, z[2].getId()), "the third blow refused");
+            t.check(MoveServer.request(p, Move.AXE_COMBO_2, false, z[2].getId()), "the third blow refused");
         });
-        t.at(third + dev.mcreload.moves.Whirl.HIT_3 + 2, () -> blow(t, was[0] - z[2].getHealth(), blow, "the third blow"));
+        t.at(third + dev.mcreload.moves.Whirl.comboHit(Move.AXE_COMBO_2) + 2, () -> blow(t, was[0] - z[2].getHealth(), blow, "the third blow"));
         t.at(end, () -> t.check(MoveServer.request(p, Move.AXE_COMBO_END, false), "the end refused"));
         t.at(end + 2, () -> t.check(s.move == Move.AXE_COMBO_END, "not ending: " + s.move)).run(end + 3);
     }

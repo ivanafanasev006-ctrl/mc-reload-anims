@@ -230,11 +230,15 @@ public final class StrikeInput {
             boolean down = MovesClient.held(mc, MovesClient.ABILITY);
             if (!down || axeG > HOLD_G) {
                 axeG = 0;
-                // the combo: a blow for each mob about (AxeComboInput), else the whirlwind
-                if (down && HudConfig.Moves.AXE_TRIPLE.on() && s.move == null && MoveServer.allowed(p, s, Move.AXE_TRIPLE)
-                        && AxeComboInput.start(p, s)) {
-                    swallow(mc);
-                    return true;
+                // the combo: a blow for each mob about (AxeComboInput), else the whirlwind; mobs enough about but its wait not
+                // over: the wait shown, not the whirlwind in its place (author, 2026-11-10, 20:00: "it works every other time")
+                if (down && HudConfig.Moves.AXE_TRIPLE.on() && s.move == null
+                        && dev.mcreload.moves.Whirl.tripleTargets(p).size() >= dev.mcreload.moves.Whirl.TRIPLE_FEWEST) {
+                    if (waits(p, s, Move.AXE_TRIPLE)) return true;
+                    if (MoveServer.allowed(p, s, Move.AXE_TRIPLE) && AxeComboInput.start(p, s)) {
+                        swallow(mc);
+                        return true;
+                    }
                 }
                 Move move = ability(p);
                 if (move != null && s.move == null && begin(mc, p, s, move)) return true;

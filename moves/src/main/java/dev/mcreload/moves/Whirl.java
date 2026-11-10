@@ -38,21 +38,19 @@ public final class Whirl {
     public static final int G_TURNS = 4;
     /**
      * The combo (author, 2026-11-10, evening: "EACH one 70 % of his health", the animation built anew from his example,
-     * round19.py): a blow for each mob, one after another, each on a whole turn of the body; the axe's head passes in front at
-     * these ticks of the opening (the wind-up and the first blow) and of the three blows (axe_combo_1, _2, _3). Its reach (blocks)
-     * and its fewest and most mobs. [default reach]
+     * round19.py; 20:00: each blow a different one, "only 3 of the 3 to 6 were hit"): a blow for each mob, one after another,
+     * a turning one and a chop in turn. Its reach (blocks: the mobs it takes, from where the player stands as each blow
+     * starts) and its fewest and most mobs. [default reach]
      */
-    public static final int OPEN_HIT = 15, HIT_1 = 6, HIT_2 = 6, HIT_3 = 8;
-    public static final double TRIPLE_REACH = 3.5;
+    public static final double TRIPLE_REACH = 5.0;
     public static final int TRIPLE_FEWEST = 3, TRIPLE_MOST = 6;
 
-    /** The tick of this blow of the combo where the axe meets its mob. */
+    /** The tick of this blow of the combo where the axe meets its mob (round19.py: its head passing in front, the fastest). */
     public static int comboHit(Move m) {
         return switch (m) {
-            case AXE_TRIPLE -> OPEN_HIT;
-            case AXE_COMBO_1 -> HIT_1;
-            case AXE_COMBO_2 -> HIT_2;
-            case AXE_COMBO_3 -> HIT_3;
+            case AXE_TRIPLE -> 6;
+            case AXE_COMBO_CHOP, AXE_COMBO_2, AXE_COMBO_DIAG -> 5;
+            case AXE_COMBO_3 -> 8;
             default -> -1;
         };
     }
@@ -60,15 +58,27 @@ public final class Whirl {
     /** How far from its mob the player stands for this blow (the axe's head that far out then, round19.py). */
     public static double comboStand(Move m) {
         return switch (m) {
-            case AXE_COMBO_2 -> 1.2;
-            case AXE_COMBO_3 -> 1.5;
+            case AXE_COMBO_CHOP, AXE_COMBO_2 -> 1.2;
+            case AXE_COMBO_3 -> 1.4;
+            case AXE_COMBO_DIAG -> 1.5;
             default -> 1.8;
         };
     }
 
-    /** The blow after this one: the three in turn, the first again after the third. */
+    /** How far to the right of the player's look the axe comes down in this blow (degrees): its mob put there. */
+    public static float comboAim(Move m) {
+        return m == Move.AXE_COMBO_DIAG ? 60f : 0f;
+    }
+
+    /** The blow after this one: a chop and a turning one in turn (author: "the poses taking turns"). */
     public static Move comboNext(Move m) {
-        return m == Move.AXE_COMBO_2 ? Move.AXE_COMBO_3 : m == Move.AXE_COMBO_3 ? Move.AXE_COMBO_1 : Move.AXE_COMBO_2;
+        return switch (m) {
+            case AXE_TRIPLE -> Move.AXE_COMBO_CHOP;
+            case AXE_COMBO_CHOP -> Move.AXE_COMBO_2;
+            case AXE_COMBO_2 -> Move.AXE_COMBO_DIAG;
+            case AXE_COMBO_DIAG -> Move.AXE_COMBO_3;
+            default -> Move.AXE_COMBO_CHOP;
+        };
     }
 
     /** A mob the combo may take: alive, not a boss, not allied. */
@@ -78,9 +88,14 @@ public final class Whirl {
 
     /** The mobs the combo may take, the nearest first, TRIPLE_MOST at most. */
     public static java.util.List<LivingEntity> tripleTargets(net.minecraft.world.entity.player.Player p) {
+        return comboMobs(p, TRIPLE_REACH);
+    }
+
+    /** The mobs the combo may take within {@code reach} (to their sides), the nearest first, TRIPLE_MOST at most. */
+    public static java.util.List<LivingEntity> comboMobs(net.minecraft.world.entity.player.Player p, double reach) {
         java.util.List<LivingEntity> out = new java.util.ArrayList<>(p.level().getEntitiesOfClass(LivingEntity.class,
-                p.getBoundingBox().inflate(TRIPLE_REACH + 1, 1.5, TRIPLE_REACH + 1),
-                e -> comboMob(p, e) && Strikes.flat(e.position().subtract(p.position())).length() - e.getBbWidth() / 2 <= TRIPLE_REACH));
+                p.getBoundingBox().inflate(reach + 1, 1.5, reach + 1),
+                e -> comboMob(p, e) && Strikes.flat(e.position().subtract(p.position())).length() - e.getBbWidth() / 2 <= reach));
         out.sort(java.util.Comparator.comparingDouble(e -> e.distanceToSqr(p)));
         return out.size() > TRIPLE_MOST ? out.subList(0, TRIPLE_MOST) : out;
     }

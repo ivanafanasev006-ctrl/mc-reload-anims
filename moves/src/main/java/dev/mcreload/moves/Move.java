@@ -229,14 +229,18 @@ public enum Move {
     WHIRL_END("axe_whirlwind_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /**
      * G held with an axe, 3 to 6 mobs about (author, 2026-11-10; in the evening: "EACH one 70 % of his health", the animation
-     * built anew from his example): the combo, a blow for each mob, one after another, each on a whole turn of the body
-     * (round19.py). This is its wind-up and first blow (axe_combo_open); then AXE_COMBO_2, _3, _1 in turn, one a mob, and
-     * AXE_COMBO_END. The client turns and steps the player to each mob (AxeComboInput); Whirl.tripleTick its blows.
+     * built anew from his example; 20:00: "no second of the stance at the start; each blow a different one, the poses taking
+     * turns as in the sword's chain finisher"): the combo, a blow for each mob, one after another (round19.py). This is its
+     * first blow, a whole turn of the body, at once from the stance (axe_combo_open); then in turn the overhead chop, the
+     * second turning blow, the chop across, the third, the chop again (Whirl.comboNext), one a mob, and AXE_COMBO_END. The
+     * client turns and steps the player to each mob (AxeComboInput); Whirl.tripleTick its blows.
      */
-    AXE_TRIPLE("axe_combo_open", 1f, 22, -1, -1, -1, -1, Side.FRONT, MovesConfig::costAxeTriple),
-    /** The combo's blows after the first (axe_combo_1, _2, _3: from the ready pose to it, a whole turn each), one a mob. */
-    AXE_COMBO_1("axe_combo_1", 1f, 12, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    AXE_TRIPLE("axe_combo_open", 1f, 12, -1, -1, -1, -1, Side.FRONT, MovesConfig::costAxeTriple),
+    /** The combo's blows after the first, one a mob, from the ready pose to it: the overhead chop, the second turning blow, the chop
+     * down across from the right, the third turning blow (axe_combo_chop, _2, _diag, _3). */
+    AXE_COMBO_CHOP("axe_combo_chop", 1f, 7, -1, -1, -1, -1, Side.FRONT, () -> 0),
     AXE_COMBO_2("axe_combo_2", 1f, 11, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    AXE_COMBO_DIAG("axe_combo_diag", 1f, 8, -1, -1, -1, -1, Side.FRONT, () -> 0),
     AXE_COMBO_3("axe_combo_3", 1f, 12, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** The combo's end: from the ready pose back to the stance (axe_combo_end). */
     AXE_COMBO_END("axe_combo_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
@@ -255,7 +259,7 @@ public enum Move {
      * W + Space + G held with a sword (author, 2026-11-10): straight over head down, five turns of the blade along the look (no
      * steering), down on the knees at 1.65 s sliding a couple of blocks, up (round16.py, his example remade). Spin.AIR_* its keys.
      */
-    AIR_SPIN("sword_air_spin", 1f, 48, -1, -1, -1, -1, Side.FRONT, MovesConfig::costAirSpin, Spin.airPush()),
+    AIR_SPIN("sword_air_spin", 1f, 54, -1, -1, -1, -1, Side.FRONT, MovesConfig::costAirSpin, Spin.airPush()),
     /** The sword's turn's ending, in place of its next turn when G is up: the slow-down and the stance (0.45 s). */
     SPIN_END("sword_spin_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
 
@@ -492,7 +496,7 @@ public enum Move {
 
     /** The axe's combo: its blows (each at a mob), not its end. */
     public boolean axeCombo() {
-        return this == AXE_TRIPLE || this == AXE_COMBO_1 || this == AXE_COMBO_2 || this == AXE_COMBO_3;
+        return this == AXE_TRIPLE || this == AXE_COMBO_CHOP || this == AXE_COMBO_2 || this == AXE_COMBO_DIAG || this == AXE_COMBO_3;
     }
 
     /** The finisher: the sword's stab or the axe's chop. */
@@ -610,7 +614,7 @@ public enum Move {
             // the chain on its own after the sword's finisher, more weak mobs about (author, 2026-11-09)
             case CHAIN_LEAP -> now == FINISHER;
             // the axe's combo: each blow, and its end, from the blow before
-            case AXE_COMBO_1, AXE_COMBO_2, AXE_COMBO_3, AXE_COMBO_END -> now.axeCombo();
+            case AXE_COMBO_CHOP, AXE_COMBO_2, AXE_COMBO_DIAG, AXE_COMBO_3, AXE_COMBO_END -> now.axeCombo();
             case FINISHER, FINISHER_AXE -> now == WEAPON_PULL;
             default -> false;
         };
