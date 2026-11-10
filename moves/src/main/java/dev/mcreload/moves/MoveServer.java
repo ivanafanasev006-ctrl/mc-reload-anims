@@ -81,7 +81,7 @@ public final class MoveServer {
         Crossbow.started(p, s, move);
         if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
-        if (move == Move.WEAPON_PULL || move == Move.CHAIN_LEAP || move.chainHop()) s.target = target;
+        if (move == Move.WEAPON_PULL || move == Move.CHAIN_LEAP || move.chainHop() || move.axeCombo()) s.target = target;
         if (move == Move.CHAIN_LEAP) s.chainCooldown = s.cooled(MovesConfig.chainCooldownTicks());
         if (move == Move.DASH) {
             s.dashCooldown = s.cooled(MovesConfig.dashCooldownTicks());
@@ -141,6 +141,7 @@ public final class MoveServer {
         if (move == Move.LEDGE_HELP) return e instanceof Player;
         if (move == Move.WEAPON_PULL) return Thrown.valid(p, e);
         if (move == Move.CHAIN_LEAP || move.chainHop()) return Chain.valid(p, move, e);
+        if (move.axeCombo()) return Whirl.comboValid(p, e);
         if (move.finisher()) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;
     }
@@ -256,6 +257,10 @@ public final class MoveServer {
         if (move == Move.AXE_TRIPLE) {
             return Strikes.axe(p) && ground && s.axeTripleCooldown <= (p.level().isClientSide ? 0 : 5)
                     && Whirl.tripleTargets(p).size() >= Whirl.TRIPLE_FEWEST;
+        }
+        // its next blows and its end: from the blow before, once that is over (the client a few ticks ahead)
+        if (move == Move.AXE_COMBO_1 || move == Move.AXE_COMBO_2 || move == Move.AXE_COMBO_3 || move == Move.AXE_COMBO_END) {
+            return s.move != null && s.move.axeCombo() && s.moveTick >= s.move.length - 1 - (p.level().isClientSide ? 0 : 3);
         }
         if (move == Move.SWORD_SPIN) return ground && s.spinCooldown <= (p.level().isClientSide ? 0 : 5);
         // W + Space + G held with a sword (author, 2026-11-10): from the ground or a jump just begun, once its wait is over

@@ -164,7 +164,7 @@ public final class Strikes {
         return to.lengthSqr() < 1.0E-4 || angle(flat(p.getViewVector(1f)), to) <= (strict ? 60 : 90);
     }
 
-    static Vec3 flat(Vec3 v) {
+    public static Vec3 flat(Vec3 v) {
         return new Vec3(v.x, 0, v.z);
     }
 

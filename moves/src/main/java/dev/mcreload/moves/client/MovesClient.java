@@ -163,6 +163,7 @@ public final class MovesClient {
             CrossbowInput.reset();
             if (p == null) ThrownClient.reset();
             ChainInput.reset();
+            AxeComboInput.reset();
             if (p != null) Cutscene.tick(mc, p, Stamina.of(p));
             return;
         }
@@ -455,6 +456,7 @@ public final class MovesClient {
             if (p == Minecraft.getInstance().player && p instanceof LocalPlayer lp) {
                 LedgeInput.place(lp, s);
                 ChainInput.tick(lp, s);
+                AxeComboInput.tick(lp, s);
                 kickTurn(lp, s);
                 MoveServer.seen(p);
             } else {

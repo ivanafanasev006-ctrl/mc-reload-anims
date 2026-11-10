@@ -1231,8 +1231,8 @@ public final class MovesGameTests {
     }
 
     /**
-     * The axe's combo (author, 2026-11-10): G held with an axe, 3 to 6 mobs about: refused with two, with three each loses 75 % of
-     * its health over the three blows (through its armour).
+     * The axe's combo (author, 2026-11-10; evening: "EACH one 70 % of his health"): G held with an axe, 3 to 6 mobs about: refused
+     * with two; with three, a blow for each in turn, each taking 70 % of that one's health (through its armour) and no other's.
      */
     @GameTest(template = FLOOR, timeoutTicks = 200, batch = "axeTriple")
     public static void axeTriple(GameTestHelper h) {
@@ -1246,17 +1246,35 @@ public final class MovesGameTests {
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
             s.energy = 100f;
             z[2].teleportTo(z[2].getX() + 20, z[2].getY(), z[2].getZ());
-            t.check(!MoveServer.request(p, Move.AXE_TRIPLE, false), "the combo with two mobs about");
+            t.check(!MoveServer.request(p, Move.AXE_TRIPLE, false, z[0].getId()), "the combo with two mobs about");
         });
         t.at(3, () -> {
             z[2].teleportTo(h.absoluteVec(new Vec3(1.5, 2, 3.5)).x, z[1].getY(), h.absoluteVec(new Vec3(1.5, 2, 3.5)).z);
-            t.check(MoveServer.request(p, Move.AXE_TRIPLE, false), "the combo refused with three");
+            t.check(MoveServer.request(p, Move.AXE_TRIPLE, false, z[0].getId()), "the combo refused with three");
             t.check(s.axeTripleCooldown == MovesConfig.axeTripleCooldownTicks(), "its wait: " + s.axeTripleCooldown);
         });
-        int last = dev.mcreload.moves.Whirl.TRIPLE_HITS[2];
-        t.at(5 + last, () -> {
-            for (Zombie e : z) t.check(!e.isAlive() || e.getHealth() <= e.getMaxHealth() * 0.25f + 0.6f, "a zombie kept " + e.getHealth());
-        }).run(6 + last);
+        float blow = 20f * MovesConfig.axeTripleShare();
+        int open = 3, second = open + Move.AXE_TRIPLE.length - 1, third = second + Move.AXE_COMBO_2.length - 1;
+        int end = third + Move.AXE_COMBO_3.length - 1;
+        t.at(open + dev.mcreload.moves.Whirl.OPEN_HIT + 2, () -> {
+            blow(t, 20f - z[0].getHealth(), blow, "the first blow");
+            t.check(z[1].getHealth() > 18f, "the second zombie hit by the first blow: " + z[1].getHealth());
+            t.check(z[2].getHealth() > 18f, "the third zombie hit by the first blow: " + z[2].getHealth());
+        });
+        t.at(second, () -> t.check(MoveServer.request(p, Move.AXE_COMBO_2, false, z[1].getId()), "the second blow refused"));
+        t.at(second + dev.mcreload.moves.Whirl.HIT_2 + 2, () -> {
+            blow(t, 20f - z[1].getHealth(), blow, "the second blow");
+            t.check(z[2].getHealth() > 18f, "the third zombie hit by the second blow: " + z[2].getHealth());
+            t.check(z[0].getHealth() > 5f, "the first zombie hit again: " + z[0].getHealth());
+        });
+        float[] was = new float[1];
+        t.at(third, () -> {
+            was[0] = z[2].getHealth();
+            t.check(MoveServer.request(p, Move.AXE_COMBO_3, false, z[2].getId()), "the third blow refused");
+        });
+        t.at(third + dev.mcreload.moves.Whirl.HIT_3 + 2, () -> blow(t, was[0] - z[2].getHealth(), blow, "the third blow"));
+        t.at(end, () -> t.check(MoveServer.request(p, Move.AXE_COMBO_END, false), "the end refused"));
+        t.at(end + 2, () -> t.check(s.move == Move.AXE_COMBO_END, "not ending: " + s.move)).run(end + 3);
     }
 
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */

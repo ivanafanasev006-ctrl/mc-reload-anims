@@ -136,7 +136,7 @@
   "kinetrix_moves.settings.move.airSpin.tip": "A sword in hand, W + Space + G held: up head down, 5 turns of the blade the way you look (no steering), hitting all around as the usual turns; down into a fighting stance. 45 s cooldown, 25 energy.",
   "kinetrix_moves.settings.move.airSpin.keys": "W + Space + %1$s held, a sword",
   "kinetrix_moves.settings.move.axeCombo": "Axe combo",
-  "kinetrix_moves.settings.move.axeCombo.tip": "An axe in hand, 3 to 6 mobs about: hold G for three blows on turns, each mob losing 75% of its health (not bosses). 40 s cooldown, 20 energy.",
+  "kinetrix_moves.settings.move.axeCombo.tip": "An axe in hand, 3 to 6 mobs about: hold G: a blow for each of them in turn, on a whirl of the body, each losing 70% of its greatest health (not bosses). 40 s cooldown, 20 energy.",
   "kinetrix_moves.settings.move.axeCombo.keys": "%1$s held, an axe",
   "kinetrix_moves.settings.move.throw": "Sword and axe throw",
   "kinetrix_moves.settings.move.throw.tip": "A sword or an axe in hand: hold the left and the right button to draw back (walking slowly), let go of either to throw; it flies as a trident, the further the longer it was drawn (up to 1 s). Auto-aim: a red cross on the mob near the crosshair, the throw goes into it. The thrown weapon glows, to be found. A hit mob has it stuck half in: the left or the right button at point blank pulls it out (a little damage, a short stun), and a weak mob is finished at once: the sword under the ribs, the axe from above. Killed by the throw, the weapon falls and sticks in the ground; walk over it to pick it up. 2.5 s cooldown.",

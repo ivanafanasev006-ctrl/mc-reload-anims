@@ -230,7 +230,13 @@ public final class StrikeInput {
             boolean down = MovesClient.held(mc, MovesClient.ABILITY);
             if (!down || axeG > HOLD_G) {
                 axeG = 0;
-                Move move = down && HudConfig.Moves.AXE_TRIPLE.on() && MoveServer.allowed(p, s, Move.AXE_TRIPLE) ? Move.AXE_TRIPLE : ability(p);
+                // the combo: a blow for each mob about (AxeComboInput), else the whirlwind
+                if (down && HudConfig.Moves.AXE_TRIPLE.on() && s.move == null && MoveServer.allowed(p, s, Move.AXE_TRIPLE)
+                        && AxeComboInput.start(p, s)) {
+                    swallow(mc);
+                    return true;
+                }
+                Move move = ability(p);
                 if (move != null && s.move == null && begin(mc, p, s, move)) return true;
             }
         }

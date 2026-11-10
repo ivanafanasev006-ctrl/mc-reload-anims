@@ -36,45 +36,86 @@ public final class Whirl {
     /** The turn (0-based) the whirlwind is in at this tick, -1 before the first or after the last. */
     /** G with an axe: this many turns, not held for (author, 2026-11-10: "the old G+ goes on G, 4 turns"). */
     public static final int G_TURNS = 4;
-    /** The combo's three blows (axe_triple: 0.70, 1.33, 1.95 s), its reach (blocks) and its fewest and most mobs. [default reach] */
-    public static final int[] TRIPLE_HITS = {14, 27, 39};
+    /**
+     * The combo (author, 2026-11-10, evening: "EACH one 70 % of his health", the animation built anew from his example,
+     * round19.py): a blow for each mob, one after another, each on a whole turn of the body; the axe's head passes in front at
+     * these ticks of the opening (the wind-up and the first blow) and of the three blows (axe_combo_1, _2, _3). Its reach (blocks)
+     * and its fewest and most mobs. [default reach]
+     */
+    public static final int OPEN_HIT = 15, HIT_1 = 6, HIT_2 = 6, HIT_3 = 8;
     public static final double TRIPLE_REACH = 3.5;
     public static final int TRIPLE_FEWEST = 3, TRIPLE_MOST = 6;
 
-    /** The mobs the combo may take (alive, not a boss, not allied), the nearest first, TRIPLE_MOST at most. */
+    /** The tick of this blow of the combo where the axe meets its mob. */
+    public static int comboHit(Move m) {
+        return switch (m) {
+            case AXE_TRIPLE -> OPEN_HIT;
+            case AXE_COMBO_1 -> HIT_1;
+            case AXE_COMBO_2 -> HIT_2;
+            case AXE_COMBO_3 -> HIT_3;
+            default -> -1;
+        };
+    }
+
+    /** How far from its mob the player stands for this blow (the axe's head that far out then, round19.py). */
+    public static double comboStand(Move m) {
+        return switch (m) {
+            case AXE_COMBO_2 -> 1.2;
+            case AXE_COMBO_3 -> 1.5;
+            default -> 1.8;
+        };
+    }
+
+    /** The blow after this one: the three in turn, the first again after the third. */
+    public static Move comboNext(Move m) {
+        return m == Move.AXE_COMBO_2 ? Move.AXE_COMBO_3 : m == Move.AXE_COMBO_3 ? Move.AXE_COMBO_1 : Move.AXE_COMBO_2;
+    }
+
+    /** A mob the combo may take: alive, not a boss, not allied. */
+    public static boolean comboMob(net.minecraft.world.entity.player.Player p, net.minecraft.world.entity.Entity e) {
+        return e instanceof net.minecraft.world.entity.Mob m && m.isAlive() && !Strikes.boss(m) && !p.isAlliedTo(m);
+    }
+
+    /** The mobs the combo may take, the nearest first, TRIPLE_MOST at most. */
     public static java.util.List<LivingEntity> tripleTargets(net.minecraft.world.entity.player.Player p) {
         java.util.List<LivingEntity> out = new java.util.ArrayList<>(p.level().getEntitiesOfClass(LivingEntity.class,
                 p.getBoundingBox().inflate(TRIPLE_REACH + 1, 1.5, TRIPLE_REACH + 1),
-                e -> e instanceof net.minecraft.world.entity.Mob && e != p && e.isAlive() && !Strikes.boss(e) && !p.isAlliedTo(e)
-                        && Strikes.flat(e.position().subtract(p.position())).length() - e.getBbWidth() / 2 <= TRIPLE_REACH));
+                e -> comboMob(p, e) && Strikes.flat(e.position().subtract(p.position())).length() - e.getBbWidth() / 2 <= TRIPLE_REACH));
         out.sort(java.util.Comparator.comparingDouble(e -> e.distanceToSqr(p)));
         return out.size() > TRIPLE_MOST ? out.subList(0, TRIPLE_MOST) : out;
     }
 
-    /** Every server tick of the combo: at each blow a quarter of each one's health, through its armour. */
+    /** The mob a blow of the combo is made at (the client named it): one it may take, near (the player steps to it). */
+    public static boolean comboValid(net.minecraft.world.entity.player.Player p, net.minecraft.world.entity.Entity e) {
+        return comboMob(p, e) && Strikes.flat(e.position().subtract(p.position())).length() <= TRIPLE_REACH + 3;
+    }
+
+    /** Every server tick of the combo: the blow's mob held where it is until the axe meets it, then 70 % of its health off. */
     static void tripleTick(net.minecraft.server.level.ServerPlayer p, Stamina s) {
-        if (s.move != Move.AXE_TRIPLE) return;
-        int k = -1;
-        for (int i = 0; i < TRIPLE_HITS.length; i++) if (TRIPLE_HITS[i] == s.moveTick) k = i;
-        if (k < 0) return;
-        ServerLevel level = p.serverLevel();
-        level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1f, 0.8f + 0.1f * k);
-        float share = MovesConfig.axeTripleShare() / TRIPLE_HITS.length;
-        // the mobs of the first blow are the combo's, the next blows find them where they are (each blow shoved them out of reach)
-        if (k == 0) {
-            s.whirlHits.clear();
-            for (LivingEntity e : tripleTargets(p)) s.whirlHits.put(e.getId(), 0);
-        }
-        for (int id : s.whirlHits.keySet()) {
-            if (!(level.getEntity(id) instanceof LivingEntity e) || !e.isAlive() || e.distanceTo(p) > TRIPLE_REACH + 4) continue;
-            e.invulnerableTime = 0;
-            Vec3 was = e.getDeltaMovement();
-            e.hurt(p.damageSources().playerAttack(p), Plunge.throughArmour(e, e.getMaxHealth() * share));
-            e.setDeltaMovement(was.x * 0.3, Math.min(was.y, 0.1), was.z * 0.3);     // held about the player, not knocked away
+        if (s.move == null || !s.move.axeCombo()) return;
+        if (!(p.level().getEntity(s.target) instanceof LivingEntity e) || !e.isAlive()) return;
+        int hit = comboHit(s.move);
+        if (s.moveTick < hit) {
+            Vec3 v = e.getDeltaMovement();
+            e.setDeltaMovement(0, Math.min(v.y, 0), 0);
             e.hurtMarked = true;
-            Vec3 at = e.position().add(0, e.getBbHeight() * 0.5, 0);
-            level.sendParticles(ParticleTypes.SWEEP_ATTACK, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+            if (e instanceof net.minecraft.world.entity.Mob m) m.getNavigation().stop();
+            return;
         }
+        if (s.moveTick != hit || e.distanceTo(p) > TRIPLE_REACH + 3) return;
+        ServerLevel level = p.serverLevel();
+        e.invulnerableTime = 0;
+        Vec3 was = e.getDeltaMovement();
+        e.hurt(p.damageSources().playerAttack(p), Plunge.throughArmour(e, e.getMaxHealth() * MovesConfig.axeTripleShare()));
+        e.setDeltaMovement(was.x * 0.3, Math.min(was.y, 0.1), was.z * 0.3);     // not knocked away: the axe goes on to the next
+        e.hurtMarked = true;
+        Vec3 at = e.position().add(0, e.getBbHeight() * 0.6, 0);
+        level.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1f, 0.8f);
+        level.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8f, 0.7f);
+        level.sendParticles(ParticleTypes.SWEEP_ATTACK, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+        level.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 10, 0.2, 0.2, 0.2, 0.3);
+        p.getMainHandItem().hurtAndBreak(1, p, x -> x.broadcastBreakEvent(net.minecraft.world.InteractionHand.MAIN_HAND));
+        p.setLastHurtMob(e);
         s.combatTicks = MovesConfig.combatTicks();
     }
 

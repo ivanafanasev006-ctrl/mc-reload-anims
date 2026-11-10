@@ -403,8 +403,8 @@ public final class MovesConfig {
         COST_THROW = b.comment("The throw of a sword or an axe: energy. [default]").defineInRange("throwCost", 5.0, 0.0, 10000.0);
         AXE_TRIPLE_WAIT = b.comment("The axe's combo (G held, 3 to 6 mobs about): seconds before the next. [default]")
                 .defineInRange("axeComboWait", 40, 0, 3600);
-        AXE_TRIPLE_SHARE = b.comment("The axe's combo: the share of each mob's health its three blows take in all (author: 75 %).")
-                .defineInRange("axeComboShare", 0.75, 0.0, 1.0);
+        AXE_TRIPLE_SHARE = b.comment("The axe's combo: the share of each mob's greatest health its blow takes (author, 2026-11-10: 70 %).")
+                .defineInRange("axeComboHealth", 0.70, 0.0, 1.0);
         COST_AXE_TRIPLE = b.comment("The axe's combo: energy. [default]").defineInRange("axeComboCost", 20.0, 0.0, 10000.0);
         AIR_SPIN_WAIT = b.comment("The turns in the air (W + Space + G held with a sword): seconds before the next (author: 45).")
                 .defineInRange("airSpinWait", 45, 0, 3600);
@@ -545,7 +545,7 @@ public final class MovesConfig {
     public static float waterArrowInertia() { return f(WATER_ARROWS, 0.9); }
     public static float throwSpeed() { return f(THROW_SPEED, 2.5); }
     public static int axeTripleCooldownTicks() { return get(AXE_TRIPLE_WAIT, 40) * 20; }
-    public static float axeTripleShare() { return f(AXE_TRIPLE_SHARE, 0.75); }
+    public static float axeTripleShare() { return f(AXE_TRIPLE_SHARE, 0.70); }
     public static float costAxeTriple() { return f(COST_AXE_TRIPLE, 20.0); }
     public static int airSpinCooldownTicks() { return get(AIR_SPIN_WAIT, 45) * 20; }
     public static float costAirSpin() { return f(COST_AIR_SPIN, 25.0); }
