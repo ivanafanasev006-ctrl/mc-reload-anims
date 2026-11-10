@@ -40,7 +40,9 @@ FPS, SIGMA = 24, 0.03
 READY = 0.70
 #: Seconds (made) the ends are blended over to the ready pose (the stance at the start of the first), and a cut within one.
 BLEND, CUT = 0.13, 0.08
-TURN, CHOP = 1.5, 1.3
+#: How much quicker than his each kind plays (21:06: "a little slower than now: he darts from mob to mob super fast";
+#: they were 1.5 and 1.3).
+TURN, CHOP = 1.2, 1.05
 #: name, his pieces (from, to, how much quicker), start pinned to ('stand', 'ready', None), end pinned, a whole turn
 PIECES = [('axe_combo_open', [(READY, 1.62, TURN)], 'stand', 'ready', True),
           ('axe_combo_chop', [(3.30, 3.46, CHOP), (4.30, 4.56, CHOP)], 'ready', 'ready', False),

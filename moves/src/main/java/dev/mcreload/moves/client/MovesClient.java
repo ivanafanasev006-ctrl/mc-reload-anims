@@ -272,11 +272,12 @@ public final class MovesClient {
 
         // ---- once a move's push is over, running, jumping or striking ends it: a dodge, a roll, a
         // slide or the hop does not hold the player in place while its animation plays out
-        if (s.move != null && recoverable(s) && (moving(mc) || jumpPressed || attackPressed)) {
+        boolean airSlide = s.move == Move.AIR_SPIN && s.moveTick > dev.mcreload.moves.Spin.AIR_LAND && (jumpPressed || attackPressed);
+        if (s.move != null && (airSlide || recoverable(s) && (moving(mc) || jumpPressed || attackPressed))) {
             Move was = s.move;
             cancel(p, s, was == Move.DASH || was == Move.HOP ? 5 : was == Move.SLIDE_SHOT_END ? 6 : 3);
-            // a vault or a dash run on: the sprint they started from goes on (the move held the keys)
-            if ((was == Move.HOP || was == Move.DASH) && sprinted && mc.options.keyUp.isDown()) p.setSprinting(true);
+            // a vault, a dash or the air turns' slide run on: the sprint goes on (the move held the keys)
+            if (((was == Move.HOP || was == Move.DASH) && sprinted || was == Move.AIR_SPIN) && mc.options.keyUp.isDown()) p.setSprinting(true);
         }
 
         // ---- the strikes: the finisher, the dash strike (they take the click), the ability on G

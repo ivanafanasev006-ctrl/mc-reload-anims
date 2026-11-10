@@ -233,17 +233,18 @@ public enum Move {
      * turns as in the sword's chain finisher"): the combo, a blow for each mob, one after another (round19.py). This is its
      * first blow, a whole turn of the body, at once from the stance (axe_combo_open); then in turn the overhead chop, the
      * second turning blow, the chop across, the third, the chop again (Whirl.comboNext), one a mob, and AXE_COMBO_END. The
-     * client turns and steps the player to each mob (AxeComboInput); Whirl.tripleTick its blows.
+     * client turns and steps the player to each mob (AxeComboInput); Whirl.tripleTick its blows. 21:06: untouchable all
+     * through, as the chain finisher; a little slower (round19.py).
      */
-    AXE_TRIPLE("axe_combo_open", 1f, 12, -1, -1, -1, -1, Side.FRONT, MovesConfig::costAxeTriple),
+    AXE_TRIPLE("axe_combo_open", 1f, 15, 0, 15, -1, -1, Side.FRONT, MovesConfig::costAxeTriple),
     /** The combo's blows after the first, one a mob, from the ready pose to it: the overhead chop, the second turning blow, the chop
      * down across from the right, the third turning blow (axe_combo_chop, _2, _diag, _3). */
-    AXE_COMBO_CHOP("axe_combo_chop", 1f, 7, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    AXE_COMBO_2("axe_combo_2", 1f, 11, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    AXE_COMBO_DIAG("axe_combo_diag", 1f, 8, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    AXE_COMBO_3("axe_combo_3", 1f, 12, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    AXE_COMBO_CHOP("axe_combo_chop", 1f, 8, 0, 8, -1, -1, Side.FRONT, () -> 0),
+    AXE_COMBO_2("axe_combo_2", 1f, 14, 0, 14, -1, -1, Side.FRONT, () -> 0),
+    AXE_COMBO_DIAG("axe_combo_diag", 1f, 9, 0, 9, -1, -1, Side.FRONT, () -> 0),
+    AXE_COMBO_3("axe_combo_3", 1f, 14, 0, 14, -1, -1, Side.FRONT, () -> 0),
     /** The combo's end: from the ready pose back to the stance (axe_combo_end). */
-    AXE_COMBO_END("axe_combo_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    AXE_COMBO_END("axe_combo_end", 1f, 11, 0, 4, -1, -1, Side.FRONT, () -> 0),
     /**
      * G with a sword in hand (author, 2026-10-30: "a quick turn round on the spot, the sword held out
      * turned flat"; and, after his video: "no stun: he just turns round and strikes in the moment; G
@@ -671,6 +672,9 @@ public enum Move {
             case FINISHER_BOW -> Strikes.BOW_KILL + 4;
             case THROW -> Thrown.THROW_RELEASE + 4;
             case CHAIN_FLIP -> Chain.ROLL_TO + 3;
+            // the turns in the air: the slide over, running takes the player out of it at once (author, 2026-11-10, 21:06: "no
+            // stun when he slides and after it: more mobile after this move"); a jump or a blow even from the landing on
+            case AIR_SPIN -> Spin.AIR_SLID;
             case WEAPON_PULL -> Thrown.PULL_TICK + 4;
             case FINISHER_XBOW -> Strikes.XBOW_KILL + 5;
             case FINISHER_AXE -> Strikes.CHOP_OUT;

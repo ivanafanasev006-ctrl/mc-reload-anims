@@ -24,6 +24,8 @@ public final class AxeComboInput {
     /** The combo's mobs already hit, the yaw turned from, the blows so far. */
     private static final List<Integer> DONE = new ArrayList<>();
     private static float yawFrom, yawWas;
+    /** The quickest step to a mob (blocks a tick; 21:06: "he darts from mob to mob super fast": it was 0.6). [default] */
+    private static final double STEP = 0.4;
     private static int blows;
 
     static void reset() {
@@ -83,7 +85,7 @@ public final class AxeComboInput {
             yawWas = yaw;
             Vec3 to = Strikes.flat(mob.position().subtract(p.position()));
             double d = to.length();
-            double step = d > 1.0E-3 ? Mth.clamp((d - Whirl.comboStand(m)) / Math.max(1, hit - t), -0.25, 0.6) : 0;
+            double step = d > 1.0E-3 ? Mth.clamp((d - Whirl.comboStand(m)) / Math.max(1, hit - t), -0.2, STEP) : 0;
             Vec3 go = d > 1.0E-3 ? to.scale(step / d) : Vec3.ZERO;
             p.setDeltaMovement(go.x, v.y, go.z);
         } else {

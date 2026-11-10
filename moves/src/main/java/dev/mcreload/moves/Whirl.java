@@ -48,9 +48,9 @@ public final class Whirl {
     /** The tick of this blow of the combo where the axe meets its mob (round19.py: its head passing in front, the fastest). */
     public static int comboHit(Move m) {
         return switch (m) {
-            case AXE_TRIPLE -> 6;
-            case AXE_COMBO_CHOP, AXE_COMBO_2, AXE_COMBO_DIAG -> 5;
-            case AXE_COMBO_3 -> 8;
+            case AXE_TRIPLE, AXE_COMBO_2 -> 7;
+            case AXE_COMBO_CHOP, AXE_COMBO_DIAG -> 6;
+            case AXE_COMBO_3 -> 10;
             default -> -1;
         };
     }
@@ -67,7 +67,7 @@ public final class Whirl {
 
     /** How far to the right of the player's look the axe comes down in this blow (degrees): its mob put there. */
     public static float comboAim(Move m) {
-        return m == Move.AXE_COMBO_DIAG ? 60f : 0f;
+        return m == Move.AXE_COMBO_DIAG ? 65f : 0f;
     }
 
     /** The blow after this one: a chop and a turning one in turn (author: "the poses taking turns"). */

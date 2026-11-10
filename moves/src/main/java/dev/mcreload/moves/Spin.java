@@ -61,9 +61,14 @@ public final class Spin {
     public static final int AIR_FROM = 3, AIR_TO = 26, AIR_TURNS = 5, AIR_LAND = 33;
     /** Its run along the look (blocks a tick; was 0.2, "1.5 times quicker"). [default] */
     public static final float AIR_SPEED = 0.30f;
-    /** The slide after it: SLIDE_TICKS ticks from SLIDE_TOP down to SLIDE_LAST blocks a tick, 3.5 blocks in all. [default] */
+    /**
+     * The slide after it: SLIDE_TICKS ticks from SLIDE_TOP down to SLIDE_LAST blocks a tick, 3.6 blocks in all, hardly slowing
+     * (21:06: "he slides, slows down, is stunned half a second, only then gets up and runs: more mobile"). [default]
+     */
     private static final int SLIDE_TICKS = 14;
-    private static final float SLIDE_TOP = 0.36f, SLIDE_LAST = 0.14f;
+    private static final float SLIDE_TOP = 0.32f, SLIDE_LAST = 0.20f;
+    /** The slide over: running on takes the player out of the move at once (no getting up); a jump or a blow from the landing on. */
+    public static final int AIR_SLID = AIR_LAND + SLIDE_TICKS;
 
     /** The air turns' pushes from Move.PUSH_TICK: AIR_SPEED to the landing, then the slide. */
     static float[] airPush() {

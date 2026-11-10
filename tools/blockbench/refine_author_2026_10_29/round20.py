@@ -7,6 +7,10 @@ fist solved (kit.solve's least squares) so the right fist, the left one and the 
 pose takes the place of his while the whirl turns (axe_whirlwind from 0.29 s to 2.5 s); the wind-up brings the hands to it,
 the ending (his own, and axe_whirlwind_end) takes them back from it, the same offset blended in and out.
 
+21:06 (videos): "it must turn the way the axe's blade looks; the axe held straighter, the arms more stretched out
+ahead": the fists out in front at arm's length, the axe straight on from them (a little to the right), its blade turned
+the other way round from round17's (EDGE: that one trailed in the turn).
+
     python3 tools/blockbench/refine_author_2026_10_29/round20.py      (after refine.py and round17.py)
 """
 import json
@@ -23,9 +27,13 @@ DST = os.path.join(kit.BB, 'refined', 'author_2026-10-30.bbmodel')
 ARMS = ('right_arm', 'right_forearm', 'left_arm', 'left_forearm', 'right_item_sword')
 #: Where the right fist is in the whirl (pixels from the hip, the body's own frame: +x right, +y up, -z ahead), which way
 #: the axe points from it (to the head), how far the left fist is from the right along the handle (towards the butt).
-FIST = np.array([4.0, 7.0, -7.0])
-AXE = np.array([1.0, 0.05, -0.35])
+FIST = np.array([1.5, 8.5, -9.3])
+AXE = np.array([0.3, 0.0, -1.0])
 LEFT_BELOW = 3.0
+#: The blade's side against round17's: -1 turns it half round about the handle (the edge ahead in the turn, the author).
+EDGE = -1.0
+#: How much a bent elbow costs (px of error a degree): the arms kept as straight as the hold lets them.
+STRAIGHT = 0.03
 #: His whirl's turning, when its arms are its spin pose (s): the wind-up before, his ending after.
 SPIN_FROM, SPIN_TO, END_TO = 0.29, 2.5, 2.85
 #: axe_whirlwind_end: the hands let go of the two-handed hold over this long (s).
@@ -58,7 +66,7 @@ def solve(model, chans, t):
     # the axe's flat as his (round17's edge ahead): its local +X, square to the new line
     side = (Wb @ W['right_item_sword'])[:3, :3] @ np.array([1.0, 0.0, 0.0])
     side = side - d * side.dot(d)
-    side /= np.linalg.norm(side)
+    side = EDGE * side / np.linalg.norm(side)
     # how far the axe's pivot is out from the fist along its line (the rig's hold), kept
     f0 = kr.apply(Wb @ W['right_forearm'], np.array([6.0, 12.0, 0.0]) - o['right_forearm'])
     i0 = kr.apply(Wb @ W['right_item_sword'], [0.0, 0.0, 0.0])
@@ -84,7 +92,8 @@ def solve(model, chans, t):
         sd = kr.apply(it, [2.0, 0.0, 0.0])
         r = [rf - FIST, lf - (FIST - LEFT_BELOW * d), i0 - (FIST + reach * d), tip - (FIST + (reach + 9.0) * d),
              (sd - i0) - 2.0 * side]
-        bend = [min(0.0, x[3]) * 2, max(0.0, x[3] - 130) * 2, min(0.0, x[7]) * 2, max(0.0, x[7] - 130) * 2]
+        bend = [min(0.0, x[3]) * 2, max(0.0, x[3] - 130) * 2, min(0.0, x[7]) * 2, max(0.0, x[7] - 130) * 2,
+                x[3] * STRAIGHT, x[7] * STRAIGHT]
         return np.concatenate([np.concatenate(r), np.array(bend), (x - x0) * 0.004])
 
     res = least_squares(resid, x0, diff_step=1e-4, xtol=1e-8, ftol=1e-10, max_nfev=2000)
