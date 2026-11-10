@@ -45,6 +45,7 @@ public final class MovesHud {
         event.registerAbove(VanillaGuiOverlay.FOOD_LEVEL.id(), "right_bar", MovesHud::right);
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "arrows", MovesHud::arrows);
         event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "finisher_hint", MovesHud::finisherHint);
+        event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "throw_power", MovesHud::throwPower);
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "cooldown_tray", MovesHud::tray);
     }
 
@@ -80,6 +81,26 @@ public final class MovesHud {
         int w = gui.getFont().width(text);
         g.fill(width / 2 - w / 2 - 3, y - 2, width / 2 + (w + 1) / 2 + 3, y + 10, (Math.round(0x90 * hint) << 24));
         g.drawCenteredString(gui.getFont(), text, width / 2, y, (alpha << 24) | 0xFFD050);
+    }
+
+    /**
+     * While the throw is drawn back (the left and the right button): its power beside the crosshair, four bars from the
+     * bottom up as the horse's jump (author, 2026-11-10), three green, the last red: the full throw.
+     */
+    private static void throwPower(ForgeGui gui, GuiGraphics g, float partialTick, int width, int height) {
+        Minecraft mc = gui.getMinecraft();
+        if (mc.options.hideGui || mc.player == null || mc.screen != null) return;
+        Stamina s = Stamina.of(mc.player);
+        if (s.move != Move.THROW_AIM) return;
+        float power = dev.mcreload.moves.Thrown.power(s.moveTick);
+        int lit = Math.min(4, Math.max(1, (int) Math.ceil(power * 4f - 0.01f)));
+        int x = width / 2 + 9, bottom = height / 2 + 9;
+        for (int k = 0; k < 4; k++) {
+            int y = bottom - (k + 1) * 5;
+            g.fill(x - 1, y - 1, x + 4, y + 4, 0xC0000000);
+            int color = k < lit ? (k == 3 ? 0xFFE03A3A : 0xFF4CD15A) : 0x60404040;
+            g.fill(x, y, x + 3, y + 3, color);
+        }
     }
 
     private static boolean show(ForgeGui gui) {

@@ -30,7 +30,7 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue DASH_WIDTH, SLIDE_ATTACK_CRIT, SLIDE_ATTACK_REACH, KICK_DAMAGE, KICK_STRENGTH,
             FALL_CUT, WATER_ARROWS, THROW_SPEED, THROW_DAMAGE, PULL_DAMAGE, COST_THROW, COST_CHAIN, CHAIN_RANGE, CHAIN_HEALTH;
     private static final ForgeConfigSpec.IntValue CHAIN_COOLDOWN, CHAIN_MAX, THROW_FULL;
-    private static final ForgeConfigSpec.DoubleValue THROW_WAIT, COST_AIR_SPIN;
+    private static final ForgeConfigSpec.DoubleValue THROW_WAIT, COST_AIR_SPIN, PLUNGE_SPLASH_AXE;
     private static final ForgeConfigSpec.IntValue AIR_SPIN_WAIT;
     private static final ForgeConfigSpec.IntValue PULL_STUN;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
@@ -265,6 +265,7 @@ public final class MovesConfig {
         PLUNGE_FROM = b.comment("The blade is held ready for the plunge from this many blocks of fall (vanilla hurts from 3). [default]")
                 .defineInRange("plungeFromBlocks", 3.5, 1.0, 64.0);
         // Author, 2026-10-30: "splash damage of at least 1 HP within 1 block: the 8 blocks round and the 1 under the player".
+        PLUNGE_SPLASH_AXE = b.comment("The same with an axe (author, 2026-11-10: 3, not the sword's 1).").defineInRange("plungeSplashAxe", 3.0, 0.0, 100.0);
         PLUNGE_SPLASH = b.comment("The blade driven into the ground hurts everything standing on the blocks round the player this",
                         "much (health points; author: 1).")
                 .defineInRange("plungeSplashDamage", 1.0, 0.0, 1000.0);
@@ -510,6 +511,7 @@ public final class MovesConfig {
     public static float swordSpinDamage() { return f(SPIN_DAMAGE, 1.0); }
     public static float swordSpinReach() { return f(SPIN_REACH, 2.6); }
     public static float plungeSplash() { return f(PLUNGE_SPLASH, 1.0); }
+    public static float plungeSplashAxe() { return f(PLUNGE_SPLASH_AXE, 3.0); }
     public static int plungeSplashBlocks() { return get(PLUNGE_SPLASH_RADIUS, 1); }
     public static float costCrossbowBlow() { return f(COST_XBOW_BLOW, 0.0); }
     public static float costCrossbowHop() { return f(COST_XBOW_HOP, 5.0); }

@@ -106,6 +106,10 @@ public final class ThrownClient {
             pose.mulPose(Axis.YP.rotationDegrees(y - 90f));
             pose.mulPose(Axis.ZP.rotationDegrees(x));
             pose.mulPose(Axis.ZP.rotationDegrees(-45f));
+            // an axe in flight turns over and over, head first, as a thrown axe does (author, 2026-11-10)
+            if (mob == null && m.item().getItem() instanceof net.minecraft.world.item.AxeItem && t.getDeltaMovement().lengthSqr() > 0.01) {
+                pose.mulPose(Axis.ZP.rotationDegrees(-((t.tickCount + partial) * 36f) % 360f));
+            }
             items.renderStatic(m.item(), ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY, pose, buffers, t.level(), t.getId());
             pose.popPose();
         }

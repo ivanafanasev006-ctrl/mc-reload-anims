@@ -33,7 +33,9 @@ ARMS_LOW = {'right_arm': (8.0, 0.0, 12.0), 'left_arm': (8.0, 0.0, -12.0), 'right
 ARMS_IN = 0.15
 #: 02:17: "turning the other way; on landing not bent back": the body's turn about Y the other way round; from the landing
 #: the body a little forward (his leant back about 20 degrees), the chest straight (None: as his).
-LAND_LEAN = {'body': (-8.0, None, None), 'chest': (0.0, None, None)}
+LAND_LEAN = {'body': (-8.0, None, None), 'chest': (0.0, None, None),
+             # 2026-11-10, 13:41: the blade jerked in the hand on landing: from then on it only pitches (point down, not turned)
+             'right_item_sword': (None, 0.0, 0.0)}
 
 
 def source(t):

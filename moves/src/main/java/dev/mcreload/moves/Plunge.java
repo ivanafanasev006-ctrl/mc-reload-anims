@@ -87,7 +87,7 @@ public final class Plunge {
      * the rules of PvP). Not the player's allies nor their tamed animals.
      */
     static int splash(ServerPlayer p) {
-        float damage = MovesConfig.plungeSplash();
+        float damage = Strikes.axe(p) ? MovesConfig.plungeSplashAxe() : MovesConfig.plungeSplash();
         int r = MovesConfig.plungeSplashBlocks();
         if (damage <= 0f) return 0;
         BlockPos at = p.blockPosition();

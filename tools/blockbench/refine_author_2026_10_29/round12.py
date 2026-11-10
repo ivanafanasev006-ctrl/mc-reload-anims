@@ -32,7 +32,7 @@ DST = os.path.join(kit.BB, 'refined', 'throw_2026-11-08.bbmodel')
 #: The aim: the shoulders turned a little to the right, the fist at the right shoulder with the elbow back and up, the
 #: weapon over the shoulder pointing forward and up (as a javelin is held; the blade stands out of the fist across it).
 AIM = {'body@p': (0, -1.2, 0.6), 'torso': (0, -30, 0), 'chest': (4, 0, 0), 'head': (0, 30, 0),
-       'right_arm': (-105, 0, 25), 'right_forearm': (135, 0, 0), 'left_arm': (85, 0, -10), 'left_forearm': (8, 0, 0),
+       'right_arm': (-160, 0, 0), 'right_forearm': (60, 0, 0), 'left_arm': (85, 0, -10), 'left_forearm': (8, 0, 0),
        'right_leg': (10, 0, 4), 'right_shin': (-18, 0, 0), 'left_leg': (-16, 0, -3), 'left_shin': (-8, 0, 0)}
 AIM_LOOP_FROM, AIM_LEN = 0.25, 0.5
 
@@ -40,7 +40,7 @@ AIM_LOOP_FROM, AIM_LEN = 0.25, 0.5
 def weapon_throw_aim():
     """Into the aim: the left foot forward, the shoulders round to the right, the weapon back over the shoulder; a
     breath held (the loop's ends are the same)."""
-    breath = {**AIM, 'right_arm': (-108, 0, 25), 'chest': (5, 0, 0)}
+    breath = {**AIM, 'right_arm': (-163, 0, 0), 'chest': (5, 0, 0)}
     keys = [(0, {}), (AIM_LOOP_FROM, AIM, 'out'), (0.38, breath, 'inout'), (AIM_LEN, AIM, 'inout')]
     feet = Feet().step('left', 0.04, 0.2, -2.2, -4.5, 20, lift=1.6).step('right', 0.06, 0.2, 2.2, 1.8, -50, lift=0.0)
     a = bake('weapon_throw_aim', AIM_LEN, design('throw_aim', AIM_LEN, [(k[0], {**{b: (0, 0, 0) for b in AIM if not b.endswith('@p')},
