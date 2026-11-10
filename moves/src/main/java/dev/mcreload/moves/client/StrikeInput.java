@@ -45,6 +45,8 @@ public final class StrikeInput {
     private static int pulledFrom = -1;
     /** G held this long with a sword makes its turns; let go before, the lunge. */
     private static final int HOLD_G = 4;
+    /** Ticks G has been down with an axe (tapped or held). */
+    private static int axeG;
     /** Ticks G has been down since it was pressed with a sword (0: not waiting). */
     private static int swordG;
     /** Ticks the left button has been down. */
@@ -93,6 +95,7 @@ public final class StrikeInput {
             case CHAIN_LEAP -> s.chainCooldown;
             case THROW -> s.throwCooldown;
             case AIR_SPIN -> s.airSpinCooldown;
+            case AXE_TRIPLE -> s.axeTripleCooldown;
             default -> 0;
         };
     }
@@ -117,7 +120,8 @@ public final class StrikeInput {
             boolean sword = s.move == Move.SWORD_SPIN;
             if ((sword && Spin.decides(s.moveTick)) || (s.move == Move.WHIRL && Whirl.decides(s.moveTick))) {
                 float extra = sword ? dev.mcreload.moves.MovesConfig.costSpinExtra() : dev.mcreload.moves.MovesConfig.costWhirlExtra();
-                boolean more = MovesClient.held(mc, MovesClient.ABILITY)
+                // the sword's turns while G is held; the axe's whirl its 4 (author, 2026-11-10: "the old G+ on G, 4 turns")
+                boolean more = (sword ? MovesClient.held(mc, MovesClient.ABILITY) : Whirl.turn(s.moveTick) < Whirl.G_TURNS - 1)
                         && (s.free() || p.getAbilities().instabuild || s.energy >= extra);
                 if (more) s.spend(extra, p);    // as the server does (a tick later)
                 else MovesClient.start(p, s, sword ? Move.SPIN_END : Move.WHIRL_END, -1);
@@ -218,8 +222,20 @@ public final class StrikeInput {
                 }
             }
         }
-        // G: the whirlwind with an axe
-        if (abilityPressed && s.move == null && !Strikes.sword(p)) {
+        // G with an axe: tapped the whirlwind (4 turns), held the combo with 3 to 6 mobs about (else the whirlwind)
+        if (!Strikes.axe(p)) axeG = 0;
+        if (abilityPressed && s.move == null && axeG == 0 && Strikes.axe(p)) axeG = 1;
+        if (axeG > 0) {
+            axeG++;
+            boolean down = MovesClient.held(mc, MovesClient.ABILITY);
+            if (!down || axeG > HOLD_G) {
+                axeG = 0;
+                Move move = down && HudConfig.Moves.AXE_TRIPLE.on() && MoveServer.allowed(p, s, Move.AXE_TRIPLE) ? Move.AXE_TRIPLE : ability(p);
+                if (move != null && s.move == null && begin(mc, p, s, move)) return true;
+            }
+        }
+        // G: the others' abilities (the bow's and the crossbow's make their own)
+        if (abilityPressed && s.move == null && !Strikes.sword(p) && !Strikes.axe(p)) {
             Move move = ability(p);
             if (move != null && !move.volley() && !move.crossbowSkill() && begin(mc, p, s, move)) return true;
         }
@@ -311,6 +327,7 @@ public final class StrikeInput {
             case CHAIN_LEAP -> HudConfig.Moves.CHAIN.key;
             case THROW -> HudConfig.Moves.THROW.key;
             case AIR_SPIN -> HudConfig.Moves.AIR_SPIN.key;
+            case AXE_TRIPLE -> HudConfig.Moves.AXE_TRIPLE.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }

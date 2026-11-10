@@ -71,6 +71,7 @@ public final class MoveServer {
         if (move == Move.HOP) Hop.started(p, s, enemy);
         if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
         if (move == Move.WHIRL) Whirl.started(p, s);
+        if (move == Move.AXE_TRIPLE) s.axeTripleCooldown = s.cooled(MovesConfig.axeTripleCooldownTicks());
         if (move == Move.SWORD_SPIN) Spin.started(p, s);
         if (move == Move.AIR_SPIN) {
             s.airSpinCooldown = s.cooled(MovesConfig.airSpinCooldownTicks());
@@ -251,6 +252,11 @@ public final class MoveServer {
         // They wait out their cooldowns (the server lets a client a few ticks ahead of it through).
         if (move == Move.DASH) return ground && s.dashCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.WHIRL) return ground && s.whirlCooldown <= (p.level().isClientSide ? 0 : 5);
+        // G held with an axe (author, 2026-11-10): 3 to 6 mobs about (the nearest 6 of more), from the ground, once its wait is over
+        if (move == Move.AXE_TRIPLE) {
+            return Strikes.axe(p) && ground && s.axeTripleCooldown <= (p.level().isClientSide ? 0 : 5)
+                    && Whirl.tripleTargets(p).size() >= Whirl.TRIPLE_FEWEST;
+        }
         if (move == Move.SWORD_SPIN) return ground && s.spinCooldown <= (p.level().isClientSide ? 0 : 5);
         // W + Space + G held with a sword (author, 2026-11-10): from the ground or a jump just begun, once its wait is over
         if (move == Move.AIR_SPIN) {

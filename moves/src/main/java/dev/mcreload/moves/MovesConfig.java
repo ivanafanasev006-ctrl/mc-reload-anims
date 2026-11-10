@@ -31,7 +31,8 @@ public final class MovesConfig {
             FALL_CUT, WATER_ARROWS, THROW_SPEED, THROW_DAMAGE, PULL_DAMAGE, COST_THROW, COST_CHAIN, CHAIN_RANGE, CHAIN_HEALTH;
     private static final ForgeConfigSpec.IntValue CHAIN_COOLDOWN, CHAIN_MAX, THROW_FULL;
     private static final ForgeConfigSpec.DoubleValue THROW_WAIT, COST_AIR_SPIN, PLUNGE_SPLASH_AXE;
-    private static final ForgeConfigSpec.IntValue AIR_SPIN_WAIT;
+    private static final ForgeConfigSpec.IntValue AIR_SPIN_WAIT, AXE_TRIPLE_WAIT;
+    private static final ForgeConfigSpec.DoubleValue AXE_TRIPLE_SHARE, COST_AXE_TRIPLE;
     private static final ForgeConfigSpec.IntValue PULL_STUN;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
     private static final ForgeConfigSpec.DoubleValue LEAP_REACH, LEAP_UP, LEAP_DOWN;
@@ -400,6 +401,11 @@ public final class MovesConfig {
         CHAIN_HEALTH = b.comment("The chain finisher: mobs at this share of their health or under (author: 50 %).")
                 .defineInRange("chainHealth", 0.5, 0.0, 1.0);
         COST_THROW = b.comment("The throw of a sword or an axe: energy. [default]").defineInRange("throwCost", 5.0, 0.0, 10000.0);
+        AXE_TRIPLE_WAIT = b.comment("The axe's combo (G held, 3 to 6 mobs about): seconds before the next. [default]")
+                .defineInRange("axeComboWait", 40, 0, 3600);
+        AXE_TRIPLE_SHARE = b.comment("The axe's combo: the share of each mob's health its three blows take in all (author: 75 %).")
+                .defineInRange("axeComboShare", 0.75, 0.0, 1.0);
+        COST_AXE_TRIPLE = b.comment("The axe's combo: energy. [default]").defineInRange("axeComboCost", 20.0, 0.0, 10000.0);
         AIR_SPIN_WAIT = b.comment("The turns in the air (W + Space + G held with a sword): seconds before the next (author: 45).")
                 .defineInRange("airSpinWait", 45, 0, 3600);
         COST_AIR_SPIN = b.comment("The turns in the air: energy (author: 25 of 100).").defineInRange("airSpinCost", 25.0, 0.0, 10000.0);
@@ -538,6 +544,9 @@ public final class MovesConfig {
     public static float crossbowFanSpread() { return f(XBOW_FAN_SPREAD, 12.0); }
     public static float waterArrowInertia() { return f(WATER_ARROWS, 0.9); }
     public static float throwSpeed() { return f(THROW_SPEED, 2.5); }
+    public static int axeTripleCooldownTicks() { return get(AXE_TRIPLE_WAIT, 40) * 20; }
+    public static float axeTripleShare() { return f(AXE_TRIPLE_SHARE, 0.75); }
+    public static float costAxeTriple() { return f(COST_AXE_TRIPLE, 20.0); }
     public static int airSpinCooldownTicks() { return get(AIR_SPIN_WAIT, 45) * 20; }
     public static float costAirSpin() { return f(COST_AIR_SPIN, 25.0); }
     public static int throwCooldownTicks() { return Math.round(f(THROW_WAIT, 2.5) * 20f); }

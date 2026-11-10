@@ -135,6 +135,8 @@ public final class Stamina {
     public int throwCooldown, throwHeld;
     /** The turns in the air's wait (author, 2026-11-10: 45 s). */
     public int airSpinCooldown;
+    /** The axe's combo's wait. */
+    public int axeTripleCooldown;
     /** The mob the throw is aimed at (the client's auto-aim; -1: along the look). */
     public int throwTarget = -1;
     /** The crossbow's rolls are on (server): a roll of them was made; ticks since the last one ended (Crossbow.rollsTick). */
@@ -173,7 +175,7 @@ public final class Stamina {
     /** The attacks' cooldowns, in the order the server sends them (MovesNet.Bars). */
     public int[] cooldowns() {
         return new int[]{dashCooldown, whirlCooldown, spinCooldown, slideAttackCooldown, markedCooldown, bowCooldown,
-                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown, throwCooldown, airSpinCooldown};
+                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown, throwCooldown, airSpinCooldown, axeTripleCooldown};
     }
 
     public void setCooldowns(int[] c) {
@@ -190,6 +192,7 @@ public final class Stamina {
         chainCooldown = c[10];
         throwCooldown = c[11];
         airSpinCooldown = c[12];
+        axeTripleCooldown = c[13];
     }
 
     public boolean canAfford(Move m, Player p) {
@@ -269,6 +272,7 @@ public final class Stamina {
         if (chainCooldown > 0) chainCooldown--;
         if (throwCooldown > 0) throwCooldown--;
         if (airSpinCooldown > 0) airSpinCooldown--;
+        if (axeTripleCooldown > 0) axeTripleCooldown--;
         if (hasteTicks > 0) hasteTicks--;
         if (chainTicks > 0 && --chainTicks == 0) chainStep = 0;
         if (p.level().isClientSide && combatTicks > 0) combatTicks--;     // the server's own counts down in serverTick
@@ -491,6 +495,7 @@ public final class Stamina {
                 FastRun.serverTick(sp, s);
                 Plunge.serverTick(sp, s);
                 Whirl.serverTick(sp, s);
+                Whirl.tripleTick(sp, s);
                 Spin.serverTick(sp, s);
                 Strikes.serverTick(sp, s);
                 Crossbow.serverTick(sp, s);

@@ -228,6 +228,11 @@ public enum Move {
     /** The whirlwind's ending, in place of its next turn when G is up: the slow-down and the stance (0.45 s). */
     WHIRL_END("axe_whirlwind_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /**
+     * G held with an axe, 3 to 6 mobs about (author, 2026-11-10): three blows on quick turns of the body, each taking a quarter of
+     * every one's health within reach (75 % in all); round18.py, his example made quicker. Whirl.TRIPLE_HITS its blows.
+     */
+    AXE_TRIPLE("axe_triple", 1f, 68, -1, -1, -1, -1, Side.FRONT, MovesConfig::costAxeTriple),
+    /**
      * G with a sword in hand (author, 2026-10-30: "a quick turn round on the spot, the sword held out
      * turned flat"; and, after his video: "no stun: he just turns round and strikes in the moment; G
      * held, he may move any way and makes up to 3 turns, for more energy"): the sword's turn
@@ -488,7 +493,7 @@ public enum Move {
      */
     public boolean strike() {
         return this == DASH || finisher() || this == SLIDE_ATTACK || turning() || crossbow() || crossbowSkill() || thrown() || chain()
-                || this == AIR_SPIN;
+                || this == AIR_SPIN || this == AXE_TRIPLE;
     }
 
     /** The chain finisher's leaps and its flip. */

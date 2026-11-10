@@ -249,6 +249,7 @@ public final class MovesHud {
         if (ability != null) out.add(ability);
         // the sword: the lunge on G (the ability above), its turns on G held
         if (Strikes.sword(p) && HudConfig.Moves.DASH.on() && HudConfig.Moves.SWORD_SPIN.on()) out.add(Move.SWORD_SPIN);
+        if (Strikes.axe(p) && HudConfig.Moves.AXE_TRIPLE.on()) out.add(Move.AXE_TRIPLE);
         if (Strikes.slideWeapon(p) && HudConfig.Moves.SLIDE_ATTACK.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_ATTACK);
         boolean bow = dev.mcreload.moves.Bow.isBow(p.getMainHandItem());
         if (bow && HudConfig.Moves.SLIDE_SHOT.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_SHOT);
@@ -270,6 +271,7 @@ public final class MovesHud {
         return switch (move) {
             case DASH -> MovesConfig.dashCooldownTicks();
             case WHIRL -> MovesConfig.whirlCooldownTicks();
+            case AXE_TRIPLE -> MovesConfig.axeTripleCooldownTicks();
             case SWORD_SPIN -> MovesConfig.swordSpinCooldownTicks();
             case SLIDE_ATTACK -> MovesConfig.slideAttackCooldownTicks();
             case MARKED_SPIN_LEFT -> MovesConfig.markedCooldownTicks();
@@ -392,7 +394,8 @@ public final class MovesHud {
     static String trayKeys(Minecraft mc, Move move) {
         return switch (move) {
             case DASH -> shortKey(MovesClient.ABILITY);
-            case SWORD_SPIN -> shortKey(MovesClient.ABILITY) + "+";
+            case SWORD_SPIN, AXE_TRIPLE -> shortKey(MovesClient.ABILITY) + "+";
+            case WHIRL -> shortKey(MovesClient.ABILITY);
             case SLIDE_ATTACK -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
             case SLIDE_SHOT -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyUse);
             case MARKED_SPIN_LEFT -> "↑" + shortKey(mc.options.keyUse);

@@ -1230,6 +1230,35 @@ public final class MovesGameTests {
         }).run(4 + dev.mcreload.moves.Spin.AIR_TO);
     }
 
+    /**
+     * The axe's combo (author, 2026-11-10): G held with an axe, 3 to 6 mobs about: refused with two, with three each loses 75 % of
+     * its health over the three blows (through its armour).
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "axeTriple")
+    public static void axeTriple(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie[] z = {h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5), h.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 3),
+                h.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 3)};
+        noSun(z);
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+            s.energy = 100f;
+            z[2].teleportTo(z[2].getX() + 20, z[2].getY(), z[2].getZ());
+            t.check(!MoveServer.request(p, Move.AXE_TRIPLE, false), "the combo with two mobs about");
+        });
+        t.at(3, () -> {
+            z[2].teleportTo(h.absoluteVec(new Vec3(1.5, 2, 3.5)).x, z[1].getY(), h.absoluteVec(new Vec3(1.5, 2, 3.5)).z);
+            t.check(MoveServer.request(p, Move.AXE_TRIPLE, false), "the combo refused with three");
+            t.check(s.axeTripleCooldown == MovesConfig.axeTripleCooldownTicks(), "its wait: " + s.axeTripleCooldown);
+        });
+        int last = dev.mcreload.moves.Whirl.TRIPLE_HITS[2];
+        t.at(5 + last, () -> {
+            for (Zombie e : z) t.check(!e.isAlive() || e.getHealth() <= e.getMaxHealth() * 0.25f + 0.6f, "a zombie kept " + e.getHealth());
+        }).run(6 + last);
+    }
+
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
     private static void blow(Script t, float lost, float damage, String what) {
         t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);

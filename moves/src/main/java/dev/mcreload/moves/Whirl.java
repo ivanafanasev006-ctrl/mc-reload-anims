@@ -34,6 +34,50 @@ public final class Whirl {
     public static final double THROW = 0.2;
 
     /** The turn (0-based) the whirlwind is in at this tick, -1 before the first or after the last. */
+    /** G with an axe: this many turns, not held for (author, 2026-11-10: "the old G+ goes on G, 4 turns"). */
+    public static final int G_TURNS = 4;
+    /** The combo's three blows (axe_triple: 0.70, 1.33, 1.95 s), its reach (blocks) and its fewest and most mobs. [default reach] */
+    public static final int[] TRIPLE_HITS = {14, 27, 39};
+    public static final double TRIPLE_REACH = 3.5;
+    public static final int TRIPLE_FEWEST = 3, TRIPLE_MOST = 6;
+
+    /** The mobs the combo may take (alive, not a boss, not allied), the nearest first, TRIPLE_MOST at most. */
+    public static java.util.List<LivingEntity> tripleTargets(net.minecraft.world.entity.player.Player p) {
+        java.util.List<LivingEntity> out = new java.util.ArrayList<>(p.level().getEntitiesOfClass(LivingEntity.class,
+                p.getBoundingBox().inflate(TRIPLE_REACH + 1, 1.5, TRIPLE_REACH + 1),
+                e -> e instanceof net.minecraft.world.entity.Mob && e != p && e.isAlive() && !Strikes.boss(e) && !p.isAlliedTo(e)
+                        && Strikes.flat(e.position().subtract(p.position())).length() - e.getBbWidth() / 2 <= TRIPLE_REACH));
+        out.sort(java.util.Comparator.comparingDouble(e -> e.distanceToSqr(p)));
+        return out.size() > TRIPLE_MOST ? out.subList(0, TRIPLE_MOST) : out;
+    }
+
+    /** Every server tick of the combo: at each blow a quarter of each one's health, through its armour. */
+    static void tripleTick(net.minecraft.server.level.ServerPlayer p, Stamina s) {
+        if (s.move != Move.AXE_TRIPLE) return;
+        int k = -1;
+        for (int i = 0; i < TRIPLE_HITS.length; i++) if (TRIPLE_HITS[i] == s.moveTick) k = i;
+        if (k < 0) return;
+        ServerLevel level = p.serverLevel();
+        level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1f, 0.8f + 0.1f * k);
+        float share = MovesConfig.axeTripleShare() / TRIPLE_HITS.length;
+        // the mobs of the first blow are the combo's, the next blows find them where they are (each blow shoved them out of reach)
+        if (k == 0) {
+            s.whirlHits.clear();
+            for (LivingEntity e : tripleTargets(p)) s.whirlHits.put(e.getId(), 0);
+        }
+        for (int id : s.whirlHits.keySet()) {
+            if (!(level.getEntity(id) instanceof LivingEntity e) || !e.isAlive() || e.distanceTo(p) > TRIPLE_REACH + 4) continue;
+            e.invulnerableTime = 0;
+            Vec3 was = e.getDeltaMovement();
+            e.hurt(p.damageSources().playerAttack(p), Plunge.throughArmour(e, e.getMaxHealth() * share));
+            e.setDeltaMovement(was.x * 0.3, Math.min(was.y, 0.1), was.z * 0.3);     // held about the player, not knocked away
+            e.hurtMarked = true;
+            Vec3 at = e.position().add(0, e.getBbHeight() * 0.5, 0);
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+        }
+        s.combatTicks = MovesConfig.combatTicks();
+    }
+
     public static int turn(int tick) {
         if (tick < SPIN_FROM) return -1;
         for (int k = 0; k < TURN_ENDS.length; k++) if (tick < TURN_ENDS[k]) return k;
