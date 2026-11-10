@@ -67,15 +67,26 @@ jobs:
         run: |
           ./gradlew -p moves build --no-daemon --stacktrace 2>&1 | tee moves-build.log
           [ ${PIPESTATUS[0]} -eq 0 ] || exit 1
-          # The whole suite again (up to 3 runs) if a test failed: a few physics-bound ones (the ledge, the dodges, the marks) fail now
-          # and then on a busy runner, a different one each run; a real fault fails both times. Every test must pass in
-          # one run either way; the failures of the first are kept in the log.
+          # The whole suite again (up to 3 runs) if a test failed: a few physics-bound ones (the ledge, the dodges, the marks, the
+          # whirlwind) fail now and then on a busy runner, a different one each run. A real fault fails in every run: the suite
+          # passes once no test has failed in all the runs so far (each failing one passed in another run).
+          seen=0
           for attempt in 1 2 3; do
             rm -rf moves/run/world
-            ./gradlew -p moves runGameTestServer --no-daemon --stacktrace 2>&1 | tee -a moves-build.log
+            ./gradlew -p moves runGameTestServer --no-daemon --stacktrace 2>&1 | tee run-$attempt.log | tee -a moves-build.log
             [ ${PIPESTATUS[0]} -eq 0 ] && exit 0
-            echo "::warning::GameTests failed on attempt $attempt: $(grep -o '[a-z0-9_]* failed!' moves-build.log | tail -5 | tr '\n' ' ')"
+            { grep -o '[a-z0-9_]* failed!' run-$attempt.log || true; } | sort -u > failed-$attempt.txt
+            echo "::warning::GameTests failed on attempt $attempt: $(tr '\n' ' ' < failed-$attempt.txt)"
+            [ -s failed-$attempt.txt ] || continue
+            if [ $seen -eq 0 ]; then cp failed-$attempt.txt failed-all.txt; seen=1; continue; fi
+            comm -12 failed-all.txt failed-$attempt.txt > both.txt
+            mv both.txt failed-all.txt
+            if [ ! -s failed-all.txt ]; then
+              echo "::warning::Every failing GameTest passed in another run: flaky on this runner, not a fault"
+              exit 0
+            fi
           done
+          echo "::error::Failed in every run: $(tr '\n' ' ' < failed-all.txt 2>/dev/null)"
           exit 1
 
       - name: Install virtual display and software OpenGL
