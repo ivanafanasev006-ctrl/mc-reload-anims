@@ -30,16 +30,48 @@ import java.util.Map;
  */
 public final class ThrownClient {
     private static final Map<Integer, MovesNet.ThrownInfo> INFO = new HashMap<>();
+    /**
+     * What each one carried, kept a while after it is gone (DRAW_AFTER ticks): picked up, the trident is still drawn flying
+     * into the hand for a few ticks, and it must not be a trident then (author, 2026-11-16).
+     */
+    private static final Map<Integer, MovesNet.ThrownInfo> DRAWN = new HashMap<>();
+    /** The client tick each was told of, and each gone one's tick to be forgotten. */
+    private static final Map<Integer, Integer> TOLD = new HashMap<>(), FORGET = new HashMap<>();
+    private static final int DRAW_AFTER = 20, WAIT_FOR_ENTITY = 40;
+    private static int now;
     /** The mob the throw's aim is on (its red square), -1: none. */
     static int aimed = -1;
 
     public static void info(MovesNet.ThrownInfo m) {
-        if (m.item().isEmpty()) INFO.remove(m.entity());
-        else INFO.put(m.entity(), m);
+        if (m.item().isEmpty()) {
+            INFO.remove(m.entity());
+            if (DRAWN.containsKey(m.entity())) FORGET.put(m.entity(), now + DRAW_AFTER);
+        } else {
+            INFO.put(m.entity(), m);
+            DRAWN.put(m.entity(), m);
+            TOLD.put(m.entity(), now);
+            FORGET.remove(m.entity());
+        }
+    }
+
+    /** Every client tick: the gone ones forgotten once their last flight to the hand is over. */
+    static void tick() {
+        now++;
+        FORGET.entrySet().removeIf(e -> {
+            if (e.getValue() > now) return false;
+            if (!INFO.containsKey(e.getKey())) {
+                DRAWN.remove(e.getKey());
+                TOLD.remove(e.getKey());
+            }
+            return true;
+        });
     }
 
     static void reset() {
         INFO.clear();
+        DRAWN.clear();
+        TOLD.clear();
+        FORGET.clear();
     }
 
     /** The local player's weapon stuck in {@code looked} (or, without one, in the nearest mob in front) within reach: the trident's id, or -1. */
@@ -47,7 +79,8 @@ public final class ThrownClient {
         int best = -1;
         double bestDist = Double.MAX_VALUE;
         // one whose weapon this client no longer has is forgotten (picked up, gone, out of sight: told again on coming near)
-        INFO.keySet().removeIf(id -> p.level().getEntity(id) == null);
+        // (the news of a throw comes before the weapon itself: not forgotten before it could come)
+        INFO.keySet().removeIf(id -> p.level().getEntity(id) == null && now - TOLD.getOrDefault(id, now) > WAIT_FOR_ENTITY);
         for (MovesNet.ThrownInfo m : INFO.values()) {
             if (m.owner() != p.getId() || m.stuckIn() < 0) continue;
             if (!(p.level().getEntity(m.stuckIn()) instanceof LivingEntity mob) || !mob.isAlive()) continue;
@@ -85,6 +118,7 @@ public final class ThrownClient {
         @Override
         public void render(ThrownTrident t, float yaw, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
             MovesNet.ThrownInfo m = INFO.get(t.getId());
+            if (m == null) m = DRAWN.get(t.getId());
             if (m == null) {
                 vanilla.render(t, yaw, partial, pose, buffers, light);
                 return;

@@ -7,6 +7,7 @@ import dev.mcreload.moves.KinetrixMoves;
 import dev.mcreload.moves.Move;
 import dev.mcreload.moves.MoveServer;
 import dev.mcreload.moves.MovesConfig;
+import dev.mcreload.moves.Paths;
 import dev.mcreload.moves.Stamina;
 import io.netty.channel.embedded.EmbeddedChannel;
 import net.minecraft.gametest.framework.GameTest;
@@ -48,6 +49,23 @@ public final class MovesGameTests {
     private static final String FLOOR = "floor";
 
     /** A dodge costs its energy; a second one during the first is refused and costs nothing. */
+    /**
+     * The paths the ledge, the fall roll and the deep jump move the player by are read (0.11–0.12.1 lost them with the
+     * mod's new name: the climb did not lift, the rolls stood still).
+     */
+    @GameTest(template = FLOOR, batch = "pathsRead")
+    public static void pathsRead(GameTestHelper h) {
+        for (String path : new String[]{"ledge_climb_up", "fall_roll", "dive_roll", "hop_on_kick", "ledge_hop"}) {
+            float most = 0f;
+            for (int tick = 0; tick < 40; tick++) most = Math.max(most, Math.abs(Paths.at(path, tick, 0)) + Math.abs(Paths.at(path, tick, 1)));
+            if (most < 0.1f) {
+                h.fail("the path " + path + " is not read");
+                return;
+            }
+        }
+        h.succeed();
+    }
+
     @GameTest(template = FLOOR, batch = "dodgeCostsEnergy")
     public static void dodgeCostsEnergy(GameTestHelper h) {
         Script t = new Script(h);

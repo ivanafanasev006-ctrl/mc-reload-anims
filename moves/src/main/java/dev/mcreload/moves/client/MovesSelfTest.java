@@ -202,6 +202,7 @@ public final class MovesSelfTest {
         whirlwind("92b_whirlwind_front", CameraType.THIRD_PERSON_FRONT, false);
         whirlwind("92c_whirlwind_held", CameraType.THIRD_PERSON_BACK, true);
         fastRun("16_fast_run");
+        fastRunSwing("16b_fast_run_swing");
         // the author's message of 2026-10-30: G (the sword's turn, the whirlwind), the tray, the splash
         swordSpin("88_sword_spin", CameraType.THIRD_PERSON_BACK, false);
         swordSpin("89_sword_spin_first_person", CameraType.FIRST_PERSON, false);
@@ -878,7 +879,7 @@ public final class MovesSelfTest {
                 note(String.format(Locale.ROOT, "%s: the stun ends %.2f s after the landing", name, (t - moveStart) / 20f));
             }
             if (t == 60) note(String.format(Locale.ROOT, "%s: %s, pose %s", name, Stamina.of(mc.player).move, mc.player.getPose()));
-        }, new int[]{6, 12, 15, 17, 19, 21, 23, 26, 29, 32, 36, 40}, camera != CameraType.FIRST_PERSON));
+        }, new int[]{6, 12, 15, 17, 19, 21, 23, 26, 29, 32, 36, 40, 43, 46, 49, 52, 56, 60, 66}, camera != CameraType.FIRST_PERSON));
     }
 
     /**
@@ -1284,6 +1285,20 @@ public final class MovesSelfTest {
             if (t == 50) note(String.format(Locale.ROOT, "%s: %.2f blocks a second, energy %.2f -> %.2f in a second", name,
                     mc.player.position().subtract(startPos).horizontalDistance(), minHeight, Stamina.of(mc.player).energy));
         }, new int[]{20, 40}, true));
+    }
+
+    /** The fast run with a sword and two swings in it (author, 2026-11-16: the blade turned down), seen from the front. */
+    private static void fastRunSwing(String name) {
+        SCENARIOS.add(new Scenario(name, 70, sp -> {
+            place(sp, -10, new ItemStack(Items.IRON_SWORD));
+            Stamina.of(sp).energy = 60f;
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_FRONT);
+            mc.options.keyUp.setDown(t >= 2 && t < 60);
+            mc.options.keySprint.setDown(t >= 2 && t < 60);
+            mc.options.keyAttack.setDown(t == 30 || t == 31 || t == 44 || t == 45);
+            if (t == 30 || t == 44) KeyMapping.click(mc.options.keyAttack.getKey());
+        }, new int[]{26, 30, 31, 32, 33, 34, 36, 38, 41, 44, 45, 46, 47, 49, 52, 56, 62}, true));
     }
 
     /** A pillar a block wide: caught on its face, then the hop mode and D held: round its corners. */

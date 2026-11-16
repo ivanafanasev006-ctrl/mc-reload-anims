@@ -161,6 +161,7 @@ public final class MovesClient {
         if (shieldFlash > 0) shieldFlash--;
         boolean dodgePressed = false, abilityPressed = false;
         SkillUse.tick();
+        ThrownClient.tick();
         while (DODGE.consumeClick()) dodgePressed = true;
         while (ABILITY.consumeClick()) abilityPressed = true;
         if (SkillUse.takeAbilityClick()) abilityPressed = true;
