@@ -1265,6 +1265,56 @@ def preview(path, out_dir, frames=5):
     return written
 
 
+def video(path, out_dir, names=None, fps=20, size=320, gif=False, slow=1.0):
+    """A short video of the animations (or of `names`, played one after another, as the mod chains them): the pose as
+    Kinetrix draws it in the game, from the front, the side and three-quarters, frame by frame at `fps` (slowed `slow`
+    times). Writes <out_dir>/<name>.mp4 (and .gif with gif=True); returns the paths."""
+    import shutil
+    import subprocess
+    import tempfile
+    from PIL import Image, ImageDraw
+    model = Model(path)
+    by = {anim_name(a): a for a in model.animations}
+    seqs = [[n] for n in by] if not names else [list(names)]
+    os.makedirs(out_dir, exist_ok=True)
+    written = []
+    for seq in seqs:
+        tmp = tempfile.mkdtemp(prefix="kr_video_")
+        k = 0
+        for name in seq:
+            anim = by[name]
+            chans = model.channels(anim)
+            length = float(anim.get("length", 0) or 0) or 1.0
+            used, items = parts_in_use(model, chans)
+            shown = [i for i in items.values() if i]
+            n = max(1, int(round(length * fps * slow)))
+            prev = {}
+            for i in range(n + 1):
+                t = length * i / n
+                vals, _ = convert_frame(model, chans, t, prev, items)
+                imgs = render(model, kinetrix_pose(as_in_game(vals, used), items), size=size,
+                              views=("front", "side", "three_quarter"), show=shown)
+                frame = Image.new("RGB", (size * 3, size + 24), (255, 255, 255))
+                for j, im in enumerate(imgs):
+                    frame.paste(im, (j * size, 24))
+                d = ImageDraw.Draw(frame)
+                d.text((6, 6), f"{name}   t={t:.2f}s / {length:.2f}s   (tick {int(t * 20)})", fill=(0, 0, 0))
+                frame.save(os.path.join(tmp, f"f{k:05d}.png"))
+                k += 1
+        out = os.path.join(out_dir, "+".join(seq) if len(seq) > 1 else seq[0])
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-framerate", str(fps), "-i", os.path.join(tmp, "f%05d.png"),
+                        "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", "-c:v", "libx264", "-pix_fmt", "yuv420p", out + ".mp4"],
+                       check=True)
+        written.append(out + ".mp4")
+        if gif:
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-framerate", str(fps), "-i", os.path.join(tmp, "f%05d.png"),
+                            "-vf", "split[a][b];[a]palettegen=max_colors=64[p];[b][p]paletteuse", out + ".gif"], check=True)
+            written.append(out + ".gif")
+        shutil.rmtree(tmp, ignore_errors=True)
+        print("wrote", ", ".join(written[-2 if gif else -1:]))
+    return written
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1281,6 +1331,14 @@ def main(argv=None):
     p.add_argument("bbmodel")
     p.add_argument("out_dir")
     p.add_argument("--frames", type=int, default=5)
+    v = sub.add_parser("video", help="a short video (mp4, gif) of the animations as the game draws them")
+    v.add_argument("bbmodel")
+    v.add_argument("out_dir")
+    v.add_argument("--anims", help="these animations one after another (comma-separated), as the mod chains them")
+    v.add_argument("--fps", type=int, default=20)
+    v.add_argument("--size", type=int, default=320)
+    v.add_argument("--slow", type=float, default=1.0, help="played this many times slower")
+    v.add_argument("--gif", action="store_true")
     a = ap.parse_args(argv)
     if a.cmd == "make":
         make(a.out)
@@ -1288,6 +1346,8 @@ def main(argv=None):
         make_opponent(a.out, a.distance)
     elif a.cmd == "convert":
         convert(a.bbmodel, a.out_dir, a.namespace)
+    elif a.cmd == "video":
+        video(a.bbmodel, a.out_dir, a.anims.split(",") if a.anims else None, a.fps, a.size, a.gif, a.slow)
     else:
         preview(a.bbmodel, a.out_dir, a.frames)
 
