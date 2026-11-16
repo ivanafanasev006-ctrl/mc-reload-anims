@@ -219,6 +219,7 @@ public final class MovesSelfTest {
         crossbowSkills("96m_crossbow_g_first_person", CameraType.FIRST_PERSON);
         chainFinisher("97d_chain_finisher");
         chainAfterFinisher("97e_chain_after_finisher");
+        combatMenu();
         throwPull("97b_throw_sword", Items.IRON_SWORD);
         throwPull("97c_throw_axe", Items.IRON_AXE);
         rangedFinisher("96n_bow_finisher", Items.BOW, CameraType.THIRD_PERSON_BACK);
@@ -611,11 +612,10 @@ public final class MovesSelfTest {
                 mc.setScreen(null);
             }
         }, new int[]{8, 16}, false));
-        // ---- the menu (/kinetrix_combat): the attacks and the mechanics, their keys and switches
+        // ---- the settings menu: the attacks and the mechanics, their keys and switches
         SCENARIOS.add(new Scenario("51_menu", 22, sp -> place(sp, 0, new ItemStack(Items.BOW)), (mc, t) -> {
             camera(mc, CameraType.FIRST_PERSON);
-            if (t == 2) net.minecraftforge.client.ClientCommandHandler.runCommand("kinetrix_combat");
-            if (t == 4) note("menu: /kinetrix_combat opened " + (mc.screen == null ? "nothing" : mc.screen.getClass().getSimpleName()));
+            if (t == 2) mc.setScreen(new MovesMenuScreen(null));
             if (t == 10) {
                 mc.options.guiScale().set(4);
                 mc.resizeDisplay();
@@ -626,6 +626,43 @@ public final class MovesSelfTest {
                 mc.setScreen(null);
             }
         }, new int[]{8, 16}, false));
+    }
+
+    /** The combat menu (K) and the wheel (Z): a few moves learned, some on the wheel (author, 2026-11-16). */
+    private static void combatMenu() {
+        java.util.function.Consumer<net.minecraft.server.level.ServerPlayer> learn = sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_AXE));
+            dev.mcreload.moves.Progress pr = Stamina.of(sp).progress;
+            for (dev.mcreload.moves.Skill k : new dev.mcreload.moves.Skill[]{dev.mcreload.moves.Skill.WHIRL, dev.mcreload.moves.Skill.AXE_COMBO,
+                    dev.mcreload.moves.Skill.DASH, dev.mcreload.moves.Skill.SWORD_SPIN, dev.mcreload.moves.Skill.VOLLEY,
+                    dev.mcreload.moves.Skill.XBOW_G, dev.mcreload.moves.Skill.THROW, dev.mcreload.moves.Skill.CHAIN}) pr.learn(k);
+            dev.mcreload.moves.net.MovesNet.progress(sp);
+        };
+        SCENARIOS.add(new Scenario("52_combat_build", 34, learn, (mc, t) -> {
+            camera(mc, CameraType.FIRST_PERSON);
+            if (t == 3) mc.setScreen(new CombatScreen(null, CombatScreen.Tab.BUILD));
+            if (t == 4 && mc.screen instanceof CombatScreen c) c.focus(dev.mcreload.moves.Skill.AXE_COMBO);
+            if (t == 20) {
+                mc.options.guiScale().set(4);
+                mc.resizeDisplay();
+            }
+            if (t == 32) {
+                mc.options.guiScale().set(0);
+                mc.resizeDisplay();
+                mc.setScreen(null);
+            }
+        }, new int[]{12, 18, 28}, false));
+        SCENARIOS.add(new Scenario("53_combat_keys_guide", 24, learn, (mc, t) -> {
+            camera(mc, CameraType.FIRST_PERSON);
+            if (t == 3) mc.setScreen(new CombatScreen(null, CombatScreen.Tab.KEYS));
+            if (t == 12) mc.setScreen(new CombatScreen(null, CombatScreen.Tab.GUIDE));
+            if (t == 22) mc.setScreen(null);
+        }, new int[]{8, 18}, false));
+        SCENARIOS.add(new Scenario("54_wheel", 20, learn, (mc, t) -> {
+            camera(mc, CameraType.FIRST_PERSON);
+            if (t == 3) mc.setScreen(new WheelScreen());
+            if (t == 18) mc.setScreen(null);
+        }, new int[]{10}, false));
     }
 
     private static void hud(String name, HudConfig.Style style, HudConfig.Shape shape, boolean swap, float energy, float shields, boolean apple) {

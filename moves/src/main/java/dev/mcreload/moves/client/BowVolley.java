@@ -186,6 +186,15 @@ public final class BowVolley {
         step = 0;
     }
 
+    /** The volley at the marked from the wheel: marked mobs in sight, its wait over, its first step allowed. */
+    static boolean wheel(LocalPlayer p, Stamina s) {
+        if (queue != null || s.move != null || !Marks.volleyReady(p, s) || !dev.mcreload.moves.MoveServer.allowed(p, s, ROUND[0])) return false;
+        queue = new ArrayList<>();
+        for (LivingEntity e : Marks.inSight(p, s)) queue.add(e.getId());
+        step = 0;
+        return !queue.isEmpty();
+    }
+
     /**
      * Letting go of the bow now makes the volley at the marked: the full draw, marked mobs in sight, its wait over, its
      * first step allowed (on the ground, not in water: author, after 0.9.1, "in water the bow is useless now").

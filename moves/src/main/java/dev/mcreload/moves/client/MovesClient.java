@@ -58,6 +58,22 @@ public final class MovesClient {
     /** The ability (author, 2026-10-30: G, rebindable): the sword's turn with a sword, the whirlwind with an axe. */
     public static final KeyMapping ABILITY = new KeyMapping("key.kinetrix_combat.ability", KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.kinetrix_combat");
+    /** The combat menu: the wheel's build, the keys, the guide (author, 2026-11-16: "P or J", then K). */
+    public static final KeyMapping MENU = new KeyMapping("key.kinetrix_combat.menu", KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, "key.categories.kinetrix_combat");
+    /** The wheel of the six moves, held (author: "hold Z, the wheel with the 6 moves"). */
+    public static final KeyMapping WHEEL = new KeyMapping("key.kinetrix_combat.wheel", KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.categories.kinetrix_combat");
+    /** A key of its own for each skill (none at first; Ctrl, Shift or Alt with it for a combination). */
+    public static final KeyMapping[] SKILL_KEYS = new KeyMapping[dev.mcreload.moves.Skill.values().length];
+
+    static {
+        for (dev.mcreload.moves.Skill k : dev.mcreload.moves.Skill.values()) {
+            SKILL_KEYS[k.ordinal()] = new KeyMapping("key.kinetrix_combat.skill." + k.key, KeyConflictContext.IN_GAME,
+                    InputConstants.UNKNOWN, "key.categories.kinetrix_combat.skills");
+        }
+    }
+
     private static final boolean KINETRIX = ModList.get().isLoaded("kinetrix");
 
     /** R pressed without a direction: waits this many more ticks for A, D, S or W. */
@@ -108,7 +124,7 @@ public final class MovesClient {
         MinecraftForge.EVENT_BUS.addListener(MovesClient::playerTick);
         MinecraftForge.EVENT_BUS.addListener(MovesClient::movementInput);
         MinecraftForge.EVENT_BUS.addListener(MovesClient::interaction);
-        MinecraftForge.EVENT_BUS.addListener(MovesMenuScreen::registerCommand);
+        // the menu is on K now (author, 2026-11-16: "not a command, a key"): no /kinetrix_combat
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> new MovesMenuScreen(parent)));
         GuardInput.init();
@@ -123,6 +139,9 @@ public final class MovesClient {
     private static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(DODGE);
         event.register(ABILITY);
+        event.register(MENU);
+        event.register(WHEEL);
+        for (KeyMapping k : SKILL_KEYS) event.register(k);
         if (!KINETRIX) event.register(OWN_SLIDE);
     }
 
@@ -141,8 +160,18 @@ public final class MovesClient {
         if (flash > 0) flash--;
         if (shieldFlash > 0) shieldFlash--;
         boolean dodgePressed = false, abilityPressed = false;
+        SkillUse.tick();
         while (DODGE.consumeClick()) dodgePressed = true;
         while (ABILITY.consumeClick()) abilityPressed = true;
+        if (SkillUse.takeAbilityClick()) abilityPressed = true;
+        // the menu (K), the wheel (Z held), each skill's own key (author, 2026-11-16)
+        if (p != null && mc.screen == null) {
+            while (MENU.consumeClick()) mc.setScreen(new CombatScreen(null));
+            while (WHEEL.consumeClick()) if (mc.screen == null && serverHasMod()) mc.setScreen(new WheelScreen());
+            for (dev.mcreload.moves.Skill k : dev.mcreload.moves.Skill.values()) {
+                while (SKILL_KEYS[k.ordinal()].consumeClick()) if (mc.screen == null) SkillUse.use(k);
+            }
+        }
         boolean slideDown = held(mc, slideKey(mc));
         boolean slidePressed = slideDown && !slideWasDown;
         slideWasDown = slideDown;
@@ -354,7 +383,7 @@ public final class MovesClient {
      * too, and a key shared by two bindings may reach only one of them).
      */
     static boolean held(Minecraft mc, KeyMapping km) {
-        if (km.isDown()) return true;
+        if (km.isDown() || SkillUse.held(km)) return true;
         if (mc.screen != null || km.isUnbound()) return false;
         InputConstants.Key k = km.getKey();
         if (k.getValue() < 0) return false;

@@ -50,7 +50,7 @@ public final class ChainInput {
      * The chain from the ground: the weak mob nearest within {@code reach} (and {@code half} degrees of the look), another one
      * near it at least (author, 2026-11-09: "only with 2 to 6 about").
      */
-    private static boolean begin(LocalPlayer p, Stamina s, double reach, double half, int finished) {
+    static boolean begin(LocalPlayer p, Stamina s, double reach, double half, int finished) {
         DONE.clear();
         kills = 0;
         groundY = p.getY();
