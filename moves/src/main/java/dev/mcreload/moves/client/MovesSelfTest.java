@@ -672,7 +672,7 @@ public final class MovesSelfTest {
 
     /** The trainer (author, 2026-11-16): his dummy and him in brown before the camera, then his page, both tabs. */
     private static void trainerPage() {
-        SCENARIOS.add(new Scenario("55_trainer", 30, sp -> {
+        SCENARIOS.add(new Scenario("55_trainer", 36, sp -> {
             place(sp, 0, ItemStack.EMPTY);
             trainerPlayer = sp;
             net.minecraft.server.level.ServerLevel level = sp.serverLevel();
@@ -695,12 +695,12 @@ public final class MovesSelfTest {
                 dev.mcreload.moves.Quests.act(trainerPlayer, trainer, dev.mcreload.moves.Quests.Action.TAKE, 0);
                 dev.mcreload.moves.net.MovesNet.trainer(trainerPlayer, trainer, true);
             });
-            if (t == 20 && mc.screen instanceof TrainerScreen ts) ts.showRank();
-            if (t == 28) {
+            if (t == 24 && mc.screen instanceof TrainerScreen ts) ts.showRank();
+            if (t == 34) {
                 mc.setScreen(null);
                 if (mc.getSingleplayerServer() != null) mc.getSingleplayerServer().execute(() -> trainer.discard());
             }
-        }, new int[]{6, 14, 25}, false));
+        }, new int[]{6, 16, 30}, false));
     }
 
     private static void hud(String name, HudConfig.Style style, HudConfig.Shape shape, boolean swap, float energy, float shields, boolean apple) {

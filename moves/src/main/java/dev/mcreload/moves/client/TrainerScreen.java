@@ -357,7 +357,7 @@ public final class TrainerScreen extends Screen {
             g.drawString(font, price.getHoverName(), x + 22, y0 + 63, DARK, false);
             g.drawString(font, Component.translatable("kinetrix_combat.trainer.list.gives"), x, y0 + 84, DARK, false);
             slot(g, x, y0 + 94, scrolls[bronze ? 1 : 2], null);
-            g.drawString(font, font.plainSubstrByWidth(scrolls[bronze ? 1 : 2].getHoverName().getString(), w - 22), x + 22, y0 + 99, DARK, false);
+            drawWrapped(g, scrolls[bronze ? 1 : 2].getHoverName(), x + 22, y0 + 95, w - 22, DARK);
             return;
         }
         int stage = data.getInt("rankStage");
