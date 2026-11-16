@@ -67,8 +67,8 @@ public final class SkillUse {
         if (p == null) return;
         Stamina s = Stamina.of(p);
         if (!s.progress.usable(k)) {
-            p.displayClientMessage(Component.translatable(s.progress.learned.contains(k) ? "kinetrix_combat.wheel.not_on"
-                    : "kinetrix_combat.wheel.not_learned", Scrolls.name(k)), true);
+            p.displayClientMessage(Component.translatable(!s.progress.learned.contains(k) ? "kinetrix_combat.wheel.not_learned"
+                    : k.perk ? "kinetrix_combat.wheel.not_on_perk" : "kinetrix_combat.wheel.not_on", Scrolls.name(k)), true);
             return;
         }
         if (!armed(p, k)) return;

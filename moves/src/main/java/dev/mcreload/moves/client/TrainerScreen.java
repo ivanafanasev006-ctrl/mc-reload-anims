@@ -4,31 +4,47 @@ import dev.mcreload.moves.Quests;
 import dev.mcreload.moves.Scrolls;
 import dev.mcreload.moves.Skill;
 import dev.mcreload.moves.net.MovesNet;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SpawnEggItem;
+
+import java.util.List;
 
 /**
  * The trainer's page (author, 2026-11-16): his two quests for moves (take one; held, the kills so far and the time left by
  * the clock; done, the scroll; failed, red, put down for another), both changed for an emerald (top right); and the bar's
  * rank, its line of tasks stage by stage.
+ *
+ * <p>Drawn as vanilla's villager trading is (author, 2026-11-16: "the new villager's menu more vanilla"): a grey panel of
+ * the size of the trading one, its two tabs on top as the creative inventory's, on the left the list of what there is as
+ * buttons (as the trades are), on the right the one picked: its mobs as their spawn eggs in slots, the time, the scroll it
+ * gives, the button for it. Dark text without a shadow, as on vanilla's panels.</p>
  */
 public final class TrainerScreen extends Screen {
+    private static final ResourceLocation PANEL = new ResourceLocation("textures/gui/demo_background.png");
+    private static final ResourceLocation TABS = new ResourceLocation("textures/gui/container/creative_inventory/tabs.png");
+    private static final int W = 276, H = 166, LIST_W = 100, DARK = 0x404040, GREY = 0x707070, RED = 0xB02E26, GREEN = 0x2F7A1E;
+
     private final int villager;
     private CompoundTag data;
     private boolean rankTab;
     private long received;
+    /** The entry picked on the left: his offers 0 and 1, the player's quests 2 and 3. */
+    private int picked = -1;
 
     TrainerScreen(int villager, CompoundTag data) {
         super(Component.translatable("kinetrix_combat.trainer.title"));
@@ -59,137 +75,248 @@ public final class TrainerScreen extends Screen {
         MovesNet.CHANNEL.sendToServer(new MovesNet.TrainerAct(villager, a.ordinal(), arg));
     }
 
-    private int left() { return Math.max(10, width / 2 - 170); }
-    private int right() { return Math.min(width - 10, width / 2 + 170); }
+    private int x0() { return (width - W) / 2; }
+
+    /** The panel's top: below its tabs, the whole in the middle. */
+    private int y0() { return Math.max(28, (height - H) / 2 + 12); }
+
+    private ListTag offers() { return data.getList("offers", Tag.TAG_COMPOUND); }
+
+    private ListTag quests() { return data.getList("quests", Tag.TAG_COMPOUND); }
+
+    private CompoundTag pickedTag() {
+        if (picked < 0) return null;
+        ListTag l = picked < 2 ? offers() : quests();
+        int i = picked < 2 ? picked : picked - 2;
+        return i < l.size() ? l.getCompound(i) : null;
+    }
+
+    // ------------------------------------------------------------------ widgets
 
     @Override
     protected void init() {
-        int l = left(), r = right(), mid = (l + r) / 2;
-        Button moves = Button.builder(Component.translatable("kinetrix_combat.trainer.tab.moves"), b -> {
-            rankTab = false;
-            rebuildWidgets();
-        }).bounds(mid - 122, 20, 120, 20).build();
-        Button ranks = Button.builder(Component.translatable("kinetrix_combat.trainer.tab.rank"), b -> {
-            rankTab = true;
-            rebuildWidgets();
-        }).bounds(mid + 2, 20, 120, 20).build();
-        moves.active = rankTab;
-        ranks.active = !rankTab;
-        addRenderableWidget(moves);
-        addRenderableWidget(ranks);
-        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).bounds(mid - 50, height - 25, 100, 20).build());
-        if (!rankTab) initMoves(l, r);
-        else initRank(l, r);
+        int x0 = x0(), y0 = y0();
+        if (!rankTab) initMoves(x0, y0);
+        else initRank(x0, y0);
     }
 
-    private void initMoves(int l, int r) {
-        // the emerald: both quests changed (top right)
-        addRenderableWidget(Button.builder(Component.literal("⟳ 1"), b -> act(Quests.Action.REROLL, 0)).bounds(r - 40, 36, 40, 14)
+    private void initMoves(int x0, int y0) {
+        ListTag offers = offers(), quests = quests();
+        // what is picked: kept while it is there; else the first quest held, else the first offer
+        if (pickedTag() == null) picked = !quests.isEmpty() ? 2 : !offers.isEmpty() ? 0 : -1;
+        // the emerald: both offers changed (top right)
+        addRenderableWidget(Button.builder(Component.literal("⟳"), b -> act(Quests.Action.REROLL, 0)).bounds(x0 + W - 25, y0 + 4, 18, 14)
                 .tooltip(Tooltip.create(Component.translatable("kinetrix_combat.trainer.reroll"))).build());
-        ListTag offers = data.getList("offers", Tag.TAG_COMPOUND), quests = data.getList("quests", Tag.TAG_COMPOUND);
-        int w = (r - l - 8) / 2;
         for (int i = 0; i < offers.size(); i++) {
             CompoundTag o = offers.getCompound(i);
-            boolean held = false;
-            for (Tag t : quests) held |= ((CompoundTag) t).getString("skill").equals(o.getString("skill"));
-            int slot = i;
-            Button take = Button.builder(Component.translatable(held ? "kinetrix_combat.trainer.taken" : "kinetrix_combat.trainer.take"),
-                    b -> act(Quests.Action.TAKE, slot)).bounds(l + i * (w + 8) + w - 64, 50 + 58, 60, 18).build();
-            take.active = !held && quests.size() < Quests.HELD;
-            addRenderableWidget(take);
+            addRenderableWidget(new Entry(x0 + 6, y0 + 28 + i * 21, i, Skill.byKey(o.getString("skill")), 0xFFFFFF));
         }
         for (int i = 0; i < quests.size(); i++) {
             CompoundTag q = quests.getCompound(i);
-            boolean done = q.getBoolean("done"), failed = q.getBoolean("failed");
-            int idx = i, y = 150 + i * 46;
-            Component label = Component.translatable(done && !failed ? "kinetrix_combat.trainer.claim"
-                    : failed ? "kinetrix_combat.trainer.refresh" : "kinetrix_combat.trainer.drop");
-            addRenderableWidget(Button.builder(label, b -> act(done && !failed ? Quests.Action.CLAIM : Quests.Action.DROP, idx))
-                    .bounds(r - 90, y + 4, 86, 18).build());
+            boolean failed = failed(q), done = q.getBoolean("done") && !failed;
+            addRenderableWidget(new Entry(x0 + 6, y0 + 92 + i * 21, 2 + i, Skill.byKey(q.getString("skill")),
+                    failed ? 0xFF6060 : done ? 0x80FF80 : 0xFFFFFF));
         }
+        CompoundTag t = pickedTag();
+        if (t == null) return;
+        Button action;
+        if (picked < 2) {
+            boolean held = false;
+            for (Tag q : quests) held |= ((CompoundTag) q).getString("skill").equals(t.getString("skill"));
+            int slot = picked;
+            action = Button.builder(Component.translatable(held ? "kinetrix_combat.trainer.taken" : "kinetrix_combat.trainer.take"),
+                    b -> act(Quests.Action.TAKE, slot)).bounds(x0 + W - 94, y0 + H - 27, 86, 20).build();
+            action.active = !held && quests.size() < Quests.HELD;
+        } else {
+            boolean failed = failed(t), done = t.getBoolean("done") && !failed;
+            int idx = picked - 2;
+            action = Button.builder(Component.translatable(done ? "kinetrix_combat.trainer.claim"
+                            : failed ? "kinetrix_combat.trainer.refresh" : "kinetrix_combat.trainer.drop"),
+                    b -> act(done ? Quests.Action.CLAIM : Quests.Action.DROP, idx)).bounds(x0 + W - 94, y0 + H - 27, 86, 20).build();
+        }
+        addRenderableWidget(action);
     }
 
-    private void initRank(int l, int r) {
+    private void initRank(int x0, int y0) {
         int rank = data.getInt("rank"), line = data.getInt("rankLine");
-        int y = 110;
+        int bx = x0 + W - 134, by = y0 + H - 27;
         if ((line == 0 && rank == 0) || ((line == 0 || line == 2) && rank == 1)) {
             boolean bronze = rank == 0;
-            Component price = Component.translatable(bronze ? "kinetrix_combat.trainer.begin_bronze" : "kinetrix_combat.trainer.begin_brass");
-            addRenderableWidget(Button.builder(price, b -> act(Quests.Action.RANK_BEGIN, 0)).bounds((l + r) / 2 - 100, y, 200, 20).build());
+            addRenderableWidget(Button.builder(Component.translatable("kinetrix_combat.trainer.begin"), b -> act(Quests.Action.RANK_BEGIN, 0))
+                    .bounds(bx, by, 126, 20).tooltip(Tooltip.create(Component.translatable(bronze
+                            ? "kinetrix_combat.trainer.begin_bronze" : "kinetrix_combat.trainer.begin_brass"))).build());
         } else if (line == 1 || line == 3) {
-            String kind = data.getString("kind");
-            String key = switch (kind) {
+            String key = switch (data.getString("kind")) {
                 case "BRING" -> "kinetrix_combat.trainer.hand_in";
                 case "KILL" -> "kinetrix_combat.trainer.next";
                 default -> "kinetrix_combat.trainer.pay";
             };
-            addRenderableWidget(Button.builder(Component.translatable(key), b -> act(Quests.Action.RANK_NEXT, 0))
-                    .bounds((l + r) / 2 - 100, height - 50, 200, 20).build());
+            addRenderableWidget(Button.builder(Component.translatable(key), b -> act(Quests.Action.RANK_NEXT, 0)).bounds(bx, by, 126, 20).build());
         }
     }
+
+    /** An entry of the list on the left: a button as vanilla's trades are, the weapon and the move's name on it. */
+    private final class Entry extends AbstractButton {
+        private final int index, colour;
+        private final Skill skill;
+
+        Entry(int x, int y, int index, Skill skill, int colour) {
+            super(x, y, LIST_W - 12, 20, skill == null ? Component.empty() : Scrolls.name(skill));
+            this.index = index;
+            this.skill = skill;
+            this.colour = colour;
+        }
+
+        @Override
+        public void onPress() {
+            picked = index;
+            rebuildWidgets();
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics g, int mx, int my, float pt) {
+            Component name = getMessage();
+            setMessage(Component.empty());
+            super.renderWidget(g, mx, my, pt);
+            setMessage(name);
+            if (skill != null) g.renderItem(SkillPreview.icon(skill.weapon), getX() + 2, getY() + 2);
+            g.drawString(font, font.plainSubstrByWidth(name.getString(), width - 22), getX() + 20, getY() + 6, colour);
+            if (index == picked) {
+                // the one picked, framed in white
+                g.fill(getX(), getY(), getX() + width, getY() + 1, 0xFFFFFFFF);
+                g.fill(getX(), getY() + height - 1, getX() + width, getY() + height, 0xFFFFFFFF);
+                g.fill(getX(), getY(), getX() + 1, getY() + height, 0xFFFFFFFF);
+                g.fill(getX() + width - 1, getY(), getX() + width, getY() + height, 0xFFFFFFFF);
+            }
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput out) {
+            defaultButtonNarrationText(out);
+        }
+    }
+
+    // ------------------------------------------------------------------ drawing
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
         renderBackground(g);
-        g.drawCenteredString(font, title, width / 2, 6, 0xFFD8A0);
-        int l = left(), r = right();
-        if (!rankTab) {
-            g.renderItem(new ItemStack(Items.EMERALD), r - 58, 35);
-            renderMoves(g, l, r);
-        }
-        else renderRank(g, l, r);
+        int x0 = x0(), y0 = y0();
+        tab(g, x0, y0, 0, !rankTab, Scrolls.of(Skill.SWORD_SPIN));
+        tab(g, x0, y0, 1, rankTab, new ItemStack(Scrolls.BRONZE.get()));
+        g.blitNineSliced(PANEL, x0, y0, W, H, 4, 4, 248, 166, 0, 0);
+        // the tab in front, joined to the panel
+        if (!rankTab) tab(g, x0, y0, 0, true, Scrolls.of(Skill.SWORD_SPIN));
+        else tab(g, x0, y0, 1, true, new ItemStack(Scrolls.BRONZE.get()));
+        g.drawString(font, Component.translatable(rankTab ? "kinetrix_combat.trainer.tab.rank" : "kinetrix_combat.trainer.tab.moves"),
+                x0 + 8, y0 + 6, DARK, false);
+        if (!rankTab) renderMoves(g, x0, y0);
+        else renderRank(g, x0, y0);
         super.render(g, mx, my, pt);
+        // the tabs' names on hovering them
+        for (int i = 0; i < 2; i++) {
+            int tx = x0 + i * 29, ty = y0 - 28;
+            if (mx >= tx && mx < tx + 26 && my >= ty && my < y0) {
+                g.renderTooltip(font, Component.translatable(i == 0 ? "kinetrix_combat.trainer.tab.moves" : "kinetrix_combat.trainer.tab.rank"), mx, my);
+            }
+        }
+    }
+
+    /** A tab on top of the panel, as the creative inventory's ({@code front}: the open one, joined to the panel). */
+    private void tab(GuiGraphics g, int x0, int y0, int i, boolean front, ItemStack icon) {
+        int x = x0 + i * 29, y = y0 - 28;
+        g.blit(TABS, x, y, i == 0 ? 0 : 26, front ? 32 : 0, 26, 32);
+        g.renderItem(icon, x + 5, y + 9);
+    }
+
+    /** A slot as vanilla's (18 x 18: shaded in, the light from the top left), with an item in it. */
+    private void slot(GuiGraphics g, int x, int y, ItemStack item, String count) {
+        g.fill(x, y, x + 18, y + 18, 0xFF8B8B8B);
+        g.fill(x, y, x + 17, y + 1, 0xFF373737);
+        g.fill(x, y, x + 1, y + 17, 0xFF373737);
+        g.fill(x + 1, y + 17, x + 18, y + 18, 0xFFFFFFFF);
+        g.fill(x + 17, y + 1, x + 18, y + 18, 0xFFFFFFFF);
+        if (item.isEmpty()) return;
+        g.renderItem(item, x + 1, y + 1);
+        if (count != null) g.renderItemDecorations(font, item, x + 1, y + 1, count);
     }
 
     private static Component mob(String id) {
         return EntityType.byString(id).map(EntityType::getDescription).orElse(Component.literal(id));
     }
 
-    private void renderMoves(GuiGraphics g, int l, int r) {
-        ListTag offers = data.getList("offers", Tag.TAG_COMPOUND), quests = data.getList("quests", Tag.TAG_COMPOUND);
-        g.drawString(font, Component.translatable("kinetrix_combat.trainer.offers"), l, 42, 0xC0C0C0);
-        int w = (r - l - 8) / 2;
-        for (int i = 0; i < offers.size(); i++) {
-            CompoundTag o = offers.getCompound(i);
-            Skill k = Skill.byKey(o.getString("skill"));
-            int x = l + i * (w + 8), y = 52;
-            CombatScreen.frame(g, x, y, w, 78, 0xFF8A6A40);
-            if (k == null) continue;
-            g.renderItem(SkillPreview.icon(k.weapon), x + 4, y + 4);
-            g.drawString(font, font.plainSubstrByWidth(Scrolls.name(k).getString(), w - 26), x + 23, y + 8, 0xFFFFD860);
-            int yy = y + 24;
-            for (Tag t : o.getList("goals", Tag.TAG_COMPOUND)) {
-                CompoundTag gl = (CompoundTag) t;
-                g.drawString(font, Component.translatable("kinetrix_combat.trainer.kill", gl.getInt("need"), mob(gl.getString("mob"))), x + 6, yy, 0xE0E0E0);
-                yy += 10;
-            }
-            g.drawString(font, Component.translatable("kinetrix_combat.trainer.time", clock(o.getInt("minutes") * 60_000L)), x + 6, yy, 0xA0A0A0);
+    /** A mob shown as its spawn egg (a skull for one without). */
+    private static ItemStack egg(String id) {
+        SpawnEggItem e = EntityType.byString(id).map(SpawnEggItem::byId).orElse(null);
+        return new ItemStack(e != null ? e : Items.SKELETON_SKULL);
+    }
+
+    private boolean failed(CompoundTag q) {
+        long left = q.getLong("left") - (System.currentTimeMillis() - received);
+        return q.getBoolean("failed") || (!q.getBoolean("done") && left < 0);
+    }
+
+    private void renderMoves(GuiGraphics g, int x0, int y0) {
+        ListTag offers = offers(), quests = quests();
+        // the emerald the change costs, left of its button
+        g.renderItem(new ItemStack(Items.EMERALD), x0 + W - 44, y0 + 3);
+        g.drawString(font, Component.translatable("kinetrix_combat.trainer.list.offers"), x0 + 7, y0 + 18, DARK, false);
+        g.drawString(font, Component.translatable("kinetrix_combat.trainer.list.yours", quests.size(), Quests.HELD), x0 + 7, y0 + 82, DARK, false);
+        if (quests.isEmpty()) g.drawString(font, Component.translatable("kinetrix_combat.trainer.list.none"), x0 + 7, y0 + 96, GREY, false);
+        // the line between the list and the one picked
+        g.fill(x0 + LIST_W, y0 + 18, x0 + LIST_W + 1, y0 + H - 8, 0xFF8B8B8B);
+        g.fill(x0 + LIST_W + 1, y0 + 18, x0 + LIST_W + 2, y0 + H - 8, 0xFFFFFFFF);
+        CompoundTag t = pickedTag();
+        int x = x0 + LIST_W + 8, right = x0 + W - 8;
+        if (t == null) {
+            drawWrapped(g, Component.translatable("kinetrix_combat.trainer.list.pick"), x, y0 + 40, right - x, GREY);
+            return;
         }
-        g.drawString(font, Component.translatable("kinetrix_combat.trainer.yours", quests.size(), Quests.HELD), l, 138, 0xC0C0C0);
-        if (quests.isEmpty()) g.drawString(font, Component.translatable("kinetrix_combat.trainer.none").withStyle(ChatFormatting.DARK_GRAY), l, 152, 0x808080);
-        for (int i = 0; i < quests.size(); i++) {
-            CompoundTag q = quests.getCompound(i);
-            Skill k = Skill.byKey(q.getString("skill"));
-            boolean done = q.getBoolean("done"), failed = q.getBoolean("failed");
-            long left = q.getLong("left") - (System.currentTimeMillis() - received);
-            if (!done && left < 0) failed = true;
-            int y = 150 + i * 46;
-            CombatScreen.frame(g, l, y, r - l, 42, failed ? 0xFFE03A3A : done ? 0xFF4CD15A : 0xFF8A6A40);
-            if (k != null) {
-                g.renderItem(SkillPreview.icon(k.weapon), l + 4, y + 4);
-                g.drawString(font, Scrolls.name(k), l + 23, y + 4, failed ? 0xFFE03A3A : 0xFFFFD860);
-            }
-            int x = l + 23;
-            for (Tag t : q.getList("goals", Tag.TAG_COMPOUND)) {
-                CompoundTag gl = (CompoundTag) t;
-                Component c = Component.translatable("kinetrix_combat.trainer.progress", mob(gl.getString("mob")), gl.getInt("have"), gl.getInt("need"));
-                g.drawString(font, c, x, y + 16, gl.getInt("have") >= gl.getInt("need") ? 0x80FF80 : 0xE0E0E0);
-                x += font.width(c) + 10;
-            }
-            Component time = failed ? Component.translatable("kinetrix_combat.trainer.failed")
-                    : done ? Component.translatable("kinetrix_combat.trainer.ready") : Component.translatable("kinetrix_combat.trainer.left", clock(left));
-            g.drawString(font, time, l + 23, y + 28, failed ? 0xFFE03A3A : done ? 0x80FF80 : 0xA0A0A0);
+        boolean quest = picked >= 2, failed = quest && failed(t), done = quest && t.getBoolean("done") && !failed;
+        Skill k = Skill.byKey(t.getString("skill"));
+        // the move: its weapon, its name, what it is
+        if (k != null) {
+            slot(g, x, y0 + 18, SkillPreview.icon(k.weapon), null);
+            g.drawString(font, font.plainSubstrByWidth(Scrolls.name(k).getString(), right - x - 22), x + 22, y0 + 19, DARK, false);
+            g.drawString(font, Component.translatable(k.perk ? "kinetrix_combat.trainer.list.perk" : "kinetrix_combat.weapon." + k.weapon.name().toLowerCase()),
+                    x + 22, y0 + 28, GREY, false);
         }
+        // the mobs to kill, each as its egg
+        int y = y0 + 42;
+        g.drawString(font, Component.translatable("kinetrix_combat.trainer.list.kill"), x, y, DARK, false);
+        y += 10;
+        for (Tag tg : t.getList("goals", Tag.TAG_COMPOUND)) {
+            CompoundTag gl = (CompoundTag) tg;
+            int need = gl.getInt("need"), have = gl.getInt("have");
+            slot(g, x, y, egg(gl.getString("mob")), null);
+            g.drawString(font, font.plainSubstrByWidth(mob(gl.getString("mob")).getString(), right - x - 56), x + 22, y + 5, DARK, false);
+            String n = quest ? Math.min(have, need) + "/" + need : "×" + need;
+            g.drawString(font, n, right - font.width(n), y + 5, quest && have >= need ? GREEN : DARK, false);
+            y += 20;
+        }
+        // the time, and how it stands
+        Component time;
+        int colour = GREY;
+        if (!quest) time = Component.translatable("kinetrix_combat.trainer.time", clock(t.getInt("minutes") * 60_000L));
+        else if (failed) {
+            time = Component.translatable("kinetrix_combat.trainer.failed");
+            colour = RED;
+        } else if (done) {
+            time = Component.translatable("kinetrix_combat.trainer.ready");
+            colour = GREEN;
+        } else time = Component.translatable("kinetrix_combat.trainer.left", clock(t.getLong("left") - (System.currentTimeMillis() - received)));
+        drawWrapped(g, time, x, y + 2, right - x, colour);
+        // the reward: the move's scroll
+        if (k != null) {
+            Component reward = Component.translatable("kinetrix_combat.trainer.list.reward");
+            g.drawString(font, reward, x, y0 + H - 21, DARK, false);
+            slot(g, x + font.width(reward) + 4, y0 + H - 26, Scrolls.of(k), null);
+        }
+    }
+
+    private void drawWrapped(GuiGraphics g, Component c, int x, int y, int w, int colour) {
+        List<FormattedCharSequence> lines = font.split(c, w);
+        for (int i = 0; i < Math.min(2, lines.size()); i++) g.drawString(font, lines.get(i), x, y + i * 9, colour, false);
     }
 
     private static String clock(long ms) {
@@ -197,44 +324,84 @@ public final class TrainerScreen extends Screen {
         return String.format("%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60);
     }
 
-    private void renderRank(GuiGraphics g, int l, int r) {
+    private void renderRank(GuiGraphics g, int x0, int y0) {
         int rank = data.getInt("rank"), line = data.getInt("rankLine");
-        int[] colours = {0xFFE38C70, 0xFFD39A5A, 0xFFF2CF5E};
-        int mid = (l + r) / 2;
-        g.drawCenteredString(font, Component.translatable("kinetrix_combat.trainer.rank", Component.translatable("kinetrix_combat.rank.name." + rank)),
-                mid, 48, colours[Math.max(0, Math.min(2, rank))]);
-        g.drawCenteredString(font, Component.translatable("kinetrix_combat.rank.cost." + rank), mid, 60, 0xA0A0A0);
+        // the three ranks down the left, each with its scroll; the player's own marked
+        g.drawString(font, Component.translatable("kinetrix_combat.trainer.list.ranks"), x0 + 7, y0 + 18, DARK, false);
+        ItemStack[] scrolls = {new ItemStack(Scrolls.COPPER.get()), new ItemStack(Scrolls.BRONZE.get()), new ItemStack(Scrolls.BRASS.get())};
+        int[] colours = {0xA8452C, 0x7A4A1A, 0x8A6A00};
+        for (int i = 0; i < 3; i++) {
+            int y = y0 + 30 + i * 30;
+            if (i == rank) g.fill(x0 + 5, y - 2, x0 + LIST_W - 4, y + 20, 0xFFA8A8A8);
+            slot(g, x0 + 7, y, scrolls[i], null);
+            g.drawString(font, Component.translatable("kinetrix_combat.rank.title." + i), x0 + 28, y + 1, colours[i], false);
+            g.drawString(font, Component.translatable("kinetrix_combat.rank.short." + i), x0 + 28, y + 10, i == rank ? DARK : GREY, false);
+        }
+        g.fill(x0 + LIST_W, y0 + 18, x0 + LIST_W + 1, y0 + H - 8, 0xFF8B8B8B);
+        g.fill(x0 + LIST_W + 1, y0 + 18, x0 + LIST_W + 2, y0 + H - 8, 0xFFFFFFFF);
+        int x = x0 + LIST_W + 8, right = x0 + W - 8, w = right - x;
         if (rank >= 2) {
-            g.drawCenteredString(font, Component.translatable("kinetrix_combat.trainer.top"), mid, 90, 0x80FF80);
+            drawWrapped(g, Component.translatable("kinetrix_combat.trainer.top"), x, y0 + 30, w, GREEN);
             return;
         }
         if (line == 2 && rank == 0) {
-            g.drawCenteredString(font, Component.translatable("kinetrix_combat.trainer.read_bronze"), mid, 90, 0xFFD860);
+            drawWrapped(g, Component.translatable("kinetrix_combat.trainer.read_bronze"), x, y0 + 30, w, DARK);
             return;
         }
         if (line == 0 || line == 2) {
-            g.drawCenteredString(font, Component.translatable(rank == 0 ? "kinetrix_combat.trainer.line_bronze" : "kinetrix_combat.trainer.line_brass"),
-                    mid, 90, 0xE0E0E0);
+            boolean bronze = rank == 0;
+            drawWrapped(g, Component.translatable(bronze ? "kinetrix_combat.trainer.line_bronze" : "kinetrix_combat.trainer.line_brass"), x, y0 + 20, w, DARK);
+            g.drawString(font, Component.translatable("kinetrix_combat.trainer.list.price"), x, y0 + 48, DARK, false);
+            ItemStack price = bronze ? new ItemStack(Items.GOLD_INGOT, 32) : new ItemStack(Items.DIAMOND, 16);
+            slot(g, x, y0 + 58, price, String.valueOf(price.getCount()));
+            g.drawString(font, price.getHoverName(), x + 22, y0 + 63, DARK, false);
+            g.drawString(font, Component.translatable("kinetrix_combat.trainer.list.gives"), x, y0 + 84, DARK, false);
+            slot(g, x, y0 + 94, scrolls[bronze ? 1 : 2], null);
+            g.drawString(font, font.plainSubstrByWidth(scrolls[bronze ? 1 : 2].getHoverName().getString(), w - 22), x + 22, y0 + 99, DARK, false);
             return;
         }
         int stage = data.getInt("rankStage");
         String kind = data.getString("kind");
-        g.drawCenteredString(font, Component.translatable("kinetrix_combat.trainer.stage", stage + 1, Quests.line(line).size(),
-                Component.translatable("kinetrix_combat.trainer.kind." + kind.toLowerCase())), mid, 84, 0xFFD860);
+        g.drawString(font, Component.translatable("kinetrix_combat.trainer.stage", stage + 1, Quests.line(line).size(),
+                Component.translatable("kinetrix_combat.trainer.kind." + kind.toLowerCase())), x, y0 + 20, DARK, false);
         CompoundTag what = data.getCompound("what"), have = data.getCompound("have");
-        int y = 100;
+        int y = y0 + 32;
         for (String id : what.getAllKeys()) {
+            if (y > y0 + H - 50) break;
             int need = what.getInt(id), got = have.getInt(id);
+            ItemStack icon = switch (kind) {
+                case "KILL" -> egg(id);
+                case "BRING" -> new ItemStack(Quests.item(id));
+                default -> new ItemStack(Items.EXPERIENCE_BOTTLE);
+            };
             Component name = switch (kind) {
                 case "KILL" -> mob(id);
-                case "BRING" -> new ItemStack(Quests.item(id)).getHoverName();
+                case "BRING" -> icon.getHoverName();
                 default -> Component.translatable("kinetrix_combat.trainer.levels");
             };
-            if (kind.equals("BRING")) g.renderItem(new ItemStack(Quests.item(id)), l + 20, y - 4);
-            g.drawString(font, name, l + 40, y, 0xE0E0E0);
-            g.drawString(font, Math.min(got, need) + " / " + need, r - 70, y, got >= need ? 0x80FF80 : 0xFF9090);
-            y += 18;
+            slot(g, x, y, icon, null);
+            g.drawString(font, font.plainSubstrByWidth(name.getString(), w - 64), x + 22, y + 5, DARK, false);
+            String n = Math.min(got, need) + "/" + need;
+            g.drawString(font, n, right - font.width(n), y + 5, got >= need ? GREEN : RED, false);
+            y += 20;
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        // the tabs
+        int x0 = x0(), y0 = y0();
+        for (int i = 0; i < 2; i++) {
+            int tx = x0 + i * 29, ty = y0 - 28;
+            if (button == 0 && mx >= tx && mx < tx + 26 && my >= ty && my < y0 && rankTab != (i == 1)) {
+                rankTab = i == 1;
+                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1f));
+                rebuildWidgets();
+                return true;
+            }
+        }
+        return super.mouseClicked(mx, my, button);
     }
 
     @Override

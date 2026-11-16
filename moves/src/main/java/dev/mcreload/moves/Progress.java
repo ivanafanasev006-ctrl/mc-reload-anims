@@ -10,7 +10,8 @@ import java.util.EnumSet;
 
 /**
  * What a player has learned (author, 2026-11-16), kept with the bars (Stamina) and through death: the skills read from
- * scrolls, the wheel of {@link Skill#WHEEL} of them (only those work), and the bar's rank: copper at the start (every
+ * scrolls, the wheel of {@link Skill#WHEEL} of them and the row of {@link Skill#PERKS} perks above it (only those work;
+ * the places are numbered on together: the wheel's 0 to 5, the perks' 6 to 10), and the bar's rank: copper at the start (every
  * move and the run costing MovesConfig.copperCost times as much), bronze, then brass (as it was), each from a scroll the
  * trainer gives for his chain of tasks, one after another.
  */
@@ -21,6 +22,7 @@ public final class Progress {
 
     public final EnumSet<Skill> learned = EnumSet.noneOf(Skill.class);
     public final Skill[] wheel = new Skill[Skill.WHEEL];
+    public final Skill[] perks = new Skill[Skill.PERKS];
     public int rank = COPPER;
     /** Every skill usable (test players; not saved). */
     public boolean all;
@@ -37,38 +39,60 @@ public final class Progress {
         return rankLine == 1 || rankLine == 3;
     }
 
-    /** This skill works now: learned and on the wheel. */
+    /** This skill works now: learned and on the wheel (a perk: in the perks' row). */
     public boolean usable(Skill k) {
         return k == null || all || ALL || (learned.contains(k) && equipped(k));
     }
 
+    /** The row a skill goes in: the perks' or the wheel. */
+    public Skill[] row(Skill k) {
+        return k.perk ? perks : wheel;
+    }
+
     public boolean equipped(Skill k) {
-        for (Skill w : wheel) if (w == k) return true;
+        for (Skill w : row(k)) if (w == k) return true;
         return false;
     }
 
-    /** Learns it (true if it was new) and puts it on the wheel's first free place, if there is one. */
+    /** All the places, the wheel's then the perks'. */
+    public static final int PLACES = Skill.WHEEL + Skill.PERKS;
+
+    /** What is on place {@code slot} (the wheel's 0 to 5, the perks' 6 to 10). */
+    public Skill at(int slot) {
+        return slot < Skill.WHEEL ? wheel[slot] : perks[slot - Skill.WHEEL];
+    }
+
+    /** Learns it (true if it was new) and puts it on its row's first free place, if there is one. */
     public boolean learn(Skill k) {
         if (!learned.add(k)) return false;
-        for (int i = 0; i < wheel.length; i++) {
-            if (wheel[i] == null) {
-                wheel[i] = k;
+        Skill[] row = row(k);
+        for (int i = 0; i < row.length; i++) {
+            if (row[i] == null) {
+                row[i] = k;
                 break;
             }
         }
         return true;
     }
 
-    /** Puts a learned skill on a place of the wheel (null: empties it); off any other place it held. */
+    /**
+     * Puts a learned skill on a place (null: empties it), off any other place it held: a move on the wheel's places, a
+     * perk on the perks'.
+     */
     public boolean equip(int slot, Skill k) {
-        if (slot < 0 || slot >= wheel.length || (k != null && !learned.contains(k))) return false;
-        if (k != null) for (int i = 0; i < wheel.length; i++) if (wheel[i] == k) wheel[i] = null;
-        wheel[slot] = k;
+        if (slot < 0 || slot >= PLACES || (k != null && !learned.contains(k))) return false;
+        boolean perkPlace = slot >= Skill.WHEEL;
+        if (k != null && k.perk != perkPlace) return false;
+        Skill[] row = perkPlace ? perks : wheel;
+        if (k != null) for (int i = 0; i < row.length; i++) if (row[i] == k) row[i] = null;
+        row[perkPlace ? slot - Skill.WHEEL : slot] = k;
         return true;
     }
 
+    /** Empties the wheel and the perks. */
     public void clearWheel() {
         java.util.Arrays.fill(wheel, null);
+        java.util.Arrays.fill(perks, null);
     }
 
     /** How much more every move and the run cost for this player: the bar's rank, a little more in heavy armour. */
@@ -92,6 +116,9 @@ public final class Progress {
         ListTag w = new ListTag();
         for (Skill k : wheel) w.add(StringTag.valueOf(k == null ? "" : k.key));
         t.put("wheel", w);
+        ListTag pk = new ListTag();
+        for (Skill k : perks) pk.add(StringTag.valueOf(k == null ? "" : k.key));
+        t.put("perks", pk);
         t.putInt("rank", rank);
         ListTag q = new ListTag();
         q.addAll(quests);
@@ -112,7 +139,23 @@ public final class Progress {
         ListTag w = t.getList("wheel", Tag.TAG_STRING);
         for (int i = 0; i < Math.min(w.size(), wheel.length); i++) {
             Skill k = Skill.byKey(w.getString(i));
-            if (k != null && learned.contains(k)) wheel[i] = k;
+            if (k != null && learned.contains(k) && !k.perk) wheel[i] = k;
+        }
+        ListTag pk = t.getList("perks", Tag.TAG_STRING);
+        for (int i = 0; i < Math.min(pk.size(), perks.length); i++) {
+            Skill k = Skill.byKey(pk.getString(i));
+            if (k != null && learned.contains(k) && k.perk) perks[i] = k;
+        }
+        // a perk that was on the wheel (before 0.13): into the perks' row
+        for (int i = 0; i < w.size(); i++) {
+            Skill k = Skill.byKey(w.getString(i));
+            if (k == null || !k.perk || !learned.contains(k) || equipped(k)) continue;
+            for (int j = 0; j < perks.length; j++) {
+                if (perks[j] == null) {
+                    perks[j] = k;
+                    break;
+                }
+            }
         }
         rank = Math.max(COPPER, Math.min(BRASS, t.getInt("rank")));
         quests.clear();
@@ -122,7 +165,7 @@ public final class Progress {
         rankKills = t.getCompound("rankKills");
     }
 
-    /** Packed for the client: the learned skills as bits, the wheel as ids (-1 empty), the rank. */
+    /** Packed for the client: the learned skills as bits, the places as ids (-1 empty), the rank. */
     public long learnedBits() {
         long b = 0;
         for (Skill k : learned) b |= 1L << k.ordinal();

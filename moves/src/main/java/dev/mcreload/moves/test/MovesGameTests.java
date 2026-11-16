@@ -1337,6 +1337,16 @@ public final class MovesGameTests {
             p.setItemInHand(InteractionHand.OFF_HAND, bronze);
             bronze.use(p.level(), p, InteractionHand.OFF_HAND);
             t.check(pr.rank == dev.mcreload.moves.Progress.BRONZE, "the bronze scroll: " + pr.rank);
+            // a perk's scroll: into the perks' row, not on the wheel; a perk only on the perks' places, a move only on the wheel's
+            ItemStack dive = dev.mcreload.moves.Scrolls.of(dev.mcreload.moves.Skill.DIVE);
+            p.setItemInHand(InteractionHand.OFF_HAND, dive);
+            dive.use(p.level(), p, InteractionHand.OFF_HAND);
+            t.check(pr.perks[0] == dev.mcreload.moves.Skill.DIVE && !java.util.Arrays.asList(pr.wheel).contains(dev.mcreload.moves.Skill.DIVE),
+                    "the deep jump not in the perks: " + java.util.Arrays.toString(pr.perks));
+            t.check(!pr.equip(1, dev.mcreload.moves.Skill.DIVE) && !pr.equip(dev.mcreload.moves.Skill.WHEEL, dev.mcreload.moves.Skill.WHIRL),
+                    "a perk on the wheel or a move among the perks");
+            t.check(pr.equip(dev.mcreload.moves.Skill.WHEEL + 2, dev.mcreload.moves.Skill.DIVE) && pr.perks[2] == dev.mcreload.moves.Skill.DIVE
+                    && pr.perks[0] == null, "the perk not moved to another square");
             p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
             s.energy = 100f;
             t.check(MoveServer.request(p, Move.DODGE_RIGHT, false), "a bronze dodge refused");
@@ -1345,8 +1355,15 @@ public final class MovesGameTests {
             p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
         });
         // (the armour's points count from the next tick on)
-        t.at(6, () -> t.check(pr.costFactor(p) > 2f && pr.costFactor(p) < 2f * (1f + MovesConfig.armourWeight()),
-                "the armour's weight: " + pr.costFactor(p))).run(7);
+        t.at(6, () -> {
+            t.check(pr.costFactor(p) > 2f && pr.costFactor(p) < 2f * (1f + MovesConfig.armourWeight()), "the armour's weight: " + pr.costFactor(p));
+            // the copper scroll: the bar back to copper
+            ItemStack copper = new ItemStack(dev.mcreload.moves.Scrolls.COPPER.get());
+            t.check(copper.hasFoil(), "the rank's scroll does not shine");
+            p.setItemInHand(InteractionHand.OFF_HAND, copper);
+            copper.use(p.level(), p, InteractionHand.OFF_HAND);
+            t.check(pr.rank == dev.mcreload.moves.Progress.COPPER, "the copper scroll: " + pr.rank);
+        }).run(7);
     }
 
     /**

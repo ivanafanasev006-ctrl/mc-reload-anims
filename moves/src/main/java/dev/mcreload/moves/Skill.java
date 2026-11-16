@@ -29,18 +29,28 @@ public enum Skill {
     XBOW_G("crossbowAbility", Weapon.CROSSBOW),
     XBOW_FAN("crossbowFan", Weapon.CROSSBOW),
     XBOW_ROLLS("crossbowRolls", Weapon.CROSSBOW),
-    /** The deep jump, W + Space + R with no mob near (author, 2026-11-16: "a scroll for the deep roll"). */
-    DIVE("dive", Weapon.ANY);
+    /**
+     * The deep jump, W + Space + R with no mob near (author, 2026-11-16: "a scroll for the deep roll"); a perk (author,
+     * 2026-11-16, later: "the perks, abilities like the deep roll and the attacks we add later").
+     */
+    DIVE("dive", Weapon.ANY, true);
 
-    /** Moves on the wheel at most. */
-    public static final int WHEEL = 6;
+    /** Moves on the wheel at most, and perks in the row of squares above it. */
+    public static final int WHEEL = 6, PERKS = 5;
 
     public final String key;
     public final Weapon weapon;
+    /** A perk: it goes into the perks' row, not on the wheel. */
+    public final boolean perk;
 
     Skill(String key, Weapon weapon) {
+        this(key, weapon, false);
+    }
+
+    Skill(String key, Weapon weapon, boolean perk) {
         this.key = key;
         this.weapon = weapon;
+        this.perk = perk;
     }
 
     public static Skill byKey(String key) {

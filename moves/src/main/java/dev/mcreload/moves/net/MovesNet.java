@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "20";
+    public static final String VERSION = "21";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -132,12 +132,12 @@ public final class MovesNet {
     public static void progress(ServerPlayer p) {
         if (!connected(p)) return;
         dev.mcreload.moves.Progress pr = dev.mcreload.moves.Stamina.of(p).progress;
-        byte[] wheel = new byte[dev.mcreload.moves.Skill.WHEEL];
-        for (int i = 0; i < wheel.length; i++) wheel[i] = (byte) (pr.wheel[i] == null ? -1 : pr.wheel[i].ordinal());
+        byte[] wheel = new byte[dev.mcreload.moves.Progress.PLACES];
+        for (int i = 0; i < wheel.length; i++) wheel[i] = (byte) (pr.at(i) == null ? -1 : pr.at(i).ordinal());
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), new Learned(pr.learnedBits(), wheel, (byte) pr.rank));
     }
 
-    /** Server -> client: the learned skills (bits), the wheel (skill ids, -1 empty), the bar's rank. */
+    /** Server -> client: the learned skills (bits), the wheel's and the perks' places (skill ids, -1 empty), the bar's rank. */
     public record Learned(long bits, byte[] wheel, byte rank) {
         static void write(Learned m, FriendlyByteBuf b) {
             b.writeLong(m.bits);
@@ -152,7 +152,7 @@ public final class MovesNet {
         }
     }
 
-    /** Client -> server: a place of the wheel given a learned skill (-1: emptied); slot -1: the whole wheel emptied. */
+    /** Client -> server: a place (the wheel's 0-5, the perks' 6-10) given a learned skill (-1: emptied); slot -1: all emptied. */
     public record Equip(int slot, int skill) {
         static void write(Equip m, FriendlyByteBuf b) {
             b.writeByte(m.slot);

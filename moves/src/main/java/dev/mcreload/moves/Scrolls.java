@@ -35,8 +35,10 @@ import java.util.Set;
 
 /**
  * The scrolls (author, 2026-11-16): a move written in one (read with the right button: learned, on the wheel if there is
- * room), found in dungeons and village chests and given by the trainer; the bar's rank scrolls (bronze, then brass), the
- * trainer's for his chains of tasks. All of them in the creative tab.
+ * room), found in dungeons and village chests and given by the trainer; its seal turquoise. The bar's rank scrolls, apart
+ * from them and shining like enchanted things (author, 2026-11-16: "1 gives copper, 2 bronze, 3 brass, shimmering"):
+ * copper (the bar back to copper), bronze, then brass, the trainer's for his chains of tasks. All of them in the creative
+ * tab.
  */
 public final class Scrolls {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, KinetrixMoves.MODID);
@@ -44,6 +46,8 @@ public final class Scrolls {
 
     public static final RegistryObject<Item> MOVE = ITEMS.register("move_scroll",
             () -> new MoveScroll(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
+    public static final RegistryObject<Item> COPPER = ITEMS.register("copper_scroll",
+            () -> new RankScroll(Progress.COPPER, new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
     public static final RegistryObject<Item> BRONZE = ITEMS.register("bronze_scroll",
             () -> new RankScroll(Progress.BRONZE, new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final RegistryObject<Item> BRASS = ITEMS.register("brass_scroll",
@@ -54,6 +58,7 @@ public final class Scrolls {
             .icon(() -> of(Skill.WHIRL))
             .displayItems((params, out) -> {
                 for (Skill k : Skill.values()) out.accept(of(k));
+                out.accept(COPPER.get());
                 out.accept(BRONZE.get());
                 out.accept(BRASS.get());
                 out.accept(Trainer.DUMMY_ITEM.get());
@@ -143,7 +148,7 @@ public final class Scrolls {
         }
     }
 
-    /** The bar's rank scroll: copper to bronze, bronze to brass, one after another. */
+    /** The bar's rank scroll: copper to bronze, bronze to brass, one after another; the copper one takes it back to copper. */
     public static final class RankScroll extends Item {
         final int rank;
 
@@ -157,16 +162,27 @@ public final class Scrolls {
             lines.add(Component.translatable("item.kinetrix_combat.rank_scroll.tip." + rank).withStyle(ChatFormatting.GRAY));
         }
 
+        /** Shines like an enchanted thing. */
+        @Override
+        public boolean isFoil(ItemStack stack) {
+            return true;
+        }
+
         @Override
         public InteractionResultHolder<ItemStack> use(Level level, Player p, InteractionHand hand) {
             ItemStack stack = p.getItemInHand(hand);
             if (level.isClientSide) return InteractionResultHolder.success(stack);
             Progress pr = Stamina.of(p).progress;
-            if (pr.rank >= rank) {
+            if (rank == Progress.COPPER ? pr.rank == Progress.COPPER : pr.rank >= rank) {
                 p.displayClientMessage(Component.translatable("kinetrix_combat.rank.already"), true);
                 return InteractionResultHolder.fail(stack);
             }
-            if (pr.rank != rank - 1) {
+            if (rank == Progress.COPPER) {
+                // back to copper: the trainer's lines from the start too
+                pr.rankLine = 0;
+                pr.rankStage = 0;
+                pr.rankKills = new CompoundTag();
+            } else if (pr.rank != rank - 1) {
                 p.displayClientMessage(Component.translatable("kinetrix_combat.rank.bronze_first"), true);
                 return InteractionResultHolder.fail(stack);
             }

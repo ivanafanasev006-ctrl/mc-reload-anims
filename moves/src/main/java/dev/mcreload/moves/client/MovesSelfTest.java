@@ -637,7 +637,7 @@ public final class MovesSelfTest {
             dev.mcreload.moves.Progress pr = Stamina.of(sp).progress;
             for (dev.mcreload.moves.Skill k : new dev.mcreload.moves.Skill[]{dev.mcreload.moves.Skill.WHIRL, dev.mcreload.moves.Skill.AXE_COMBO,
                     dev.mcreload.moves.Skill.DASH, dev.mcreload.moves.Skill.SWORD_SPIN, dev.mcreload.moves.Skill.VOLLEY,
-                    dev.mcreload.moves.Skill.XBOW_G, dev.mcreload.moves.Skill.THROW, dev.mcreload.moves.Skill.CHAIN}) pr.learn(k);
+                    dev.mcreload.moves.Skill.XBOW_G, dev.mcreload.moves.Skill.THROW, dev.mcreload.moves.Skill.CHAIN, dev.mcreload.moves.Skill.DIVE}) pr.learn(k);
             dev.mcreload.moves.net.MovesNet.progress(sp);
         };
         SCENARIOS.add(new Scenario("52_combat_build", 34, learn, (mc, t) -> {

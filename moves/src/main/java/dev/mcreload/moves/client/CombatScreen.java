@@ -25,14 +25,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The combat menu on K (author, 2026-11-16): the build of the wheel (6 places, every move with a lock until learned, a
- * search that finds by other words too, a preview of each), the moves' own keys, the guide (the fight, the energy bar, how
+ * The combat menu on K (author, 2026-11-16): the build of the wheel (6 places; above it, smaller, the row of 5 perks:
+ * "abilities like the deep roll"; every move with a lock until learned, a search that finds by other words too, a
+ * preview of each), the moves' own keys, the guide (the fight, the energy bar, how
  * it fills, its ranks), and the old settings. Drawn in vanilla's way, fitting every GUI scale.
  */
 public final class CombatScreen extends Screen {
     public enum Tab { BUILD, KEYS, GUIDE }
 
-    private static final int ROW = 18, SLOT = 30;
+    private static final int ROW = 18, SLOT = 26, PERK = 22, PERK_GAP = 3;
     private static Tab lastTab = Tab.BUILD;
 
     private final Screen parent;
@@ -145,47 +146,64 @@ public final class CombatScreen extends Screen {
             List<Component> tip = new ArrayList<>();
             tip.add(Scrolls.name(hovered).copy().withStyle(ChatFormatting.YELLOW));
             tip.add(Component.translatable("kinetrix_combat.weapon." + hovered.weapon.name().toLowerCase()).withStyle(ChatFormatting.GRAY));
+            if (hovered.perk) tip.add(Component.translatable("kinetrix_combat.combat.perk").withStyle(ChatFormatting.DARK_AQUA));
+            String row = hovered.perk ? "perks" : "wheel";
             tip.add(progress().learned.contains(hovered) ? Component.translatable(progress().equipped(hovered)
-                    ? "kinetrix_combat.combat.on_wheel" : "kinetrix_combat.combat.learned").withStyle(ChatFormatting.GREEN)
+                    ? "kinetrix_combat.combat.on_" + row : "kinetrix_combat.combat.learned_" + row).withStyle(ChatFormatting.GREEN)
                     : Component.translatable("kinetrix_combat.combat.locked").withStyle(ChatFormatting.RED));
             g.renderComponentTooltip(font, tip, mx, my);
         }
     }
 
-    /** The place of the wheel's slot {@code i} (its centre). */
-    private int[] slotAt(int i) {
-        int cy = (top() + bottom() - 24) / 2;
-        int r = Math.min(56, (bottom() - 24 - top()) / 2 - SLOT / 2);
+    /** The top of the perks' row (its label above it). */
+    private int perksY() { return top() + 11; }
+
+    /** The top of the wheel's ring (its label above it). */
+    private int wheelTop() { return perksY() + PERK + 17; }
+
+    private int wheelR() { return Mth.clamp((bottom() - 26 - wheelTop() - SLOT) / 2, 24, 40); }
+
+    /** The centre of place {@code i}: the wheel's 0 to 5 round its middle, the perks' 6 to 10 in a row above it. */
+    private int[] placeAt(int i) {
+        if (i >= Skill.WHEEL) {
+            int n = i - Skill.WHEEL, row = Skill.PERKS * PERK + (Skill.PERKS - 1) * PERK_GAP;
+            return new int[]{wheelX() - row / 2 + n * (PERK + PERK_GAP) + PERK / 2, perksY() + PERK / 2};
+        }
+        int r = wheelR(), cy = wheelTop() + SLOT / 2 + r;
         double a = Math.toRadians(-90 + 60 * i);
         return new int[]{wheelX() + (int) Math.round(Math.cos(a) * r), cy + (int) Math.round(Math.sin(a) * r)};
     }
 
+    private static int size(int place) {
+        return place >= Skill.WHEEL ? PERK : SLOT;
+    }
+
     private void renderBuild(GuiGraphics g, int mx, int my, float pt) {
         Progress pr = progress();
-        // the wheel
-        int[] c0 = slotAt(0);
-        int cy = (top() + bottom() - 24) / 2;
-        g.drawCenteredString(font, Component.translatable("kinetrix_combat.combat.wheel", count(pr), Skill.WHEEL), wheelX(), cy - 4, 0xFFD8A0);
-        for (int i = 0; i < Skill.WHEEL; i++) {
-            int[] c = slotAt(i);
-            int x = c[0] - SLOT / 2, y = c[1] - SLOT / 2;
-            boolean over = mx >= x && mx < x + SLOT && my >= y && my < y + SLOT;
-            Skill k = pr.wheel[i];
+        // the perks above, the wheel below them
+        g.drawCenteredString(font, Component.translatable("kinetrix_combat.combat.perks", count(pr.perks), Skill.PERKS), wheelX(), perksY() - 10, 0xA0E0D8);
+        g.drawCenteredString(font, Component.translatable("kinetrix_combat.combat.wheel", count(pr.wheel), Skill.WHEEL), wheelX(), wheelTop() - 11, 0xFFD8A0);
+        for (int i = 0; i < Progress.PLACES; i++) {
+            int[] c = placeAt(i);
+            int sz = size(i), x = c[0] - sz / 2, y = c[1] - sz / 2;
+            boolean over = mx >= x && mx < x + sz && my >= y && my < y + sz;
+            Skill k = pr.at(i);
             if (over && k != null) hovered = k;
-            frame(g, x, y, SLOT, SLOT, i == selectedSlot ? 0xFFFFD860 : over ? 0xFFC0C0C0 : 0xFF555555);
-            if (k != null) {
-                g.renderItem(SkillPreview.icon(k.weapon), x + 7, y + 4);
-                String n = shortName(k);
-                g.pose().pushPose();
-                g.pose().translate(x + SLOT / 2f, y + 21, 0);
-                g.pose().scale(0.5f, 0.5f, 1f);
-                g.drawCenteredString(font, n, 0, 0, 0xFFFFFF);
-                g.pose().popPose();
+            boolean perk = i >= Skill.WHEEL;
+            frame(g, x, y, sz, sz, i == selectedSlot ? 0xFFFFD860 : over ? 0xFFC0C0C0 : perk ? 0xFF3E7A74 : 0xFF555555);
+            if (k == null) {
+                g.drawCenteredString(font, "+", x + sz / 2, y + sz / 2 - 4, 0x808080);
+            } else if (perk) {
+                g.renderItem(SkillPreview.icon(k.weapon), x + (sz - 16) / 2, y + (sz - 16) / 2);
             } else {
-                g.drawCenteredString(font, "+", x + SLOT / 2, y + 11, 0x808080);
+                g.renderItem(SkillPreview.icon(k.weapon), x + (sz - 16) / 2, y + 2);
+                g.pose().pushPose();
+                g.pose().translate(x + sz / 2f, y + sz - 6, 200);
+                g.pose().scale(0.45f, 0.45f, 1f);
+                g.drawCenteredString(font, font.plainSubstrByWidth(shortName(k), (int) ((sz - 2) / 0.45f)), 0, 0, 0xFFFFFF);
+                g.pose().popPose();
             }
         }
-        if (c0 == null) return;
         // the list
         int lx = listX(), lw = listW(), ly = top() + 20, lh = bottom() - ly;
         g.fill(lx, ly, lx + lw, ly + lh, 0x80000000);
@@ -204,7 +222,7 @@ public final class CombatScreen extends Screen {
             int color = learned ? 0xFFFFFF : 0x808080;
             g.drawString(font, font.plainSubstrByWidth(Scrolls.name(k).getString(), lw - 34), lx + 21, y + 5, color);
             if (!learned) lock(g, lx + lw - 11, y + 4);
-            else if (pr.equipped(k)) g.drawString(font, "●", lx + lw - 10, y + 5, 0xFFD860);
+            else if (pr.equipped(k)) g.drawString(font, "●", lx + lw - 10, y + 5, k.perk ? 0x70E0D0 : 0xFFD860);
         }
         g.disableScissor();
         // the preview and what it is
@@ -221,9 +239,9 @@ public final class CombatScreen extends Screen {
         }
     }
 
-    private static int count(Progress pr) {
+    private static int count(Skill[] row) {
         int n = 0;
-        for (Skill k : pr.wheel) if (k != null) n++;
+        for (Skill k : row) if (k != null) n++;
         return n;
     }
 
@@ -291,9 +309,9 @@ public final class CombatScreen extends Screen {
         if (super.mouseClicked(mx, my, button)) return true;
         if (tab == Tab.BUILD) {
             Progress pr = progress();
-            for (int i = 0; i < Skill.WHEEL; i++) {
-                int[] c = slotAt(i);
-                if (Math.abs(mx - c[0]) <= SLOT / 2.0 && Math.abs(my - c[1]) <= SLOT / 2.0) {
+            for (int i = 0; i < Progress.PLACES; i++) {
+                int[] c = placeAt(i);
+                if (Math.abs(mx - c[0]) <= size(i) / 2.0 && Math.abs(my - c[1]) <= size(i) / 2.0) {
                     if (button == 1) equip(i, null);
                     else selectedSlot = selectedSlot == i ? -1 : i;
                     click();
@@ -307,7 +325,9 @@ public final class CombatScreen extends Screen {
                     Skill k = shown.get(r);
                     focused = k;
                     if (pr.learned.contains(k)) {
-                        int slot = selectedSlot >= 0 ? selectedSlot : firstFree(pr);
+                        // into the place picked, if it is of its row (a perk's square, the wheel's place), else its row's first free one
+                        boolean fits = selectedSlot >= 0 && (selectedSlot >= Skill.WHEEL) == k.perk;
+                        int slot = fits ? selectedSlot : firstFree(pr, k);
                         if (slot >= 0) equip(slot, k);
                         selectedSlot = -1;
                     }
@@ -331,8 +351,10 @@ public final class CombatScreen extends Screen {
         return false;
     }
 
-    private static int firstFree(Progress pr) {
-        for (int i = 0; i < pr.wheel.length; i++) if (pr.wheel[i] == null) return i;
+    /** The first free place of the skill's row (numbered as the places: the perks' from 6), or -1. */
+    private static int firstFree(Progress pr, Skill k) {
+        Skill[] row = pr.row(k);
+        for (int i = 0; i < row.length; i++) if (row[i] == null) return k.perk ? Skill.WHEEL + i : i;
         return -1;
     }
 

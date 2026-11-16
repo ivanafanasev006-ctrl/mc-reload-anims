@@ -2,9 +2,10 @@
 
     python3 art/refined/items/make_scrolls.py
 
-writes moves/src/main/resources/assets/kinetrix_combat/textures/item/{move,bronze,brass}_scroll.png and a 8x preview here.
-A parchment rolled at both ends, three lines of writing, a wax seal on a ribbon: red for a move's scroll, bronze and
-brass for the bar's ranks (author, 2026-11-16).
+writes moves/src/main/resources/assets/kinetrix_combat/textures/item/{move,copper,bronze,brass}_scroll.png and a 8x preview
+here. A parchment rolled at both ends, three lines of writing, a wax seal on a ribbon: turquoise for a move's scroll; red,
+brown and yellow for the bar's ranks, copper, bronze and brass (author, 2026-11-16: "the other scrolls plain, turquoise
+below, not red, brown and yellow like the rank scrolls"; those shine like enchanted things in the game).
 """
 import os
 
@@ -48,7 +49,8 @@ SHAPE = shape()
 PARCH = dict(o=(62, 40, 20), R=(120, 84, 46), r=(168, 126, 78), q=(206, 168, 112), d=(184, 150, 100), p=(222, 196, 150),
              l=(238, 220, 182), h=(250, 240, 214), w=(126, 96, 62))
 SEALS = {
-    'move': dict(S=(98, 18, 18), X=(170, 36, 32), x=(226, 94, 78), b=(150, 30, 28)),
+    'move': dict(S=(16, 78, 80), X=(34, 156, 148), x=(112, 222, 204), b=(24, 118, 114)),
+    'copper': dict(S=(98, 18, 18), X=(170, 36, 32), x=(226, 94, 78), b=(150, 30, 28)),
     'bronze': dict(S=(86, 50, 18), X=(160, 100, 42), x=(214, 160, 92), b=(122, 74, 30)),
     'brass': dict(S=(110, 76, 14), X=(212, 164, 52), x=(250, 226, 130), b=(176, 128, 30)),
 }
@@ -68,7 +70,7 @@ def draw(seal):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    sheet = Image.new('RGBA', (16 * 3 * 8 + 16, 16 * 8), (120, 150, 190, 255))
+    sheet = Image.new('RGBA', (len(SEALS) * (128 + 8) - 8, 16 * 8), (120, 150, 190, 255))
     for i, (name, seal) in enumerate(SEALS.items()):
         im = draw(seal)
         im.save(os.path.join(OUT, f'{name}_scroll.png'))

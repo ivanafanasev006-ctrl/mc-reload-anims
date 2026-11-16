@@ -1060,7 +1060,11 @@ public final class MovesClient {
         dev.mcreload.moves.Progress pr = Stamina.of(p).progress;
         pr.setLearnedBits(m.bits());
         pr.clearWheel();
-        for (int i = 0; i < Math.min(m.wheel().length, pr.wheel.length); i++) pr.wheel[i] = dev.mcreload.moves.Skill.byId(m.wheel()[i]);
+        for (int i = 0; i < Math.min(m.wheel().length, dev.mcreload.moves.Progress.PLACES); i++) {
+            dev.mcreload.moves.Skill k = dev.mcreload.moves.Skill.byId(m.wheel()[i]);
+            if (i < dev.mcreload.moves.Skill.WHEEL) pr.wheel[i] = k;
+            else pr.perks[i - dev.mcreload.moves.Skill.WHEEL] = k;
+        }
         pr.rank = m.rank();
     }
 
