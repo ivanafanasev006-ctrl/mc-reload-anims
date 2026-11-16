@@ -214,15 +214,27 @@ final class BladeModule implements AnimModule {
      */
     private static void swordRun(MotionState m, PoseFrame f, Signs s, float gate, float hd, PartPose main, PartPose off,
                                  float foreignMain, float foreignOff) {
-        float w = m.swordRunW.v * gate * m.armsFree.v;
+        // A swing in the run has the arm and the blade to itself (author, 2026-11-16: running with Ctrl and striking,
+        // the blade turned down to the ground mid-swing); the run's pose comes back as the swing ends.
+        float w = m.swordRunW.v * gate * m.armsFree.v * (1f - strikeWeight(m));
         if (w <= 0.001f) return;
         float bob = Mth.cos(m.time * 9f) * m.groundW.v;
         trailArm(main, s, hd, w * (1f - foreignMain), bob);
-        m.itemTiltTarget = Math.max(m.itemTiltTarget, RUN_TILT * w);
+        // Better Combat's own swing on the arm: its blade is not turned down either
+        m.itemTiltTarget = Math.max(m.itemTiltTarget, RUN_TILT * w * (1f - foreignMain));
         if (m.dualSwords) {
             trailArm(off, s, -hd, w * (1f - foreignOff), -bob);
-            m.itemTiltOffTarget = Math.max(m.itemTiltOffTarget, RUN_TILT * w);
+            m.itemTiltOffTarget = Math.max(m.itemTiltOffTarget, RUN_TILT * w * (1f - foreignOff));
         }
+    }
+
+    /** How much of the arm a weapon's swing (#strike) has now, without the gate: 0 outside one. */
+    private static float strikeWeight(MotionState m) {
+        if (!MotionState.isWeapon(m.slashKind)) return 0f;
+        float t = m.slashProgress();
+        if (t >= 1.3f) return 0f;
+        float in = m.slashChained ? 1f : AngleMath.ease(t / 0.10f);
+        return in * (1f - AngleMath.ease((t - 0.8f) / 0.45f));
     }
 
     private static void trailArm(PartPose arm, Signs s, float hd, float w, float bob) {
