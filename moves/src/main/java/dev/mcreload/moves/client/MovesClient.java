@@ -130,6 +130,7 @@ public final class MovesClient {
         GuardInput.init();
         StoopFx.init();
         Cutscene.init();
+        SmoothCamera.init();
         LedgeAim.init();
         MarkRender.init();
         BowVolley.init();
@@ -722,7 +723,7 @@ public final class MovesClient {
         int t = s.moveTick, from = roll ? Kick.RK_TURN_FROM : Kick.TURN_FROM, to = roll ? Kick.RK_TURN_TO : Kick.TURN_TO;
         if (t < from || t > to) return;
         if (t == from) {
-            turnFrom = p.getYRot();
+            turnFrom = SmoothCamera.yaw(p);
             Entity mob = p.level().getEntity(s.target);
             Vec3 at = mob == null ? Vec3.ZERO : new Vec3(mob.getX() - p.getX(), 0, mob.getZ() - p.getZ());
             // the roll kick turns in the flip right over the mob: back the way it flies, to where the mob will be behind it
@@ -731,7 +732,7 @@ public final class MovesClient {
         }
         float f = (t - from + 1) / (float) (to - from + 1);
         float yaw = turnFrom + Mth.wrapDegrees(turnTo - turnFrom) * f * f * (3 - 2 * f);
-        p.setYRot(yaw);
+        SmoothCamera.turnTo(p, yaw);
         p.setYHeadRot(yaw);
         p.yBodyRot = yaw;
     }
@@ -834,7 +835,8 @@ public final class MovesClient {
         if (t < turn) {
             float f = (t + 1) / (float) turn;
             float yaw = s.attackYaw + 180f * f * f * (3 - 2 * f);
-            p.setYRot(yaw);
+            if (p instanceof LocalPlayer lp) SmoothCamera.turnTo(lp, yaw);
+            else p.setYRot(yaw);
             p.setYHeadRot(yaw);
             p.yBodyRot = yaw;
         }

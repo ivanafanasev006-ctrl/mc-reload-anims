@@ -91,7 +91,7 @@ public final class AxeComboInput {
             float f = Mth.clamp((t + 1) / (float) (hit + 1), 0f, 1f);
             f = f * f * (3 - 2 * f);
             float yaw = yawFrom + Mth.wrapDegrees(yawTo(p, mob) - Whirl.comboAim(m) - yawFrom) * f;
-            p.setYRot(p.getYRot() + (yaw - yawWas));
+            SmoothCamera.turn(yaw - yawWas);
             p.yBodyRot = yaw;
             yawWas = yaw;
             go = step(p, mob, Whirl.comboStand(m), hit - t);

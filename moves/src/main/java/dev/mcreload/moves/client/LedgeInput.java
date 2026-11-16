@@ -127,16 +127,14 @@ public final class LedgeInput {
                 if (spot != null && !Ledge.lookingAt(p, spot)) spot = null;
                 if (spot != null) {
                     catchFrom = p.position();
-                    catchYaw = p.getYRot();
+                    catchYaw = SmoothCamera.yaw(p);
                 }
             }
             if (spot != null) {
                 if (p.isUsingItem()) p.stopUsingItem();
                 GuardInput.lowerLocal(p, s, true);
-                if (catchFrom == null) {
-                    p.setYRot(spot.yaw());
-                    p.yRotO = p.getYRot();
-                }
+                // facing the wall: the view turned to it softly (SmoothCamera), the body at once
+                if (catchFrom == null) SmoothCamera.turnTo(p, spot.yaw());
                 if (m != null && !m.ledge()) MovesClient.cancel(p, s, 2);
                 if (start(p, s, Move.LEDGE_HANG, spot)) {
                     swallowUse(mc);
@@ -317,7 +315,7 @@ public final class LedgeInput {
         from = at;
         fromYaw = d.getOpposite().toYRot();
         p.setPos(at);
-        p.setYRot(fromYaw);
+        SmoothCamera.turnTo(p, fromYaw);
         p.setDeltaMovement(Vec3.ZERO);
         s.ledgeDir = os.ledgeDir;
         return MovesClient.start(p, s, Move.LEDGE_HELP, other.getId());
@@ -376,7 +374,7 @@ public final class LedgeInput {
                 at = Ledge.leapAt(leapFrom, leapTo, f);
                 // turned to the other edge's wall on the way, the camera too
                 float yaw = Mth.rotLerp(f, leapYawFrom, leapYawTo);
-                p.setYRot(p.getYRot() + Mth.wrapDegrees(yaw - leapYawWas));
+                SmoothCamera.turn(Mth.wrapDegrees(yaw - leapYawWas));
                 leapYawWas = yaw;
                 p.setPos(at);
                 p.setDeltaMovement(Vec3.ZERO);
@@ -392,7 +390,7 @@ public final class LedgeInput {
                     at = hopAt(f);
                     // round a corner the player turns with it, the camera too
                     float yaw = Mth.rotLerp(f, hopYawFrom, hopYawTo);
-                    p.setYRot(p.getYRot() + Mth.wrapDegrees(yaw - hopYawWas));
+                    SmoothCamera.turn(Mth.wrapDegrees(yaw - hopYawWas));
                     hopYawWas = yaw;
                     p.setPos(at);
                     p.setDeltaMovement(Vec3.ZERO);
@@ -409,7 +407,7 @@ public final class LedgeInput {
                     f = f * f * (3 - 2 * f);
                     at = catchFrom.add(hangAt.subtract(catchFrom).scale(f));
                     float yaw = Mth.rotLerp(f, catchYaw, d.toYRot());
-                    p.setYRot(yaw);
+                    SmoothCamera.turnTo(p, yaw);
                     p.setYHeadRot(yaw);
                 } else {
                     catchFrom = null;
@@ -424,7 +422,7 @@ public final class LedgeInput {
                     float f = (t + 1) / (float) DOWN_WALK;
                     at = from.add(at.subtract(from).scale(f));
                     float yaw = Mth.rotLerp(f, fromYaw, d.toYRot());
-                    p.setYRot(yaw);
+                    SmoothCamera.turnTo(p, yaw);
                     p.setYHeadRot(yaw);
                 }
             }

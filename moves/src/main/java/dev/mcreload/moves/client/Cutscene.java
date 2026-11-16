@@ -50,12 +50,21 @@ public final class Cutscene {
         boolean behind = kicking ? HudConfig.kickCutscene() : aimed && HudConfig.attackCamera();
         if (behind) linger = LINGER;
         else if (linger > 0) linger--;
+        // the camera pulled out from the eyes to behind and, at the end, in to the eyes before first person comes back
+        // (author, 2026-11-17: "the change could be softer"; SmoothCamera)
         if (behind && before == null && mc.options.getCameraType() == CameraType.FIRST_PERSON) {
             before = mc.options.getCameraType();
             mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            SmoothCamera.pullOut(true);
+        } else if (behind && before != null) {
+            SmoothCamera.pullOut(false);
         } else if (!behind && linger == 0 && before != null) {
-            if (mc.options.getCameraType() == CameraType.THIRD_PERSON_BACK) mc.options.setCameraType(before);
-            before = null;
+            boolean ours = mc.options.getCameraType() == CameraType.THIRD_PERSON_BACK;
+            if (!ours || SmoothCamera.pullIn()) {
+                if (ours) mc.options.setCameraType(before);
+                before = null;
+                SmoothCamera.pullDone();
+            }
         }
     }
 

@@ -155,7 +155,7 @@ public final class ChainInput {
                 double h = 0.45 + Math.max(0, top.y - from.y) * 0.3;
                 p.setPos(from.lerp(top, f).add(0, h * Math.sin(Math.PI * f), 0));
                 float yaw = Mth.lerp(f, yawFrom, yawTo);
-                p.setYRot(p.getYRot() + (yaw - yawWas));
+                SmoothCamera.turn(yaw - yawWas);
                 p.yBodyRot = yaw;
                 yawWas = yaw;
             } else {
