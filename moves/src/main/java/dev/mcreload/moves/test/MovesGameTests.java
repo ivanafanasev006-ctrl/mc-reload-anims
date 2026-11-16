@@ -1331,6 +1331,61 @@ public final class MovesGameTests {
                 "the armour's weight: " + pr.costFactor(p))).run(7);
     }
 
+    /**
+     * The trainer (author, 2026-11-16): a quest for a move taken, its kills counted, the scroll given; the bronze line begun
+     * for 32 gold, its things brought, its mobs killed, its spoils brought, its levels paid: the bronze scroll.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "trainer")
+    public static void trainer(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.novice();
+        dev.mcreload.moves.Progress pr = Stamina.of(p).progress;
+        net.minecraft.world.entity.npc.Villager v = h.spawnWithNoFreeWill(EntityType.VILLAGER, 3, 2, 5);
+        t.at(2, () -> {
+            v.setVillagerData(v.getVillagerData().setProfession(dev.mcreload.moves.Trainer.TRAINER.get()));
+            t.check(dev.mcreload.moves.Trainer.is(v), "not a trainer");
+            dev.mcreload.moves.Quests.act(p, v, dev.mcreload.moves.Quests.Action.TAKE, 0);
+            t.check(pr.quests.size() == 1, "the quest not taken");
+            net.minecraft.nbt.CompoundTag q = pr.quests.get(0);
+            for (net.minecraft.nbt.Tag g : q.getList("goals", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                net.minecraft.nbt.CompoundTag goal = (net.minecraft.nbt.CompoundTag) g;
+                kill(h, p, goal.getString("mob"), goal.getInt("need"));
+            }
+            t.check(dev.mcreload.moves.Quests.done(q), "the kills not counted: " + q);
+            dev.mcreload.moves.Quests.act(p, v, dev.mcreload.moves.Quests.Action.CLAIM, 0);
+            t.check(pr.quests.isEmpty() && p.getInventory().countItem(dev.mcreload.moves.Scrolls.MOVE.get()) == 1, "no scroll for the quest");
+            // the rank: not without the gold, then the line
+            dev.mcreload.moves.Quests.act(p, v, dev.mcreload.moves.Quests.Action.RANK_BEGIN, 0);
+            t.check(pr.rankLine == 0, "the bronze line begun for nothing");
+            p.getInventory().add(new ItemStack(Items.GOLD_INGOT, 32));
+            dev.mcreload.moves.Quests.act(p, v, dev.mcreload.moves.Quests.Action.RANK_BEGIN, 0);
+            t.check(pr.rankLine == 1 && p.getInventory().countItem(Items.GOLD_INGOT) == 0, "the bronze line: " + pr.rankLine);
+            for (dev.mcreload.moves.Quests.Stage st : dev.mcreload.moves.Quests.BRONZE) {
+                switch (st.kind()) {
+                    case BRING -> st.what().forEach((id, n) -> p.getInventory().add(new ItemStack(dev.mcreload.moves.Quests.item(id), n)));
+                    case KILL -> st.what().forEach((id, n) -> kill(h, p, id, n));
+                    case PAY -> p.setExperienceLevels(20);
+                }
+                int stage = pr.rankStage;
+                dev.mcreload.moves.Quests.act(p, v, dev.mcreload.moves.Quests.Action.RANK_NEXT, 0);
+                t.check(pr.rankStage == stage + 1 || pr.rankLine == 2, "stuck at the stage " + stage + " (" + st.kind() + ")");
+            }
+            t.check(pr.rankLine == 2 && p.getInventory().countItem(dev.mcreload.moves.Scrolls.BRONZE.get()) == 1 && p.experienceLevel == 8,
+                    "no bronze scroll: line " + pr.rankLine + ", levels " + p.experienceLevel);
+        }).run(3);
+    }
+
+    /** As if the player had killed {@code n} mobs of this kind (the death's event, each with a fresh mob). */
+    private static void kill(GameTestHelper h, ServerPlayer p, String id, int n) {
+        EntityType<?> type = EntityType.byString(id).orElseThrow();
+        for (int i = 0; i < n; i++) {
+            net.minecraft.world.entity.Entity e = type.create(h.getLevel());
+            if (e instanceof net.minecraft.world.entity.LivingEntity le) {
+                dev.mcreload.moves.Quests.killed(new net.minecraftforge.event.entity.living.LivingDeathEvent(le, p.damageSources().playerAttack(p)));
+            }
+        }
+    }
+
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
     private static void blow(Script t, float lost, float damage, String what) {
         t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);

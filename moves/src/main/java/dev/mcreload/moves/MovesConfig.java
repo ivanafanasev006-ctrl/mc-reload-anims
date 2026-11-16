@@ -34,7 +34,8 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.IntValue AIR_SPIN_WAIT, AXE_TRIPLE_WAIT;
     private static final ForgeConfigSpec.DoubleValue AXE_TRIPLE_SHARE, COST_AXE_TRIPLE;
     private static final ForgeConfigSpec.IntValue PULL_STUN;
-    private static final ForgeConfigSpec.DoubleValue COPPER_COST, BRONZE_COST, ARMOUR_WEIGHT, SCROLL_DUNGEON, SCROLL_VILLAGE;
+    private static final ForgeConfigSpec.DoubleValue COPPER_COST, BRONZE_COST, ARMOUR_WEIGHT, SCROLL_DUNGEON, SCROLL_VILLAGE, TRAINER_CHANCE;
+    private static final ForgeConfigSpec.IntValue QUEST_MINUTES, BRONZE_LINE, BRASS_LINE;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
     private static final ForgeConfigSpec.DoubleValue LEAP_REACH, LEAP_UP, LEAP_DOWN;
     private static final ForgeConfigSpec.DoubleValue FAST_RUN_SPEED, FAST_RUN_COST, PLUNGE_CUT, PLUNGE_FROM, WHIRL_DAMAGE, WHIRL_REACH,
@@ -431,6 +432,12 @@ public final class MovesConfig {
                 .defineInRange("scrollChanceDungeon", 0.15, 0.0, 1.0);
         SCROLL_VILLAGE = b.comment("The chance of a move's scroll in a village's chest. [default]")
                 .defineInRange("scrollChanceVillage", 0.05, 0.0, 1.0);
+        TRAINER_CHANCE = b.comment("The chance a villager made with a village is the trainer (each village's house: about one a village). [default]")
+                .defineInRange("trainerChance", 0.2, 0.0, 1.0);
+        QUEST_MINUTES = b.comment("The trainer's quest for a move: minutes by the clock to do it in (author: 2 hours).")
+                .defineInRange("questMinutes", 120, 1, 100000);
+        BRONZE_LINE = b.comment("Gold ingots that begin the bronze bar's line of tasks (author: 32).").defineInRange("bronzeLineGold", 32, 0, 640);
+        BRASS_LINE = b.comment("Diamonds that begin the brass bar's line of tasks (author: 16).").defineInRange("brassLineDiamonds", 16, 0, 640);
         b.pop();
         SPEC = b.build();
     }
@@ -579,6 +586,10 @@ public final class MovesConfig {
     public static float armourWeight() { return f(ARMOUR_WEIGHT, 0.10); }
     public static float scrollChanceDungeon() { return f(SCROLL_DUNGEON, 0.15); }
     public static float scrollChanceVillage() { return f(SCROLL_VILLAGE, 0.05); }
+    public static float trainerChance() { return f(TRAINER_CHANCE, 0.2); }
+    public static int questMinutes() { return get(QUEST_MINUTES, 120); }
+    public static int bronzeLinePrice() { return get(BRONZE_LINE, 32); }
+    public static int brassLinePrice() { return get(BRASS_LINE, 16); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

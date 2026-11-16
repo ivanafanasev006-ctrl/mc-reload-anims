@@ -31,7 +31,10 @@ public final class KinetrixMoves {
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, MovesConfig.SPEC, MODID + "-server.toml");
         MovesNet.init();
         Scrolls.init(modBus);
+        Trainer.init(modBus);
         MinecraftForge.EVENT_BUS.register(Scrolls.class);
+        MinecraftForge.EVENT_BUS.register(Trainer.class);
+        MinecraftForge.EVENT_BUS.register(Quests.class);
         modBus.addListener(Stamina::registerCapability);
         modBus.addListener(Bow::setup);
         MinecraftForge.EVENT_BUS.register(Stamina.Events.class);

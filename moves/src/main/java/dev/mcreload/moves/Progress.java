@@ -24,6 +24,18 @@ public final class Progress {
     public int rank = COPPER;
     /** Every skill usable (test players; not saved). */
     public boolean all;
+    /** The trainer's quests for moves this player holds (Quests: the move, the mobs to kill and how many so far, by when). */
+    public final java.util.List<CompoundTag> quests = new java.util.ArrayList<>();
+    /**
+     * The rank's line of tasks (Quests): 0 none begun, 1 the bronze line under way, 2 bronze given, 3 the brass line under
+     * way, 4 brass given; its stage and the kills counted in a killing stage.
+     */
+    public int rankLine, rankStage;
+    public CompoundTag rankKills = new CompoundTag();
+
+    public boolean rankActive() {
+        return rankLine == 1 || rankLine == 3;
+    }
 
     /** This skill works now: learned and on the wheel. */
     public boolean usable(Skill k) {
@@ -81,6 +93,12 @@ public final class Progress {
         for (Skill k : wheel) w.add(StringTag.valueOf(k == null ? "" : k.key));
         t.put("wheel", w);
         t.putInt("rank", rank);
+        ListTag q = new ListTag();
+        q.addAll(quests);
+        t.put("quests", q);
+        t.putInt("rankLine", rankLine);
+        t.putInt("rankStage", rankStage);
+        t.put("rankKills", rankKills);
         return t;
     }
 
@@ -97,6 +115,11 @@ public final class Progress {
             if (k != null && learned.contains(k)) wheel[i] = k;
         }
         rank = Math.max(COPPER, Math.min(BRASS, t.getInt("rank")));
+        quests.clear();
+        for (Tag e : t.getList("quests", Tag.TAG_COMPOUND)) quests.add((CompoundTag) e);
+        rankLine = t.getInt("rankLine");
+        rankStage = t.getInt("rankStage");
+        rankKills = t.getCompound("rankKills");
     }
 
     /** Packed for the client: the learned skills as bits, the wheel as ids (-1 empty), the rank. */

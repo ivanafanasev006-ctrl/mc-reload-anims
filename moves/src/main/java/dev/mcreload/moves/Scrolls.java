@@ -56,6 +56,7 @@ public final class Scrolls {
                 for (Skill k : Skill.values()) out.accept(of(k));
                 out.accept(BRONZE.get());
                 out.accept(BRASS.get());
+                out.accept(Trainer.DUMMY_ITEM.get());
             }).build());
 
     /** Chests a move's scroll may be found in: the dungeons' (author: "in dungeons and village chests"). */

@@ -220,6 +220,7 @@ public final class MovesSelfTest {
         chainFinisher("97d_chain_finisher");
         chainAfterFinisher("97e_chain_after_finisher");
         combatMenu();
+        trainerPage();
         throwPull("97b_throw_sword", Items.IRON_SWORD);
         throwPull("97c_throw_axe", Items.IRON_AXE);
         rangedFinisher("96n_bow_finisher", Items.BOW, CameraType.THIRD_PERSON_BACK);
@@ -663,6 +664,42 @@ public final class MovesSelfTest {
             if (t == 3) mc.setScreen(new WheelScreen());
             if (t == 18) mc.setScreen(null);
         }, new int[]{10}, false));
+    }
+
+    private static ServerPlayer trainerPlayer;
+    private static net.minecraft.world.entity.npc.Villager trainer;
+
+    /** The trainer (author, 2026-11-16): his dummy and him in brown before the camera, then his page, both tabs. */
+    private static void trainerPage() {
+        SCENARIOS.add(new Scenario("55_trainer", 30, sp -> {
+            place(sp, 0, ItemStack.EMPTY);
+            trainerPlayer = sp;
+            net.minecraft.server.level.ServerLevel level = sp.serverLevel();
+            net.minecraft.world.phys.Vec3 look = sp.getLookAngle().multiply(1, 0, 1).normalize();
+            net.minecraft.world.phys.Vec3 at = sp.position().add(look.scale(3));
+            net.minecraft.world.entity.npc.Villager v = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+            v.moveTo(at.x, sp.getY(), at.z, sp.getYRot() + 180f, 0f);
+            v.setYHeadRot(sp.getYRot() + 180f);
+            v.yBodyRot = sp.getYRot() + 180f;
+            v.setVillagerData(v.getVillagerData().setProfession(dev.mcreload.moves.Trainer.TRAINER.get()).setLevel(1));
+            v.setVillagerXp(1);
+            v.setNoAi(true);
+            level.addFreshEntity(v);
+            trainer = v;
+            net.minecraft.core.BlockPos dummy = net.minecraft.core.BlockPos.containing(at.add(look.yRot((float) Math.PI / 2).scale(1.5)));
+            level.setBlockAndUpdate(dummy, dev.mcreload.moves.Trainer.DUMMY.get().defaultBlockState());
+        }, (mc, t) -> {
+            camera(mc, CameraType.FIRST_PERSON);
+            if (t == 8 && mc.getSingleplayerServer() != null) mc.getSingleplayerServer().execute(() -> {
+                dev.mcreload.moves.Quests.act(trainerPlayer, trainer, dev.mcreload.moves.Quests.Action.TAKE, 0);
+                dev.mcreload.moves.net.MovesNet.trainer(trainerPlayer, trainer, true);
+            });
+            if (t == 20 && mc.screen instanceof TrainerScreen ts) ts.showRank();
+            if (t == 28) {
+                mc.setScreen(null);
+                if (mc.getSingleplayerServer() != null) mc.getSingleplayerServer().execute(() -> trainer.discard());
+            }
+        }, new int[]{6, 14, 25}, false));
     }
 
     private static void hud(String name, HudConfig.Style style, HudConfig.Shape shape, boolean swap, float energy, float shields, boolean apple) {

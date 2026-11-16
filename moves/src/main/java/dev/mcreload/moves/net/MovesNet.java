@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "19";
+    public static final String VERSION = "20";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -47,6 +47,85 @@ public final class MovesNet {
         CHANNEL.registerMessage(id++, ThrownInfo.class, ThrownInfo::write, ThrownInfo::read, ThrownInfo::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, Learned.class, Learned::write, Learned::read, Learned::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, Equip.class, Equip::write, Equip::read, Equip::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++, TrainerData.class, TrainerData::write, TrainerData::read, TrainerData::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, TrainerAct.class, TrainerAct::write, TrainerAct::read, TrainerAct::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+    }
+
+    /**
+     * The trainer's page for this player: his offers (with {@code v}), the player's quests (time left, kills so far), the rank's
+     * line (its stage, what it asks, what the player has of it). {@code open}: open the page; else only refresh it if open.
+     */
+    public static void trainer(ServerPlayer p, net.minecraft.world.entity.npc.Villager v, boolean open) {
+        if (!connected(p)) return;
+        dev.mcreload.moves.Progress pr = dev.mcreload.moves.Stamina.of(p).progress;
+        net.minecraft.nbt.CompoundTag t = new net.minecraft.nbt.CompoundTag();
+        if (v != null) t.put("offers", dev.mcreload.moves.Quests.offers(v, p).copy());
+        net.minecraft.nbt.ListTag qs = new net.minecraft.nbt.ListTag();
+        long now = System.currentTimeMillis();
+        for (net.minecraft.nbt.CompoundTag q : pr.quests) {
+            net.minecraft.nbt.CompoundTag c = q.copy();
+            c.putLong("left", q.getLong("until") - now);
+            c.putBoolean("failed", dev.mcreload.moves.Quests.failed(q));
+            c.putBoolean("done", dev.mcreload.moves.Quests.done(q));
+            qs.add(c);
+        }
+        t.put("quests", qs);
+        t.putInt("rank", pr.rank);
+        t.putInt("rankLine", pr.rankLine);
+        t.putInt("rankStage", pr.rankStage);
+        t.putInt("levels", p.experienceLevel);
+        if (pr.rankActive()) {
+            dev.mcreload.moves.Quests.Stage st = dev.mcreload.moves.Quests.line(pr.rankLine).get(pr.rankStage);
+            t.putString("kind", st.kind().name());
+            net.minecraft.nbt.CompoundTag what = new net.minecraft.nbt.CompoundTag(), have = new net.minecraft.nbt.CompoundTag();
+            for (java.util.Map.Entry<String, Integer> e : st.what().entrySet()) {
+                what.putInt(e.getKey(), e.getValue());
+                int n = switch (st.kind()) {
+                    case KILL -> pr.rankKills.getInt(e.getKey());
+                    case BRING -> p.getInventory().countItem(dev.mcreload.moves.Quests.item(e.getKey()));
+                    case PAY -> p.experienceLevel;
+                };
+                have.putInt(e.getKey(), n);
+            }
+            t.put("what", what);
+            t.put("have", have);
+        }
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), new TrainerData(v == null ? -1 : v.getId(), open, t));
+    }
+
+    /** Server -> client: the trainer's page (see trainer). */
+    public record TrainerData(int villager, boolean open, net.minecraft.nbt.CompoundTag data) {
+        static void write(TrainerData m, FriendlyByteBuf b) {
+            b.writeVarInt(m.villager + 1);
+            b.writeBoolean(m.open);
+            b.writeNbt(m.data);
+        }
+        static TrainerData read(FriendlyByteBuf b) { return new TrainerData(b.readVarInt() - 1, b.readBoolean(), b.readNbt()); }
+        static void handle(TrainerData m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> dev.mcreload.moves.client.TrainerScreen.received(m.villager, m.open, m.data)));
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Client -> server: on the trainer's page, an action (Quests.Action) with its argument. */
+    public record TrainerAct(int villager, int action, int arg) {
+        static void write(TrainerAct m, FriendlyByteBuf b) {
+            b.writeVarInt(m.villager);
+            b.writeByte(m.action);
+            b.writeByte(m.arg);
+        }
+        static TrainerAct read(FriendlyByteBuf b) { return new TrainerAct(b.readVarInt(), b.readByte(), b.readByte()); }
+        static void handle(TrainerAct m, Supplier<NetworkEvent.Context> ctx) {
+            ServerPlayer p = ctx.get().getSender();
+            if (p != null) ctx.get().enqueueWork(() -> {
+                if (!(p.level().getEntity(m.villager) instanceof net.minecraft.world.entity.npc.Villager v) || !dev.mcreload.moves.Trainer.is(v)
+                        || v.distanceToSqr(p) > 8 * 8) return;
+                dev.mcreload.moves.Quests.Action[] all = dev.mcreload.moves.Quests.Action.values();
+                if (m.action >= 0 && m.action < all.length) dev.mcreload.moves.Quests.act(p, v, all[m.action], m.arg);
+            });
+            ctx.get().setPacketHandled(true);
+        }
     }
 
     /** What this player has learned (Progress), to their client: on joining and whenever it changes. */

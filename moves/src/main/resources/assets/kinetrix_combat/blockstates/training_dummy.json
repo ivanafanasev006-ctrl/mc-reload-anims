@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "kinetrix_combat:block/training_dummy"
+    },
+    "facing=east": {
+      "model": "kinetrix_combat:block/training_dummy",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "kinetrix_combat:block/training_dummy",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "kinetrix_combat:block/training_dummy",
+      "y": 270
+    }
+  }
+}
