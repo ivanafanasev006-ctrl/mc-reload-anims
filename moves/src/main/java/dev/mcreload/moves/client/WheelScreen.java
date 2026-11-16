@@ -43,7 +43,7 @@ public final class WheelScreen extends Screen {
     /** A weapon of some kind in hand, not this skill's: grey, it does nothing. */
     private boolean grey(Skill k) {
         if (k.weapon.in(minecraft.player)) return false;
-        for (Skill.Weapon w : Skill.Weapon.values()) if (w != Skill.Weapon.BLADE && w.in(minecraft.player)) return true;
+        for (Skill.Weapon w : Skill.Weapon.values()) if (w != Skill.Weapon.BLADE && w != Skill.Weapon.ANY && w.in(minecraft.player)) return true;
         return false;
     }
 
@@ -71,7 +71,7 @@ public final class WheelScreen extends Screen {
                 g.drawCenteredString(font, "—", c[0], c[1] - 4, 0x707070);
                 continue;
             }
-            g.renderItem(SkillPreview.weapon(k.weapon), c[0] - 8, y + 5);
+            g.renderItem(SkillPreview.icon(k.weapon), c[0] - 8, y + 5);
             String n = CombatScreen.shortName(k);
             g.pose().pushPose();
             g.pose().translate(c[0], y + 25, 200);

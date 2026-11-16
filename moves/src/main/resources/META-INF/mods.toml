@@ -39,3 +39,11 @@ description='''${mod_description}'''
     versionRange="*"
     ordering="AFTER"
     side="CLIENT"
+# The old name of this very mod (Kinetrix Moves, up to 0.10.6): both at once each take the same keys and play their moves
+# over each other (author, 2026-11-16: "everything broken"). Its old jar must go: Forge stops with a message naming it.
+[[dependencies.${mod_id}]]
+    modId="kinetrix_moves"
+    mandatory=false
+    versionRange="[9999,)"
+    ordering="NONE"
+    side="BOTH"

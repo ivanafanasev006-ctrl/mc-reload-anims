@@ -174,7 +174,7 @@ public final class CombatScreen extends Screen {
             if (over && k != null) hovered = k;
             frame(g, x, y, SLOT, SLOT, i == selectedSlot ? 0xFFFFD860 : over ? 0xFFC0C0C0 : 0xFF555555);
             if (k != null) {
-                g.renderItem(SkillPreview.weapon(k.weapon), x + 7, y + 4);
+                g.renderItem(SkillPreview.icon(k.weapon), x + 7, y + 4);
                 String n = shortName(k);
                 g.pose().pushPose();
                 g.pose().translate(x + SLOT / 2f, y + 21, 0);
@@ -200,7 +200,7 @@ public final class CombatScreen extends Screen {
             boolean learned = pr.learned.contains(k);
             if (over) g.fill(lx, y, lx + lw, y + ROW, 0x40FFFFFF);
             if (k == focused) g.fill(lx, y, lx + 2, y + ROW, 0xFFFFD860);
-            g.renderItem(SkillPreview.weapon(k.weapon), lx + 2, y + 1);
+            g.renderItem(SkillPreview.icon(k.weapon), lx + 2, y + 1);
             int color = learned ? 0xFFFFFF : 0x808080;
             g.drawString(font, font.plainSubstrByWidth(Scrolls.name(k).getString(), lw - 34), lx + 21, y + 5, color);
             if (!learned) lock(g, lx + lw - 11, y + 4);
@@ -263,7 +263,7 @@ public final class CombatScreen extends Screen {
         for (int r = 0; r < rows && r + scroll < Skill.values().length; r++) {
             Skill k = Skill.values()[r + scroll];
             int y = y0 + 16 + r * ROW;
-            g.renderItem(SkillPreview.weapon(k.weapon), x, y);
+            g.renderItem(SkillPreview.icon(k.weapon), x, y);
             boolean learned = progress().learned.contains(k);
             g.drawString(font, Scrolls.name(k), x + 20, y + 4, learned ? 0xFFFFFF : 0x808080);
             KeyMapping km = MovesClient.SKILL_KEYS[k.ordinal()];
@@ -411,7 +411,7 @@ public final class CombatScreen extends Screen {
             case MARKS -> Move.MARKED_SPIN_LEFT;
             case LEGOLAS -> Move.LEGOLAS_LEFT;
             case SLIDE_SHOT -> Move.SLIDE_SHOT;
-            case XBOW_CHAIN -> Move.XBOW_THRUST;
+            case DIVE -> Move.DIVE;
             case XBOW_G -> Move.XBOW_VOLLEY;
             case XBOW_FAN -> Move.XBOW_FAN;
             case XBOW_ROLLS -> Move.XBOW_ROLL_BACK;

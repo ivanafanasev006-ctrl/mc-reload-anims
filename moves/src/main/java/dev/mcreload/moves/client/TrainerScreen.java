@@ -155,7 +155,7 @@ public final class TrainerScreen extends Screen {
             int x = l + i * (w + 8), y = 52;
             CombatScreen.frame(g, x, y, w, 78, 0xFF8A6A40);
             if (k == null) continue;
-            g.renderItem(SkillPreview.weapon(k.weapon), x + 4, y + 4);
+            g.renderItem(SkillPreview.icon(k.weapon), x + 4, y + 4);
             g.drawString(font, font.plainSubstrByWidth(Scrolls.name(k).getString(), w - 26), x + 23, y + 8, 0xFFFFD860);
             int yy = y + 24;
             for (Tag t : o.getList("goals", Tag.TAG_COMPOUND)) {
@@ -176,7 +176,7 @@ public final class TrainerScreen extends Screen {
             int y = 150 + i * 46;
             CombatScreen.frame(g, l, y, r - l, 42, failed ? 0xFFE03A3A : done ? 0xFF4CD15A : 0xFF8A6A40);
             if (k != null) {
-                g.renderItem(SkillPreview.weapon(k.weapon), l + 4, y + 4);
+                g.renderItem(SkillPreview.icon(k.weapon), l + 4, y + 4);
                 g.drawString(font, Scrolls.name(k), l + 23, y + 4, failed ? 0xFFE03A3A : 0xFFFFD860);
             }
             int x = l + 23;

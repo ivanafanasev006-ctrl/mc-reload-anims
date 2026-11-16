@@ -8,7 +8,8 @@ import net.minecraft.world.item.ItemStack;
  * The moves a player learns (author, 2026-11-16): written in scrolls (found in dungeons and village chests, given by the
  * trainer for his quests), at most {@link #WHEEL} of them on the wheel at a time, and only those work. The rest of the
  * mod's moves every player has from the start: the fast run, the dodges and rolls, the vault and the kicks on R, the
- * slide and the attack out of it, the soft landing, the block, the finisher on the left button, the ledge.
+ * slide and the attack out of it, the soft landing, the block, the finisher on the left button, the ledge, the crossbow's
+ * blows on the left button (author, 2026-11-16: "the crossbow's strikes by default, without a scroll").
  *
  * <p>{@code key}: the move's name in the language files (kinetrix_combat.settings.move.&lt;key&gt;) and in the saves.</p>
  */
@@ -25,10 +26,11 @@ public enum Skill {
     MARKS("bowMarks", Weapon.BOW),
     LEGOLAS("legolas", Weapon.BOW),
     SLIDE_SHOT("slideShot", Weapon.BOW),
-    XBOW_CHAIN("crossbow", Weapon.CROSSBOW),
     XBOW_G("crossbowAbility", Weapon.CROSSBOW),
     XBOW_FAN("crossbowFan", Weapon.CROSSBOW),
-    XBOW_ROLLS("crossbowRolls", Weapon.CROSSBOW);
+    XBOW_ROLLS("crossbowRolls", Weapon.CROSSBOW),
+    /** The deep jump, W + Space + R with no mob near (author, 2026-11-16: "a scroll for the deep roll"). */
+    DIVE("dive", Weapon.ANY);
 
     /** Moves on the wheel at most. */
     public static final int WHEEL = 6;
@@ -67,7 +69,7 @@ public enum Skill {
                  MARKED_STAND, MARKED_KNEEL -> MARKS;
             case LEGOLAS_LEFT, LEGOLAS_RIGHT -> LEGOLAS;
             case SLIDE_SHOT, SLIDE_SHOT_END -> SLIDE_SHOT;
-            case XBOW_THRUST, XBOW_SLAP, XBOW_SPINE, XBOW_SHOT, XBOW_DASH -> XBOW_CHAIN;
+            case DIVE -> DIVE;
             case XBOW_VOLLEY, XBOW_SPIN -> XBOW_G;
             case XBOW_FAN, XBOW_FAN_SHOT -> XBOW_FAN;
             case XBOW_ROLL_BACK, XBOW_ROLL_FRONT, XBOW_ROLL_LEFT, XBOW_ROLL_RIGHT -> XBOW_ROLLS;
@@ -77,7 +79,7 @@ public enum Skill {
 
     /** What a skill is made with. */
     public enum Weapon {
-        SWORD, AXE, BLADE, BOW, CROSSBOW;
+        SWORD, AXE, BLADE, BOW, CROSSBOW, ANY;
 
         public boolean in(Player p) {
             ItemStack hand = p.getMainHandItem();
@@ -87,6 +89,7 @@ public enum Skill {
                 case BLADE -> Strikes.sword(p) || Strikes.axe(p);
                 case BOW -> Bow.isBow(hand);
                 case CROSSBOW -> hand.getItem() instanceof CrossbowItem;
+                case ANY -> true;
             };
         }
     }

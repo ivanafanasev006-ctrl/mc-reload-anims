@@ -197,7 +197,7 @@
   "kinetrix_combat.wheel.how.slideShot": "The shot out of a slide: in the slide (Ctrl + C), the right button",
   "kinetrix_combat.wheel.how.crossbowRolls": "The crossbow's rolls: hold the right button and press R",
   "kinetrix_combat.wheel.how.bowMarks": "The volley at the marked: mark the mobs first (right + left button at a mob)",
-  "kinetrix_combat.guide.text": "§6The fight§r\nThe blow, the damage and the movement are vanilla's: the mod only adds moves to them. Every player has the basic moves from the start: the fast run (Ctrl), the rolls and dodges (R + WASD), the vault over a mob (R + W at point blank), the jump with a kick (W + Space + R), the slide (Ctrl + C) and the attack out of it (LMB), the soft landing (R while falling), the block (RMB with a sword or an axe), the finisher (LMB at a weakened mob), the ledge.\n\n§6Moves and the wheel§r\nThe other moves are written in scrolls: found in dungeon and village chests, given by the trainer villager. Read one (RMB) and the move is learned. Only the moves on the wheel work, 6 at most (K, the Moves tab). Hold Z for the wheel: point and click. Another weapon's moves are grey. Any move can have a key of its own (the Keys tab).\n\n§6The energy bar§r\nEvery move and the fast run take from the bar (100). Empty, a move does not start.\nCopper (at the start): everything costs 3 times as much. Bronze: twice. Brass: as usual. The rank goes up with endurance scrolls the trainer gives for a chain of tasks: bronze first, then brass.\nArmour weighs a little: full armour (20 points) costs 10 % more.\n\n§6How it fills§r\nBy itself: 4 a second unless you are hungry. In a fight, running or in a move, half as fast; standing still or sneaking, twice as fast; well fed (full hunger and saturation), 1.5 times as fast. Filling takes hunger.\nCooked food gives +25 at once. A golden apple: 30 s of filling twice as fast. An enchanted golden apple: 45 s of an endless bar and cooldowns halved.\n\n§6Shields§r\nThe block takes shields (10). One comes back every 4 s for 5 energy.",
+  "kinetrix_combat.guide.text": "§6The fight§r\nThe blow, the damage and the movement are vanilla's: the mod only adds moves to them. Every player has the basic moves from the start: the fast run (Ctrl), the rolls and dodges (R + WASD), the vault over a mob (R + W at point blank), the jump with a kick (W + Space + R at a mob), the slide (Ctrl + C) and the attack out of it (LMB), the soft landing (R while falling), the block (RMB with a sword or an axe), the finisher (LMB at a weakened mob), the crossbow's blows (LMB), the ledge.\n\n§6Moves and the wheel§r\nThe other moves are written in scrolls: found in dungeon and village chests, given by the trainer villager. Read one (RMB) and the move is learned. Only the moves on the wheel work, 6 at most (K, the Moves tab). Hold Z for the wheel: point and click. Another weapon's moves are grey. Any move can have a key of its own (the Keys tab).\n\n§6The energy bar§r\nEvery move and the fast run take from the bar (100). Empty, a move does not start.\nCopper (at the start): everything costs 3 times as much. Bronze: twice. Brass: as usual. The rank goes up with endurance scrolls the trainer gives for a chain of tasks: bronze first, then brass.\nArmour weighs a little: full armour (20 points) costs 10 % more.\n\n§6How it fills§r\nBy itself: 4 a second unless you are hungry. In a fight, running or in a move, half as fast; standing still or sneaking, twice as fast; well fed (full hunger and saturation), 1.5 times as fast. Filling takes hunger.\nCooked food gives +25 at once. A golden apple: 30 s of filling twice as fast. An enchanted golden apple: 45 s of an endless bar and cooldowns halved.\n\n§6Shields§r\nThe block takes shields (10). One comes back every 4 s for 5 energy.",
   "kinetrix_combat.skill.dash.words": "lunge dash thrust charge",
   "key.kinetrix_combat.skill.dash": "Move: Sword lunge",
   "kinetrix_combat.skill.swordSpin.words": "spin turns whirl parry",
@@ -222,8 +222,6 @@
   "key.kinetrix_combat.skill.legolas": "Move: Legolas stance",
   "kinetrix_combat.skill.slideShot.words": "slide shot knee fan",
   "key.kinetrix_combat.skill.slideShot": "Move: Slide shot",
-  "kinetrix_combat.skill.crossbow.words": "crossbow blows butt",
-  "key.kinetrix_combat.skill.crossbow": "Move: Crossbow attacks",
   "kinetrix_combat.skill.crossbowAbility.words": "hop turn shove",
   "key.kinetrix_combat.skill.crossbowAbility": "Move: Crossbow: G",
   "kinetrix_combat.skill.crossbowFan.words": "fan shotgun spread",
@@ -276,5 +274,9 @@
   "kinetrix_combat.quest.need_emerald": "You need an emerald",
   "kinetrix_combat.rank.need": "You need: %s × %s",
   "kinetrix_combat.rank.not_all": "Not all of it yet",
-  "kinetrix_combat.rank.need_levels": "Experience levels needed: %s"
+  "kinetrix_combat.rank.need_levels": "Experience levels needed: %s",
+  "kinetrix_combat.weapon.any": "With anything",
+  "kinetrix_combat.weapon.take.any": "anything",
+  "kinetrix_combat.skill.dive.words": "deep jump dive roll forward",
+  "key.kinetrix_combat.skill.dive": "Move: Deep jump"
 }

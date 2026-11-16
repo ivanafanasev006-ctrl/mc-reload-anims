@@ -55,20 +55,27 @@ final class SkillPreview {
             case MARKS -> new Move[]{Move.MARKED_SPIN_LEFT, Move.MARKED_CROUCH, Move.MARKED_SPIN_RIGHT};
             case LEGOLAS -> new Move[]{Move.LEGOLAS_LEFT, Move.LEGOLAS_RIGHT};
             case SLIDE_SHOT -> new Move[]{Move.SLIDE_SHOT};
-            case XBOW_CHAIN -> new Move[]{Move.XBOW_THRUST, Move.XBOW_SLAP, Move.XBOW_SPINE, Move.XBOW_SHOT};
             case XBOW_G -> new Move[]{Move.XBOW_VOLLEY, Move.XBOW_SPIN};
             case XBOW_FAN -> new Move[]{Move.XBOW_FAN, Move.XBOW_FAN_SHOT};
             case XBOW_ROLLS -> new Move[]{Move.XBOW_ROLL_BACK, Move.XBOW_ROLL_LEFT};
+            case DIVE -> new Move[]{Move.DIVE};
         };
     }
 
+    /** What the preview holds for a skill made with this weapon (nothing for one made with any). */
     static ItemStack weapon(Skill.Weapon w) {
         return new ItemStack(switch (w) {
             case SWORD, BLADE -> Items.IRON_SWORD;
             case AXE -> Items.IRON_AXE;
             case BOW -> Items.BOW;
             case CROSSBOW -> Items.CROSSBOW;
+            case ANY -> Items.AIR;
         });
+    }
+
+    /** Its icon in the lists and on the wheel (a feather for a move made with anything in hand). */
+    static ItemStack icon(Skill.Weapon w) {
+        return w == Skill.Weapon.ANY ? new ItemStack(Items.FEATHER) : weapon(w);
     }
 
     void show(Skill k) {

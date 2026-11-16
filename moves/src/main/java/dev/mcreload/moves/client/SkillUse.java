@@ -105,7 +105,7 @@ public final class SkillUse {
             }
             case AIR_SPIN -> MovesClient.start(p, s, Move.AIR_SPIN, -1);
             case CHAIN -> ChainInput.begin(p, s, Chain.FIRST_REACH, 50, -1);
-            case XBOW_CHAIN -> hold(attack, 1);
+            case DIVE -> MovesClient.start(p, s, Move.DIVE, -1);
             case MARKS -> {
                 if (!BowVolley.wheel(p, s)) p.displayClientMessage(Component.translatable("kinetrix_combat.wheel.how.bowMarks"), true);
             }
