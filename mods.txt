@@ -1,0 +1,21 @@
+total 8704
+drwxr-xr-x  2 runner runner    4096 Nov 16 19:09 .
+drwxr-xr-x 10 runner runner    4096 Nov 16 19:09 ..
+-rw-r--r--  1 runner runner  423492 Nov 16 19:09 entity_model_features_forge_1.20.1-2.2.jar
+-rw-r--r--  1 runner runner  676887 Nov 16 19:09 entity_texture_features_forge_1.20.1-6.2.9.jar
+-rw-r--r--  1 runner runner  492436 Nov 16 19:09 kinetrix-1.20.1-1.1.4-beta.jar
+-rw-r--r--  1 runner runner 2851119 Nov 16 19:09 oculus-mc1.20.1-1.8.0.jar
+-rw-r--r--  1 runner runner  181437 Nov 16 19:09 player-animation-lib-forge-1.0.2-rc1+1.20.jar
+-rw-r--r--  1 runner runner 2163998 Nov 16 19:09 skinlayers3d-forge-1.11.1-mc1.20.1.jar
+-rw-r--r--  1 runner runner 2093415 Nov 16 19:09 xenon-0.3.31%2bmc1.20.1.jar
+entity_model_features_forge_1.20.1-2.2.jar: modId = "entity_model_features"
+entity_texture_features_forge_1.20.1-6.2.9.jar: modId = "entity_texture_features"
+kinetrix-1.20.1-1.1.4-beta.jar: modId="kinetrix"
+oculus-mc1.20.1-1.8.0.jar: modId="oculus"
+player-animation-lib-forge-1.0.2-rc1+1.20.jar: modId = "playeranimator"
+skinlayers3d-forge-1.11.1-mc1.20.1.jar: modId="skinlayers3d"
+xenon-0.3.31%2bmc1.20.1.jar: modId="xenon"
+total 520
+drwxr-xr-x  2 runner runner   4096 Nov 16 19:09 .
+drwxr-xr-x 10 runner runner   4096 Nov 16 19:09 ..
+-rw-r--r--  1 runner runner 522973 Nov 16 19:09 ComplementaryUnbound_r5.7.1.zip
