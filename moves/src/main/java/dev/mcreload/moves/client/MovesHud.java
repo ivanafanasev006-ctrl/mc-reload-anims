@@ -74,8 +74,8 @@ public final class MovesHud {
         float pulse = 0.85f + 0.15f * Mth.sin(now / 1000f * Mth.TWO_PI * 1.5f);
         int alpha = Math.max(8, Math.round(255 * hint * pulse));
         net.minecraft.network.chat.Component text = pull < 0
-                ? net.minecraft.network.chat.Component.translatable("kinetrix_moves.hint.finisher", mc.options.keyAttack.getTranslatedKeyMessage())
-                : net.minecraft.network.chat.Component.translatable(ThrownClient.axe(pull) ? "kinetrix_moves.hint.pull_axe" : "kinetrix_moves.hint.pull_sword",
+                ? net.minecraft.network.chat.Component.translatable("kinetrix_combat.hint.finisher", mc.options.keyAttack.getTranslatedKeyMessage())
+                : net.minecraft.network.chat.Component.translatable(ThrownClient.axe(pull) ? "kinetrix_combat.hint.pull_axe" : "kinetrix_combat.hint.pull_sword",
                         shortKey(mc.options.keyAttack) + "/" + shortKey(mc.options.keyUse));
         int y = height / 2 + 10;
         int w = gui.getFont().width(text);
@@ -263,6 +263,9 @@ public final class MovesHud {
         if (dev.mcreload.moves.Thrown.throwable(p) && HudConfig.Moves.THROW.on()) out.add(Move.THROW);
         // the crossbow's rolls (by the back roll)
         if (dev.mcreload.moves.Crossbow.held(p) && HudConfig.Moves.CROSSBOW_ROLLS.on()) out.add(Move.XBOW_ROLL_BACK);
+        // only what works: the wheel's learned moves and those every player has (author, 2026-11-16)
+        dev.mcreload.moves.Progress pr = dev.mcreload.moves.Stamina.of(p).progress;
+        out.removeIf(m -> !pr.usable(dev.mcreload.moves.Skill.of(m)));
         return out;
     }
 
@@ -416,7 +419,7 @@ public final class MovesHud {
     static String shortKey(net.minecraft.client.KeyMapping key) {
         com.mojang.blaze3d.platform.InputConstants.Key k = key.getKey();
         if (k.getType() == com.mojang.blaze3d.platform.InputConstants.Type.MOUSE && k.getValue() >= 0 && k.getValue() <= 2) {
-            return net.minecraft.network.chat.Component.translatable("kinetrix_moves.key.mouse" + k.getValue()).getString();
+            return net.minecraft.network.chat.Component.translatable("kinetrix_combat.key.mouse" + k.getValue()).getString();
         }
         // the long names short, so a row's keys fit ("Left Control" was all of the chain's that was seen)
         if (k.getType() == com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM) {
@@ -424,16 +427,20 @@ public final class MovesHud {
                 case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL -> { return "Ctrl"; }
                 case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT -> { return "Shift"; }
                 case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_ALT, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_ALT -> { return "Alt"; }
-                case org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE -> { return net.minecraft.network.chat.Component.translatable("kinetrix_moves.key.space").getString(); }
+                case org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE -> { return net.minecraft.network.chat.Component.translatable("kinetrix_combat.key.space").getString(); }
                 default -> { }
             }
         }
         return key.getTranslatedKeyMessage().getString();
     }
 
-    /** Energy bar textures, in the chosen style. */
+    /** Energy bar textures: copper or bronze below the brass rank (author, 2026-11-16), then the chosen style. */
     private static ResourceLocation tex(String name) {
-        return new ResourceLocation(KinetrixMoves.MODID, "textures/gui/hud/" + HudConfig.style().name().toLowerCase(Locale.ROOT) + "/" + name + ".png");
+        net.minecraft.client.player.LocalPlayer p = net.minecraft.client.Minecraft.getInstance().player;
+        int rank = p == null ? dev.mcreload.moves.Progress.BRASS : dev.mcreload.moves.Stamina.of(p).progress.rank;
+        String style = rank == dev.mcreload.moves.Progress.COPPER ? "copper" : rank == dev.mcreload.moves.Progress.BRONZE ? "bronze"
+                : HudConfig.style().name().toLowerCase(Locale.ROOT);
+        return new ResourceLocation(KinetrixMoves.MODID, "textures/gui/hud/" + style + "/" + name + ".png");
     }
 
     /** Shield icons: always steel grey, whatever the style (the author's choice). */

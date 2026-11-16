@@ -1,5 +1,5 @@
 """The GameTest structure: a 7x4x7 room, a stone floor and air above (src/main/resources/data/
-kinetrix_moves/structures/floor.nbt). Written by hand as NBT so no other tool is needed:
+kinetrix_combat/structures/floor.nbt). Written by hand as NBT so no other tool is needed:
 
     python3 moves/tools/make_floor.py
 """
@@ -9,7 +9,7 @@ import struct
 
 W, H, D = 7, 4, 7
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "main", "resources",
-                   "data", "kinetrix_moves", "structures", "floor.nbt")
+                   "data", "kinetrix_combat", "structures", "floor.nbt")
 
 END, INT, STRING, LIST, COMPOUND = 0, 3, 8, 9, 10
 

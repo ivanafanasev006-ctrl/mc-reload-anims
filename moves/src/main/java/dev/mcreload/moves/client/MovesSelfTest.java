@@ -58,7 +58,7 @@ import java.util.function.Consumer;
  */
 public final class MovesSelfTest {
     public static boolean enabled() {
-        return Boolean.getBoolean("kinetrix_moves.selftest");
+        return Boolean.getBoolean("kinetrix_combat.selftest");
     }
 
     private static final int Y = 100;
@@ -96,7 +96,7 @@ public final class MovesSelfTest {
         MinecraftForge.EVENT_BUS.addListener(net.minecraftforge.eventbus.api.EventPriority.HIGHEST, MovesSelfTest::beforeTick);
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onGui);
         MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::onScreen);
-        if (Boolean.getBoolean("kinetrix_moves.selftest.probe")) MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::probe);
+        if (Boolean.getBoolean("kinetrix_combat.selftest.probe")) MinecraftForge.EVENT_BUS.addListener(MovesSelfTest::probe);
         // the moves' own sounds as the game starts them (the celebrate emote's music)
         MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.client.event.sound.PlaySoundEvent e) -> {
             if (e.getSound() != null && KinetrixMoves.MODID.equals(e.getSound().getLocation().getNamespace())) {
@@ -104,9 +104,9 @@ public final class MovesSelfTest {
             }
         });
         build();
-        String only = System.getProperty("kinetrix_moves.selftest.only", "");
+        String only = System.getProperty("kinetrix_combat.selftest.only", "");
         if (!only.isBlank()) SCENARIOS.removeIf(s -> !s.name.matches(".*(" + only + ").*"));
-        KinetrixMoves.LOG.info("[kinetrix_moves] SELF-TEST MODE, {} scenarios", SCENARIOS.size());
+        KinetrixMoves.LOG.info("[kinetrix_combat] SELF-TEST MODE, {} scenarios", SCENARIOS.size());
     }
 
     // ------------------------------------------------------------------ scenarios
@@ -141,7 +141,7 @@ public final class MovesSelfTest {
         dodge("20_dodge_left", Move.DODGE_LEFT, mc -> mc.options.keyLeft);
         dodge("21_dodge_right", Move.DODGE_RIGHT, mc -> mc.options.keyRight);
         dodge("22_dodge_back", Move.DODGE_BACK, mc -> mc.options.keyDown);
-        if (Boolean.getBoolean("kinetrix_moves.selftest.frames")) {
+        if (Boolean.getBoolean("kinetrix_combat.selftest.frames")) {
             // Every tick of a roll and a slide, to compare with the Blockbench preview.
             SCENARIOS.add(new Scenario("40_frames_roll", 32, sp -> place(sp, 0, new ItemStack(Items.IRON_SWORD)), (mc, t) -> {
                 camera(mc, CameraType.THIRD_PERSON_BACK);
@@ -574,7 +574,7 @@ public final class MovesSelfTest {
             z.moveTo(sp.getX(), sp.getY(), sp.getZ() + 2, 180f, 0f);
             z.setYHeadRot(180f);
             z.setNoAi(true);
-            z.addTag("kinetrix_moves.selftest");
+            z.addTag("kinetrix_combat.selftest");
             sp.serverLevel().addFreshEntity(z);
         }, (mc, t) -> {
             camera(mc, CameraType.THIRD_PERSON_BACK);
@@ -588,7 +588,7 @@ public final class MovesSelfTest {
                 srv.execute(() -> {
                     ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
                     for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Husk.class, sp.getBoundingBox().inflate(8))) {
-                        if (!e.getTags().contains("kinetrix_moves.selftest")) continue;
+                        if (!e.getTags().contains("kinetrix_combat.selftest")) continue;
                         note(String.format(Locale.ROOT, "strikes t=%d: husk health %.1f of %.1f, Better Combat %s", t, e.getHealth(), e.getMaxHealth(),
                                 net.minecraftforge.fml.ModList.get().isLoaded("bettercombat")));
                         if (t == 52) e.discard();
@@ -611,11 +611,11 @@ public final class MovesSelfTest {
                 mc.setScreen(null);
             }
         }, new int[]{8, 16}, false));
-        // ---- the menu (/kinetrix_moves): the attacks and the mechanics, their keys and switches
+        // ---- the menu (/kinetrix_combat): the attacks and the mechanics, their keys and switches
         SCENARIOS.add(new Scenario("51_menu", 22, sp -> place(sp, 0, new ItemStack(Items.BOW)), (mc, t) -> {
             camera(mc, CameraType.FIRST_PERSON);
-            if (t == 2) net.minecraftforge.client.ClientCommandHandler.runCommand("kinetrix_moves");
-            if (t == 4) note("menu: /kinetrix_moves opened " + (mc.screen == null ? "nothing" : mc.screen.getClass().getSimpleName()));
+            if (t == 2) net.minecraftforge.client.ClientCommandHandler.runCommand("kinetrix_combat");
+            if (t == 4) note("menu: /kinetrix_combat opened " + (mc.screen == null ? "nothing" : mc.screen.getClass().getSimpleName()));
             if (t == 10) {
                 mc.options.guiScale().set(4);
                 mc.resizeDisplay();
@@ -1226,7 +1226,7 @@ public final class MovesSelfTest {
             if (t == 20) note(String.format(Locale.ROOT, "%s: %s, wall way %d", name, Stamina.of(p).move, Stamina.of(p).ledgeDir));
             if (t == 22) KeyMapping.click(MovesClient.DODGE.getKey());
             mc.options.keyRight.setDown(t >= 26 && t < 90);
-            if (t >= 24 && t <= 100 && (Boolean.getBoolean("kinetrix_moves.selftest.probe") || t % 25 == 20))
+            if (t >= 24 && t <= 100 && (Boolean.getBoolean("kinetrix_combat.selftest.probe") || t % 25 == 20))
                 note(String.format(Locale.ROOT, "%s: t %d %s@%d, wall way %d, at x %.2f z %.2f, feet %.2f below the top, yaw %.0f",
                         name, t, Stamina.of(p).move, Stamina.of(p).moveTick, Stamina.of(p).ledgeDir, p.getX(), p.getZ(), Y + 4 - p.getY(), p.getYRot()));
             if (t == 110) mc.getSingleplayerServer().execute(() -> {
@@ -1671,7 +1671,7 @@ public final class MovesSelfTest {
         z.removeFreeWill();
         z.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));    // not burning in the sun
         if (health > 0) z.setHealth(health);
-        z.addTag("kinetrix_moves.selftest");
+        z.addTag("kinetrix_combat.selftest");
         sp.serverLevel().addFreshEntity(z);
     }
 
@@ -1699,7 +1699,7 @@ public final class MovesSelfTest {
             ServerPlayer sp = srv.getPlayerList().getPlayers().get(0);
             boolean any = false;
             for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, sp.getBoundingBox().inflate(12))) {
-                if (!e.getTags().contains("kinetrix_moves.selftest")) continue;
+                if (!e.getTags().contains("kinetrix_combat.selftest")) continue;
                 any = true;
                 note(String.format(Locale.ROOT, "%s: mob %s health %.1f of %.1f, alive %s, at z %.2f; player energy %.1f",
                         what, e.getType().toShortString(), e.getHealth(), e.getMaxHealth(), e.isAlive(), e.getZ(), Stamina.of(sp).energy));
@@ -1773,7 +1773,7 @@ public final class MovesSelfTest {
 
     private static KeyMapping slideKey(Minecraft mc) {
         for (KeyMapping k : mc.options.keyMappings) if ("key.kinetrix.crawl".equals(k.getName())) return k;
-        for (KeyMapping k : mc.options.keyMappings) if ("key.kinetrix_moves.slide".equals(k.getName())) return k;
+        for (KeyMapping k : mc.options.keyMappings) if ("key.kinetrix_combat.slide".equals(k.getName())) return k;
         throw new IllegalStateException("no slide key");
     }
 
@@ -1815,7 +1815,7 @@ public final class MovesSelfTest {
 
     private static void note(String line) {
         REPORT.add(label + "  " + line);
-        KinetrixMoves.LOG.info("[kinetrix_moves] self-test: {}", line);
+        KinetrixMoves.LOG.info("[kinetrix_combat] self-test: {}", line);
     }
 
     // ------------------------------------------------------------------ the world
@@ -1879,7 +1879,7 @@ public final class MovesSelfTest {
     }
 
     private static void onTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END && phase == Phase.RUNNING && Boolean.getBoolean("kinetrix_moves.selftest.probe")) probeTick();
+        if (event.phase == TickEvent.Phase.END && phase == Phase.RUNNING && Boolean.getBoolean("kinetrix_combat.selftest.probe")) probeTick();
         if (event.phase != TickEvent.Phase.START) return;
         Minecraft mc = Minecraft.getInstance();
         mc.options.pauseOnLostFocus = false;
@@ -1932,19 +1932,19 @@ public final class MovesSelfTest {
                 case DONE -> {
                     if (timer == 40) {
                         writeReport(mc);
-                        KinetrixMoves.LOG.info("[kinetrix_moves] SELF-TEST FINISHED");
+                        KinetrixMoves.LOG.info("[kinetrix_combat] SELF-TEST FINISHED");
                         mc.stop();
                     }
                 }
             }
         } catch (Throwable t) {
-            KinetrixMoves.LOG.error("[kinetrix_moves] SELF-TEST ERROR in " + phase + " / " + label, t);
+            KinetrixMoves.LOG.error("[kinetrix_combat] SELF-TEST ERROR in " + phase + " / " + label, t);
             REPORT.add(label + "  ERROR " + t);
             phase = Phase.DONE;
             timer = 0;
         }
         if (timer > 20 * 60 * 3 && phase != Phase.RUNNING && phase != Phase.DONE) {
-            KinetrixMoves.LOG.error("[kinetrix_moves] SELF-TEST TIMEOUT in {}", phase);
+            KinetrixMoves.LOG.error("[kinetrix_combat] SELF-TEST TIMEOUT in {}", phase);
             mc.stop();
         }
     }
@@ -1974,7 +1974,7 @@ public final class MovesSelfTest {
     private static void run(Minecraft mc) {
         Scenario sc = SCENARIOS.get(index);
         if (!SERVER_READY.get()) return;
-        if (pendingShot != null) KinetrixMoves.LOG.debug("[kinetrix_moves] self-test: frame {} not drawn in time", pendingShot);
+        if (pendingShot != null) KinetrixMoves.LOG.debug("[kinetrix_combat] self-test: frame {} not drawn in time", pendingShot);
         tick++;
         if (tick < 0) return;
         sc.script.accept(mc, tick);
@@ -2091,7 +2091,7 @@ public final class MovesSelfTest {
             if (!PROBE.isEmpty()) Files.write(mc.gameDirectory.toPath().resolve("moves-probe.txt"), PROBE, StandardCharsets.UTF_8);
             Files.write(out, REPORT, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            KinetrixMoves.LOG.error("[kinetrix_moves] cannot write {}", out, e);
+            KinetrixMoves.LOG.error("[kinetrix_combat] cannot write {}", out, e);
         }
     }
 

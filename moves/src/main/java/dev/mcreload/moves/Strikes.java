@@ -39,14 +39,14 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  *   <li><b>Finisher</b> ({@code finisher_stab}): a mob with a fifth of its health or less at point
  *   blank, the left button held, a sword in hand. It is held from the start and dies at the stab into
  *   its belly (0.3 s; author, 2026-10-30: as quick as the axe's, no lead-up). Not on bosses (the
- *   dragon, the wither, the forge:bosses tag, our kinetrix_moves:no_finisher tag, or anything with
+ *   dragon, the wither, the forge:bosses tag, our kinetrix_combat:no_finisher tag, or anything with
  *   more health than a config limit).</li>
  *   <li><b>The axe's finisher</b> ({@code finisher_chop}; author, 2026-10-30): the same mob, the same button, an axe in
  *   hand: no stab but a chop from above. It is held while the axe goes up and dies at the blow (0.6 s).</li>
  * </ul>
  */
 public final class Strikes {
-    /** Mobs no finisher works on, besides bosses (data/kinetrix_moves/tags/entity_types/no_finisher.json). */
+    /** Mobs no finisher works on, besides bosses (data/kinetrix_combat/tags/entity_types/no_finisher.json). */
     public static final TagKey<EntityType<?>> NO_FINISHER =
             TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, new ResourceLocation(KinetrixMoves.MODID, "no_finisher"));
     private static final TagKey<EntityType<?>> FORGE_BOSSES = net.minecraftforge.common.Tags.EntityTypes.BOSSES;
@@ -86,14 +86,14 @@ public final class Strikes {
 
     // ------------------------------------------------------------------ who
 
-    /** A boss: the ender dragon, the wither, anything tagged forge:bosses or kinetrix_moves:no_finisher, or with more health than the config allows. */
+    /** A boss: the ender dragon, the wither, anything tagged forge:bosses or kinetrix_combat:no_finisher, or with more health than the config allows. */
     public static boolean boss(LivingEntity e) {
         if (e instanceof EnderDragon || e instanceof WitherBoss) return true;
         if (e.getType().is(FORGE_BOSSES) || e.getType().is(NO_FINISHER)) return true;
         return e.getMaxHealth() > MovesConfig.finisherMaxHealth();
     }
 
-    /** Swords (and other mods' blades in the tag kinetrix_moves:swords) make the sword moves. */
+    /** Swords (and other mods' blades in the tag kinetrix_combat:swords) make the sword moves. */
     public static boolean sword(Player p) {
         return Guard.isSword(p.getMainHandItem());
     }

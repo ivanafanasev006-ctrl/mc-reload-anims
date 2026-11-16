@@ -30,7 +30,7 @@ public final class FastRun {
         if (on) {
             if (now == null || now.getAmount() != amount) {
                 if (now != null) speed.removeModifier(ID);
-                speed.addTransientModifier(new AttributeModifier(ID, "Kinetrix Moves fast run", amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+                speed.addTransientModifier(new AttributeModifier(ID, "Kinetrix Combat fast run", amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
             }
             // a move carries the player itself: the run eats energy only while it is the run
             if (s.move == null) s.spend(MovesConfig.maxEnergy() * MovesConfig.fastRunBarPerSecond() / 20f, p);

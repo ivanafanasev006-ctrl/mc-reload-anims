@@ -1,0 +1,4 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {"layer0": "kinetrix_combat:item/bronze_scroll"}
+}

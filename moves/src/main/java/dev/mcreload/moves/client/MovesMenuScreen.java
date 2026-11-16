@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * The mod's menu ({@code /kinetrix_moves}, or Config in the Mods list; author, 2026-10-30: "the
- * mechanics and the attacks in the menu of kinetrix_moves, on the command /kinetrix_moves"): every
+ * The mod's menu ({@code /kinetrix_combat}, or Config in the Mods list; author, 2026-10-30: "the
+ * mechanics and the attacks in the menu of kinetrix_combat, on the command /kinetrix_combat"): every
  * attack and mechanic, each with its keys (as they are bound now) and a switch for this player's
  * keys, in vanilla's scrolling list so it fits any GUI scale; the hover tells what it does. The look
  * of the bars and of the tray is one button away (MovesSettingsScreen).
@@ -40,7 +40,7 @@ public final class MovesMenuScreen extends Screen {
     private Rows rows;
 
     public MovesMenuScreen(Screen parent) {
-        super(Component.translatable("kinetrix_moves.menu.title"));
+        super(Component.translatable("kinetrix_combat.menu.title"));
         this.parent = parent;
     }
 
@@ -51,27 +51,27 @@ public final class MovesMenuScreen extends Screen {
             mc.tell(() -> mc.setScreen(new MovesMenuScreen(null)));
             return 1;
         };
-        event.getDispatcher().register(Commands.literal("kinetrix_moves").executes(open));
+        event.getDispatcher().register(Commands.literal("kinetrix_combat").executes(open));
     }
 
     @Override
     protected void init() {
         rows = new Rows(minecraft, width, height, 36, height - 34);
-        rows.header("kinetrix_moves.menu.attacks");
+        rows.header("kinetrix_combat.menu.attacks");
         for (HudConfig.Moves m : ATTACKS) rows.move(m);
-        rows.header("kinetrix_moves.menu.moves");
+        rows.header("kinetrix_combat.menu.moves");
         for (HudConfig.Moves m : MOVES) rows.move(m);
-        rows.header("kinetrix_moves.menu.view");
-        rows.toggle("kinetrix_moves.settings.move.kickCutscene", HudConfig.kickCutscene(), HudConfig.KICK_CUTSCENE::set);
-        rows.toggle("kinetrix_moves.settings.move.firstPersonArms", HudConfig.firstPersonArms(), HudConfig.FIRST_PERSON_ARMS::set);
-        rows.toggle("kinetrix_moves.settings.move.attackCamera", HudConfig.attackCamera(), HudConfig.ATTACK_CAMERA::set);
+        rows.header("kinetrix_combat.menu.view");
+        rows.toggle("kinetrix_combat.settings.move.kickCutscene", HudConfig.kickCutscene(), HudConfig.KICK_CUTSCENE::set);
+        rows.toggle("kinetrix_combat.settings.move.firstPersonArms", HudConfig.firstPersonArms(), HudConfig.FIRST_PERSON_ARMS::set);
+        rows.toggle("kinetrix_combat.settings.move.attackCamera", HudConfig.attackCamera(), HudConfig.ATTACK_CAMERA::set);
         addWidget(rows);
         int bw = Math.min(150, (width - 30) / 2);
-        addRenderableWidget(Button.builder(Component.translatable("kinetrix_moves.menu.look"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("kinetrix_combat.menu.look"), b -> {
                     HudConfig.SPEC.save();
                     minecraft.setScreen(new MovesSettingsScreen(this));
                 })
-                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("kinetrix_moves.menu.look.tip")))
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("kinetrix_combat.menu.look.tip")))
                 .bounds(width / 2 - bw - 4, height - 27, bw, 20).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose())
                 .bounds(width / 2 + 4, height - 27, bw, 20).build());
@@ -82,7 +82,7 @@ public final class MovesMenuScreen extends Screen {
         renderBackground(g);
         rows.render(g, mouseX, mouseY, partialTick);
         g.drawCenteredString(font, title, width / 2, 10, 0xFFFFFF);
-        g.drawCenteredString(font, Component.translatable("kinetrix_moves.menu.hint"), width / 2, 22, 0xA0A0A0);
+        g.drawCenteredString(font, Component.translatable("kinetrix_combat.menu.hint"), width / 2, 22, 0xA0A0A0);
         super.render(g, mouseX, mouseY, partialTick);
     }
 
@@ -116,7 +116,7 @@ public final class MovesMenuScreen extends Screen {
         }
 
         void move(HudConfig.Moves m) {
-            String key = "kinetrix_moves.settings.move." + m.key;
+            String key = "kinetrix_combat.settings.move." + m.key;
             addEntry(new Switch(Component.translatable(key), Component.translatable(key + ".keys", keys()),
                     Component.translatable(key + ".tip"), m.on(), m::set));
         }

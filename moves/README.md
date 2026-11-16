@@ -42,7 +42,7 @@
 | Щиты | 10, тратятся на блоки, восстанавливаются по 0.5 раз в 4 с за 5 энергии |
 | Интерфейс | щиты слева над бронёй, энергия справа над голодом, счётчик стрел у хотбара с луком; трей перезарядок в правом нижнем углу — по строке на удар с перезарядкой оружия в руке (G(G+) — нажать или зажать, ЛКМ+ПКМ, C+ЛКМ; у лука ещё C+ПКМ, ↑ПКМ — залп по меченым, ПКМ+R — стойка Леголаса): иконка оружия, клавиши и полоска, которая заполняется, пока удар перезаряжается, и полная, когда готов |
 | Руки от первого лица | во всех атаках видны обе руки, как на краю: атаки мода (обороты G мечом и топором — как раньше, клинок вокруг камеры), удары ЛКМ (и Better Combat); натяжение лука — ванильное; камера за спину уходит только в залпе по меченым и в катсценах пинков (всё выключается в меню, «Вид») |
-| Меню | `/kinetrix_moves` (одна команда) или кнопка «Настроить» в списке модов: «Механики и атаки» — каждая атака и механика с клавишами и переключателем для себя, подсказка при наведении; «Полоски и трей…» — цвет энергии (щиты всегда серые), вид щита, стороны, счётчик стрел, трей |
+| Меню | `/kinetrix_combat` (одна команда) или кнопка «Настроить» в списке модов: «Механики и атаки» — каждая атака и механика с клавишами и переключателем для себя, подсказка при наведении; «Полоски и трей…» — цвет энергии (щиты всегда серые), вид щита, стороны, счётчик стрел, трей |
 
 Клавиши R, C и G переназначаются в настройках управления (C — это клавиша ползания Kinetrix). Эмоция
 `celebrate` с музыкой с 0.7.0 — в Kinetrix (меню эмоций B, `/kinetrix`).
@@ -58,24 +58,24 @@
 - Приёмы с мобом и игроком: перелёт (`Hop`), пинок (`Kick`), удары мечом (`Strikes`), падение (`Fall`),
   край (`Ledge` — где он, что разрешено; на клиенте `LedgeInput`: клавиши и путь игрока по краю).
   Пути, по которым механика несёт игрока в движениях, держащихся за край (и в пинке, и в перекате), —
-  `src/main/resources/kinetrix_moves_paths.json`: их строит из самих анимаций
+  `src/main/resources/kinetrix_combat_paths.json`: их строит из самих анимаций
   `tools/blockbench/refine_author_2026_10_29/refine.py` (`Paths` читает).
 - Другие игроки видят движение по пакету от сервера (`MovesNet`; для края — и в какую сторону стена).
 - С Kinetrix мод говорит через его маленькое API (`compat/KinetrixBridge` → `KinetrixApi`): не начинать
   ползание на C, пока возможен подкат, и не подмешивать свои ноги и голову под движение.
 
-Числа правил — в `serverconfig/kinetrix_moves-server.toml` мира (Forge отправляет их клиентам);
+Числа правил — в `serverconfig/kinetrix_combat-server.toml` мира (Forge отправляет их клиентам);
 значения, которых автор не называл, помечены там `[default]`. Вид полосок и какие приёмы включены —
-в `config/kinetrix_moves-client.toml` или в экране настроек.
+в `config/kinetrix_combat-client.toml` или в экране настроек.
 
 ## Откуда ресурсы
 
-- Анимации `src/main/resources/assets/kinetrix_moves/player_animation/*.json` — конвертированные
+- Анимации `src/main/resources/assets/kinetrix_combat/player_animation/*.json` — конвертированные
   доработанные анимации автора:
-  `python3 tools/blockbench/kinetrix_rig.py convert tools/blockbench/refined/author_2026-10-27.bbmodel moves/src/main/resources/assets/kinetrix_moves/player_animation --namespace kinetrix_moves`.
+  `python3 tools/blockbench/kinetrix_rig.py convert tools/blockbench/refined/author_2026-10-27.bbmodel moves/src/main/resources/assets/kinetrix_combat/player_animation --namespace kinetrix_combat`.
   CI проверяет, что они совпадают с `tools/blockbench/refined/`.
 - Текстуры полосок берутся при сборке из `art/refined/hud/` (их рисует `art/refined/hud/make_hud.py`).
-- Площадка для серверных тестов `src/main/resources/data/kinetrix_moves/structures/floor.nbt` —
+- Площадка для серверных тестов `src/main/resources/data/kinetrix_combat/structures/floor.nbt` —
   `python3 moves/tools/make_floor.py`.
 
 ## Сборка и проверка

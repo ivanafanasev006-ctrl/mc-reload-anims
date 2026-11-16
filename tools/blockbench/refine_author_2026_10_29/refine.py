@@ -74,7 +74,7 @@ DST_C = os.path.join(kit.BB, 'refined', 'author_2026-10-30.bbmodel')
 #: Kinetrix's own keyframe emotes (the CI converts them into Kinetrix, namespace kinetrix).
 DST_KINETRIX = os.path.join(kit.BB, 'refined', 'kinetrix', 'emotes.bbmodel')
 #: The mechanic's paths (moves.paths), read by the mod.
-DST_PATHS = os.path.join(os.path.dirname(kit.BB), '..', 'moves', 'src', 'main', 'resources', 'kinetrix_moves_paths.json')
+DST_PATHS = os.path.join(os.path.dirname(kit.BB), '..', 'moves', 'src', 'main', 'resources', 'kinetrix_combat_paths.json')
 
 #: The ledge in the ledge file: a block wall whose top edge is where the hands hold (ledge.py). Not a
 #: bone of the rig, so it never reaches the game; in each move it moves against the player's path, so

@@ -3,7 +3,7 @@ package dev.mcreload.moves;
 import net.minecraftforge.common.ForgeConfigSpec;
 
 /**
- * config/kinetrix_moves-client.toml: how the bars look (docs/combat-spec.md, 9), and which moves
+ * config/kinetrix_combat-client.toml: how the bars look (docs/combat-spec.md, 9), and which moves
  * this player's keys make (author, 2026-10-29: a settings menu to switch off the lunges, the
  * strikes, the combos...). A move switched off is not started by its keys; the server's rules
  * are the same for everyone.
@@ -60,7 +60,7 @@ public final class HudConfig {
         CROSSBOW_ROLLS("crossbowRolls", "The crossbow's rolls: the right button held, R: rolls the way WASD points (back with none), an arrow",
                 "each; the button let go or the crossbow put away ends them (12 s cooldown from their end).");
 
-        /** The key in the file and in the language files (kinetrix_moves.settings.move.<key>). */
+        /** The key in the file and in the language files (kinetrix_combat.settings.move.<key>). */
         public final String key;
         private final String[] comment;
         private ForgeConfigSpec.BooleanValue value;

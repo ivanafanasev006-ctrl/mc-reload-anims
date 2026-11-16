@@ -40,6 +40,8 @@ public final class Stamina {
     public static final Capability<Stamina> CAP = CapabilityManager.get(new CapabilityToken<>() {});
     private static final ResourceLocation KEY = new ResourceLocation(KinetrixMoves.MODID, "stamina");
 
+    /** What this player has learned: the skills, the wheel, the bar's rank (kept through death). */
+    public final Progress progress = new Progress();
     public float energy = MovesConfig.maxEnergy();
     public float shields = MovesConfig.maxShields();
     /** Game ticks left of free moves (golden apples) and how long that spell was, for the bar. */
@@ -196,7 +198,12 @@ public final class Stamina {
     }
 
     public boolean canAfford(Move m, Player p) {
-        return free() || p.getAbilities().instabuild || energy >= m.cost(move);
+        return free() || p.getAbilities().instabuild || energy >= m.cost(move) * progress.costFactor(p);
+    }
+
+    /** This much energy is there for a move's cost now (the bar's rank and the armour counted). */
+    public boolean canAfford(float cost, Player p) {
+        return free() || p.getAbilities().instabuild || energy >= cost * progress.costFactor(p);
     }
 
     /** Some energy is left (the moves paid by the second, creeping along a ledge, go on while it lasts). */
@@ -204,7 +211,13 @@ public final class Stamina {
         return free() || p.getAbilities().instabuild || energy > 0.01f;
     }
 
+    /** A move's or the run's cost: times the bar's rank (copper 3, bronze 2, brass 1) and a little for heavy armour. */
     public void spend(float amount, Player p) {
+        spendRaw(amount * progress.costFactor(p), p);
+    }
+
+    /** Energy taken as it is (the shields' refill). */
+    private void spendRaw(float amount, Player p) {
         if (free() || p.getAbilities().instabuild) return;
         energy = Math.max(0f, energy - amount);
     }
@@ -345,7 +358,7 @@ public final class Stamina {
             if (++shieldTimer >= MovesConfig.shieldRegenTicks()) {
                 float cost = MovesConfig.shieldRegenCost();
                 if (free() || energy >= cost) {
-                    spend(cost, p);
+                    spendRaw(cost, p);
                     shields = Math.min(maxShields, shields + MovesConfig.shieldRegen());
                     shieldTimer = 0;
                 } else {
@@ -424,6 +437,7 @@ public final class Stamina {
         t.putInt("freeTotal", freeTotal);
         t.putInt("boost", boostTicks);
         t.putInt("haste", hasteTicks);
+        t.put("progress", progress.save());
         return t;
     }
 
@@ -434,6 +448,7 @@ public final class Stamina {
         freeTotal = t.getInt("freeTotal");
         boostTicks = t.getInt("boost");
         hasteTicks = t.getInt("haste");
+        if (t.contains("progress")) progress.load(t.getCompound("progress"));
     }
 
     static void registerCapability(RegisterCapabilitiesEvent event) {
@@ -471,10 +486,11 @@ public final class Stamina {
         /** Back from the End keeps the bars; after death they start full. */
         @SubscribeEvent
         public static void clone(PlayerEvent.Clone event) {
-            if (event.isWasDeath()) return;
             Player old = event.getOriginal();
             old.reviveCaps();
-            CompoundTag saved = of(old).save();
+            CompoundTag saved = event.isWasDeath() ? new CompoundTag() : of(old).save();
+            // what was learned stays after death too (the bars start full)
+            if (event.isWasDeath()) saved.put("progress", of(old).progress.save());
             old.invalidateCaps();
             of(event.getEntity()).load(saved);
         }

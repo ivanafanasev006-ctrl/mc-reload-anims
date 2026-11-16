@@ -122,7 +122,7 @@ public final class BowVolley {
                     s.marks.clear();
                     MovesNet.CHANNEL.sendToServer(new MovesNet.Mark(-1));
                     p.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.3f, 0.8f);
-                    p.displayClientMessage(Component.translatable("kinetrix_moves.marks.cleared"), true);
+                    p.displayClientMessage(Component.translatable("kinetrix_combat.marks.cleared"), true);
                 }
                 taken = true;
             } else {
@@ -132,7 +132,7 @@ public final class BowVolley {
                     Marks.toggle(p, s, mob);
                     MovesNet.CHANNEL.sendToServer(new MovesNet.Mark(mob.getId()));
                     p.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, 0.35f, had ? 0.8f : 1.7f);
-                    p.displayClientMessage(Component.translatable("kinetrix_moves.marks.count", s.marks.size(), MovesConfig.marksMax()), true);
+                    p.displayClientMessage(Component.translatable("kinetrix_combat.marks.count", s.marks.size(), MovesConfig.marksMax()), true);
                     taken = true;
                 }
             }

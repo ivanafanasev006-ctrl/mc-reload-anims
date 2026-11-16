@@ -81,7 +81,7 @@ public final class MoveAnimator {
         KeyframeAnimation anim = PlayerAnimationRegistry.getAnimation(move.animation);
         if (layer == null) return;
         if (anim == null) {
-            KinetrixMoves.LOG.warn("[kinetrix_moves] animation {} is missing", move.animation);
+            KinetrixMoves.LOG.warn("[kinetrix_combat] animation {} is missing", move.animation);
             return;
         }
         layer.speed.speed = move.animSpeed;

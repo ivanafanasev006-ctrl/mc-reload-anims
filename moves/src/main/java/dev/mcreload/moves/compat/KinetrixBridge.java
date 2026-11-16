@@ -23,7 +23,7 @@ public final class KinetrixBridge {
         try {
             BLOCK_CRAWL.invokeExact(millis);
         } catch (Throwable t) {
-            KinetrixMoves.LOG.debug("[kinetrix_moves] KinetrixApi.blockCrawl failed", t);
+            KinetrixMoves.LOG.debug("[kinetrix_combat] KinetrixApi.blockCrawl failed", t);
         }
     }
 
@@ -36,7 +36,7 @@ public final class KinetrixBridge {
         try {
             WHOLE_BODY.invokeExact(player, millis);
         } catch (Throwable t) {
-            KinetrixMoves.LOG.debug("[kinetrix_moves] KinetrixApi.wholeBody failed", t);
+            KinetrixMoves.LOG.debug("[kinetrix_combat] KinetrixApi.wholeBody failed", t);
         }
     }
 

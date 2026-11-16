@@ -23,13 +23,15 @@ import org.slf4j.Logger;
  */
 @Mod(KinetrixMoves.MODID)
 public final class KinetrixMoves {
-    public static final String MODID = "kinetrix_moves";
+    public static final String MODID = "kinetrix_combat";
     public static final Logger LOG = LogUtils.getLogger();
 
     public KinetrixMoves() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, MovesConfig.SPEC, MODID + "-server.toml");
         MovesNet.init();
+        Scrolls.init(modBus);
+        MinecraftForge.EVENT_BUS.register(Scrolls.class);
         modBus.addListener(Stamina::registerCapability);
         modBus.addListener(Bow::setup);
         MinecraftForge.EVENT_BUS.register(Stamina.Events.class);

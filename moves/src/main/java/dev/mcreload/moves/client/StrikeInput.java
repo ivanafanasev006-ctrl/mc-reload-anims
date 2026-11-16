@@ -317,12 +317,12 @@ public final class StrikeInput {
         int cooldown = cooldown(s, move);
         if (cooldown <= 0) return false;
         MovesHud.refused(move);
-        p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_moves.cooldown",
-                net.minecraft.network.chat.Component.translatable("kinetrix_moves.settings.move." + key(move)), (cooldown + 19) / 20), true);
+        p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_combat.cooldown",
+                net.minecraft.network.chat.Component.translatable("kinetrix_combat.settings.move." + key(move)), (cooldown + 19) / 20), true);
         return true;
     }
 
-    /** The move's name key in the settings (kinetrix_moves.settings.move.<key>). */
+    /** The move's name key in the settings (kinetrix_combat.settings.move.<key>). */
     static String key(Move move) {
         return switch (move) {
             case DASH -> HudConfig.Moves.DASH.key;

@@ -34,11 +34,11 @@ minecraft {
             // ./gradlew runClient -Pselftest: a flat test world, the moves played and photographed
             // (test/ClientSelfTest), then the game quits.
             if (project.hasProperty('selftest')) {
-                property 'kinetrix_moves.selftest', 'true'
+                property 'kinetrix_combat.selftest', 'true'
                 args '--width', '1280', '--height', '720'
-                if (project.hasProperty('selftestOnly')) property 'kinetrix_moves.selftest.only', project.property('selftestOnly')
-                if (project.hasProperty('selftestFrames')) property 'kinetrix_moves.selftest.frames', 'true'
-                if (project.hasProperty('selftestProbe')) property 'kinetrix_moves.selftest.probe', 'true'
+                if (project.hasProperty('selftestOnly')) property 'kinetrix_combat.selftest.only', project.property('selftestOnly')
+                if (project.hasProperty('selftestFrames')) property 'kinetrix_combat.selftest.frames', 'true'
+                if (project.hasProperty('selftestProbe')) property 'kinetrix_combat.selftest.probe', 'true'
             }
         }
         server {

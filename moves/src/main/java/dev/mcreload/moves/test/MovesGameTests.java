@@ -1279,6 +1279,58 @@ public final class MovesGameTests {
         t.at(end + 2, () -> t.check(s.move == Move.AXE_COMBO_END, "not ending: " + s.move)).run(end + 3);
     }
 
+    /**
+     * Learning (author, 2026-11-16): a novice has the dodges, not the whirlwind; a scroll read teaches it and puts it on the
+     * wheel, off the wheel it does not work; the copper bar makes a dodge cost three times as much, bronze twice; the brass
+     * scroll does nothing before the bronze one; armour weighs a little.
+     */
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "learning")
+    public static void learning(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.novice();
+        Stamina s = Stamina.of(p);
+        dev.mcreload.moves.Progress pr = s.progress;
+        t.at(2, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+            s.energy = 100f;
+            t.check(!MoveServer.request(p, Move.WHIRL, false), "the whirlwind unlearned");
+            t.check(MoveServer.request(p, Move.DODGE_LEFT, false), "a dodge refused to a novice");
+            t.close(s.energy, 100f - 3f * MovesConfig.costDodge(), "a copper dodge");
+            s.end(p);
+            ItemStack scroll = dev.mcreload.moves.Scrolls.of(dev.mcreload.moves.Skill.WHIRL);
+            p.setItemInHand(InteractionHand.OFF_HAND, scroll);
+            scroll.use(p.level(), p, InteractionHand.OFF_HAND);
+            t.check(pr.learned.contains(dev.mcreload.moves.Skill.WHIRL) && pr.equipped(dev.mcreload.moves.Skill.WHIRL), "the scroll not read");
+            t.check(p.getOffhandItem().isEmpty(), "the scroll not used up");
+        });
+        t.at(4, () -> {
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.WHIRL, false), "the whirlwind learned and on the wheel refused");
+            s.end(p);
+            s.whirlCooldown = 0;
+            pr.clearWheel();
+            t.check(!MoveServer.request(p, Move.WHIRL, false), "the whirlwind off the wheel");
+            t.check(pr.equip(0, dev.mcreload.moves.Skill.WHIRL) && !pr.equip(1, dev.mcreload.moves.Skill.CHAIN), "the wheel took the unlearned");
+            ItemStack brass = new ItemStack(dev.mcreload.moves.Scrolls.BRASS.get());
+            p.setItemInHand(InteractionHand.OFF_HAND, brass);
+            brass.use(p.level(), p, InteractionHand.OFF_HAND);
+            t.check(pr.rank == dev.mcreload.moves.Progress.COPPER, "brass before bronze");
+            ItemStack bronze = new ItemStack(dev.mcreload.moves.Scrolls.BRONZE.get());
+            p.setItemInHand(InteractionHand.OFF_HAND, bronze);
+            bronze.use(p.level(), p, InteractionHand.OFF_HAND);
+            t.check(pr.rank == dev.mcreload.moves.Progress.BRONZE, "the bronze scroll: " + pr.rank);
+            p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            s.energy = 100f;
+            t.check(MoveServer.request(p, Move.DODGE_RIGHT, false), "a bronze dodge refused");
+            t.close(s.energy, 100f - 2f * MovesConfig.costDodge(), "a bronze dodge");
+            s.end(p);
+            p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
+        });
+        // (the armour's points count from the next tick on)
+        t.at(6, () -> t.check(pr.costFactor(p) > 2f && pr.costFactor(p) < 2f * (1f + MovesConfig.armourWeight()),
+                "the armour's weight: " + pr.costFactor(p))).run(7);
+    }
+
     /** A blow's damage as a zombie takes it: its own 2 armour takes a few hundredths off. */
     private static void blow(Script t, float lost, float damage, String what) {
         t.check(lost > damage * 0.94f && lost <= damage + 0.01f, what + ": " + lost + ", expected " + damage);
@@ -2316,7 +2368,18 @@ public final class MovesGameTests {
             p.teleportTo(h.getLevel(), at.x, at.y, at.z, 0f, 0f);
             p.getFoodData().setFoodLevel(20);
             p.getFoodData().setSaturation(5f);
+            // the tests of the moves: every move usable, the brass bar (the learning has its own test, a novice())
+            Stamina.of(p).progress.all = true;
+            Stamina.of(p).progress.rank = dev.mcreload.moves.Progress.BRASS;
             players.add(p);
+            return p;
+        }
+
+        /** A player as one starts out: nothing learned, the copper bar. */
+        ServerPlayer novice() {
+            ServerPlayer p = player();
+            Stamina.of(p).progress.all = false;
+            Stamina.of(p).progress.rank = dev.mcreload.moves.Progress.COPPER;
             return p;
         }
 

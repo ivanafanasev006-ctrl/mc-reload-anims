@@ -67,7 +67,7 @@ public final class CrossbowInput {
                 gDown = 0;
                 Move move = held ? Move.XBOW_FAN : Crossbow.loaded(p) ? Move.XBOW_VOLLEY : Move.XBOW_SPIN;
                 if (move == Move.XBOW_FAN && Crossbow.arrows(p) <= 0) {
-                    p.displayClientMessage(Component.translatable("kinetrix_moves.crossbow.no_arrows"), true);
+                    p.displayClientMessage(Component.translatable("kinetrix_combat.crossbow.no_arrows"), true);
                 } else if (s.move == null && (move == Move.XBOW_SPIN ? MovesClient.start(p, s, move, Crossbow.pushOff(p))
                         : MovesClient.start(p, s, move, -1))) {
                     if (p.isUsingItem()) p.stopUsingItem();     // G takes the crossbow over from the loading
@@ -83,7 +83,7 @@ public final class CrossbowInput {
             if (n != fanShown) {
                 fanShown = n;
                 p.playSound(SoundEvents.CROSSBOW_LOADING_MIDDLE, 0.6f, 0.9f + 0.05f * n);
-                p.displayClientMessage(Component.translatable("kinetrix_moves.crossbow.fan", n, MovesConfig.crossbowFanMax()), true);
+                p.displayClientMessage(Component.translatable("kinetrix_combat.crossbow.fan", n, MovesConfig.crossbowFanMax()), true);
             }
             if (!MovesClient.held(mc, MovesClient.ABILITY)) MovesClient.start(p, s, Move.XBOW_FAN_SHOT, n);
         }

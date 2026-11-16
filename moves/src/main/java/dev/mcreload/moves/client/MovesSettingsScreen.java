@@ -22,7 +22,7 @@ public final class MovesSettingsScreen extends Screen {
     private int previewTop = -1;
 
     public MovesSettingsScreen(Screen parent) {
-        super(Component.translatable("kinetrix_moves.settings.title"));
+        super(Component.translatable("kinetrix_combat.settings.title"));
         this.parent = parent;
     }
 
@@ -42,26 +42,26 @@ public final class MovesSettingsScreen extends Screen {
                 .withValues(HudConfig.Style.values())
                 .withInitialValue(HudConfig.style())
                 .withTooltip(v -> Tooltip.create(Component.translatable(key("style", v.name()) + ".tip")))
-                .create(at[0][0], at[0][1], w, BUTTON_H, Component.translatable("kinetrix_moves.settings.style"),
+                .create(at[0][0], at[0][1], w, BUTTON_H, Component.translatable("kinetrix_combat.settings.style"),
                         (b, v) -> HudConfig.STYLE.set(v)));
         addRenderableWidget(CycleButton.<HudConfig.Shape>builder(v -> Component.translatable(key("shape", v.name())))
                 .withValues(HudConfig.Shape.values())
                 .withInitialValue(HudConfig.shape())
-                .create(at[1][0], at[1][1], w, BUTTON_H, Component.translatable("kinetrix_moves.settings.shape"),
+                .create(at[1][0], at[1][1], w, BUTTON_H, Component.translatable("kinetrix_combat.settings.shape"),
                         (b, v) -> HudConfig.SHAPE.set(v)));
-        addRenderableWidget(CycleButton.booleanBuilder(Component.translatable("kinetrix_moves.settings.sides.swapped"),
-                        Component.translatable("kinetrix_moves.settings.sides.normal"))
+        addRenderableWidget(CycleButton.booleanBuilder(Component.translatable("kinetrix_combat.settings.sides.swapped"),
+                        Component.translatable("kinetrix_combat.settings.sides.normal"))
                 .withInitialValue(HudConfig.swapSides())
-                .withTooltip(v -> Tooltip.create(Component.translatable("kinetrix_moves.settings.sides.tip")))
-                .create(at[2][0], at[2][1], w, BUTTON_H, Component.translatable("kinetrix_moves.settings.sides"),
+                .withTooltip(v -> Tooltip.create(Component.translatable("kinetrix_combat.settings.sides.tip")))
+                .create(at[2][0], at[2][1], w, BUTTON_H, Component.translatable("kinetrix_combat.settings.sides"),
                         (b, v) -> HudConfig.SWAP_SIDES.set(v)));
         addRenderableWidget(CycleButton.onOffBuilder(HudConfig.arrows())
-                .withTooltip(v -> Tooltip.create(Component.translatable("kinetrix_moves.settings.arrows.tip")))
-                .create(at[3][0], at[3][1], w, BUTTON_H, Component.translatable("kinetrix_moves.settings.arrows"),
+                .withTooltip(v -> Tooltip.create(Component.translatable("kinetrix_combat.settings.arrows.tip")))
+                .create(at[3][0], at[3][1], w, BUTTON_H, Component.translatable("kinetrix_combat.settings.arrows"),
                         (b, v) -> HudConfig.ARROWS.set(v)));
         addRenderableWidget(CycleButton.onOffBuilder(HudConfig.tray())
-                .withTooltip(v -> Tooltip.create(Component.translatable("kinetrix_moves.settings.tray.tip")))
-                .create(at[4][0], at[4][1], twoColumns ? 2 * w + GAP : w, BUTTON_H, Component.translatable("kinetrix_moves.settings.tray"),
+                .withTooltip(v -> Tooltip.create(Component.translatable("kinetrix_combat.settings.tray.tip")))
+                .create(at[4][0], at[4][1], twoColumns ? 2 * w + GAP : w, BUTTON_H, Component.translatable("kinetrix_combat.settings.tray"),
                         (b, v) -> HudConfig.TRAY.set(v)));
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose())
                 .bounds((width - 150) / 2, height - 28, 150, BUTTON_H).build());
@@ -70,7 +70,7 @@ public final class MovesSettingsScreen extends Screen {
     }
 
     private static String key(String what, String value) {
-        return "kinetrix_moves.settings." + what + "." + value.toLowerCase(Locale.ROOT);
+        return "kinetrix_combat.settings." + what + "." + value.toLowerCase(Locale.ROOT);
     }
 
     @Override
@@ -80,7 +80,7 @@ public final class MovesSettingsScreen extends Screen {
         super.render(g, mouseX, mouseY, partialTick);
         // The bars as they will look: shields 6.5 of 10, energy 60 %; under them the tray.
         if (previewTop >= 0 && width >= 200) {
-            g.drawCenteredString(font, Component.translatable("kinetrix_moves.settings.preview"), width / 2, previewTop, 0xA0A0A0);
+            g.drawCenteredString(font, Component.translatable("kinetrix_combat.settings.preview"), width / 2, previewTop, 0xA0A0A0);
             boolean tray = HudConfig.tray();
             if (tray && width >= 400) {
                 // side by side: the bars on the left, the tray on the right

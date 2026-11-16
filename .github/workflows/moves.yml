@@ -1,4 +1,4 @@
-name: Kinetrix Moves
+name: Kinetrix Combat
 
 on:
   push:
@@ -49,9 +49,9 @@ jobs:
         run: |
           python3 -m pip install --quiet --user numpy pillow
           for f in tools/blockbench/refined/*.bbmodel; do
-            python3 tools/blockbench/kinetrix_rig.py convert "$f" build/moves-anims --namespace kinetrix_moves > /dev/null
+            python3 tools/blockbench/kinetrix_rig.py convert "$f" build/moves-anims --namespace kinetrix_combat > /dev/null
           done
-          python3 moves/tools/check_anims.py build/moves-anims moves/src/main/resources/assets/kinetrix_moves/player_animation
+          python3 moves/tools/check_anims.py build/moves-anims moves/src/main/resources/assets/kinetrix_combat/player_animation
           # Kinetrix's own keyframe emotes (celebrate) come from refined/kinetrix.
           for f in tools/blockbench/refined/kinetrix/*.bbmodel; do
             python3 tools/blockbench/kinetrix_rig.py convert "$f" build/kinetrix-anims --namespace kinetrix > /dev/null
@@ -111,9 +111,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="moves-v${{ steps.ver.outputs.version }}-build${{ github.run_number }}"
+          TAG="combat-v${{ steps.ver.outputs.version }}-build${{ github.run_number }}"
           gh release create "$TAG" moves/build/libs/*.jar --target "$GITHUB_SHA" \
-            --title "Kinetrix Moves ${{ steps.ver.outputs.version }} (build ${{ github.run_number }})" \
+            --title "Kinetrix Combat (alpha) ${{ steps.ver.outputs.version }} (build ${{ github.run_number }})" \
             --notes "Automatic build of ${GITHUB_SHA::7}. Forge 1.20.1; needs Player Animator, best with Kinetrix 1.0.9-beta or later. Install on the client and the server." \
             --prerelease
 

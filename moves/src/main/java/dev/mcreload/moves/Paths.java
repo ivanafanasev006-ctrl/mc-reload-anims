@@ -16,7 +16,7 @@ import java.util.Map;
  * something (the ledge, the kick, the fall roll): a value a game tick from the move's start, in
  * blocks, worked out from the animations themselves (tools/blockbench/refine_author_2026_10_29,
  * moves.paths) so the hands stay on the edge while the player moves. Read from
- * kinetrix_moves_paths.json; a path is [up, forward] pairs or single values.
+ * kinetrix_combat_paths.json; a path is [up, forward] pairs or single values.
  */
 public final class Paths {
     private static Map<String, float[][]> paths;
@@ -45,8 +45,8 @@ public final class Paths {
     private static synchronized Map<String, float[][]> all() {
         if (paths != null) return paths;
         Map<String, float[][]> out = new HashMap<>();
-        try (InputStream in = Paths.class.getResourceAsStream("/kinetrix_moves_paths.json")) {
-            if (in == null) throw new IllegalStateException("kinetrix_moves_paths.json is missing");
+        try (InputStream in = Paths.class.getResourceAsStream("/kinetrix_combat_paths.json")) {
+            if (in == null) throw new IllegalStateException("kinetrix_combat_paths.json is missing");
             JsonObject root = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
             for (Map.Entry<String, JsonElement> e : root.entrySet()) {
                 JsonArray ticks = e.getValue().getAsJsonArray();
@@ -64,7 +64,7 @@ public final class Paths {
                 out.put(e.getKey(), p);
             }
         } catch (Exception ex) {
-            KinetrixMoves.LOG.error("[kinetrix_moves] could not read the move paths", ex);
+            KinetrixMoves.LOG.error("[kinetrix_combat] could not read the move paths", ex);
         }
         paths = out;
         return paths;

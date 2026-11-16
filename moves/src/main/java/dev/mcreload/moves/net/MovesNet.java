@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "18";
+    public static final String VERSION = "19";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -45,6 +45,51 @@ public final class MovesNet {
         CHANNEL.registerMessage(id++, Run.class, Run::write, Run::read, Run::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, Mark.class, Mark::write, Mark::read, Mark::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, ThrownInfo.class, ThrownInfo::write, ThrownInfo::read, ThrownInfo::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, Learned.class, Learned::write, Learned::read, Learned::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, Equip.class, Equip::write, Equip::read, Equip::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+    }
+
+    /** What this player has learned (Progress), to their client: on joining and whenever it changes. */
+    public static void progress(ServerPlayer p) {
+        if (!connected(p)) return;
+        dev.mcreload.moves.Progress pr = dev.mcreload.moves.Stamina.of(p).progress;
+        byte[] wheel = new byte[dev.mcreload.moves.Skill.WHEEL];
+        for (int i = 0; i < wheel.length; i++) wheel[i] = (byte) (pr.wheel[i] == null ? -1 : pr.wheel[i].ordinal());
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), new Learned(pr.learnedBits(), wheel, (byte) pr.rank));
+    }
+
+    /** Server -> client: the learned skills (bits), the wheel (skill ids, -1 empty), the bar's rank. */
+    public record Learned(long bits, byte[] wheel, byte rank) {
+        static void write(Learned m, FriendlyByteBuf b) {
+            b.writeLong(m.bits);
+            b.writeByteArray(m.wheel);
+            b.writeByte(m.rank);
+        }
+        static Learned read(FriendlyByteBuf b) { return new Learned(b.readLong(), b.readByteArray(64), b.readByte()); }
+        static void handle(Learned m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> dev.mcreload.moves.client.MovesClient.learned(m)));
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Client -> server: a place of the wheel given a learned skill (-1: emptied); slot -1: the whole wheel emptied. */
+    public record Equip(int slot, int skill) {
+        static void write(Equip m, FriendlyByteBuf b) {
+            b.writeByte(m.slot);
+            b.writeByte(m.skill);
+        }
+        static Equip read(FriendlyByteBuf b) { return new Equip(b.readByte(), b.readByte()); }
+        static void handle(Equip m, Supplier<NetworkEvent.Context> ctx) {
+            ServerPlayer p = ctx.get().getSender();
+            if (p != null) ctx.get().enqueueWork(() -> {
+                dev.mcreload.moves.Progress pr = dev.mcreload.moves.Stamina.of(p).progress;
+                if (m.slot < 0) pr.clearWheel();
+                else pr.equip(m.slot, dev.mcreload.moves.Skill.byId(m.skill));
+                progress(p);
+            });
+            ctx.get().setPacketHandled(true);
+        }
     }
 
     /**

@@ -3,7 +3,7 @@ package dev.mcreload.moves;
 import net.minecraftforge.common.ForgeConfigSpec;
 
 /**
- * serverconfig/kinetrix_moves-server.toml (in the world folder): the numbers of the combat rules.
+ * serverconfig/kinetrix_combat-server.toml (in the world folder): the numbers of the combat rules.
  * Forge sends them to every client that joins, so the client's guesses (the bars, whether a move
  * is affordable) use the same numbers as the server.
  *
@@ -34,6 +34,7 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.IntValue AIR_SPIN_WAIT, AXE_TRIPLE_WAIT;
     private static final ForgeConfigSpec.DoubleValue AXE_TRIPLE_SHARE, COST_AXE_TRIPLE;
     private static final ForgeConfigSpec.IntValue PULL_STUN;
+    private static final ForgeConfigSpec.DoubleValue COPPER_COST, BRONZE_COST, ARMOUR_WEIGHT, SCROLL_DUNGEON, SCROLL_VILLAGE;
     private static final ForgeConfigSpec.BooleanValue LEDGE_GRAB;
     private static final ForgeConfigSpec.DoubleValue LEAP_REACH, LEAP_UP, LEAP_DOWN;
     private static final ForgeConfigSpec.DoubleValue FAST_RUN_SPEED, FAST_RUN_COST, PLUNGE_CUT, PLUNGE_FROM, WHIRL_DAMAGE, WHIRL_REACH,
@@ -72,7 +73,7 @@ public final class MovesConfig {
         APPLE_BOOST = b.comment("Golden apple: refill multiplier during the boost. [default]")
                 .defineInRange("goldenAppleBoostFactor", 2.0, 1.0, 100.0);
         COOKED_FOOD = b.comment("Energy a cooked or prepared food gives back when eaten (roasted meat and fish, a baked potato,",
-                        "bread, stews and soups, pie; the item tag kinetrix_moves:cooked_food, and other mods' foods named",
+                        "bread, stews and soups, pie; the item tag kinetrix_combat:cooked_food, and other mods' foods named",
                         "cooked, baked, roasted, fried, grilled, smoked, stew, soup, pie or bread). A little energy in a",
                         "fight without potions or golden apples (author: 25 of 100).")
                 .defineInRange("cookedFoodEnergy", 25.0, 0.0, 10000.0);
@@ -419,6 +420,18 @@ public final class MovesConfig {
         XBOW_FAN_SPREAD = b.comment("The fan of arrows: how far its arrows scatter about the look, degrees to each side (a shotgun). [default]")
                 .defineInRange("fanSpread", 12.0, 0.0, 45.0);
         b.pop();
+        b.comment("Learning (author, 2026-11-16): the energy bar's ranks, the armour's weight, the scrolls in chests.").push("progress");
+        COPPER_COST = b.comment("The copper bar (at the start): every move and the run cost this many times as much (author: \"2 or even 3 times\").")
+                .defineInRange("copperCost", 3.0, 1.0, 10.0);
+        BRONZE_COST = b.comment("The bronze bar (the trainer's first chain of tasks): this many times as much (author: 2).")
+                .defineInRange("bronzeCost", 2.0, 1.0, 10.0);
+        ARMOUR_WEIGHT = b.comment("Armour weighs: a full 20 armour points costs this much more energy (author: \"a little, even diamond",
+                "not critical\"). [default]").defineInRange("armourWeight", 0.10, 0.0, 1.0);
+        SCROLL_DUNGEON = b.comment("The chance of a move's scroll in a dungeon's chest (dungeons, mineshafts, temples, strongholds...). [default]")
+                .defineInRange("scrollChanceDungeon", 0.15, 0.0, 1.0);
+        SCROLL_VILLAGE = b.comment("The chance of a move's scroll in a village's chest. [default]")
+                .defineInRange("scrollChanceVillage", 0.05, 0.0, 1.0);
+        b.pop();
         SPEC = b.build();
     }
 
@@ -560,6 +573,12 @@ public final class MovesConfig {
     public static float chainRange() { return f(CHAIN_RANGE, 7.0); }
     public static int chainMax() { return get(CHAIN_MAX, 6); }
     public static float chainHealth() { return f(CHAIN_HEALTH, 0.5); }
+
+    public static float copperCost() { return f(COPPER_COST, 3.0); }
+    public static float bronzeCost() { return f(BRONZE_COST, 2.0); }
+    public static float armourWeight() { return f(ARMOUR_WEIGHT, 0.10); }
+    public static float scrollChanceDungeon() { return f(SCROLL_DUNGEON, 0.15); }
+    public static float scrollChanceVillage() { return f(SCROLL_VILLAGE, 0.05); }
 
     private static float f(ForgeConfigSpec.DoubleValue value, double fallback) {
         return get(value, fallback).floatValue();

@@ -50,14 +50,14 @@ import org.lwjgl.glfw.GLFW;
  * else the deep jump. Each move can be switched off for this player (HudConfig.Moves).</p>
  */
 public final class MovesClient {
-    public static final KeyMapping DODGE = new KeyMapping("key.kinetrix_moves.dodge", KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.categories.kinetrix_moves");
+    public static final KeyMapping DODGE = new KeyMapping("key.kinetrix_combat.dodge", KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.categories.kinetrix_combat");
     /** Only registered without Kinetrix; with it the slide uses Kinetrix's crawl key. */
-    private static final KeyMapping OWN_SLIDE = new KeyMapping("key.kinetrix_moves.slide", KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, "key.categories.kinetrix_moves");
+    private static final KeyMapping OWN_SLIDE = new KeyMapping("key.kinetrix_combat.slide", KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, "key.categories.kinetrix_combat");
     /** The ability (author, 2026-10-30: G, rebindable): the sword's turn with a sword, the whirlwind with an axe. */
-    public static final KeyMapping ABILITY = new KeyMapping("key.kinetrix_moves.ability", KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.kinetrix_moves");
+    public static final KeyMapping ABILITY = new KeyMapping("key.kinetrix_combat.ability", KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.kinetrix_combat");
     private static final boolean KINETRIX = ModList.get().isLoaded("kinetrix");
 
     /** R pressed without a direction: waits this many more ticks for A, D, S or W. */
@@ -225,7 +225,7 @@ public final class MovesClient {
             if (attackPressed && HudConfig.Moves.SLIDE_ATTACK.on() && dev.mcreload.moves.Strikes.slideWeapon(p)) {
                 if (s.slideAttackCooldown > 0) {
                     MovesHud.refused(Move.SLIDE_ATTACK);
-                    p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_moves.slide_attack.cooldown",
+                    p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_combat.slide_attack.cooldown",
                             (s.slideAttackCooldown + 19) / 20), true);
                 } else if (start(p, s, Move.SLIDE_ATTACK, false, -1)) {
                     StrikeInput.swallow(mc);
@@ -1020,7 +1020,18 @@ public final class MovesClient {
         if (s.move != move) return;
         s.end(p);
         MoveAnimator.stop(p, 3);
-        KinetrixMoves.LOG.debug("[kinetrix_moves] server refused {}", move);
+        KinetrixMoves.LOG.debug("[kinetrix_combat] server refused {}", move);
+    }
+
+    /** What this player has learned, from the server (Progress). */
+    public static void learned(dev.mcreload.moves.net.MovesNet.Learned m) {
+        net.minecraft.world.entity.player.Player p = Minecraft.getInstance().player;
+        if (p == null) return;
+        dev.mcreload.moves.Progress pr = Stamina.of(p).progress;
+        pr.setLearnedBits(m.bits());
+        pr.clearWheel();
+        for (int i = 0; i < Math.min(m.wheel().length, pr.wheel.length); i++) pr.wheel[i] = dev.mcreload.moves.Skill.byId(m.wheel()[i]);
+        pr.rank = m.rank();
     }
 
     public static void bars(MovesNet.Bars m) {

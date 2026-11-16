@@ -175,7 +175,7 @@ public final class LedgeInput {
             boolean climb = up && Ledge.roomOnTop(p, top);
             if (jumpPressed && !climb && aim != null) {
                 if (aim.reachable() && HudConfig.Moves.LEDGE_HOPS.on()) leap(p, s, d, aim.spot());
-                else p.displayClientMessage(Component.translatable("kinetrix_moves.ledge.too_far"), true);
+                else p.displayClientMessage(Component.translatable("kinetrix_combat.ledge.too_far"), true);
                 return;
             }
             if (up && jumpPressed) {
@@ -183,7 +183,7 @@ public final class LedgeInput {
                     hangAt = p.position();
                     MovesClient.start(p, s, Move.LEDGE_CLIMB, s.ledgeDir);
                 } else {
-                    p.displayClientMessage(Component.translatable("kinetrix_moves.ledge.no_room"), true);
+                    p.displayClientMessage(Component.translatable("kinetrix_combat.ledge.no_room"), true);
                 }
                 return;
             }

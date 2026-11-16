@@ -1,6 +1,6 @@
 """Do the animations in the mod match the refined Blockbench file? (CI, .github/workflows/moves.yml)
 
-    python3 moves/tools/check_anims.py <freshly converted dir> moves/src/main/resources/assets/kinetrix_moves/player_animation
+    python3 moves/tools/check_anims.py <freshly converted dir> moves/src/main/resources/assets/kinetrix_combat/player_animation
 
 Numbers may differ in the last digit between numpy builds; anything above 1e-4 is a real change:
 convert again and commit (see moves/README.md).

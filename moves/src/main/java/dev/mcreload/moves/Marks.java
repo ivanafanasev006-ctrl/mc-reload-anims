@@ -72,7 +72,7 @@ public final class Marks {
      */
     public static boolean volleyReady(Player p, Stamina s) {
         if (s.markedCooldown > (p.level().isClientSide ? 0 : 5) || !Bow.volleyReady(p)) return false;
-        if (!s.free() && !p.getAbilities().instabuild && s.energy < MovesConfig.costMarked() + MovesConfig.costMarkedEach()) return false;
+        if (!s.canAfford(MovesConfig.costMarked() + MovesConfig.costMarkedEach(), p)) return false;
         return !inSight(p, s).isEmpty();
     }
 

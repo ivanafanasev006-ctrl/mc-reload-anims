@@ -147,6 +147,8 @@ public final class MoveServer {
     }
 
     public static boolean allowed(Player p, Stamina s, Move move) {
+        // a learned move works only from the wheel (author, 2026-11-16); the others every player has
+        if (!s.progress.usable(Skill.of(move))) return false;
         if (!p.isAlive() || p.isSpectator() || p.isPassenger() || p.isSleeping() || p.isFallFlying()
                 || p.getAbilities().flying || p.isInWater() || p.isInLava()) return false;
         // Using an item (eating, drawing a bow) rules moves out, except the dodges of the Legolas stance,
@@ -320,6 +322,8 @@ public final class MoveServer {
 
     /** Sends the bars to the player when they changed enough to show (or {@code now}). */
     static void sync(ServerPlayer p, Stamina s, boolean now) {
+        // what was learned: to a new client (joined, respawned, another dimension), and now and then (a lost one)
+        if (!SENT.containsKey(p.getUUID()) || p.tickCount % 200 == 0) MovesNet.progress(p);
         float[] last = SENT.computeIfAbsent(p.getUUID(), u -> new float[]{-1, -1, -1, -1, -1, -1, -1, -1});
         float maxE = MovesConfig.maxEnergy(), maxS = MovesConfig.maxShields();
         // The bar is 71 pixels: a quarter of a pixel is invisible; free time counts by the second.

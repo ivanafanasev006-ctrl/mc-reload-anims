@@ -135,7 +135,7 @@ public final class FirstPersonArms {
             f = AnimationStack.class.getDeclaredField("layers");
             f.setAccessible(true);
         } catch (ReflectiveOperationException | RuntimeException e) {
-            KinetrixMoves.LOG.warn("[kinetrix_moves] cannot see the animation layers: other mods' attacks keep their own first person look", e);
+            KinetrixMoves.LOG.warn("[kinetrix_combat] cannot see the animation layers: other mods' attacks keep their own first person look", e);
         }
         LAYERS = f;
     }
