@@ -33,6 +33,9 @@ public final class GuardInput {
         MinecraftForge.EVENT_BUS.addListener(GuardInput::movementInput);
     }
 
+    /** The blade goes up again by itself once the move is over, if the button is still held. */
+    static boolean rearm;
+
     private static void rightClick(PlayerInteractEvent.RightClickItem event) {
         if (event.getLevel().isClientSide && event.getHand() == InteractionHand.MAIN_HAND
                 && event.getEntity() == Minecraft.getInstance().player) {
@@ -50,7 +53,15 @@ public final class GuardInput {
         Stamina s = Stamina.of(p);
         boolean held = mc.options.keyUse.isDown() && mc.screen == null;
         if (!held) waitRelease = false;
+        if (!held) rearm = false;
         if (s.guard == Guard.Kind.NONE) {
+            // after the block's kick or shove, the button still held: up again (no new parry window: Guard.raise)
+            if (rearm && held && s.move == null && Guard.allowed(p, s)) {
+                rearm = false;
+                waitRelease = false;
+                raise(p, s);
+                return;
+            }
             if (click && held && !waitRelease && dev.mcreload.moves.HudConfig.Moves.GUARD.on() && MovesClient.serverHasMod()
                     && Guard.allowed(p, s)) raise(p, s);
             return;

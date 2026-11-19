@@ -69,6 +69,13 @@ public final class Spin {
     private static final float SLIDE_TOP = 0.32f, SLIDE_LAST = 0.20f;
     /** The slide over: running on takes the player out of the move at once (no getting up); a jump or a blow from the landing on. */
     public static final int AIR_SLID = AIR_LAND + SLIDE_TICKS;
+    /** The slide after it is steered by the look, this many degrees a tick at most (author, 2026-11-19). [default] */
+    public static final float AIR_STEER = 9f;
+
+    /** The slide after the turns is under way (steered; the left button attacks out of it). */
+    public static boolean airSliding(int tick) {
+        return tick > AIR_LAND && tick < AIR_SLID;
+    }
 
     /** The air turns' pushes from Move.PUSH_TICK: AIR_SPEED to the landing, then the slide. */
     static float[] airPush() {

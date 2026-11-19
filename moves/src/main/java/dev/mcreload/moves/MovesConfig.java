@@ -24,6 +24,9 @@ public final class MovesConfig {
             SHIELD_REGEN_SECONDS, HOP_SPEED_TICKS;
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
     private static final ForgeConfigSpec.IntValue PARRY_REARM;
+    private static final ForgeConfigSpec.DoubleValue GR_FINISH_HEALTH, GR_KICK_STRENGTH, GR_KICK_DAMAGE, GR_SHOVE_STRENGTH, GR_SHOVE_DAMAGE,
+            GR_CROWD_RANGE, GR_ARCHER_RANGE, GR_THROW_SPEED, GR_THROW_DAMAGE, GR_HOLD_MOVE, GR_COST_FINISH, GR_COST_SHOVE, GR_COST_SHIELD;
+    private static final ForgeConfigSpec.IntValue GR_CROWD, GR_HOLD_SECONDS;
     private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE, KNEEL_MOVE,
             VAULT_MIN_WIDTH, VAULT_MIN_HEIGHT, VAULT_MAX_HEIGHT, VAULT_SHOVE, DASH_CRIT, FINISH_HEALTH, FINISH_RANGE, FINISH_MAX_HEALTH;
     private static final ForgeConfigSpec.IntValue DASH_COOLDOWN, SLIDE_ATTACK_COOLDOWN;
@@ -439,6 +442,32 @@ public final class MovesConfig {
         BRONZE_LINE = b.comment("Gold ingots that begin the bronze bar's line of tasks (author: 32).").defineInRange("bronzeLineGold", 32, 0, 640);
         BRASS_LINE = b.comment("Diamonds that begin the brass bar's line of tasks (author: 16).").defineInRange("brassLineDiamonds", 16, 0, 640);
         b.pop();
+
+        b.comment("The sword block's answers (author, 2026-11-19; perks): the finisher, the kick, the shove, the living shield.").push("guardAnswers");
+        GR_FINISH_HEALTH = b.comment("A blow blocked from a mob with less than this share of its health left: caught, its arm twisted behind",
+                "its back, kicked onto its face, dead (author: 25 %).").defineInRange("finishHealth", 0.25, 0.0, 1.0);
+        GR_KICK_STRENGTH = b.comment("A blow blocked (not perfectly): the kick throws the mob back (0.5: about 2 blocks, author). Heavy mobs go as far.")
+                .defineInRange("kickStrength", 0.5, 0.0, 3.0);
+        GR_KICK_DAMAGE = b.comment("The block's kick: its damage. [default]").defineInRange("kickDamage", 0.0, 0.0, 1000.0);
+        GR_SHOVE_STRENGTH = b.comment("A perfect parry: the body and the blade shove the mob back (1.15: about 5 blocks, author).")
+                .defineInRange("shoveStrength", 1.15, 0.0, 3.0);
+        GR_SHOVE_DAMAGE = b.comment("The perfect parry's shove: its damage (author: 2 hearts = 4).").defineInRange("shoveDamage", 4.0, 0.0, 1000.0);
+        GR_CROWD = b.comment("A perfect parry with this many enemies near (the one who struck too) or an archer in range: the living shield",
+                "instead of the shove (author: 2 and more).").defineInRange("shieldCrowd", 2, 1, 100);
+        GR_CROWD_RANGE = b.comment("How near (blocks) the enemies are counted for the living shield. [default]").defineInRange("shieldCrowdRange", 8.0, 1.0, 64.0);
+        GR_ARCHER_RANGE = b.comment("How near (blocks) a shooting mob (a skeleton, a pillager...) makes the living shield. [default]")
+                .defineInRange("shieldArcherRange", 16.0, 1.0, 64.0);
+        GR_HOLD_SECONDS = b.comment("The living shield: seconds the mob is held on the blade before it dies by itself (author: \"or it dies by",
+                "itself\"). [default]").defineInRange("shieldHoldSeconds", 8, 1, 600);
+        GR_HOLD_MOVE = b.comment("The living shield: how fast the player walks holding it (1: as ever). [default]").defineInRange("shieldMove", 0.45, 0.0, 1.0);
+        GR_THROW_SPEED = b.comment("The living shield kicked off the blade (the right button again): its speed, blocks a tick. [default]")
+                .defineInRange("shieldThrowSpeed", 1.3, 0.1, 5.0);
+        GR_THROW_DAMAGE = b.comment("The kicked mob knocks down those it flies into (as in bowling): their damage. [default]")
+                .defineInRange("shieldThrowDamage", 4.0, 0.0, 1000.0);
+        GR_COST_FINISH = b.comment("Energy: the block's finisher. [default]").defineInRange("costFinish", 5.0, 0.0, 100.0);
+        GR_COST_SHOVE = b.comment("Energy: the perfect parry's shove. [default]").defineInRange("costShove", 3.0, 0.0, 100.0);
+        GR_COST_SHIELD = b.comment("Energy: the living shield. [default]").defineInRange("costShield", 5.0, 0.0, 100.0);
+        b.pop();
         SPEC = b.build();
     }
 
@@ -465,6 +494,21 @@ public final class MovesConfig {
     public static boolean dodgeOnlyOnGround() { return get(DODGE_ON_GROUND, true); }
     public static float slideBlocks() { return f(SLIDE_TAP, 5.0); }
     public static float slideHeldBlocks() { return f(SLIDE_HELD, 6.0); }
+    public static float guardFinishHealth() { return f(GR_FINISH_HEALTH, 0.25); }
+    public static float guardKickStrength() { return f(GR_KICK_STRENGTH, 0.5); }
+    public static float guardKickDamage() { return f(GR_KICK_DAMAGE, 0.0); }
+    public static float guardShoveStrength() { return f(GR_SHOVE_STRENGTH, 1.15); }
+    public static float guardShoveDamage() { return f(GR_SHOVE_DAMAGE, 4.0); }
+    public static int shieldCrowd() { return get(GR_CROWD, 2); }
+    public static float shieldCrowdRange() { return f(GR_CROWD_RANGE, 8.0); }
+    public static float shieldArcherRange() { return f(GR_ARCHER_RANGE, 16.0); }
+    public static int shieldHoldTicks() { return get(GR_HOLD_SECONDS, 8) * 20; }
+    public static float shieldMove() { return f(GR_HOLD_MOVE, 0.45); }
+    public static float shieldThrowSpeed() { return f(GR_THROW_SPEED, 1.3); }
+    public static float shieldThrowDamage() { return f(GR_THROW_DAMAGE, 4.0); }
+    public static float costGuardFinish() { return f(GR_COST_FINISH, 5.0); }
+    public static float costGuardShove() { return f(GR_COST_SHOVE, 3.0); }
+    public static float costLivingShield() { return f(GR_COST_SHIELD, 5.0); }
     public static int parryRearmTicks() { return get(PARRY_REARM, 10); }
     public static float costHop() { return f(COST_HOP, 12.5); }
     public static float costBarrage() { return f(COST_BARRAGE, 10.0); }

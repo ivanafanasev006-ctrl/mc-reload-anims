@@ -129,6 +129,7 @@ public final class MovesClient {
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> new MovesMenuScreen(parent)));
         GuardInput.init();
         StoopFx.init();
+        MobPoses.init();
         Cutscene.init();
         SmoothCamera.init();
         LedgeAim.init();
@@ -200,6 +201,13 @@ public final class MovesClient {
         }
         Stamina s = Stamina.of(p);
         Cutscene.tick(mc, p, s);
+
+        // ---- the living shield held on the blade: the right button again kicks it off (GuardAnswers)
+        if (s.move == Move.HOSTAGE_HOLD) {
+            if (usePressed) start(p, s, Move.HOSTAGE_KICK, s.target);
+            return;
+        }
+        if (s.move != null && s.move.guardAnswer()) return;
 
         // ---- the fast run: Ctrl held (the server gives the speed while sprinting and takes the energy)
         boolean run = HudConfig.Moves.FAST_RUN.on() && mc.options.keySprint.isDown();
@@ -298,6 +306,20 @@ public final class MovesClient {
                 cancel(p, s, 6);    // the bow put away, or it could not be drawn
             } else if (!p.onGround() && p.fallDistance > 1f) {
                 cancel(p, s, 4);    // slid off a drop: no kneeling in the air (the fall's own moves may follow)
+            }
+        }
+
+        // ---- the slide after the turns in the air (author, 2026-11-19): steered by the look, and the left button makes the
+        // attack out of it, as out of the Ctrl + C slide
+        if (s.move == Move.AIR_SPIN && dev.mcreload.moves.Spin.airSliding(s.moveTick)) {
+            moveYaw = Mth.approachDegrees(moveYaw, p.getYRot(), dev.mcreload.moves.Spin.AIR_STEER);
+            if (attackPressed && HudConfig.Moves.SLIDE_ATTACK.on() && dev.mcreload.moves.Strikes.slideWeapon(p)) {
+                if (s.slideAttackCooldown > 0) {
+                    MovesHud.refused(Move.SLIDE_ATTACK);
+                } else if (start(p, s, Move.SLIDE_ATTACK, false, -1)) {
+                    StrikeInput.swallow(mc);
+                }
+                attackPressed = false;
             }
         }
 
@@ -895,6 +917,13 @@ public final class MovesClient {
         if (s.move == Move.SLIDE && s.moveTick < Move.PUSH_TICK) return;
         if (s.move == Move.FALL_TUCK || s.move == Move.PLUNGE_FALL) return;     // in the air: the little steering vanilla gives stays
         if (s.move == Move.SWORD_SPIN || s.move == Move.SPIN_END) return;     // the sword's turns walk with the keys
+        // holding the living shield: walking slowly with it (GuardAnswers)
+        if (s.move == Move.HOSTAGE_HOLD) {
+            event.getInput().forwardImpulse *= MovesConfig.shieldMove();
+            event.getInput().leftImpulse *= MovesConfig.shieldMove();
+            event.getInput().jumping = false;
+            return;
+        }
         Input in = event.getInput();
         in.forwardImpulse = 0f;
         in.leftImpulse = 0f;
@@ -1023,7 +1052,15 @@ public final class MovesClient {
         if (!(e instanceof AbstractClientPlayer p)) return;
         Stamina s = Stamina.of(p);
         if (p == mc.player) {
+            // the server ended a move it started on us (the living shield gone)
+            if (move == null && s.move != null && s.move.serverStarted()) {
+                s.end(p);
+                MoveAnimator.stop(p, 3);
+                return;
+            }
             if (move == null || !move.serverStarted()) return;
+            // the block's kick and shove: the blade goes up again after them if the button is still held
+            if (move == Move.GUARD_KICK || move == Move.GUARD_SHOVE) GuardInput.rearm = true;
             Move was = s.move;
             s.start(p, move, false);
             moveYaw = p.getYRot();

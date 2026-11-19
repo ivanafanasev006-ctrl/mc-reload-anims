@@ -49,6 +49,7 @@ public final class KinetrixMoves {
         MinecraftForge.EVENT_BUS.register(Bow.class);
         MinecraftForge.EVENT_BUS.register(WaterArrows.class);
         MinecraftForge.EVENT_BUS.register(Parry.class);
+        MinecraftForge.EVENT_BUS.register(GuardAnswers.class);
         MinecraftForge.EVENT_BUS.register(Thrown.class);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, HudConfig.SPEC, MODID + "-client.toml");

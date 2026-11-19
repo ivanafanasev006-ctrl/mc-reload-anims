@@ -350,6 +350,110 @@ public final class MovesGameTests {
         }).run(12);
     }
 
+    // ------------------------------------------------------------------ the block's answers (GuardAnswers, perks)
+
+    /** A weak mob's blow on the blade: caught, twisted, kicked onto its face, dead; the player untouched. */
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardAnswerFinish")
+    public static void guardAnswerFinish(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD));
+            zombie.setHealth(4f);
+        });
+        t.at(3, () -> Guard.request(p, true));
+        t.at(14, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.check(s.move == Move.GUARD_FINISH, "no finisher from the block: " + s.move);
+            t.close(p.getHealth(), 20f, "health after the blow the finisher caught");
+        });
+        t.at(14 + dev.mcreload.moves.GuardAnswers.FIN_KICK - 2, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.close(p.getHealth(), 20f, "the player hurt in the finisher");
+        });
+        t.at(14 + dev.mcreload.moves.GuardAnswers.FIN_KILL + 2, () -> t.check(!zombie.isAlive(), "the zombie lived through the finisher"))
+                .run(14 + dev.mcreload.moves.GuardAnswers.FIN_KILL + 3);
+    }
+
+    /** A blow blocked (not perfectly): the kick throws the mob back. */
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardAnswerKick")
+    public static void guardAnswerKick(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        Stamina s = Stamina.of(p);
+        float[] was = new float[1];
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> Guard.request(p, true));
+        t.at(14, () -> {
+            was[0] = zombie.distanceTo(p);
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.check(s.move == Move.GUARD_KICK, "no kick from the block: " + s.move);
+            t.close(p.getHealth(), 18f, "a kicked blow is still a blocked one");
+        });
+        t.at(14 + dev.mcreload.moves.GuardAnswers.KICK_HIT + 8, () -> t.check(zombie.distanceTo(p) > was[0] + 1.0f,
+                "the kick did not throw it back: " + was[0] + " -> " + zombie.distanceTo(p)))
+                .run(14 + dev.mcreload.moves.GuardAnswers.KICK_HIT + 9);
+    }
+
+    /** A perfect parry: the shove, 2 hearts and far back. */
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardAnswerShove")
+    public static void guardAnswerShove(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        Stamina s = Stamina.of(p);
+        float[] was = new float[1];
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> Guard.request(p, true));
+        t.at(9, () -> {
+            was[0] = zombie.distanceTo(p);
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.check(s.move == Move.GUARD_SHOVE, "no shove from the parry: " + s.move);
+            t.close(p.getHealth(), 20f, "health after the parried blow");
+        });
+        t.at(9 + dev.mcreload.moves.GuardAnswers.SHOVE_PUSH + 10, () -> {
+            float want = 20f - MovesConfig.guardShoveDamage();
+            t.check(Math.abs(zombie.getHealth() - want) < 0.5f, "the shove's damage: " + zombie.getHealth() + ", expected " + want);
+            t.check(zombie.distanceTo(p) > was[0] + 2.5f, "the shove did not drive it far: " + was[0] + " -> " + zombie.distanceTo(p));
+        }).run(9 + dev.mcreload.moves.GuardAnswers.SHOVE_PUSH + 11);
+    }
+
+    /** A perfect parry with two near: the living shield takes a blow from the front; the right button again kicks it off. */
+    @GameTest(template = FLOOR, timeoutTicks = 300, batch = "guardAnswerShield")
+    public static void guardAnswerShield(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        Zombie other = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 6);
+        noSun(zombie);
+        noSun(other);
+        Stamina s = Stamina.of(p);
+        int held = 9 + dev.mcreload.moves.GuardAnswers.GRAB_LEN + 4;
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> Guard.request(p, true));
+        t.at(9, () -> {
+            p.hurt(p.damageSources().mobAttack(zombie), 8f);
+            t.check(s.move == Move.GUARD_GRAB, "no grab from the parry with two near: " + s.move);
+        });
+        t.at(held, () -> {
+            t.check(s.move == Move.HOSTAGE_HOLD, "not holding it: " + s.move);
+            t.check(zombie.distanceTo(p) < 1.6f, "the shield not in front: " + zombie.distanceTo(p));
+            float before = zombie.getHealth();
+            p.invulnerableTime = 0;
+            p.hurt(p.damageSources().mobAttack(other), 6f);
+            t.close(p.getHealth(), 20f, "the player hurt behind the living shield");
+            t.check(zombie.getHealth() < before, "the shield took nothing: " + before + " -> " + zombie.getHealth());
+            t.check(MoveServer.request(p, Move.HOSTAGE_KICK, false, zombie.getId()), "the kick off the blade refused");
+        });
+        t.at(held + 40, () -> t.check(!zombie.isAlive(), "the kicked shield lived")).run(held + 41);
+    }
+
     /** Blows from behind are not blocked. */
     @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardNotFromBehind")
     public static void guardNotFromBehind(GameTestHelper h) {

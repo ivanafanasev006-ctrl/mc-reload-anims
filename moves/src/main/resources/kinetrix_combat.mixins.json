@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.mcreload.moves.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "kinetrix_combat.refmap.json",
+  "client": [
+    "LivingEntityRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

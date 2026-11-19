@@ -2,6 +2,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 version = mod_version
@@ -51,6 +52,12 @@ minecraft {
     }
 }
 
+// The mobs' poses in our moves (mixin/LivingEntityRendererMixin): one small mixin of our own.
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+    config "${mod_id}.mixins.json"
+}
+
 repositories {
     maven {
         name = 'KosmX (playerAnimator)'
@@ -65,6 +72,7 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     // Our animation layer; Kinetrix draws its bends (elbows, knees, waist).
     implementation fg.deobf("dev.kosmx.player-anim:player-animation-lib-forge:${player_anim_version}")
     // Kinetrix in the development client, when it has been published locally. The mod only reaches it

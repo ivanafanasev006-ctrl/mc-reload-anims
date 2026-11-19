@@ -437,6 +437,9 @@ public final class CombatScreen extends Screen {
             case XBOW_G -> Move.XBOW_VOLLEY;
             case XBOW_FAN -> Move.XBOW_FAN;
             case XBOW_ROLLS -> Move.XBOW_ROLL_BACK;
+            case GUARD_KICK -> Move.GUARD_KICK;
+            case GUARD_COUNTER -> Move.GUARD_SHOVE;
+            case GUARD_FINISH -> Move.GUARD_FINISH;
         };
         return new int[]{StrikeInput.cooldown(s, m), Math.max(1, MovesHud.cooldownTotal(m))};
     }

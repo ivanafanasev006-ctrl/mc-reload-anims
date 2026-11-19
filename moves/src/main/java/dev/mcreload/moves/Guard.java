@@ -152,9 +152,16 @@ public final class Guard {
     public static void attack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer p) || event.isCanceled()) return;
         Stamina s = Stamina.of(p);
-        if (!blockable(p, s, event.getSource()) || !inParryWindow(s)) return;
+        if (!blockable(p, s, event.getSource())) return;
         // During the player's hurt invulnerability vanilla ignores the blow anyway.
         if (p.invulnerableTime > 10) return;
+        boolean parry = inParryWindow(s);
+        // the block's answers (perks): the finisher for a weak mob, the shove or the living shield on a perfect parry
+        if (GuardAnswers.answerBlow(p, s, event.getSource(), parry)) {
+            event.setCanceled(true);
+            return;
+        }
+        if (!parry) return;
         event.setCanceled(true);
         s.combatTicks = MovesConfig.combatTicks();
         effects(p, true);
@@ -177,6 +184,8 @@ public final class Guard {
             p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 0.8f, 1.1f);
             lower(p, s);
         }
+        // the kick (a perk): the one that struck goes back about 2 blocks
+        GuardAnswers.blocked(p, s, event.getSource());
         MoveServer.sync(p, s, true);
     }
 

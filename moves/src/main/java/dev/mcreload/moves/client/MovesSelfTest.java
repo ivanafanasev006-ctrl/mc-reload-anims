@@ -186,6 +186,11 @@ public final class MovesSelfTest {
         dash("93_dash_mob_near", 2.2, CameraType.THIRD_PERSON_BACK);
         dash("94_dash_first_person", 4.5, CameraType.FIRST_PERSON);
         finisher("91_finisher", Items.IRON_SWORD, CameraType.THIRD_PERSON_BACK);
+        // the block's answers (author, 2026-11-19; GuardAnswers): the kick, the shove, the finisher, the living shield
+        guardAnswer("66_guard_answer_kick", 20f, false, false);
+        guardAnswer("67_guard_answer_shove", 20f, true, false);
+        guardAnswer("68_guard_answer_finish", 4f, false, false);
+        guardAnswer("69_guard_answer_shield", 20f, true, true);
         finisher("92_finisher_axe", Items.IRON_AXE, CameraType.THIRD_PERSON_BACK);
         finisher("95_finisher_first_person", Items.IRON_SWORD, CameraType.FIRST_PERSON);
 
@@ -723,6 +728,49 @@ public final class MovesSelfTest {
     }
 
     /** The finisher on a weakened zombie at point blank: the hint, then the left button held; with this weapon. */
+    private static ServerPlayer answerPlayer;
+
+    /**
+     * The sword block, a zombie 1.6 blocks ahead striking it (from the server): in the parry window ({@code perfect}) or
+     * after; {@code crowd}: a second zombie beside it (the living shield), which strikes the shield in turn, then the right
+     * button again kicks the shield off.
+     */
+    private static void guardAnswer(String name, float health, boolean perfect, boolean crowd) {
+        int blow = perfect ? 9 : 16, hold = blow + dev.mcreload.moves.GuardAnswers.GRAB_LEN + 6;
+        SCENARIOS.add(new Scenario(name, crowd ? hold + 40 : blow + 52, sp -> {
+            answerPlayer = sp;
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 1.6, health);
+            if (crowd) dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, 2.2, 2.4, 20f);
+        }, (mc, t) -> {
+            // from in front for the finisher and the shield (the mob is between the camera and the player, seen falling)
+            camera(mc, crowd || health < 5f ? CameraType.THIRD_PERSON_FRONT : CameraType.THIRD_PERSON_BACK);
+            if (t == 1) mc.player.setXRot(crowd || health < 5f ? -8f : 22f);
+            if (t == 3) KeyMapping.click(mc.options.keyUse.getKey());
+            mc.options.keyUse.setDown(t >= 3 && t < (crowd ? hold + 4 : blow + 40) || crowd && t >= hold + 8 && t < hold + 11);
+            if (t == blow || (crowd && t == hold)) strike(mc, t == blow ? 0 : 1);
+            if (t == blow + 2) note("guard answer: move " + Stamina.of(mc.player).move);
+            if (crowd && t == hold + 8) KeyMapping.click(mc.options.keyUse.getKey());
+            if (crowd && t == hold + 10) note("guard answer: then " + Stamina.of(mc.player).move);
+            if (t == (crowd ? hold + 36 : blow + 48)) dummyReport(mc, "guard answer", true);
+        }, crowd ? new int[]{blow + 4, blow + 14, hold + 2, hold + 13, hold + 18} : perfect
+                ? new int[]{blow + 2, blow + 7, blow + 10, blow + 16}
+                : health < 5f ? new int[]{blow + 4, blow + 16, blow + 28, blow + 33, blow + 40, blow + 47} : new int[]{blow + 2, blow + 5, blow + 9}, true));
+    }
+
+    /** The self-test's mob number {@code i} (from the player's left) strikes the player, on the server. */
+    private static void strike(Minecraft mc, int i) {
+        if (mc.getSingleplayerServer() == null) return;
+        mc.getSingleplayerServer().execute(() -> {
+            List<net.minecraft.world.entity.Mob> mobs = new ArrayList<>(answerPlayer.serverLevel().getEntitiesOfClass(
+                    net.minecraft.world.entity.Mob.class, answerPlayer.getBoundingBox().inflate(8), m -> m.isAlive()));
+            mobs.sort((a, b) -> Double.compare(a.distanceTo(answerPlayer), b.distanceTo(answerPlayer)));
+            if (mobs.size() <= i) return;
+            answerPlayer.invulnerableTime = 0;
+            answerPlayer.hurt(answerPlayer.damageSources().mobAttack(mobs.get(mobs.size() > 1 && i == 1 ? mobs.size() - 1 : i)), 4f);
+        });
+    }
+
     private static void finisher(String name, net.minecraft.world.item.Item weapon, CameraType camera) {
         SCENARIOS.add(new Scenario(name, 50, sp -> {
             place(sp, 0, new ItemStack(weapon));

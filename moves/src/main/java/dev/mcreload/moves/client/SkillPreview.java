@@ -59,6 +59,9 @@ final class SkillPreview {
             case XBOW_FAN -> new Move[]{Move.XBOW_FAN, Move.XBOW_FAN_SHOT};
             case XBOW_ROLLS -> new Move[]{Move.XBOW_ROLL_BACK, Move.XBOW_ROLL_LEFT};
             case DIVE -> new Move[]{Move.DIVE};
+            case GUARD_KICK -> new Move[]{Move.GUARD_KICK};
+            case GUARD_COUNTER -> new Move[]{Move.GUARD_SHOVE, Move.GUARD_GRAB, Move.HOSTAGE_HOLD, Move.HOSTAGE_KICK};
+            case GUARD_FINISH -> new Move[]{Move.GUARD_FINISH};
         };
     }
 

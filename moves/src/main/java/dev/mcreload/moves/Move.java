@@ -370,7 +370,22 @@ public enum Move {
     /** Pulled up by a friend (the server starts it, when the friend takes their hand). */
     LEDGE_PULLED("ledge_pulled_up", 1f, 55, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** The friend: the right button on a player hanging below them; they kneel, take the hand and pull. */
-    LEDGE_HELP("ledge_help_pull", 1f, 55, -1, -1, -1, -1, Side.BACK, MovesConfig::costLedgeHelp);
+    LEDGE_HELP("ledge_help_pull", 1f, 55, -1, -1, -1, -1, Side.BACK, MovesConfig::costLedgeHelp),
+
+    // ---- the sword block's answers (author, 2026-11-19; GuardAnswers): started by the server when a blow meets the
+    // raised blade; their animations from tools/blockbench/refine_author_2026_10_29/round22.py
+    /** A weak mob's blow blocked: the wrist caught, the arm twisted behind its back, the kick, it falls on its face and dies. */
+    GUARD_FINISH("guard_finish", 1f, GuardAnswers.FIN_LEN, 0, GuardAnswers.FIN_LEN, -1, -1, Side.FRONT, () -> 0),
+    /** A blow blocked: the front kick, the mob about 2 blocks back; no stun. */
+    GUARD_KICK("guard_kick", 1f, GuardAnswers.KICK_LEN, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** A perfect parry: caught mid-blade, the body gives back, then body and blade drive it 5 blocks away. */
+    GUARD_SHOVE("guard_shove", 1f, GuardAnswers.SHOVE_LEN, 0, GuardAnswers.SHOVE_PUSH, -1, -1, Side.FRONT, () -> 0),
+    /** A perfect parry in a crowd or under arrows: the wrist caught, a turn, the blade into its back, the hand on its shoulder. */
+    GUARD_GRAB("guard_grab", 1f, GuardAnswers.GRAB_LEN, 0, GuardAnswers.GRAB_LEN, -1, -1, Side.FRONT, () -> 0),
+    /** Holding it on the blade, a living shield: walking slowly, the right button kicks it away. */
+    HOSTAGE_HOLD("hostage_hold", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** Kicked off the blade like a shot. */
+    HOSTAGE_KICK("hostage_kick", 1f, GuardAnswers.THROW_LEN, -1, -1, -1, -1, Side.FRONT, () -> 0);
 
     /** The hops along the edge play this much faster than their animation (author: one after another). */
     public static final float HOP_SPEED = 1.4f;
@@ -501,6 +516,11 @@ public enum Move {
     }
 
     /** The finisher: the sword's stab or the axe's chop. */
+    /** The block's answers, started by the server (the living shield's kick is asked for by the client). */
+    public boolean guardAnswer() {
+        return this == GUARD_FINISH || this == GUARD_KICK || this == GUARD_SHOVE || this == GUARD_GRAB || this == HOSTAGE_HOLD;
+    }
+
     public boolean finisher() {
         return this == FINISHER || this == FINISHER_AXE || this == FINISHER_BOW || this == FINISHER_XBOW;
     }
@@ -585,8 +605,10 @@ public enum Move {
     public boolean follows(Move now) {
         if (now == null) return false;
         return switch (this) {
-            case SLIDE_ATTACK, SLIDE_SHOT -> now == SLIDE;
+            case SLIDE_ATTACK -> now == SLIDE || now == AIR_SPIN;
+            case SLIDE_SHOT -> now == SLIDE;
             case SLIDE_SHOT_END -> now == SLIDE_SHOT;
+            case HOSTAGE_KICK -> now == HOSTAGE_HOLD;
             case FALL_ROLL -> now == FALL_TUCK;
             // R while falling with the blade held for the plunge: the tuck instead; the plunge's landing
             case FALL_TUCK -> now == PLUNGE_FALL;
@@ -623,7 +645,7 @@ public enum Move {
 
     /** Started by the server on a player who did not ask (pulled up by a friend): their own client plays it when told. */
     public boolean serverStarted() {
-        return this == LEDGE_PULLED;
+        return this == LEDGE_PULLED || guardAnswer();
     }
 
     /**
@@ -643,7 +665,7 @@ public enum Move {
      * throws the hand up into the eyes) and the crossbow's rolls (the body goes head over heels): vanilla's crossbow.
      */
     public boolean firstPerson() {
-        return this == HOP || this == DASH || finisher() || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
+        return this == HOP || this == DASH || finisher() || guardAnswer() || this == HOSTAGE_KICK || this == SLIDE_ATTACK || this == FALL_ROLL || this == PLUNGE
                 || turning() || ledge() || volley() || marked() || this == SLIDE_SHOT || crossbow()
                 || this == XBOW_VOLLEY || this == XBOW_SPIN || this == XBOW_FAN || thrown();
     }
@@ -669,6 +691,9 @@ public enum Move {
             case SLIDE_SHOT_END -> SLIDE_SHOT_UP;
             case FALL_ROLL -> Fall.STAND;
             case FINISHER -> Strikes.FINISH_OUT;
+            case GUARD_KICK -> GuardAnswers.KICK_HIT + 3;
+            case GUARD_SHOVE -> GuardAnswers.SHOVE_PUSH + 3;
+            case HOSTAGE_KICK -> GuardAnswers.THROW_HIT + 3;
             case FINISHER_BOW -> Strikes.BOW_KILL + 4;
             case THROW -> Thrown.THROW_RELEASE + 4;
             case CHAIN_FLIP -> Chain.ROLL_TO + 3;

@@ -110,7 +110,7 @@ public final class SkillUse {
                 if (!BowVolley.wheel(p, s)) p.displayClientMessage(Component.translatable("kinetrix_combat.wheel.how.bowMarks"), true);
             }
             // made only in a state of their own
-            case LEGOLAS, SLIDE_SHOT, XBOW_ROLLS -> p.displayClientMessage(Component.translatable("kinetrix_combat.wheel.how." + k.key), true);
+            case LEGOLAS, SLIDE_SHOT, XBOW_ROLLS, GUARD_KICK, GUARD_COUNTER, GUARD_FINISH -> p.displayClientMessage(Component.translatable("kinetrix_combat.wheel.how." + k.key), true);
         }
     }
 

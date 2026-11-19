@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "21";
+    public static final String VERSION = "22";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -49,6 +49,7 @@ public final class MovesNet {
         CHANNEL.registerMessage(id++, Equip.class, Equip::write, Equip::read, Equip::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, TrainerData.class, TrainerData::write, TrainerData::read, TrainerData::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, TrainerAct.class, TrainerAct::write, TrainerAct::read, TrainerAct::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++, PoseMob.class, PoseMob::write, PoseMob::read, PoseMob::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     /**
@@ -213,6 +214,13 @@ public final class MovesNet {
         if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), msg);
     }
 
+    /** The server ended the move it started on {@code p}: everyone who sees them, and their own client. */
+    public static void forceStop(ServerPlayer p) {
+        Play msg = new Play(p.getId(), (byte) -1, -1);
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), msg);
+        if (connected(p)) CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), msg);
+    }
+
     /** Everyone who can see {@code p} stops their move. */
     public static void stop(ServerPlayer p) {
         CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> p), new Play(p.getId(), (byte) -1, -1));
@@ -228,6 +236,11 @@ public final class MovesNet {
     /** Everyone who sees {@code e} sees it stoop forward by {@code lean} degrees (under a vaulting hand) in {@code delay} ticks, for {@code ticks}. */
     public static void stoop(net.minecraft.world.entity.Entity e, int delay, int ticks, float lean) {
         CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> e), new Stoop(e.getId(), (byte) delay, (byte) ticks, (byte) Math.round(lean)));
+    }
+
+    /** Everyone who sees {@code e} sees it take this pose for {@code ticks} (turned: facing the other way meanwhile). */
+    public static void mobPose(net.minecraft.world.entity.Entity e, dev.mcreload.moves.MobPose pose, int ticks, boolean turned) {
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> e), new PoseMob(e.getId(), (byte) pose.ordinal(), ticks, turned));
     }
 
     public static void deny(ServerPlayer p, Move move) {
@@ -392,6 +405,17 @@ public final class MovesNet {
         static void handle(GuardState m, Supplier<NetworkEvent.Context> ctx) {
             ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> dev.mcreload.moves.client.GuardInput.remote(m.entity, dev.mcreload.moves.Guard.Kind.byId(m.kind))));
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Server -> client: a mob's pose in one of our moves (MobPose). */
+    public record PoseMob(int entity, byte pose, int ticks, boolean turned) {
+        static void write(PoseMob m, FriendlyByteBuf b) { b.writeVarInt(m.entity); b.writeByte(m.pose); b.writeVarInt(m.ticks); b.writeBoolean(m.turned); }
+        static PoseMob read(FriendlyByteBuf b) { return new PoseMob(b.readVarInt(), b.readByte(), b.readVarInt(), b.readBoolean()); }
+        static void handle(PoseMob m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> dev.mcreload.moves.client.MobPoses.set(m.entity, dev.mcreload.moves.MobPose.byId(m.pose), m.ticks, m.turned)));
             ctx.get().setPacketHandled(true);
         }
     }

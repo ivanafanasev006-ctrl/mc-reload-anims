@@ -73,6 +73,7 @@ public final class MoveServer {
         if (move == Move.WHIRL) Whirl.started(p, s);
         if (move == Move.AXE_TRIPLE) s.axeTripleCooldown = s.cooled(MovesConfig.axeTripleCooldownTicks());
         if (move == Move.SWORD_SPIN) Spin.started(p, s);
+        if (move == Move.HOSTAGE_KICK) GuardAnswers.kickOff(p, s);
         if (move == Move.AIR_SPIN) {
             s.airSpinCooldown = s.cooled(MovesConfig.airSpinCooldownTicks());
             s.attackYaw = p.getYRot();
@@ -169,11 +170,16 @@ public final class MoveServer {
         if (move == Move.SLIDE) return ground && sprint;
         // Out of the slide, a sword or an axe in hand, after the cooldown (a client a few ticks ahead is let through).
         if (move == Move.SLIDE_ATTACK) {
-            return s.move == Move.SLIDE && Strikes.slideWeapon(p) && s.slideAttackCooldown <= (p.level().isClientSide ? 0 : 5);
+            boolean client = p.level().isClientSide;
+            // or out of the slide after the turns in the air (author, 2026-11-19; a client a tick or two ahead let through)
+            boolean slide = s.move == Move.SLIDE || (s.move == Move.AIR_SPIN && (client ? Spin.airSliding(s.moveTick)
+                    : s.moveTick > Spin.AIR_LAND - 3 && s.moveTick < Spin.AIR_SLID + 3));
+            return slide && Strikes.slideWeapon(p) && s.slideAttackCooldown <= (client ? 0 : 5);
         }
         // The right button out of the slide with a bow (author, 2026-10-31), after its cooldown; its ending out of it.
         if (move == Move.SLIDE_SHOT) return s.move == Move.SLIDE && ground && s.slideShotCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.SLIDE_SHOT_END) return s.move == Move.SLIDE_SHOT;
+        if (move == Move.HOSTAGE_KICK) return s.move == Move.HOSTAGE_HOLD && s.moveTick >= 2;
         // In the air: the tuck while falling far enough, the roll out of it; the ledge from a jump or a fall.
         if (move == Move.FALL_TUCK) return p.fallDistance >= Fall.TUCK_FROM - (p.level().isClientSide ? 0f : 1f);
         if (move == Move.FALL_ROLL) return s.move == Move.FALL_TUCK;

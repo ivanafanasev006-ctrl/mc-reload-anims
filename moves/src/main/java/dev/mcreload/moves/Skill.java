@@ -33,7 +33,11 @@ public enum Skill {
      * The deep jump, W + Space + R with no mob near (author, 2026-11-16: "a scroll for the deep roll"); a perk (author,
      * 2026-11-16, later: "the perks, abilities like the deep roll and the attacks we add later").
      */
-    DIVE("dive", Weapon.ANY, true);
+    DIVE("dive", Weapon.ANY, true),
+    /** The sword block's answers (author, 2026-11-19; GuardAnswers): perks, working while in the perks' row. */
+    GUARD_KICK("guardKick", Weapon.SWORD, true),
+    GUARD_COUNTER("guardCounter", Weapon.SWORD, true),
+    GUARD_FINISH("guardFinish", Weapon.SWORD, true);
 
     /** Moves on the wheel at most, and perks in the row of squares above it. */
     public static final int WHEEL = 6, PERKS = 5;
@@ -80,6 +84,9 @@ public enum Skill {
             case LEGOLAS_LEFT, LEGOLAS_RIGHT -> LEGOLAS;
             case SLIDE_SHOT, SLIDE_SHOT_END -> SLIDE_SHOT;
             case DIVE -> DIVE;
+            case GUARD_KICK -> GUARD_KICK;
+            case GUARD_SHOVE, GUARD_GRAB, HOSTAGE_HOLD, HOSTAGE_KICK -> GUARD_COUNTER;
+            case GUARD_FINISH -> GUARD_FINISH;
             case XBOW_VOLLEY, XBOW_SPIN -> XBOW_G;
             case XBOW_FAN, XBOW_FAN_SHOT -> XBOW_FAN;
             case XBOW_ROLL_BACK, XBOW_ROLL_FRONT, XBOW_ROLL_LEFT, XBOW_ROLL_RIGHT -> XBOW_ROLLS;
