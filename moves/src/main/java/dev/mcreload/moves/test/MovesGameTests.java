@@ -2626,6 +2626,10 @@ public final class MovesGameTests {
                 // (near a player it was just shot: a hop back may take the player to the floor's edge)
                 if (all || !floor.contains(a.position()) && players.stream().noneMatch(p -> p.distanceTo(a) < 2.5f)) a.discard();
             }
+            // the test over: its mobs go too, flung off the floor or not (the block's kick and shove throw them 2 to 5 blocks,
+            // where a later test counted them as enemies about: the living shield instead of the shove)
+            if (all) for (net.minecraft.world.entity.Mob m : h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.Mob.class,
+                    floor.inflate(3.0, 0.0, 3.0))) m.discard();
         }
 
         void check(boolean ok, String what) {
