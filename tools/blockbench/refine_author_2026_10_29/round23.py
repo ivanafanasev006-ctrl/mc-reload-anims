@@ -5,18 +5,23 @@
 from above along it with the sword, a thrust, from behind, into the belly, in turn, and ends where he began and with the
 left hand yawns grandly, holding the sword in the right."
 
-    ts_stance  (1.5 s)  his samurai_mode as he made it (0.625 s: the body turned side-on, the blade drawn level at the
-                        hip, low on bent knees), then held: the head looks about (the enemies freezing), a breath.
-    ts_slash   (0.5 s)  from above down along it: the sword up over the right shoulder, down across to the left hip (hit
-                        at tick 4).
-    ts_thrust  (0.5 s)  the blade drawn back level, a lunge, the arm straight out (tick 4).
-    ts_back    (0.5 s)  from behind it, across its back: wound to the right, the blade swept level right to left (tick 4).
-    ts_belly   (0.5 s)  low, into the belly: down on the knees, the blade rising from the right hip across (tick 4).
-    ts_yawn    (2 s)    up out of the crouch, the sword lowered in the right hand, the left hand to the mouth, the head
-                        back in a long yawn, the hand down, at ease.
+    ts_stance  (1.5 s)  (author, 19.11 after trying it: "just the ordinary default pose, the sword in its default place,
+                        in both hands in front of him, and he looks at the sword") up from where he was into it, the
+                        head down at the blade, a breath.
+    6 blows    (0.35 s each, the hit at tick 3; 19.11: "1.5 times faster", "the blows and the look of the player varied"):
+      ts_slash   standing, from over the right shoulder down across to the left hip;
+      ts_thrust  a deep lunge, the arm and the blade straight out;
+      ts_back    upright, wound to the right, swept level across its back;
+      ts_belly   down on a knee, the blade rising from the right hip into the belly;
+      ts_leap    in the air above it, both hands, straight down;
+      ts_spin    a whole turn on the spot, the blade out level at arm's length.
+                 Each starts in its own wind-up (the server puts the player at the mob between them: he appears in it)
+                 and ends in its own follow-through, so no two look alike and none ends in a common pose.
+    ts_yawn    (2 s)    up, the sword lowered in the right hand; the left hand to the mouth as in Kinetrix's thinking
+                        pose (the inventory: the elbow out, the hand at the chin), the head back in a long yawn, then a
+                        moment's thought, the hand down, at ease.
 
-The blows start and end in the same low ready pose (the server puts the player at each mob between them; the flicker
-covers the cut). His file is not changed.
+His file is not changed.
 
     python3 tools/blockbench/refine_author_2026_10_29/round23.py   (writes refined/ninja_2026-11-16.bbmodel)
 """
@@ -51,30 +56,25 @@ def samurai(t):
 
 
 def ts_stance():
-    """His stance, then held: the head turning to look about (left, right, back to the front), a breath."""
+    """Up into the plain stance, the sword in both hands in front (its default place in the right hand, the left under
+    it), the head bowed to the blade; a breath."""
     LEN = 1.5
-    hold = samurai(SAMURAI_LEN)
-    hx, hy, hz = hold['head']
-    look = kit.keys((SAMURAI_LEN, hy), (0.85, hy - 35), (1.1, hy + 20), (1.35, hy), (LEN, hy))
-
-    def pose_at(t):
-        p = samurai(t)
-        if t > SAMURAI_LEN:
-            p['head'] = (hx, look(t), hz)
-            bx, by, bz = p['body@p']
-            p['body@p'] = (bx, by - 0.25 * kit.span(t, SAMURAI_LEN, 1.0) * (1 - kit.span(t, 1.0, LEN)), bz)
-        return p
-
-    feet = Feet().designed(-1.0, LEN + 1.0)
-    a = bake('ts_stance', LEN, pose_at, feet, level=False)
-    return a
+    hold = {'right_arm': (28.0, 30.0, 6.0), 'right_forearm': (24.0, 0.0, 0.0), 'left_arm': (22.0, -36.0, -4.0),
+            'left_forearm': (34.0, 0.0, 0.0), 'head': (-20.0, 0.0, 0.0), 'chest': (-2.0, 0.0, 0.0), 'body@p': (0.0, -0.3, 0.0)}
+    breath = {**hold, 'chest': (1.0, 0.0, 0.0), 'head': (-22.0, 0.0, 0.0), 'body@p': (0.0, -0.1, 0.0)}
+    keys = [(0, {}), (0.3, hold, 'inout'), (0.9, breath, 'inout'), (LEN, hold, 'inout')]
+    feet = Feet()
+    return bake('ts_stance', LEN, design('ts_stance', LEN, _all(keys)), feet, level=False)
 
 
-#: The low ready pose the blows start and end in: crouched, the blade low at the right hip, the left hand out.
-READY = {'body@p': (0.0, -2.0, 0.0), 'chest': (-14.0, 0.0, 0.0), 'head': (12.0, 0.0, 0.0),
-         'right_arm': (30.0, 20.0, 22.0), 'right_forearm': (40.0, 0.0, 0.0), 'left_arm': (24.0, -10.0, -24.0), 'left_forearm': (30.0, 0.0, 0.0),
-         'right_leg': (30.0, 0.0, 6.0), 'right_shin': (-40.0, 0.0, 0.0), 'left_leg': (-6.0, 0.0, -6.0), 'left_shin': (-34.0, 0.0, 0.0)}
-WIND, HIT, THRU, LEN = 0.08, 0.2, 0.32, 0.5
+HIT, THRU, LEN = 0.15, 0.27, 0.35
+#: The stances the blows are made from (the look of the player varied, author).
+LOW = {'body@p': (0.0, -2.0, 0.0), 'chest': (-14.0, 0.0, 0.0), 'head': (12.0, 0.0, 0.0),
+       'left_arm': (24.0, -10.0, -24.0), 'left_forearm': (30.0, 0.0, 0.0),
+       'right_leg': (30.0, 0.0, 6.0), 'right_shin': (-40.0, 0.0, 0.0), 'left_leg': (-6.0, 0.0, -6.0), 'left_shin': (-34.0, 0.0, 0.0)}
+UP = {'body@p': (0.0, -0.6, 0.0), 'chest': (-6.0, 0.0, 0.0), 'head': (6.0, 0.0, 0.0),
+      'left_arm': (14.0, 0.0, -20.0), 'left_forearm': (24.0, 0.0, 0.0),
+      'right_leg': (14.0, 0.0, 4.0), 'right_shin': (-16.0, 0.0, 0.0), 'left_leg': (-8.0, 0.0, -4.0), 'left_shin': (-14.0, 0.0, 0.0)}
 
 
 def _all(keys):
@@ -82,79 +82,114 @@ def _all(keys):
     return [(k[0], {**bones, **k[1]}) + tuple(k[2:]) for k in keys]
 
 
-def _blow(name, wind, hit, thru):
-    keys = [(0, READY), (WIND, {**READY, **wind}, 'out'), (HIT, {**READY, **hit}, 'linear'), (THRU, {**READY, **thru}, 'out'),
-            (LEN, READY, 'inout')]
-    feet = (Feet().step('left', 0.0, 0.01, -2.4, -3.0, 10, lift=0.0).step('right', 0.0, 0.01, 2.2, 2.0, -20, lift=0.0))
-    feet.start = {'right': (2.2, 2.0, -20.0), 'left': (-2.4, -3.0, 10.0)}
-    return bake(name, LEN, design(name, LEN, _all(keys)), feet, extra=(HIT,), level=False)
+def _blow(name, base, wind, hit, thru, feet=None, lift=None):
+    """Its wind-up at once, the blade through it at HIT, the follow-through held to the end."""
+    keys = [(0, {**base, **wind}), (HIT, {**base, **hit}, 'linear'), (THRU, {**base, **thru}, 'out'), (LEN, {**base, **thru})]
+    if feet is None:
+        feet = Feet()
+        feet.start = {'right': (2.2, 2.0, -20.0), 'left': (-2.4, -3.0, 10.0)}
+    return bake(name, LEN, design(name, LEN, _all(keys)), feet, extra=(HIT,), level=False, lift=lift)
 
 
 def ts_slash():
-    """Up over the right shoulder, down across to the left hip."""
-    return _blow('ts_slash',
-                 {'right_arm': (165.0, 10.0, -20.0), 'right_forearm': (20.0, 0.0, 0.0), 'torso': (0.0, 22.0, 0.0), 'chest': (-4.0, 0.0, 0.0),
-                  'head': (4.0, -18.0, 0.0), 'body@p': (0.0, -1.0, 0.4)},
-                 {'right_arm': (70.0, -30.0, 30.0), 'right_forearm': (8.0, 0.0, 0.0), 'torso': (0.0, -26.0, 0.0), 'chest': (-22.0, 0.0, 0.0),
-                  'head': (16.0, 22.0, 0.0), 'body@p': (0.0, -2.6, -1.4)},
-                 {'right_arm': (34.0, -40.0, 34.0), 'right_forearm': (10.0, 0.0, 0.0), 'torso': (0.0, -32.0, 0.0), 'chest': (-20.0, 0.0, 0.0),
-                  'head': (16.0, 28.0, 0.0), 'body@p': (0.0, -2.6, -1.6)})
+    """Standing, from over the right shoulder down across to the left hip."""
+    return _blow('ts_slash', UP,
+                 {'right_arm': (165.0, 10.0, -20.0), 'right_forearm': (20.0, 0.0, 0.0), 'torso': (0.0, 24.0, 0.0), 'chest': (2.0, 0.0, 0.0),
+                  'head': (4.0, -18.0, 0.0), 'body@p': (0.0, 0.0, 0.4)},
+                 {'right_arm': (70.0, -30.0, 30.0), 'right_forearm': (8.0, 0.0, 0.0), 'torso': (0.0, -26.0, 0.0), 'chest': (-20.0, 0.0, 0.0),
+                  'head': (14.0, 22.0, 0.0), 'body@p': (0.0, -1.6, -1.4)},
+                 {'right_arm': (30.0, -40.0, 34.0), 'right_forearm': (10.0, 0.0, 0.0), 'torso': (0.0, -34.0, 0.0), 'chest': (-22.0, 0.0, 0.0),
+                  'head': (14.0, 30.0, 0.0), 'body@p': (0.0, -1.8, -1.6)})
 
 
 def ts_thrust():
-    """The blade drawn back level at the hip, a lunge, the arm and the blade straight out."""
-    return _blow('ts_thrust',
+    """A deep lunge, the blade drawn back level at the hip, then the arm and the blade straight out."""
+    lunge = {**LOW, 'right_leg': (50.0, 0.0, 4.0), 'right_shin': (-50.0, 0.0, 0.0), 'left_leg': (-30.0, 0.0, -4.0), 'left_shin': (-10.0, 0.0, 0.0)}
+    feet = Feet()
+    feet.start = {'right': (2.2, 4.6, -10.0), 'left': (-2.4, -5.0, 14.0)}
+    return _blow('ts_thrust', lunge,
                  {'right_arm': (40.0, 30.0, 26.0), 'right_forearm': (92.0, 0.0, 0.0), 'torso': (0.0, 30.0, 0.0), 'head': (8.0, -26.0, 0.0),
-                  'right_item_sword': (0.0, -84.0, 0.0), 'body@p': (0.0, -2.2, 1.0)},
+                  'right_item_sword': (0.0, -84.0, 0.0), 'body@p': (0.0, -2.4, 1.0)},
                  {'right_arm': (88.0, 2.0, 2.0), 'right_forearm': (0.0, 0.0, 0.0), 'torso': (0.0, -12.0, 0.0), 'chest': (-18.0, 0.0, 0.0),
-                  'head': (14.0, 10.0, 0.0), 'right_item_sword': (0.0, -84.0, 0.0), 'body@p': (0.0, -2.8, -3.2),
+                  'head': (14.0, 10.0, 0.0), 'right_item_sword': (0.0, -84.0, 0.0), 'body@p': (0.0, -3.2, -3.0),
                   'left_arm': (10.0, 0.0, -50.0), 'left_forearm': (10.0, 0.0, 0.0)},
                  {'right_arm': (84.0, 2.0, 2.0), 'right_forearm': (4.0, 0.0, 0.0), 'torso': (0.0, -10.0, 0.0), 'chest': (-16.0, 0.0, 0.0),
-                  'head': (14.0, 10.0, 0.0), 'right_item_sword': (0.0, -84.0, 0.0), 'body@p': (0.0, -2.8, -3.0),
-                  'left_arm': (14.0, 0.0, -46.0), 'left_forearm': (12.0, 0.0, 0.0)})
+                  'head': (14.0, 10.0, 0.0), 'right_item_sword': (0.0, -84.0, 0.0), 'body@p': (0.0, -3.2, -2.8),
+                  'left_arm': (14.0, 0.0, -60.0), 'left_forearm': (12.0, 0.0, 0.0)}, feet)
 
 
 def ts_back():
-    """Wound to the right, the blade swept level across its back from right to left."""
-    return _blow('ts_back',
-                 {'right_arm': (84.0, 70.0, 40.0), 'right_forearm': (20.0, 0.0, 0.0), 'torso': (0.0, 40.0, 0.0), 'head': (6.0, -36.0, 0.0),
-                  'body@p': (0.0, -1.6, 0.6)},
-                 {'right_arm': (86.0, -40.0, -6.0), 'right_forearm': (6.0, 0.0, 0.0), 'torso': (0.0, -30.0, 0.0), 'chest': (-16.0, 0.0, 0.0),
-                  'head': (12.0, 26.0, 0.0), 'body@p': (0.0, -2.4, -1.2)},
-                 {'right_arm': (80.0, -62.0, -10.0), 'right_forearm': (10.0, 0.0, 0.0), 'torso': (0.0, -40.0, 0.0), 'chest': (-14.0, 0.0, 0.0),
-                  'head': (12.0, 34.0, 0.0), 'body@p': (0.0, -2.4, -1.2)})
+    """Upright, wound to the right, the blade swept level across its back from right to left."""
+    return _blow('ts_back', UP,
+                 {'right_arm': (84.0, 70.0, 40.0), 'right_forearm': (20.0, 0.0, 0.0), 'torso': (0.0, 44.0, 0.0), 'head': (4.0, -38.0, 0.0),
+                  'body@p': (0.0, -0.4, 0.6), 'left_arm': (40.0, 0.0, -30.0)},
+                 {'right_arm': (86.0, -40.0, -6.0), 'right_forearm': (6.0, 0.0, 0.0), 'torso': (0.0, -30.0, 0.0), 'chest': (-10.0, 0.0, 0.0),
+                  'head': (8.0, 26.0, 0.0), 'body@p': (0.0, -0.8, -1.0), 'left_arm': (20.0, 0.0, -50.0)},
+                 {'right_arm': (80.0, -66.0, -10.0), 'right_forearm': (10.0, 0.0, 0.0), 'torso': (0.0, -44.0, 0.0), 'chest': (-8.0, 0.0, 0.0),
+                  'head': (8.0, 36.0, 0.0), 'body@p': (0.0, -0.8, -1.0), 'left_arm': (16.0, 0.0, -56.0)})
 
 
 def ts_belly():
-    """Down on the knees, the blade rising from the right hip across into the belly."""
-    return _blow('ts_belly',
-                 {'right_arm': (12.0, 40.0, 50.0), 'right_forearm': (30.0, 0.0, 0.0), 'torso': (0.0, 30.0, 0.0), 'head': (16.0, -24.0, 0.0),
-                  'body@p': (0.0, -3.4, 0.4)},
-                 {'right_arm': (96.0, -28.0, -10.0), 'right_forearm': (10.0, 0.0, 0.0), 'torso': (0.0, -22.0, 0.0), 'chest': (-20.0, 0.0, 0.0),
-                  'head': (6.0, 18.0, 0.0), 'body@p': (0.0, -3.6, -1.6)},
-                 {'right_arm': (118.0, -34.0, -12.0), 'right_forearm': (10.0, 0.0, 0.0), 'torso': (0.0, -28.0, 0.0), 'chest': (-14.0, 0.0, 0.0),
-                  'head': (2.0, 22.0, 0.0), 'body@p': (0.0, -3.2, -1.6)})
+    """Down on the left knee, the blade rising from the right hip across into the belly."""
+    knee = {**LOW, 'body@p': (0.0, -5.4, 0.0), 'right_leg': (80.0, 0.0, 4.0), 'right_shin': (-84.0, 0.0, 0.0),
+            'left_leg': (-4.0, 0.0, -4.0), 'left_shin': (-96.0, 0.0, 0.0)}
+    feet = Feet().designed(-1.0, LEN + 1.0)
+    return _blow('ts_belly', knee,
+                 {'right_arm': (12.0, 40.0, 50.0), 'right_forearm': (30.0, 0.0, 0.0), 'torso': (0.0, 30.0, 0.0), 'head': (16.0, -24.0, 0.0)},
+                 {'right_arm': (96.0, -28.0, -10.0), 'right_forearm': (10.0, 0.0, 0.0), 'torso': (0.0, -22.0, 0.0), 'chest': (-16.0, 0.0, 0.0),
+                  'head': (6.0, 18.0, 0.0)},
+                 {'right_arm': (124.0, -34.0, -12.0), 'right_forearm': (10.0, 0.0, 0.0), 'torso': (0.0, -28.0, 0.0), 'chest': (-8.0, 0.0, 0.0),
+                  'head': (0.0, 22.0, 0.0)}, feet)
+
+
+def ts_leap():
+    """In the air above it, the knees drawn up, both hands high; down with it onto the ground, the blade straight down."""
+    air = {'right_leg': (60.0, 0.0, 6.0), 'right_shin': (-90.0, 0.0, 0.0), 'left_leg': (40.0, 0.0, -6.0), 'left_shin': (-100.0, 0.0, 0.0)}
+    land = {'right_leg': (40.0, 0.0, 6.0), 'right_shin': (-70.0, 0.0, 0.0), 'left_leg': (-10.0, 0.0, -6.0), 'left_shin': (-60.0, 0.0, 0.0)}
+    feet = Feet().designed(-1.0, LEN + 1.0)
+    return _blow('ts_leap', {},
+                 {**air, 'right_arm': (170.0, 6.0, -6.0), 'right_forearm': (30.0, 0.0, 0.0), 'left_arm': (168.0, -10.0, 8.0),
+                  'left_forearm': (40.0, 0.0, 0.0), 'chest': (8.0, 0.0, 0.0), 'head': (-10.0, 0.0, 0.0), 'body@p': (0.0, 6.0, 0.0)},
+                 {**land, 'right_arm': (66.0, 14.0, 4.0), 'right_forearm': (14.0, 0.0, 0.0), 'left_arm': (66.0, -24.0, -4.0),
+                  'left_forearm': (24.0, 0.0, 0.0), 'chest': (-24.0, 0.0, 0.0), 'head': (16.0, 0.0, 0.0), 'body@p': (0.0, -3.4, -1.0)},
+                 {**land, 'right_arm': (40.0, 14.0, 4.0), 'right_forearm': (14.0, 0.0, 0.0), 'left_arm': (40.0, -24.0, -4.0),
+                  'left_forearm': (24.0, 0.0, 0.0), 'chest': (-26.0, 0.0, 0.0), 'head': (18.0, 0.0, 0.0), 'body@p': (0.0, -3.8, -1.0)}, feet,
+                 lift=lambda t: 10.0 * (1 - kit.smooth(min(1.0, t / HIT))))
+
+
+def ts_spin():
+    """A whole turn on the spot (to the left), the blade out level at arm's length, the left arm in to the chest."""
+    out = {'right_arm': (86.0, 0.0, 70.0), 'right_forearm': (6.0, 0.0, 0.0), 'left_arm': (60.0, -30.0, 10.0), 'left_forearm': (90.0, 0.0, 0.0),
+           'right_item_sword': (0.0, -60.0, 0.0), 'chest': (-8.0, 0.0, 0.0), 'head': (6.0, 0.0, 0.0), 'body@p': (0.0, -1.2, 0.0)}
+    keys = [(0, {**UP, **out, 'body': (0.0, -60.0, 0.0)}), (HIT, {**UP, **out, 'body': (0.0, 150.0, 0.0)}, 'linear'),
+            (THRU, {**UP, **out, 'body': (0.0, 300.0, 0.0), 'right_arm': (80.0, 0.0, 60.0)}, 'out'),
+            (LEN, {**UP, **out, 'body': (0.0, 300.0, 0.0), 'right_arm': (80.0, 0.0, 60.0)})]
+    feet = Feet().designed(-1.0, LEN + 1.0)
+    return bake('ts_spin', LEN, design('ts_spin', LEN, _all(keys)), feet, extra=(HIT,), level=False)
 
 
 def ts_yawn():
-    """Up out of the crouch, the sword lowered in the right hand; the left hand to the mouth, the head back in a long yawn
-    (0.4-1.3 s), the hand down, at ease."""
+    """Up out of the blow, the sword lowered in the right hand; the left hand to the mouth as in Kinetrix's thinking pose
+    (ScreenModule.think: the arm up, the elbow out, the forearm bent up to the chin), the head back in a long yawn
+    (0.5-1.3 s); a moment's thought, head bowed; the hand down, at ease."""
     LEN = 2.0
     up = {'right_arm': (14.0, 0.0, 8.0), 'right_forearm': (16.0, 0.0, 0.0), 'left_arm': (6.0, 0.0, -6.0), 'left_forearm': (10.0, 0.0, 0.0),
           'head': (4.0, 0.0, 0.0), 'body@p': (0.0, -0.2, 0.0)}
-    mouth = {**up, 'left_arm': (112.0, 34.0, -6.0), 'left_forearm': (118.0, 0.0, 0.0), 'head': (-24.0, 0.0, 6.0), 'chest': (10.0, 0.0, 0.0),
-             'torso': (0.0, 6.0, 0.0), 'body@p': (0.0, 0.2, 0.4)}
-    deep = {**mouth, 'head': (-30.0, 4.0, 8.0), 'chest': (12.0, 0.0, 0.0), 'right_arm': (18.0, 0.0, 14.0)}
-    keys = [(0, READY), (0.3, up, 'inout'), (0.5, mouth, 'inout'), (1.05, deep, 'inout'), (1.35, mouth, 'inout'), (1.6, up, 'inout'),
-            (LEN, {}, 'inout')]
+    # the thinking pose's chin hand (Java (-1.22, 0.64, -1.00) rad, the elbow 1.34 rad) in Blockbench degrees
+    chin = {'left_arm': (70.0, -36.7, -57.3), 'left_forearm': (76.8, 0.0, 0.0)}
+    mouth = {**up, **chin, 'head': (14.0, 4.0, -4.0), 'chest': (4.0, 0.0, 0.0), 'body@p': (0.0, 0.0, 0.2)}
+    deep = {**mouth, 'head': (24.0, 6.0, -6.0), 'chest': (8.0, 0.0, 0.0), 'right_arm': (18.0, 0.0, 14.0),
+            'left_arm': (76.0, -36.7, -57.3), 'left_forearm': (82.0, 0.0, 0.0), 'body@p': (0.0, 0.2, 0.4)}
+    think = {**up, **chin, 'head': (-20.0, -6.0, 8.0), 'chest': (-2.0, 0.0, 0.0)}
+    keys = [(0, {}), (0.3, up, 'inout'), (0.5, mouth, 'inout'), (1.05, deep, 'inout'), (1.3, mouth, 'inout'), (1.45, think, 'inout'),
+            (1.7, think, 'inout'), (LEN, {}, 'inout')]
     feet = Feet()
-    feet.start = {'right': (2.2, 2.0, -20.0), 'left': (-2.4, -3.0, 10.0)}
-    feet.step('right', 0.1, 0.35, 1.9, 0.0, 0, lift=1.0).step('left', 0.2, 0.45, -1.9, 0.0, 0, lift=1.0)
+    feet.step('right', 0.05, 0.3, 1.9, 0.0, 0, lift=1.0).step('left', 0.15, 0.4, -1.9, 0.0, 0, lift=1.0)
     return bake('ts_yawn', LEN, design('ts_yawn', LEN, _all(keys)), feet, level=False)
 
 
 def made():
-    a = [ts_stance(), ts_slash(), ts_thrust(), ts_back(), ts_belly(), ts_yawn()]
+    a = [ts_stance(), ts_slash(), ts_thrust(), ts_back(), ts_belly(), ts_leap(), ts_spin(), ts_yawn()]
     for x in a:
         kit.soften(x, round9.SOFTEN, round9.LEGS)
     return a

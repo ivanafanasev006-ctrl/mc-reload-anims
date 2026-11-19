@@ -40,6 +40,15 @@ public final class GuardInput {
         if (event.getLevel().isClientSide && event.getHand() == InteractionHand.MAIN_HAND
                 && event.getEntity() == Minecraft.getInstance().player) {
             clicked = true;
+            // up at once, this very tick (not the next one): the block must not lag behind the button (author 19.11)
+            Minecraft mc = Minecraft.getInstance();
+            LocalPlayer p = mc.player;
+            Stamina s = Stamina.of(p);
+            if (s.guard == Guard.Kind.NONE && !waitRelease && mc.options.keyUse.isDown() && mc.screen == null
+                    && dev.mcreload.moves.HudConfig.Moves.GUARD.on() && MovesClient.serverHasMod() && Guard.allowed(p, s)) {
+                clicked = false;
+                raise(p, s);
+            }
         }
     }
 

@@ -1064,14 +1064,14 @@ public final class MovesClient {
                 return;
             }
             if (move == null || !move.serverStarted()) return;
-            if (move.timeStop()) TimeStopView.step(p, move, extra);
+            if (move.timeStop() || move == Move.GUARD_FINISH) TimeStopView.step(p, move, extra);
             // the block's kick and shove: the blade goes up again after them if the button is still held
             if (move == Move.GUARD_KICK || move == Move.GUARD_SHOVE) GuardInput.rearm = true;
             Move was = s.move;
             s.start(p, move, false);
             moveYaw = p.getYRot();
             if (extra >= 0) s.ledgeDir = extra;
-            if (move.timeStopBlow()) s.target = extra;
+            if (move.timeStopBlow() || move == Move.GUARD_FINISH) s.target = extra;
             LedgeInput.pulled(mc.player, s);
             MoveAnimator.play(p, move, was);
             return;
@@ -1081,10 +1081,10 @@ public final class MovesClient {
             MoveAnimator.stop(p, 3);
         } else {
             Move was = s.move;
-            if (move.timeStop()) TimeStopView.step(p, move, extra);
+            if (move.timeStop() || move == Move.GUARD_FINISH) TimeStopView.step(p, move, extra);
             s.start(p, move, false);
             if (extra >= 0) s.ledgeDir = extra;
-            if (move.timeStopBlow()) s.target = extra;
+            if (move.timeStopBlow() || move == Move.GUARD_FINISH) s.target = extra;
             MoveAnimator.play(p, move, was);
         }
     }

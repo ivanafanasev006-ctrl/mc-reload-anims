@@ -1,13 +1,20 @@
 package dev.mcreload.moves.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import dev.mcreload.moves.GuardAnswers;
 import dev.mcreload.moves.Move;
 import dev.mcreload.moves.Stamina;
 import dev.mcreload.moves.TimeStop;
+import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
@@ -18,53 +25,79 @@ import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * The time stop as the players see it (TimeStop on the server).
+ * The time stop as the players see it (TimeStop on the server), and the block's finisher, which borrows its camera.
  *
  * <ul>
- *   <li>Its maker's camera: third person, staying behind the place he began from while the server puts him at each
+ *   <li>The maker's camera: third person, staying behind the place he began from while the server puts him at each
  *   enemy in turn; the mouse turns it all round (the look is free, the body faces each blow's mob); first person again
- *   at the end, if it was that.</li>
- *   <li>The flicker (author: "as in films and anime, the body flickering in different places"): where he was a moment
- *   ago his body is seen again for a few ticks, on and off, as he appears at the next mob.</li>
+ *   at the end, if it was that. The finisher's: from beside where he stood, as he goes behind the mob.</li>
+ *   <li>The after-image (author 19.11: "before each one your reflection, gone in a fraction of a second"): where he was a
+ *   moment ago his body is seen again, pale and fading out in 0.4 s.</li>
+ *   <li>The slashes (19.11: "as the sweep_attack's white line, but turned each its own way: upright, 30, 45, 127
+ *   degrees", "not gone at once: in 1-2 s more and more see-through"): a white crescent where each blow cut, turned to
+ *   the camera at its own angle.</li>
  * </ul>
  */
 public final class TimeStopView {
     /** How long an after-image stays (ticks), and how far behind the camera stands (blocks). */
-    private static final int GHOST_TICKS = 5;
+    private static final int GHOST_TICKS = 8;
     private static final double BACK = 4.5;
+    /** A slash: how long it is seen (ticks), the part of it at full strength. */
+    private static final int SLASH_TICKS = 34, SLASH_FULL = 4;
 
     private record Ghost(int entity, Vec3 at, float yaw, long born) {}
 
+    private record Slash(Vec3 at, float roll, float size, long born) {}
+
     private static final List<Ghost> GHOSTS = new ArrayList<>();
+    private static final List<Slash> SLASHES = new ArrayList<>();
     private static boolean active;
     private static Vec3 anchor;
     private static float anchorYaw;
     private static CameraType before;
     private static boolean drawingGhost;
     private static int gap;
+    /** Where our own player was last tick (the finisher's jump behind the mob leaves an after-image there). */
+    private static Vec3 lastSelf;
+    private static float lastSelfYaw;
 
     static void init() {
         MinecraftForge.EVENT_BUS.addListener(TimeStopView::tick);
         MinecraftForge.EVENT_BUS.addListener(TimeStopView::camera);
         MinecraftForge.EVENT_BUS.addListener(TimeStopView::facing);
-        MinecraftForge.EVENT_BUS.addListener(TimeStopView::ghosts);
+        MinecraftForge.EVENT_BUS.addListener(TimeStopView::draw);
     }
 
-    /** A part of the time stop starts on {@code p}: an after-image where they stand now; for us, the camera. */
+    /** Ours: a move with this view (the time stop, the block's finisher). */
+    private static boolean viewed(Move m) {
+        return m != null && (m.timeStop() || m == Move.GUARD_FINISH);
+    }
+
+    /** A part of the time stop (or the finisher) starts on {@code p}: an after-image where they stand now; for us, the camera. */
     static void step(Player p, Move move, int target) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
-        if (move != Move.TS_STANCE) GHOSTS.add(new Ghost(p.getId(), p.position(), p.yBodyRot, mc.level.getGameTime()));
-        if (p == mc.player && move == Move.TS_STANCE && !active) {
+        if (move.timeStopBlow() || move == Move.TS_YAWN) GHOSTS.add(new Ghost(p.getId(), p.position(), p.yBodyRot, mc.level.getGameTime()));
+        if (p == mc.player && (move == Move.TS_STANCE || move == Move.GUARD_FINISH) && !active) {
             active = true;
             gap = 0;
             anchor = p.getEyePosition();
             anchorYaw = p.getYRot();
+            if (move == Move.GUARD_FINISH) {
+                // from beside where he stood, a little up: the mob and the stab behind it both in sight
+                float yaw = p.getYRot() * net.minecraft.util.Mth.DEG_TO_RAD;
+                anchor = anchor.add(-net.minecraft.util.Mth.cos(yaw) * 1.6, 0.4, -net.minecraft.util.Mth.sin(yaw) * 1.6);
+            }
             before = mc.options.getCameraType();
             mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         }
@@ -75,18 +108,56 @@ public final class TimeStopView {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
             GHOSTS.clear();
+            SLASHES.clear();
             active = false;
+            lastSelf = null;
             return;
         }
         long now = mc.level.getGameTime();
         GHOSTS.removeIf(g -> now - g.born > GHOST_TICKS || now < g.born);
-        boolean on = mc.player != null && Stamina.of(mc.player).move != null && Stamina.of(mc.player).move.timeStop();
+        SLASHES.removeIf(s -> now - s.born > SLASH_TICKS || now < s.born);
+        // the slashes where the blows cut (each client sees every player's)
+        for (Player p : mc.level.players()) {
+            Stamina s = Stamina.of(p);
+            if (s.move == null) continue;
+            boolean blow = s.move.timeStopBlow() && s.moveTick == TimeStop.HIT;
+            boolean stab = s.move == Move.GUARD_FINISH && s.moveTick == GuardAnswers.FIN_STAB;
+            if (!blow && !stab) continue;
+            Entity mob = mc.level.getEntity(s.target);
+            if (mob == null) continue;
+            Vec3 at = mob.position().add(0, mob.getBbHeight() * 0.55, 0);
+            float jitter = (float) ((p.getRandom().nextDouble() - 0.5) * 24.0);
+            SLASHES.add(new Slash(at, roll(s.move) + jitter, stab ? 0.9f : 1.25f, now));
+            if (s.move == Move.TS_SPIN) SLASHES.add(new Slash(at.add(0, -0.25, 0), roll(s.move) + 180f - jitter, 1.4f, now));
+        }
+        LocalPlayer self = mc.player;
+        Stamina mine = self == null ? null : Stamina.of(self);
+        boolean on = mine != null && viewed(mine.move);
+        // the finisher's jump: an after-image where we were
+        if (self != null && mine.move == Move.GUARD_FINISH && lastSelf != null && lastSelf.distanceToSqr(self.position()) > 1.0) {
+            GHOSTS.add(new Ghost(self.getId(), lastSelf, lastSelfYaw, now));
+        }
+        lastSelf = self == null ? null : self.position();
+        lastSelfYaw = self == null ? 0f : self.yBodyRot;
         // between its parts this end may finish one a tick or two before the server starts the next: a few ticks' grace
         gap = on ? 0 : gap + 1;
         if (active && gap > 6) {
             active = false;
             if (before != null && mc.options.getCameraType() == CameraType.THIRD_PERSON_BACK) mc.options.setCameraType(before);
         }
+    }
+
+    /** Each blow's slash at its own angle (0 level, 90 upright), the way the blade went. */
+    private static float roll(Move m) {
+        return switch (m) {
+            case TS_SLASH -> 127f;
+            case TS_LEAP -> 90f;
+            case TS_THRUST -> 30f;
+            case TS_SPIN -> 172f;
+            case TS_BACK -> 8f;
+            case TS_BELLY -> 45f;
+            default -> 18f;
+        };
     }
 
     /** The camera behind where he began, turned by the mouse, not into a wall. */
@@ -104,36 +175,45 @@ public final class TimeStopView {
     private static void facing(RenderPlayerEvent.Pre event) {
         Player p = event.getEntity();
         Stamina s = Stamina.of(p);
-        if (s.move == null || !s.move.timeStop()) return;
+        if (!viewed(s.move)) return;
         float yaw;
-        Entity mob = s.move.timeStopBlow() ? p.level().getEntity(s.target) : null;
+        boolean finisherBehind = s.move == Move.GUARD_FINISH && s.moveTick >= GuardAnswers.FIN_JUMP;
+        Entity mob = s.move.timeStopBlow() || finisherBehind ? p.level().getEntity(s.target) : null;
         if (mob != null) yaw = TimeStop.facing(p.position(), mob.position());
+        else if (s.move == Move.GUARD_FINISH) return;
         else if (p == Minecraft.getInstance().player && anchor != null) yaw = anchorYaw;
         else return;
         p.yBodyRot = p.yBodyRotO = yaw;
         p.yHeadRot = p.yHeadRotO = yaw;
     }
 
-    /** The after-images: the player's body drawn again where they were, flickering out. */
+    private static void draw(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) ghosts(event);
+        else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) slashes(event);
+    }
+
+    // ------------------------------------------------------------------ the after-images
+
+    /** The after-images: the player's body drawn again where they were, pale, fading out. */
     private static void ghosts(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || GHOSTS.isEmpty() || drawingGhost) return;
+        if (GHOSTS.isEmpty() || drawingGhost) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         long now = mc.level.getGameTime();
+        float pt = event.getPartialTick();
         Vec3 cam = event.getCamera().getPosition();
         PoseStack ps = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         drawingGhost = true;
         try {
             for (Ghost g : GHOSTS) {
-                long age = now - g.born;
-                // on, off, on, off: the flicker
-                if (age % 2 == 1) continue;
-                if (!(mc.level.getEntity(g.entity) instanceof AbstractClientPlayer p)) continue;
+                float age = now - g.born + pt;
+                float alpha = 0.6f * Math.max(0f, 1f - age / GHOST_TICKS);
+                if (alpha <= 0.01f || !(mc.level.getEntity(g.entity) instanceof AbstractClientPlayer p)) continue;
                 float bodyWas = p.yBodyRot, bodyWasO = p.yBodyRotO;
                 p.yBodyRot = p.yBodyRotO = g.yaw;
-                mc.getEntityRenderDispatcher().render(p, g.at.x - cam.x, g.at.y - cam.y, g.at.z - cam.z, g.yaw,
-                        event.getPartialTick(), ps, buffers, mc.getEntityRenderDispatcher().getPackedLightCoords(p, event.getPartialTick()));
+                mc.getEntityRenderDispatcher().render(p, g.at.x - cam.x, g.at.y - cam.y, g.at.z - cam.z, g.yaw, pt, ps,
+                        new Pale(buffers, p.getSkinTextureLocation().toString(), alpha), 0xF000F0);
                 p.yBodyRot = bodyWas;
                 p.yBodyRotO = bodyWasO;
             }
@@ -141,6 +221,146 @@ public final class TimeStopView {
         } finally {
             drawingGhost = false;
         }
+    }
+
+    /**
+     * The body and the blade in hand only (no armour, cape or glint), see-through and cold white: the skin's layers into
+     * the translucent entity type, the item atlas into the translucent item sheet, the alpha taken down.
+     */
+    private record Pale(MultiBufferSource to, String skin, float alpha) implements MultiBufferSource {
+        private static final Map<RenderType, Integer> KIND = new IdentityHashMap<>();
+
+        @Override
+        public VertexConsumer getBuffer(RenderType type) {
+            int kind = KIND.computeIfAbsent(type, t -> {
+                String s = t.toString();
+                if (s.contains("glint")) return 0;
+                if (s.contains("textures/atlas/blocks.png")) return 2;
+                return s.contains("skins/") || s.contains("skin") ? 1 : 0;
+            });
+            if (kind == 0) return NOTHING;
+            if (kind == 1 && !type.toString().contains(skin)) return NOTHING;
+            RenderType into = kind == 1 ? RenderType.entityTranslucent(new net.minecraft.resources.ResourceLocation(skin)) : Sheets.translucentItemSheet();
+            return new Fade(to.getBuffer(into), alpha);
+        }
+    }
+
+    private static final VertexConsumer NOTHING = new VertexConsumer() {
+        public VertexConsumer vertex(double x, double y, double z) { return this; }
+        public VertexConsumer color(int r, int g, int b, int a) { return this; }
+        public VertexConsumer uv(float u, float v) { return this; }
+        public VertexConsumer overlayCoords(int u, int v) { return this; }
+        public VertexConsumer uv2(int u, int v) { return this; }
+        public VertexConsumer normal(float x, float y, float z) { return this; }
+        public void endVertex() {}
+        public void defaultColor(int r, int g, int b, int a) {}
+        public void unsetDefaultColor() {}
+    };
+
+    /** A vertex consumer passing everything on, the colour paled to a cold white and its alpha taken down. */
+    private record Fade(VertexConsumer to, float alpha) implements VertexConsumer {
+        public VertexConsumer vertex(double x, double y, double z) {
+            to.vertex(x, y, z);
+            return this;
+        }
+
+        public VertexConsumer color(int r, int g, int b, int a) {
+            to.color(150 + r * 105 / 255, 170 + g * 85 / 255, 255, Math.round(a * alpha));
+            return this;
+        }
+
+        public VertexConsumer uv(float u, float v) {
+            to.uv(u, v);
+            return this;
+        }
+
+        public VertexConsumer overlayCoords(int u, int v) {
+            to.overlayCoords(OverlayTexture.NO_OVERLAY);
+            return this;
+        }
+
+        public VertexConsumer uv2(int u, int v) {
+            to.uv2(0xF0, 0xF0);
+            return this;
+        }
+
+        public VertexConsumer normal(float x, float y, float z) {
+            to.normal(x, y, z);
+            return this;
+        }
+
+        public void endVertex() {
+            to.endVertex();
+        }
+
+        public void defaultColor(int r, int g, int b, int a) {
+            to.defaultColor(r, g, b, a);
+        }
+
+        public void unsetDefaultColor() {
+            to.unsetDefaultColor();
+        }
+    }
+
+    // ------------------------------------------------------------------ the slashes
+
+    /** The slashes: white crescents facing the camera, each turned its own way, fading out. */
+    private static void slashes(RenderLevelStageEvent event) {
+        if (SLASHES.isEmpty()) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        long now = mc.level.getGameTime();
+        float pt = event.getPartialTick();
+        Camera camera = event.getCamera();
+        Vec3 cam = camera.getPosition();
+        Vector3f left = camera.getLeftVector(), up = camera.getUpVector();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer vc = buffers.getBuffer(RenderType.lightning());
+        Matrix4f m = event.getPoseStack().last().pose();
+        for (Slash s : SLASHES) {
+            float age = now - s.born + pt;
+            float a = age < SLASH_FULL ? 1f : Math.max(0f, 1f - (age - SLASH_FULL) / (SLASH_TICKS - SLASH_FULL));
+            if (a <= 0.01f) continue;
+            double r = Math.toRadians(s.roll);
+            // the crescent's long way (u) and the way it bulges (v), in the camera's plane
+            Vector3f u = new Vector3f(left).mul((float) -Math.cos(r)).add(new Vector3f(up).mul((float) Math.sin(r)));
+            Vector3f v = new Vector3f(left).mul((float) -Math.sin(r)).sub(new Vector3f(up).mul((float) Math.cos(r))).negate();
+            float cx = (float) (s.at.x - cam.x), cy = (float) (s.at.y - cam.y), cz = (float) (s.at.z - cam.z);
+            float R = s.size;
+            int n = 18;
+            float spread = (float) Math.toRadians(80);
+            float[] ox = new float[n + 1], oy = new float[n + 1], oz = new float[n + 1], ix = new float[n + 1], iy = new float[n + 1], iz = new float[n + 1];
+            for (int i = 0; i <= n; i++) {
+                float f = -spread + 2 * spread * i / n;
+                float edge = (float) Math.pow(Math.cos(f * 0.5 * Math.PI / spread), 1.4);
+                float w = 0.3f * R * edge;
+                float sin = (float) Math.sin(f), cos = (float) Math.cos(f) - 0.62f;
+                ox[i] = cx + R * (u.x * sin + v.x * cos);
+                oy[i] = cy + R * (u.y * sin + v.y * cos);
+                oz[i] = cz + R * (u.z * sin + v.z * cos);
+                float k = (R - w) / R;
+                ix[i] = cx + R * (u.x * sin * k + v.x * (cos * k - (1 - k) * 0.62f));
+                iy[i] = cy + R * (u.y * sin * k + v.y * (cos * k - (1 - k) * 0.62f));
+                iz[i] = cz + R * (u.z * sin * k + v.z * (cos * k - (1 - k) * 0.62f));
+            }
+            for (int i = 0; i < n; i++) {
+                float e0 = (float) Math.pow(Math.cos((-spread + 2 * spread * i / n) * 0.5 * Math.PI / spread), 0.6);
+                float e1 = (float) Math.pow(Math.cos((-spread + 2 * spread * (i + 1) / n) * 0.5 * Math.PI / spread), 0.6);
+                int a0 = Math.round(235 * a * e0), a1 = Math.round(235 * a * e1);
+                // both faces (the type culls)
+                quad(vc, m, ox[i], oy[i], oz[i], a0, ox[i + 1], oy[i + 1], oz[i + 1], a1, ix[i + 1], iy[i + 1], iz[i + 1], 0, ix[i], iy[i], iz[i], 0);
+                quad(vc, m, ix[i], iy[i], iz[i], 0, ix[i + 1], iy[i + 1], iz[i + 1], 0, ox[i + 1], oy[i + 1], oz[i + 1], a1, ox[i], oy[i], oz[i], a0);
+            }
+        }
+        buffers.endBatch(RenderType.lightning());
+    }
+
+    private static void quad(VertexConsumer vc, Matrix4f m, float x0, float y0, float z0, int a0, float x1, float y1, float z1, int a1,
+                             float x2, float y2, float z2, int a2, float x3, float y3, float z3, int a3) {
+        vc.vertex(m, x0, y0, z0).color(255, 255, 255, a0).endVertex();
+        vc.vertex(m, x1, y1, z1).color(255, 255, 255, a1).endVertex();
+        vc.vertex(m, x2, y2, z2).color(240, 248, 255, a2).endVertex();
+        vc.vertex(m, x3, y3, z3).color(240, 248, 255, a3).endVertex();
     }
 
     private TimeStopView() {}

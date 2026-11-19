@@ -26,10 +26,10 @@ import java.util.UUID;
  * The time stop (author, 2026-11-19): a sword in hand, the right button and G held, 5 to 10 enemies about.
  *
  * <p>Time stops for the player and those enemies only (the server and the world go on): the player goes into his
- * samurai stance and looks about while they slow down within a second and freeze, each in a pose of its own (running,
+ * stance (the sword in both hands before him, looking at it) while they slow down within a second and freeze, each in a pose of its own (running,
  * in a deep leap, jumping down at him with a knee bent and the arms swung up, roaring with the arms thrown back). Then he
- * flickers from one to the next, half a second each, a different blow each time (down along it from above, a thrust, from
- * behind, into the belly), round them all twice; back where he began he yawns, the sword in his right hand. Then time
+ * flickers from one to the next, 0.35 s each (19.11: 1.5 times faster), a different blow each time (from above, leaping
+ * down, a thrust, a whole turn, from behind, into the belly), round them all twice; back where he began he yawns, the sword in his right hand. Then time
  * runs again: they fly off, each its own way (as if blown up, onto the back, onto the face, tripping), and die.</p>
  *
  * <p>99 % of the bar, 30 s before the next (author). The camera stays where it was, behind the player's place, and turns
@@ -37,12 +37,12 @@ import java.util.UUID;
  */
 public final class TimeStop {
     /** The stance and the freeze (ticks); a blow; its hit; the yawn; when the enemies die in it. */
-    public static final int STANCE_LEN = 30, FREEZE = 20, STEP = 10, HIT = 4, YAWN_LEN = 40, DIE_AT = 22;
+    public static final int STANCE_LEN = 30, FREEZE = 20, STEP = 7, HIT = 3, YAWN_LEN = 40, DIE_AT = 22;
     /** The frozen poses, given round in turn; the poses they fly off in. */
     private static final MobPose[] FROZEN = {MobPose.FROZEN_RUN, MobPose.FROZEN_LEAP, MobPose.FROZEN_POUNCE, MobPose.FROZEN_RAGE};
     private static final MobPose[] FLY_OFF = {MobPose.BLASTED, MobPose.FALL_BACK, MobPose.FALL_FACE, MobPose.STUMBLE};
-    /** The blows, in turn. */
-    private static final Move[] BLOWS = {Move.TS_SLASH, Move.TS_THRUST, Move.TS_BACK, Move.TS_BELLY};
+    /** The blows, in turn (author 19.11: "the blows and the look of the player varied"). */
+    public static final Move[] BLOWS = {Move.TS_SLASH, Move.TS_LEAP, Move.TS_THRUST, Move.TS_SPIN, Move.TS_BACK, Move.TS_BELLY};
 
     private static final class State {
         final Vec3 anchor;
@@ -91,8 +91,7 @@ public final class TimeStop {
         }
         ON.put(p.getUUID(), new State(p.position(), p.getYRot(), ids));
         ServerLevel level = p.serverLevel();
-        level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.BELL_RESONATE, SoundSource.PLAYERS, 1.2f, 0.6f);
-        level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1f, 0.5f);
+        level.playSound(null, p.getX(), p.getY(), p.getZ(), MovesSounds.TIME_STOP_SLOW.get(), SoundSource.PLAYERS, 1.2f, 1f);
     }
 
     static void serverTick(ServerPlayer p, Stamina s) {
@@ -154,7 +153,7 @@ public final class TimeStop {
         go(p, st.anchor);
         flickerFx(p, from, st.anchor);
         ServerLevel level = p.serverLevel();
-        level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.BELL_BLOCK, SoundSource.PLAYERS, 1f, 0.5f);
+        level.playSound(null, p.getX(), p.getY(), p.getZ(), MovesSounds.TIME_STOP_UNWIND.get(), SoundSource.PLAYERS, 1.2f, 1f);
         for (int i = 0; i < mobs.size(); i++) flyOff(p, st, mobs.get(i), i);
     }
 
@@ -168,6 +167,8 @@ public final class TimeStop {
         double side = switch (blow) {
             case TS_BACK -> Math.PI;
             case TS_BELLY -> Math.PI / 2;
+            case TS_SPIN -> -Math.PI / 2;
+            case TS_LEAP -> Math.PI / 4;
             default -> 0;
         };
         int round = step / Math.max(1, st.targets.size());
@@ -180,13 +181,17 @@ public final class TimeStop {
         return p.position();
     }
 
-    /** The player put there at once (the look kept: the camera turns on with the mouse). */
-    private static void go(ServerPlayer p, Vec3 at) {
-        p.connection.teleport(at.x, at.y, at.z, 0f, 0f, EnumSet.of(RelativeMovement.Y_ROT, RelativeMovement.X_ROT));
+    /**
+     * The player put there at once, the look kept (the camera turns on with the mouse). The look is relative and its
+     * change nothing: the server's own yaw and pitch go in, as vanilla takes them away again (0 there snapped the look
+     * to the south and level at each blow: the camera's jerk, author 19.11).
+     */
+    static void go(ServerPlayer p, Vec3 at) {
+        p.connection.teleport(at.x, at.y, at.z, p.getYRot(), p.getXRot(), EnumSet.of(RelativeMovement.Y_ROT, RelativeMovement.X_ROT));
         p.setDeltaMovement(Vec3.ZERO);
     }
 
-    private static void flickerFx(ServerPlayer p, Vec3 from, Vec3 to) {
+    static void flickerFx(ServerPlayer p, Vec3 from, Vec3 to) {
         ServerLevel level = p.serverLevel();
         Vec3 d = to.subtract(from);
         int n = (int) Math.min(12, Math.ceil(d.length() * 1.5));
@@ -194,15 +199,15 @@ public final class TimeStop {
             Vec3 at = from.add(d.scale(i / (double) Math.max(1, n))).add(0, 1.0, 0);
             level.sendParticles(ParticleTypes.CLOUD, at.x, at.y, at.z, 1, 0.1, 0.3, 0.1, 0.0);
         }
-        level.playSound(null, to.x, to.y, to.z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.25f, 1.8f);
+        level.playSound(null, to.x, to.y, to.z, MovesSounds.TIME_STOP_SWING.get(), SoundSource.PLAYERS, 0.9f, 0.95f + p.getRandom().nextFloat() * 0.15f);
     }
 
     private static void hitFx(ServerPlayer p, LivingEntity mob) {
         ServerLevel level = p.serverLevel();
         Vec3 at = mob.position().add(0, mob.getBbHeight() * 0.55, 0);
-        level.sendParticles(ParticleTypes.SWEEP_ATTACK, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+        // the white slash where the blade went is drawn by the clients (TimeStopView), turned each its own way
         level.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 10, 0.25, 0.3, 0.25, 0.3);
-        level.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.9f, 1.3f);
+        level.playSound(null, at.x, at.y, at.z, MovesSounds.TIME_STOP_HIT.get(), SoundSource.PLAYERS, 1f, 0.95f + p.getRandom().nextFloat() * 0.1f);
         // the hurt flash and sound, the blow's damage held back until time runs again
         level.getChunkSource().broadcastAndSend(mob, new ClientboundEntityEventPacket(mob, (byte) 2));
     }

@@ -25,7 +25,7 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.BooleanValue DODGE_ON_GROUND;
     private static final ForgeConfigSpec.IntValue PARRY_REARM;
     private static final ForgeConfigSpec.DoubleValue GR_FINISH_HEALTH, GR_KICK_STRENGTH, GR_KICK_DAMAGE, GR_SHOVE_STRENGTH, GR_SHOVE_DAMAGE,
-            GR_CROWD_RANGE, GR_ARCHER_RANGE, GR_THROW_SPEED, GR_THROW_DAMAGE, GR_HOLD_MOVE, GR_COST_FINISH, GR_COST_SHOVE, GR_COST_SHIELD;
+            GR_CROWD_RANGE, GR_ARCHER_RANGE, GR_THROW_SPEED, GR_THROW_BLOCKS, GR_THROW_DAMAGE, GR_HOLD_MOVE, GR_COST_FINISH, GR_COST_SHOVE, GR_COST_SHIELD;
     private static final ForgeConfigSpec.IntValue GR_CROWD, GR_HOLD_SECONDS;
     private static final ForgeConfigSpec.IntValue TS_MIN, TS_MAX, TS_COOLDOWN, TS_ROUNDS;
     private static final ForgeConfigSpec.DoubleValue TS_RANGE, TS_SHARE;
@@ -464,6 +464,8 @@ public final class MovesConfig {
         GR_HOLD_MOVE = b.comment("The living shield: how fast the player walks holding it (1: as ever). [default]").defineInRange("shieldMove", 0.45, 0.0, 1.0);
         GR_THROW_SPEED = b.comment("The living shield kicked off the blade (the right button again): its speed, blocks a tick. [default]")
                 .defineInRange("shieldThrowSpeed", 1.3, 0.1, 5.0);
+        GR_THROW_BLOCKS = b.comment("The living shield kicked off the blade: how far it flies from the player at most, blocks (author 19.11:",
+                "\"8-9 blocks at most\").").defineInRange("shieldThrowBlocks", 8.5, 1.0, 64.0);
         GR_THROW_DAMAGE = b.comment("The kicked mob knocks down those it flies into (as in bowling): their damage. [default]")
                 .defineInRange("shieldThrowDamage", 4.0, 0.0, 1000.0);
         GR_COST_FINISH = b.comment("Energy: the block's finisher. [default]").defineInRange("costFinish", 5.0, 0.0, 100.0);
@@ -522,6 +524,7 @@ public final class MovesConfig {
     public static int shieldHoldTicks() { return get(GR_HOLD_SECONDS, 8) * 20; }
     public static float shieldMove() { return f(GR_HOLD_MOVE, 0.45); }
     public static float shieldThrowSpeed() { return f(GR_THROW_SPEED, 1.3); }
+    public static float shieldThrowBlocks() { return f(GR_THROW_BLOCKS, 8.5); }
     public static float shieldThrowDamage() { return f(GR_THROW_DAMAGE, 4.0); }
     public static float costGuardFinish() { return f(GR_COST_FINISH, 5.0); }
     public static float costGuardShove() { return f(GR_COST_SHOVE, 3.0); }

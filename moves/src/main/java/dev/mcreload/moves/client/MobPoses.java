@@ -11,6 +11,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.client.event.RenderLivingEvent;
+import net.minecraft.world.phys.Vec3;
+import dev.mcreload.moves.Stamina;
+import dev.mcreload.moves.Move;
+import dev.mcreload.moves.GuardAnswers;
 import net.minecraftforge.common.MinecraftForge;
 
 import java.util.HashMap;
@@ -132,6 +136,7 @@ public final class MobPoses {
         float lean = b[0] * w, turn = b[1], lift = b[2] * w;
         PoseStack ps = event.getPoseStack();
         ps.pushPose();
+        if (o.pose == MobPose.HOSTAGE) stuck(e, ps, event.getPartialTick());
         float yaw = Mth.rotLerp(event.getPartialTick(), e.yBodyRotO, e.yBodyRot);
         ps.translate(0, lift, 0);
         // the lean along the way it faces once turned; the turn about its middle (as a growing yaw turns a mob)
@@ -141,6 +146,26 @@ public final class MobPoses {
         int death = e.deathTime;
         e.deathTime = 0;
         PUSHED.put(e, death);
+    }
+
+    /**
+     * The living shield drawn where its holder's blade has it this very frame, not where the server last said (a mob's
+     * place comes every few ticks and is eased into: it trailed behind the player, author 19.11: "you become as one").
+     */
+    private static void stuck(LivingEntity e, PoseStack ps, float partial) {
+        for (Player p : e.level().players()) {
+            Stamina s = Stamina.of(p);
+            boolean holds = s.move == Move.HOSTAGE_HOLD || (s.move == Move.GUARD_GRAB && s.moveTick >= GuardAnswers.GRAB_TURN)
+                    || (s.move == Move.HOSTAGE_KICK && s.moveTick < GuardAnswers.THROW_HIT);
+            if (!holds || p.distanceToSqr(e) > 16.0) continue;
+            float yaw = p.getViewYRot(partial);
+            Vec3 at = p.getPosition(partial).add(-Mth.sin(yaw * D) * GuardAnswers.SHIELD_AT, 0, Mth.cos(yaw * D) * GuardAnswers.SHIELD_AT);
+            Vec3 drawn = e.getPosition(partial);
+            ps.translate(at.x - drawn.x, at.y - drawn.y, at.z - drawn.z);
+            e.yBodyRot = e.yBodyRotO = yaw;
+            e.yHeadRot = e.yHeadRotO = yaw;
+            return;
+        }
     }
 
     private static void post(RenderLivingEvent.Post<?, ?> event) {

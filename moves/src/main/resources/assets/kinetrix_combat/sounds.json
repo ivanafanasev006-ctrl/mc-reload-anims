@@ -1,0 +1,18 @@
+{
+  "time_stop.slow": {
+    "sounds": ["kinetrix_combat:time_stop/slow"],
+    "subtitle": "subtitles.kinetrix_combat.time_stop.slow"
+  },
+  "time_stop.unwind": {
+    "sounds": ["kinetrix_combat:time_stop/unwind"],
+    "subtitle": "subtitles.kinetrix_combat.time_stop.unwind"
+  },
+  "time_stop.swing": {
+    "sounds": ["kinetrix_combat:time_stop/swing1", "kinetrix_combat:time_stop/swing2", "kinetrix_combat:time_stop/swing3", "kinetrix_combat:time_stop/swing4"],
+    "subtitle": "subtitles.kinetrix_combat.time_stop.swing"
+  },
+  "time_stop.hit": {
+    "sounds": ["kinetrix_combat:time_stop/hit1", "kinetrix_combat:time_stop/hit2", "kinetrix_combat:time_stop/hit3"],
+    "subtitle": "subtitles.kinetrix_combat.time_stop.hit"
+  }
+}

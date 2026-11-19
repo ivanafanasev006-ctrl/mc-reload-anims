@@ -32,6 +32,7 @@ public final class KinetrixMoves {
         MovesNet.init();
         Scrolls.init(modBus);
         Trainer.init(modBus);
+        MovesSounds.init(modBus);
         MinecraftForge.EVENT_BUS.register(Scrolls.class);
         MinecraftForge.EVENT_BUS.register(Trainer.class);
         MinecraftForge.EVENT_BUS.register(Quests.class);

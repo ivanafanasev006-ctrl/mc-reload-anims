@@ -37,8 +37,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  *   left.</li>
  * </ul>
  *
- * <p>Times follow the animations' keys (docs/moves.md): the blades are across at 0.2 s, the parry
- * window is the 0.2 s after that.</p>
+ * <p>It blocks from the first tick the server knows of it (the animation's blades come across in 0.2 s: the block
+ * must not wait for them, author 19.11), the parry window is the first 0.35 s.</p>
  */
 public final class Guard {
     /** Swords that are not {@link SwordItem}s (other mods' blades) can join through this tag. */
@@ -46,10 +46,13 @@ public final class Guard {
 
     public enum Kind {
         NONE("", 0, 0, 0, 0f, 0f),
-        /** One sword: blade up at 0.2 s, parry 0.2-0.4 s. */
-        SINGLE("cross_guard", 4, 4, 8, 0.25f, 1f),
-        /** Two swords crossed flat (cross_guard_flat, author 2026-10-28): blades up at 0.2 s, parry 0.2-0.4 s. */
-        DOUBLE("cross_guard_flat", 4, 4, 8, 0.10f, 1.5f);
+        /**
+         * One sword: blocking from the first tick, the parry in the first 0.35 s (author 19.11: "the block works late, you
+         * have to press it beforehand"; it was 0.2 s, the blade across in the animation, plus the trip to the server).
+         */
+        SINGLE("cross_guard", 1, 0, 7, 0.25f, 1f),
+        /** Two swords crossed flat (cross_guard_flat, author 2026-10-28): as one sword. */
+        DOUBLE("cross_guard_flat", 1, 0, 7, 0.10f, 1.5f);
 
         public final ResourceLocation animation;
         /** Guard tick from which blows are blocked; the perfect parry window (inclusive). */

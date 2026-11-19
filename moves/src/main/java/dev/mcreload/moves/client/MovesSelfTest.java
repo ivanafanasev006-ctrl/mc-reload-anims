@@ -754,6 +754,8 @@ public final class MovesSelfTest {
             if (t == len + 20) {
                 note("time stop: zombies left alive " + dummies(mc).stream().filter(e -> e.isAlive()).count()
                         + ", energy " + Math.round(Stamina.of(mc.player).energy));
+                for (var e : dummies(mc)) if (e.isAlive()) note("time stop: alive " + e.getType().getDescriptionId() + " health "
+                        + ((net.minecraft.world.entity.LivingEntity) e).getHealth() + " at " + e.blockPosition() + ", removed " + e.isRemoved());
             }
         }, new int[]{12, 26, 40, 44, 62, 100, 130, len - 34, len - 20, len - 4, len + 16}, false));
     }
@@ -1868,8 +1870,8 @@ public final class MovesSelfTest {
             for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, sp.getBoundingBox().inflate(12))) {
                 if (!e.getTags().contains("kinetrix_combat.selftest")) continue;
                 any = true;
-                note(String.format(Locale.ROOT, "%s: mob %s health %.1f of %.1f, alive %s, at z %.2f; player energy %.1f",
-                        what, e.getType().toShortString(), e.getHealth(), e.getMaxHealth(), e.isAlive(), e.getZ(), Stamina.of(sp).energy));
+                note(String.format(Locale.ROOT, "%s: mob %s health %.1f of %.1f, alive %s, at z %.2f (the player at z %.2f); player energy %.1f",
+                        what, e.getType().toShortString(), e.getHealth(), e.getMaxHealth(), e.isAlive(), e.getZ(), sp.getZ(), Stamina.of(sp).energy));
                 if (clear) e.discard();
             }
             if (!any) note(what + ": the mob is gone (dead)");

@@ -16,9 +16,9 @@ of the hold is the sword's finisher's (finisher_stab, author_2026-10-30, at 0.3 
     guard_kick     (0.65 s)  the right knee up, the foot out into it (KICK_HIT, tick 5), back, down, the guard again.
     guard_shove    (0.85 s)  the blade takes it (the body gives back, the left hand on the flat), then a step in and body
                              and blade drive it off (SHOVE_PUSH, tick 9), the follow-through, the guard.
-    guard_finish   (2.3 s)   the left hand on its wrist (0.12 s), held (FIN_CATCH, tick 10), the arm twisted down and round
-                             behind its back, the body over it (to 1.4 s), the kick into its back (FIN_KICK, tick 30), the
-                             foot down, standing where he stood as it falls (FIN_KILL, tick 42).
+    guard_finish   (1.8 s)   the blow meets the blade; behind it at once (FIN_JUMP, tick 5: the server moves him), the
+                             left hand on its shoulder, the thrust into its back (FIN_STAB, tick 9), held, the blade pulled
+                             out with a step back as it falls on its face (FIN_PULL, tick 21; it dies, FIN_KILL, tick 32).
     guard_grab     (1.1 s)   the wrist taken, pulled across as the shoulders turn (GRAB_TURN, tick 6), the hand onto its
                              left shoulder, the blade into its back (GRAB_STAB, tick 14), into the hold.
     hostage_hold   (1 s, loop)  the hold: the arms and the body above the hips only (the legs walk the vanilla way).
@@ -106,32 +106,27 @@ def guard_shove():
 
 
 def guard_finish():
-    """The left hand closes on the striking wrist over the blade (0.12 s) and holds it (to 0.5 s); the shoulders turn and
-    the body goes over it as the arm is twisted down and round behind its back, the blade's point at its neck (to 1.4 s);
-    up, the knee, the kick into its back (1.5 s), the foot down; standing where he stood, the blade down at the side as
-    it falls and dies."""
-    T_GRAB, T_HOLD, T_TWIST, T_OVER, T_UP, T_HIT, T_BACK, T_DOWN, LEN = 0.12, 0.5, 1.0, 1.25, 1.36, 1.5, 1.62, 1.82, 2.3
-    grab = {**GUARD, 'left_arm': (86.0, -10.0, 8.0), 'left_forearm': (12.0, 0.0, 0.0), 'body@p': (0.0, -0.8, 0.4)}
-    hold = {**grab, 'left_arm': (72.0, -6.0, 4.0), 'left_forearm': (40.0, 0.0, 0.0), 'chest': (-4.0, 0.0, 0.0)}
-    twist = {**GUARD, 'torso': (0.0, -22.0, 0.0), 'head': (12.0, 18.0, 0.0), 'chest': (-14.0, 0.0, 0.0), 'body@p': (0.0, -1.4, -1.6),
-             'left_arm': (46.0, 30.0, -8.0), 'left_forearm': (78.0, 0.0, 0.0),
-             'right_arm': (78.0, 22.0, 30.0), 'right_forearm': (28.0, 0.0, 0.0), 'right_item_sword': (0.0, 0.0, -60.0)}
-    over = {**twist, 'torso': (0.0, -28.0, 0.0), 'head': (16.0, 24.0, 0.0), 'chest': (-18.0, 0.0, 0.0), 'body@p': (0.0, -1.8, -2.0),
-            'left_arm': (30.0, 34.0, -4.0), 'left_forearm': (88.0, 0.0, 0.0)}
-    up = {**GUARD, **CHAMBER, 'chest': (2.0, 0.0, 0.0), 'body@p': (0.0, -0.4, 0.2),
-          'left_arm': (40.0, -10.0, -30.0), 'left_forearm': (30.0, 0.0, 0.0)}
-    hit = {**up, **KICKED, 'chest': (14.0, 0.0, 0.0), 'head': (-6.0, 0.0, 0.0), 'body@p': (0.0, -0.5, 0.8),
-           'left_arm': (30.0, -10.0, -48.0), 'left_forearm': (20.0, 0.0, 0.0)}
-    back = {**up}
-    rest = {'right_arm': (12.0, 0.0, 6.0), 'right_forearm': (14.0, 0.0, 0.0), 'left_arm': (6.0, 0.0, -6.0), 'left_forearm': (12.0, 0.0, 0.0),
-            'head': (14.0, 0.0, 0.0), 'chest': (-3.0, 0.0, 0.0), 'body@p': (0.0, -0.2, 0.0)}
-    keys = [(0, GUARD), (T_GRAB, grab, 'out'), (T_HOLD, hold, 'inout'), (T_TWIST, twist, 'inout'), (T_OVER, over, 'inout'),
-            (T_UP, up, 'inout'), (T_HIT, hit, 'out'), (T_BACK, back, 'inout'), (T_DOWN, rest, 'inout'), (2.05, rest), (LEN, {}, 'inout')]
-    feet = (OneFoot().step('left', 0.55, 0.95, -2.6, -3.6, 30, lift=1.2)
-            .step('left', 1.2, 1.34, -2.2, -0.6, 10, lift=1.0)
-            .kick('right', 1.3, T_DOWN - 0.02)
-            .step('left', 1.95, 2.2, -1.9, 0.0, 0, lift=1.0).step('right', T_DOWN, 2.1, 1.9, 0.0, 0, lift=0.0))
-    return bake('guard_finish', LEN, design('guard_finish', LEN, _all(keys)), feet, extra=(T_HIT,), level=False)
+    """(author, 2026-11-19: "you fly in behind its back and stab, as in a cutscene") The blow meets the blade (to 0.24 s);
+    then he is behind it (the server moves him there at 0.25 s, tick 5): the left hand on its shoulder, the blade drawn
+    back at the hip; the thrust into its back (0.45 s, tick 9), held, pushed in deeper; the blade pulled out with a step
+    back (1.05 s, tick 21) as it falls on its face; the blade flicked down at the side, at ease."""
+    T_JUMP, T_STAB, T_DEEP, T_PULL, T_REST, LEN = 0.25, 0.45, 0.85, 1.05, 1.4, 1.8
+    brace = {**GUARD, 'chest': (-9.0, 0.0, 0.0), 'body@p': (0.0, -0.8, 0.2)}
+    behind = {**HOLD, 'right_arm': (40.0, 14.0, 10.0), 'right_forearm': (60.0, 0.0, 0.0), 'torso': (0.0, 22.0, 0.0),
+              'right_item_sword@p': (0.0, -6.0, 5.4), 'body@p': (0.0, -1.0, 0.4), 'head': (10.0, -6.0, 0.0)}
+    stab = {**HOLD, 'body@p': (0.0, -0.8, -1.4), 'chest': (-14.0, 0.0, 0.0), 'head': (8.0, -6.0, 0.0)}
+    deep = {**stab, 'body@p': (0.0, -0.9, -1.7), 'chest': (-16.0, 0.0, 0.0), 'torso': (0.0, 18.0, 0.0)}
+    pull = {**behind, 'right_arm': (30.0, 10.0, 12.0), 'right_forearm': (50.0, 0.0, 0.0), 'left_arm': (20.0, 0.0, -18.0),
+            'left_forearm': (20.0, 0.0, 0.0), 'chest': (-4.0, 0.0, 0.0), 'body@p': (0.0, -0.4, 0.8), 'torso': (0.0, 10.0, 0.0)}
+    flick = {'right_arm': (8.0, 0.0, 20.0), 'right_forearm': (10.0, 0.0, 0.0), 'left_arm': (6.0, 0.0, -6.0), 'left_forearm': (12.0, 0.0, 0.0),
+             'head': (12.0, 0.0, 0.0), 'chest': (-3.0, 0.0, 0.0), 'body@p': (0.0, -0.2, 0.0)}
+    keys = [(0, GUARD), (0.1, brace, 'out'), (T_JUMP - 0.01, brace), (T_JUMP, behind, 'linear'), (T_STAB, stab, 'out'),
+            (T_DEEP, deep, 'inout'), (T_PULL, pull, 'out'), (T_REST, flick, 'inout'), (1.6, flick), (LEN, {}, 'inout')]
+    feet = (OneFoot().step('left', T_JUMP - 0.01, T_JUMP, -2.0, -3.2, 10, lift=0.0).step('right', T_JUMP - 0.01, T_JUMP, 2.2, 2.6, -24, lift=0.0)
+            .step('left', 0.3, 0.45, -2.0, -4.2, 10, lift=0.8)
+            .step('left', T_PULL - 0.05, T_PULL + 0.15, -2.0, -2.2, 6, lift=1.0)
+            .step('left', 1.45, 1.7, -1.9, 0.0, 0, lift=1.0).step('right', 1.5, 1.75, 1.9, 0.0, 0, lift=1.0))
+    return bake('guard_finish', LEN, design('guard_finish', LEN, _all(keys)), feet, extra=(T_STAB,), level=False)
 
 
 #: The hold (the living shield): the blade in its back level forward, the left hand on its left shoulder, the body behind it.

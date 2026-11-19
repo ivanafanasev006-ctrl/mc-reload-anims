@@ -352,7 +352,7 @@ public final class MovesGameTests {
 
     // ------------------------------------------------------------------ the block's answers (GuardAnswers, perks)
 
-    /** A weak mob's blow on the blade: caught, twisted, kicked onto its face, dead; the player untouched. */
+    /** A weak mob's blow on the blade: the player behind it, the blade in its back, it falls on its face, dead; untouched. */
     @GameTest(template = FLOOR, timeoutTicks = 200, batch = "guardAnswerFinish")
     public static void guardAnswerFinish(GameTestHelper h) {
         Script t = new Script(h).settle();
@@ -370,7 +370,7 @@ public final class MovesGameTests {
             t.check(s.move == Move.GUARD_FINISH, "no finisher from the block: " + s.move);
             t.close(p.getHealth(), 20f, "health after the blow the finisher caught");
         });
-        t.at(14 + dev.mcreload.moves.GuardAnswers.FIN_KICK - 2, () -> {
+        t.at(14 + dev.mcreload.moves.GuardAnswers.FIN_PULL - 2, () -> {
             p.hurt(p.damageSources().mobAttack(zombie), 8f);
             t.close(p.getHealth(), 20f, "the player hurt in the finisher");
         });

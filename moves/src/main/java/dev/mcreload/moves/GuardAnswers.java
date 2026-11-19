@@ -31,9 +31,10 @@ import java.util.UUID;
  * meets the raised blade (Guard), one sword or two:
  *
  * <ul>
- *   <li><b>The finisher</b> (GUARD_FINISH): any blow blocked from a mob with less than a quarter of its health left. Its
- *   wrist caught on the blade (0.5 s), its arm twisted behind its back (1 s), the kick into its back; it stumbles, falls on
- *   its face and dies. The mob is held meanwhile, the player untouchable and staying where they stood.</li>
+ *   <li><b>The finisher</b> (GUARD_FINISH): any blow blocked from a mob with less than a quarter of its health left. The
+ *   blow meets the blade; at once the player is behind it (19.11: "you fly in behind its back and stab, as in a
+ *   cutscene"; the camera stays where it was, client/TimeStopView), the blade into its back, pulled out as it falls on its
+ *   face, and it dies. The mob is held meanwhile, the player untouchable.</li>
  *   <li><b>The kick</b> (GUARD_KICK): a blow blocked (not perfectly): the front kick throws it about 2 blocks back, no
  *   stun; the blade goes up again if the button is still held.</li>
  *   <li><b>The shove</b> (GUARD_COUNTER): a perfect parry: caught mid-blade, the body gives back with the blow, then body
@@ -47,24 +48,26 @@ import java.util.UUID;
  * Bosses, players and mobs not of a man's build are not caught (the shove and the kick still work on the last).
  */
 public final class GuardAnswers {
-    /** The finisher (ticks): the wrist caught, the twist, the kick, the death, the end. */
-    public static final int FIN_CATCH = 10, FIN_KICK = 30, FIN_KILL = 42, FIN_LEN = 46;
-    /** The kick: the foot meets it; the end. */
-    public static final int KICK_HIT = 5, KICK_LEN = 13;
-    /** The shove: the body drives it off; the end. */
-    public static final int SHOVE_PUSH = 9, SHOVE_LEN = 17;
+    /** The finisher (ticks, guard_finish's keys): behind it, the thrust, the blade out (it falls), its death, the end. */
+    public static final int FIN_JUMP = 5, FIN_STAB = 9, FIN_PULL = 21, FIN_KILL = 32, FIN_LEN = 36;
+    /** The kick: the foot meets it; the end (the blade up again soon after, author 19.11). */
+    public static final int KICK_HIT = 5, KICK_LEN = 10;
+    /** The shove: the body drives it off; the end (19.11: "pushed him off and almost at once the block again"). */
+    public static final int SHOVE_PUSH = 9, SHOVE_LEN = 11;
     /** The grab: the wrist caught, swung round in front, the blade in; the end (on into the hold). */
     public static final int GRAB_TURN = 6, GRAB_STAB = 14, GRAB_LEN = 22;
     /** The living shield kicked off: the foot; the end. */
     public static final int THROW_HIT = 5, THROW_LEN = 15;
     /** The mob is held this far in front of the player (blocks, between their middles). */
-    static final double HOLD_AT = 1.05, SHIELD_AT = 0.8;
+    public static final double HOLD_AT = 1.05, SHIELD_AT = 0.8;
     /** A flying living shield goes straight this many ticks, then falls; it dies on landing or after FLIGHT_MAX. */
     static final int FLIGHT_STRAIGHT = 7, FLIGHT_MAX = 30;
 
     private static final class Flight {
         final int mob;
         final Vec3 dir;
+        Vec3 from;
+        boolean straight = true;
         int tick;
         final Set<Integer> hit = new HashSet<>();
 
@@ -102,7 +105,7 @@ public final class GuardAnswers {
                 && s.canAfford(MovesConfig.costGuardFinish(), p)) {
             s.spend(MovesConfig.costGuardFinish(), p);
             begin(p, s, Move.GUARD_FINISH, mob);
-            MovesNet.mobPose(mob, MobPose.CAUGHT, FIN_CATCH + 2, false);
+            MovesNet.mobPose(mob, MobPose.CAUGHT, FIN_JUMP + 2, false);
             return true;
         }
         if (!parry || !s.progress.usable(Skill.GUARD_COUNTER)) return false;
@@ -145,7 +148,8 @@ public final class GuardAnswers {
         s.start(p, m, false);
         s.target = mob.getId();
         s.combatTicks = MovesConfig.combatTicks();
-        MovesNet.force(p, m, -1);
+        // the finisher's mob goes with it: the clients turn the body to it behind its back
+        MovesNet.force(p, m, m == Move.GUARD_FINISH ? mob.getId() : -1);
         MoveServer.sync(p, s, true);
         ServerLevel level = p.serverLevel();
         Vec3 at = p.getEyePosition().add(p.getViewVector(1f).scale(0.7)).subtract(0, 0.3, 0);
@@ -215,24 +219,54 @@ public final class GuardAnswers {
         }
     }
 
+    /** Where the finisher's mob stands from the jump on, and its facing (away from the player behind it). */
+    private static final Map<UUID, Vec3> FIN_SPOT = new HashMap<>();
+
     private static void finishTick(ServerPlayer p, Stamina s, LivingEntity mob) {
         if (mob == null) return;
-        if (s.moveTick < FIN_KICK) {
+        if (s.moveTick < FIN_JUMP) {
             hold(p, mob, HOLD_AT, false);
-            if (s.moveTick == FIN_CATCH) MovesNet.mobPose(mob, MobPose.TWISTED, FIN_KICK - FIN_CATCH + 2, false);
-        } else if (s.moveTick == FIN_KICK) {
-            // the kick into its back: it stumbles off, falls on its face (turned: its back was to the player)
-            MovesNet.mobPose(mob, MobPose.FALL_FACE, 60, true);
+        } else if (s.moveTick == FIN_JUMP) {
+            // behind it at once: the look kept (the camera stays), the body turned to it by the clients
+            Vec3 d = Strikes.flat(mob.position().subtract(p.position()));
+            d = d.lengthSqr() < 1.0E-4 ? Strikes.flat(p.getViewVector(1f)).normalize() : d.normalize();
+            Vec3 from = p.position();
+            Vec3 to = mob.position().add(d.scale(mob.getBbWidth() / 2 + 0.75));
+            if (!p.level().noCollision(p, p.getBoundingBox().move(to.subtract(p.position())))) to = from;
+            FIN_SPOT.put(p.getUUID(), mob.position());
+            MovesNet.mobPose(mob, MobPose.HOSTAGE, FIN_PULL - FIN_JUMP + 2, false);
+            TimeStop.go(p, to);
+            TimeStop.flickerFx(p, from, to);
+            pin(p, mob);
+        } else if (s.moveTick < FIN_PULL) {
+            pin(p, mob);
+            if (s.moveTick == FIN_STAB) {
+                stab(p, mob);
+                p.serverLevel().playSound(null, mob.getX(), mob.getY(), mob.getZ(), MovesSounds.TIME_STOP_HIT.get(), SoundSource.PLAYERS, 1f, 0.9f);
+            }
+        } else if (s.moveTick == FIN_PULL) {
+            // the blade out: it falls on its face, away from the player behind it
+            FIN_SPOT.remove(p.getUUID());
+            MovesNet.mobPose(mob, MobPose.FALL_FACE, 60, false);
             Vec3 away = away(p, mob);
-            mob.setDeltaMovement(away.x * 0.32, 0.05, away.z * 0.32);
+            mob.setDeltaMovement(away.x * 0.18, 0.02, away.z * 0.18);
             mob.hurtMarked = true;
-            ServerLevel level = p.serverLevel();
-            level.playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.PLAYERS, 1.1f, 0.75f);
+            p.serverLevel().playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.PLAYERS, 0.8f, 0.7f);
         } else if (s.moveTick < FIN_KILL) {
             still(mob);
         } else if (s.moveTick == FIN_KILL) {
             kill(p, mob);
         }
+    }
+
+    /** The finisher's mob held where it stood, its back to the player. */
+    private static void pin(ServerPlayer p, LivingEntity mob) {
+        Vec3 at = FIN_SPOT.getOrDefault(p.getUUID(), mob.position());
+        float face = TimeStop.facing(p.position(), at);
+        mob.moveTo(at.x, at.y, at.z, face, 0f);
+        mob.setYHeadRot(face);
+        mob.setYBodyRot(face);
+        still(mob);
     }
 
     /** The mob held where the move wants it: in front of the player, turned to them (or, facing away, their way). */
@@ -314,7 +348,9 @@ public final class GuardAnswers {
         dir = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
         mob.moveTo(p.getX() + dir.x * 1.2, p.getY() + 0.3, p.getZ() + dir.z * 1.2, p.getYRot(), 0f);
         MovesNet.mobPose(mob, MobPose.THROWN, 60, false);
-        FLYING.put(p.getUUID(), new Flight(mob.getId(), dir));
+        Flight f = new Flight(mob.getId(), dir);
+        f.from = p.position();
+        FLYING.put(p.getUUID(), f);
         ServerLevel level = p.serverLevel();
         level.playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.PLAYERS, 1.3f, 0.6f);
         level.playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR, SoundSource.PLAYERS, 0.5f, 1.3f);
@@ -326,7 +362,14 @@ public final class GuardAnswers {
         if (!(p.level().getEntity(f.mob) instanceof LivingEntity mob) || !mob.isAlive()) return true;
         f.tick++;
         double speed = MovesConfig.shieldThrowSpeed();
-        if (f.tick <= FLIGHT_STRAIGHT) mob.setDeltaMovement(f.dir.x * speed, 0.02, f.dir.z * speed);
+        // straight on until it is nearly as far as it goes (author 19.11: "8-9 blocks at most"), then it drops
+        boolean on = f.tick <= FLIGHT_STRAIGHT && Strikes.flat(mob.position().subtract(f.from)).length() < MovesConfig.shieldThrowBlocks() - 1.6;
+        if (on) mob.setDeltaMovement(f.dir.x * speed, 0.02, f.dir.z * speed);
+        else if (f.straight) {
+            f.straight = false;
+            Vec3 v = mob.getDeltaMovement();
+            mob.setDeltaMovement(v.x * 0.3, Math.min(v.y, 0.0), v.z * 0.3);
+        }
         mob.hurtMarked = true;
         mob.hasImpulse = true;
         if (mob instanceof Mob m) {
@@ -343,9 +386,12 @@ public final class GuardAnswers {
             if (catchable(other)) MovesNet.mobPose(other, MobPose.FLUNG, 16, false);
             p.serverLevel().playSound(null, other.getX(), other.getY(), other.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1f, 0.8f);
         }
-        boolean wall = f.tick <= FLIGHT_STRAIGHT && f.tick > 1 && mob.horizontalCollision;
+        boolean wall = f.straight && f.tick > 1 && mob.horizontalCollision;
         if ((f.tick > 3 && mob.onGround()) || wall || f.tick >= FLIGHT_MAX) {
             kill(p, mob);
+            // where it fell it lies (the blow's knockback took the body 2 blocks on: 8-9 at most, author)
+            mob.setDeltaMovement(0, Math.min(0, mob.getDeltaMovement().y), 0);
+            mob.hurtMarked = true;
             return true;
         }
         return false;
