@@ -734,7 +734,7 @@ public final class MovesSelfTest {
      * round half-way through (the camera stays where it was).
      */
     private static void timeStop(String name) {
-        int len = dev.mcreload.moves.TimeStop.STANCE_LEN + 6 * 2 * dev.mcreload.moves.TimeStop.STEP + dev.mcreload.moves.TimeStop.YAWN_LEN;
+        int len = dev.mcreload.moves.TimeStop.STANCE_LEN + 6 * 2 * dev.mcreload.moves.TimeStop.STEP + dev.mcreload.moves.TimeStop.BRAKE_LEN;
         SCENARIOS.add(new Scenario(name, len + 24, sp -> {
             place(sp, 0, new ItemStack(Items.IRON_SWORD));
             for (int i = 0; i < 6; i++) {

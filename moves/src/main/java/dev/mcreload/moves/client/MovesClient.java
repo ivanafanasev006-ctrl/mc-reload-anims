@@ -1071,7 +1071,7 @@ public final class MovesClient {
             s.start(p, move, false);
             moveYaw = p.getYRot();
             if (extra >= 0) s.ledgeDir = extra;
-            if (move.timeStopBlow() || move == Move.GUARD_FINISH) s.target = extra;
+            if (move.timeStopBlow() || move == Move.GUARD_FINISH || move == Move.TS_BRAKE) s.target = extra;
             LedgeInput.pulled(mc.player, s);
             MoveAnimator.play(p, move, was);
             return;
@@ -1084,7 +1084,7 @@ public final class MovesClient {
             if (move.timeStop() || move == Move.GUARD_FINISH) TimeStopView.step(p, move, extra);
             s.start(p, move, false);
             if (extra >= 0) s.ledgeDir = extra;
-            if (move.timeStopBlow() || move == Move.GUARD_FINISH) s.target = extra;
+            if (move.timeStopBlow() || move == Move.GUARD_FINISH || move == Move.TS_BRAKE) s.target = extra;
             MoveAnimator.play(p, move, was);
         }
     }

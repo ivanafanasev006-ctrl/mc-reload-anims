@@ -5,9 +5,8 @@
 from above along it with the sword, a thrust, from behind, into the belly, in turn, and ends where he began and with the
 left hand yawns grandly, holding the sword in the right."
 
-    ts_stance  (1.5 s)  (author, 19.11 after trying it: "just the ordinary default pose, the sword in its default place,
-                        in both hands in front of him, and he looks at the sword") up from where he was into it, the
-                        head down at the blade, a breath.
+    ts_stance  (1.5 s)  (author, 19.11) the sword upright in both hands right in the middle before the face, its flat to
+                        the front, the forehead bowed onto the blade; a breath in, held.
     6 blows    (0.35 s each, the hit at tick 3; 19.11: "1.5 times faster", "the blows and the look of the player varied"):
       ts_slash   standing, from over the right shoulder down across to the left hip;
       ts_thrust  a deep lunge, the arm and the blade straight out;
@@ -17,9 +16,8 @@ left hand yawns grandly, holding the sword in the right."
       ts_spin    a whole turn on the spot, the blade out level at arm's length.
                  Each starts in its own wind-up (the server puts the player at the mob between them: he appears in it)
                  and ends in its own follow-through, so no two look alike and none ends in a common pose.
-    ts_yawn    (2 s)    up, the sword lowered in the right hand; the left hand to the mouth as in Kinetrix's thinking
-                        pose (the inventory: the elbow out, the hand at the chin), the head back in a long yawn, then a
-                        moment's thought, the hand down, at ease.
+    ts_brake   (1.8 s)  (19.11, instead of the yawn) back where he began, skidding to a stop as on a skateboard: side-on,
+                        low, leaning back, the feet scraping, the arms out; up, the blade flicked down at his side.
 
 His file is not changed.
 
@@ -56,13 +54,16 @@ def samurai(t):
 
 
 def ts_stance():
-    """Up into the plain stance, the sword in both hands in front (its default place in the right hand, the left under
-    it), the head bowed to the blade; a breath."""
+    """(19.11, the second try: "the sword and the hands not quite in the middle; he should lean his head on the sword, the
+    blade turned flat outwards, and as if hold his breath, then the teleports") Up into it: the sword upright in both hands
+    right in the middle before the face, its flat to the front, the forehead bowed onto the blade; a breath in (the
+    shoulders and the chest up), and held, still."""
     LEN = 1.5
-    hold = {'right_arm': (28.0, 30.0, 6.0), 'right_forearm': (24.0, 0.0, 0.0), 'left_arm': (22.0, -36.0, -4.0),
-            'left_forearm': (34.0, 0.0, 0.0), 'head': (-20.0, 0.0, 0.0), 'chest': (-2.0, 0.0, 0.0), 'body@p': (0.0, -0.3, 0.0)}
-    breath = {**hold, 'chest': (1.0, 0.0, 0.0), 'head': (-22.0, 0.0, 0.0), 'body@p': (0.0, -0.1, 0.0)}
-    keys = [(0, {}), (0.3, hold, 'inout'), (0.9, breath, 'inout'), (LEN, hold, 'inout')]
+    hold = {'right_arm': (10.0, 47.0, 0.0), 'right_forearm': (80.0, 0.0, 0.0), 'left_arm': (4.0, -47.0, 0.0),
+            'left_forearm': (80.0, 0.0, 0.0), 'head': (-17.0, 0.0, 0.0), 'chest': (-12.0, 0.0, 0.0), 'body@p': (0.0, -0.3, 0.0)}
+    breath = {**hold, 'chest': (-9.0, 0.0, 0.0), 'head': (-19.0, 0.0, 0.0), 'right_arm': (12.0, 47.0, 0.0), 'left_arm': (6.0, -47.0, 0.0),
+              'body@p': (0.0, 0.1, 0.0)}
+    keys = [(0, {}), (0.35, hold, 'inout'), (0.75, breath, 'inout'), (LEN, breath)]
     feet = Feet()
     return bake('ts_stance', LEN, design('ts_stance', LEN, _all(keys)), feet, level=False)
 
@@ -168,28 +169,33 @@ def ts_spin():
     return bake('ts_spin', LEN, design('ts_spin', LEN, _all(keys)), feet, extra=(HIT,), level=False)
 
 
-def ts_yawn():
-    """Up out of the blow, the sword lowered in the right hand; the left hand to the mouth as in Kinetrix's thinking pose
-    (ScreenModule.think: the arm up, the elbow out, the forearm bent up to the chin), the head back in a long yawn
-    (0.5-1.3 s); a moment's thought, head bowed; the hand down, at ease."""
-    LEN = 2.0
-    up = {'right_arm': (14.0, 0.0, 8.0), 'right_forearm': (16.0, 0.0, 0.0), 'left_arm': (6.0, 0.0, -6.0), 'left_forearm': (10.0, 0.0, 0.0),
-          'head': (4.0, 0.0, 0.0), 'body@p': (0.0, -0.2, 0.0)}
-    # the thinking pose's chin hand (Java (-1.22, 0.64, -1.00) rad, the elbow 1.34 rad) in Blockbench degrees
-    chin = {'left_arm': (70.0, -36.7, -57.3), 'left_forearm': (76.8, 0.0, 0.0)}
-    mouth = {**up, **chin, 'head': (14.0, 4.0, -4.0), 'chest': (4.0, 0.0, 0.0), 'body@p': (0.0, 0.0, 0.2)}
-    deep = {**mouth, 'head': (24.0, 6.0, -6.0), 'chest': (8.0, 0.0, 0.0), 'right_arm': (18.0, 0.0, 14.0),
-            'left_arm': (76.0, -36.7, -57.3), 'left_forearm': (82.0, 0.0, 0.0), 'body@p': (0.0, 0.2, 0.4)}
-    think = {**up, **chin, 'head': (-20.0, -6.0, 8.0), 'chest': (-2.0, 0.0, 0.0)}
-    keys = [(0, {}), (0.3, up, 'inout'), (0.5, mouth, 'inout'), (1.05, deep, 'inout'), (1.3, mouth, 'inout'), (1.45, think, 'inout'),
-            (1.7, think, 'inout'), (LEN, {}, 'inout')]
-    feet = Feet()
-    feet.step('right', 0.05, 0.3, 1.9, 0.0, 0, lift=1.0).step('left', 0.15, 0.4, -1.9, 0.0, 0, lift=1.0)
-    return bake('ts_yawn', LEN, design('ts_yawn', LEN, _all(keys)), feet, level=False)
+def ts_brake():
+    """(19.11: "at the end better that he teleports and brakes with his feet as on a skateboard, hard, instead of the yawn")
+    He comes out of the last flicker already skidding (the server gives him the slide, TimeStop): the body turned side-on to
+    the way he goes, low, leaning back against it, the feet wide and scraping, the left arm out for balance, the blade
+    trailing low behind; the skid dies (0.55 s), he rises and turns back to the front, the blade flicked down at his side."""
+    LEN = 1.8
+    skid = {'body': (8.0, 72.0, 0.0), 'body@p': (0.0, -5.0, 0.0), 'chest': (6.0, 0.0, 0.0), 'head': (-4.0, -60.0, 0.0),
+            'left_leg': (24.0, 0.0, -34.0), 'left_shin': (-18.0, 0.0, 0.0), 'right_leg': (-14.0, 0.0, 30.0), 'right_shin': (-78.0, 0.0, 0.0),
+            'left_arm': (50.0, 0.0, -72.0), 'left_forearm': (14.0, 0.0, 0.0),
+            'right_arm': (-34.0, 0.0, 40.0), 'right_forearm': (10.0, 0.0, 0.0)}
+    shake = {**skid, 'body@p': (0.0, -5.3, 0.0), 'chest': (8.0, 0.0, 0.0), 'left_arm': (56.0, 0.0, -76.0)}
+    stop = {**skid, 'body': (2.0, 66.0, 0.0), 'body@p': (0.0, -4.0, 0.0), 'chest': (-4.0, 0.0, 0.0), 'head': (4.0, -56.0, 0.0),
+            'left_arm': (30.0, 0.0, -50.0)}
+    rise = {'body': (0.0, 20.0, 0.0), 'body@p': (0.0, -0.8, 0.0), 'chest': (-2.0, 0.0, 0.0), 'head': (2.0, -18.0, 0.0),
+            'left_leg': (4.0, 0.0, -10.0), 'left_shin': (-8.0, 0.0, 0.0), 'right_leg': (-4.0, 0.0, 10.0), 'right_shin': (-10.0, 0.0, 0.0),
+            'left_arm': (8.0, 0.0, -14.0), 'left_forearm': (10.0, 0.0, 0.0), 'right_arm': (24.0, 0.0, 30.0), 'right_forearm': (20.0, 0.0, 0.0)}
+    flick = {**rise, 'body': (0.0, 0.0, 0.0), 'body@p': (0.0, -0.2, 0.0), 'head': (6.0, 0.0, 0.0), 'left_leg': (0.0, 0.0, -4.0),
+             'left_shin': (0.0, 0.0, 0.0), 'right_leg': (0.0, 0.0, 4.0), 'right_shin': (0.0, 0.0, 0.0),
+             'right_arm': (6.0, 0.0, 22.0), 'right_forearm': (8.0, 0.0, 0.0)}
+    keys = [(0, skid), (0.12, shake, 'linear'), (0.24, skid, 'linear'), (0.36, shake, 'linear'), (0.55, stop, 'out'),
+            (0.95, rise, 'inout'), (1.25, flick, 'out'), (1.5, flick), (LEN, {}, 'inout')]
+    feet = Feet().designed(-1.0, LEN + 1.0)
+    return bake('ts_brake', LEN, design('ts_brake', LEN, _all(keys)), feet, level=False)
 
 
 def made():
-    a = [ts_stance(), ts_slash(), ts_thrust(), ts_back(), ts_belly(), ts_leap(), ts_spin(), ts_yawn()]
+    a = [ts_stance(), ts_slash(), ts_thrust(), ts_back(), ts_belly(), ts_leap(), ts_spin(), ts_brake()]
     for x in a:
         kit.soften(x, round9.SOFTEN, round9.LEGS)
     return a

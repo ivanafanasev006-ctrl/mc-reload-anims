@@ -153,19 +153,26 @@ public final class MobPoses {
      * place comes every few ticks and is eased into: it trailed behind the player, author 19.11: "you become as one").
      */
     private static void stuck(LivingEntity e, PoseStack ps, float partial) {
-        for (Player p : e.level().players()) {
-            Stamina s = Stamina.of(p);
-            boolean holds = s.move == Move.HOSTAGE_HOLD || (s.move == Move.GUARD_GRAB && s.moveTick >= GuardAnswers.GRAB_TURN)
-                    || (s.move == Move.HOSTAGE_KICK && s.moveTick < GuardAnswers.THROW_HIT);
-            if (!holds || p.distanceToSqr(e) > 16.0) continue;
+        Player p = holder(e);
+        if (p != null) {
             float yaw = p.getViewYRot(partial);
             Vec3 at = p.getPosition(partial).add(-Mth.sin(yaw * D) * GuardAnswers.SHIELD_AT, 0, Mth.cos(yaw * D) * GuardAnswers.SHIELD_AT);
             Vec3 drawn = e.getPosition(partial);
             ps.translate(at.x - drawn.x, at.y - drawn.y, at.z - drawn.z);
             e.yBodyRot = e.yBodyRotO = yaw;
             e.yHeadRot = e.yHeadRotO = yaw;
-            return;
         }
+    }
+
+    /** The player holding this mob on the blade (the living shield), if any near. */
+    private static Player holder(LivingEntity e) {
+        for (Player p : e.level().players()) {
+            Stamina s = Stamina.of(p);
+            boolean holds = s.move == Move.HOSTAGE_HOLD || (s.move == Move.GUARD_GRAB && s.moveTick >= GuardAnswers.GRAB_TURN)
+                    || (s.move == Move.HOSTAGE_KICK && s.moveTick < GuardAnswers.THROW_HIT);
+            if (holds && p.distanceToSqr(e) <= 16.0) return p;
+        }
+        return null;
     }
 
     private static void post(RenderLivingEvent.Post<?, ?> event) {
@@ -192,7 +199,24 @@ public final class MobPoses {
         set(h.leftArm, p, 9, w);
         set(h.rightLeg, p, 12, w);
         set(h.leftLeg, p, 15, w);
+        if (o.pose == MobPose.HOSTAGE) inStep(e, h, partial);
         h.hat.copyFrom(h.head);
+    }
+
+    /**
+     * The living shield walks with its holder (author 19.11: "in sync", not standing still while the player walks): its
+     * legs in step with the player's (the same stride and pace, the other foot first, as it is ahead of him), its arms
+     * hanging and swinging a little.
+     */
+    private static void inStep(LivingEntity e, HumanoidModel<?> h, float partial) {
+        Player p = holder(e);
+        if (p == null) return;
+        float pos = p.walkAnimation.position(partial), speed = Math.min(1f, p.walkAnimation.speed(partial));
+        float swing = Mth.cos(pos * 0.6662f) * 1.2f * speed;
+        h.rightLeg.xRot += -swing;
+        h.leftLeg.xRot += swing;
+        h.rightArm.xRot += swing * 0.25f;
+        h.leftArm.xRot += -swing * 0.25f;
     }
 
     private static void set(ModelPart part, float[] p, int i, float w) {

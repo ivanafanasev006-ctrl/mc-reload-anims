@@ -438,7 +438,7 @@ public final class MovesGameTests {
         }
         net.minecraft.world.phys.Vec3[] start = new net.minecraft.world.phys.Vec3[1];
         int len = dev.mcreload.moves.TimeStop.STANCE_LEN + z.length * MovesConfig.timeStopRounds() * dev.mcreload.moves.TimeStop.STEP
-                + dev.mcreload.moves.TimeStop.YAWN_LEN;
+                + dev.mcreload.moves.TimeStop.BRAKE_LEN;
         t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
         t.at(3, () -> {
             start[0] = p.position();

@@ -323,7 +323,7 @@
   "kinetrix_combat.wheel.how.guardCounter": "Works by itself: put it among the perks and block with a sword right as the blow comes",
   "kinetrix_combat.wheel.how.guardFinish": "Works by itself: put it among the perks and block a weak mob's blow",
   "kinetrix_combat.settings.move.timeStop": "Time stop",
-  "kinetrix_combat.settings.move.timeStop.tip": "The right button and G held with a sword, 5 to 10 enemies about. Time stops for you and them: the sword in both hands before you, they slow down and freeze in different poses. You flicker from one to the next, a different blow each time, 2 blows each. Back where you began you yawn, and they fly off and die. The camera stays put and turns all round with the mouse. 99 % of the energy, 30 s cooldown.",
+  "kinetrix_combat.settings.move.timeStop.tip": "The right button and G held with a sword, 5 to 10 enemies about. Time stops for you and them: the sword in both hands before you, they slow down and freeze in different poses. You flicker from one to the next, a different blow each time, 2 blows each. Back where you began you skid to a stop, and they fly off and die. The camera stays put and turns all round with the mouse. 99 % of the energy, 30 s cooldown.",
   "kinetrix_combat.settings.move.timeStop.keys": "%5$s + %1$s held with a sword",
   "kinetrix_combat.skill.timeStop.words": "time stop samurai ultimate flicker teleport",
   "key.kinetrix_combat.skill.timeStop": "Move: Time stop",

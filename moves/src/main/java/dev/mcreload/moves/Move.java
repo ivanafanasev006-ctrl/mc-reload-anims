@@ -389,7 +389,7 @@ public enum Move {
 
     // ---- the time stop (author, 2026-11-19; TimeStop): the right button and G held with a sword, 5 to 10 enemies about. The
     // stance (the sword in both hands, looking at it) as they freeze; the blows, 0.35 s each, the player put at each mob;
-    // the yawn back where he began. Untouchable throughout. Animations from round23.py.
+    // the skid to a stop back where he began. Untouchable throughout. Animations from round23.py.
     TS_STANCE("ts_stance", 1f, TimeStop.STANCE_LEN, 0, TimeStop.STANCE_LEN, -1, -1, Side.FRONT, () -> 0),
     TS_SLASH("ts_slash", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
     TS_THRUST("ts_thrust", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
@@ -397,7 +397,7 @@ public enum Move {
     TS_BELLY("ts_belly", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
     TS_LEAP("ts_leap", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
     TS_SPIN("ts_spin", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
-    TS_YAWN("ts_yawn", 1f, TimeStop.YAWN_LEN, 0, TimeStop.YAWN_LEN, -1, -1, Side.FRONT, () -> 0);
+    TS_BRAKE("ts_brake", 1f, TimeStop.BRAKE_LEN, 0, TimeStop.BRAKE_LEN, -1, -1, Side.FRONT, () -> 0);
 
     /** The hops along the edge play this much faster than their animation (author: one after another). */
     public static final float HOP_SPEED = 1.4f;
@@ -535,7 +535,7 @@ public enum Move {
 
     /** The time stop's parts (TimeStop). */
     public boolean timeStop() {
-        return this == TS_STANCE || timeStopBlow() || this == TS_YAWN;
+        return this == TS_STANCE || timeStopBlow() || this == TS_BRAKE;
     }
 
     /** A blow of the time stop, made at a mob. */

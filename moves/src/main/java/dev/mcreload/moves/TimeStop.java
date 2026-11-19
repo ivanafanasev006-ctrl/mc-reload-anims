@@ -29,15 +29,15 @@ import java.util.UUID;
  * stance (the sword in both hands before him, looking at it) while they slow down within a second and freeze, each in a pose of its own (running,
  * in a deep leap, jumping down at him with a knee bent and the arms swung up, roaring with the arms thrown back). Then he
  * flickers from one to the next, 0.35 s each (19.11: 1.5 times faster), a different blow each time (from above, leaping
- * down, a thrust, a whole turn, from behind, into the belly), round them all twice; back where he began he yawns, the sword in his right hand. Then time
+ * down, a thrust, a whole turn, from behind, into the belly), round them all twice; back where he began he skids to a stop as on a skateboard. Then time
  * runs again: they fly off, each its own way (as if blown up, onto the back, onto the face, tripping), and die.</p>
  *
  * <p>99 % of the bar, 30 s before the next (author). The camera stays where it was, behind the player's place, and turns
  * all round with the mouse (client/TimeStopView). The player cannot be hurt meanwhile. Not on bosses or players.</p>
  */
 public final class TimeStop {
-    /** The stance and the freeze (ticks); a blow; its hit; the yawn; when the enemies die in it. */
-    public static final int STANCE_LEN = 30, FREEZE = 20, STEP = 7, HIT = 3, YAWN_LEN = 40, DIE_AT = 22;
+    /** The stance and the freeze (ticks); a blow; its hit; the brake; when the enemies die in it. */
+    public static final int STANCE_LEN = 30, FREEZE = 20, STEP = 7, HIT = 3, BRAKE_LEN = 36, DIE_AT = 22;
     /** The frozen poses, given round in turn; the poses they fly off in. */
     private static final MobPose[] FROZEN = {MobPose.FROZEN_RUN, MobPose.FROZEN_LEAP, MobPose.FROZEN_POUNCE, MobPose.FROZEN_RAGE};
     private static final MobPose[] FLY_OFF = {MobPose.BLASTED, MobPose.FALL_BACK, MobPose.FALL_FACE, MobPose.STUMBLE};
@@ -84,7 +84,7 @@ public final class TimeStop {
         s.timeStopCooldown = s.cooled(MovesConfig.timeStopCooldownTicks());
         List<LivingEntity> mobs = enemies(p);
         List<Integer> ids = new ArrayList<>();
-        int total = STANCE_LEN + mobs.size() * MovesConfig.timeStopRounds() * STEP + YAWN_LEN + 20;
+        int total = STANCE_LEN + mobs.size() * MovesConfig.timeStopRounds() * STEP + BRAKE_LEN + 20;
         for (int i = 0; i < mobs.size(); i++) {
             ids.add(mobs.get(i).getId());
             MovesNet.mobPose(mobs.get(i), FROZEN[i % FROZEN.length], total, false);
@@ -105,10 +105,11 @@ public final class TimeStop {
         }
         p.fallDistance = 0f;
         List<LivingEntity> mobs = alive(p, st);
-        if (s.move == Move.TS_YAWN) {
+        if (s.move == Move.TS_BRAKE) {
+            if (s.moveTick < SKID) skidFx(p, s.moveTick);
             if (s.moveTick == DIE_AT) for (LivingEntity mob : mobs) GuardAnswers.kill(p, mob);
             else if (s.moveTick < DIE_AT) for (LivingEntity mob : mobs) mob.fallDistance = 0f;
-            if (s.moveTick >= Move.TS_YAWN.length - 1) ON.remove(p.getUUID());
+            if (s.moveTick >= Move.TS_BRAKE.length - 1) ON.remove(p.getUUID());
             return;
         }
         // slowing down to a stop within the freeze, then held as they are
@@ -129,7 +130,7 @@ public final class TimeStop {
             if (mob != null) hitFx(p, mob);
         }
         if (s.moveTick < s.move.length - 1) return;
-        // the next blow: the next enemy still about (all dead or gone: the yawn)
+        // the next blow: the next enemy still about (all dead or gone: the brake)
         while (st.step < steps) {
             int i = st.step % st.targets.size();
             LivingEntity mob = byId(p, st.targets.get(i));
@@ -145,13 +146,23 @@ public final class TimeStop {
             flickerFx(p, from, spot);
             return;
         }
-        // back where he began, and the yawn; time runs again
+        // back where he began, skidding to a stop as on a skateboard (author 19.11, instead of the yawn): he comes out a
+        // little short of his place, going on the way he came, and the ground stops him on it; time runs again
         Vec3 from = p.position();
-        s.start(p, Move.TS_YAWN, false);
-        s.target = -1;
-        MovesNet.force(p, Move.TS_YAWN, -1);
-        go(p, st.anchor);
-        flickerFx(p, from, st.anchor);
+        Vec3 way = Strikes.flat(st.anchor.subtract(from));
+        way = way.lengthSqr() < 1.0E-4 ? Strikes.flat(Vec3.directionFromRotation(0f, st.yaw)) : way.normalize();
+        Vec3 in = st.anchor.subtract(way.scale(SKID_SHORT));
+        if (!p.level().noCollision(p, p.getBoundingBox().move(in.subtract(p.position())))) in = st.anchor;
+        int wayYaw = Math.floorMod(Math.round(facing(Vec3.ZERO, way)), 360);
+        s.start(p, Move.TS_BRAKE, false);
+        // the brake's extra: the way he skids (degrees; the clients turn the body side-on to it)
+        s.target = wayYaw;
+        MovesNet.force(p, Move.TS_BRAKE, wayYaw);
+        go(p, in);
+        p.setDeltaMovement(way.x * SKID_SPEED, 0.0, way.z * SKID_SPEED);
+        p.hurtMarked = true;
+        flickerFx(p, from, in);
+        p.serverLevel().playSound(null, in.x, in.y, in.z, SoundEvents.GRAVEL_BREAK, SoundSource.PLAYERS, 1f, 0.6f);
         ServerLevel level = p.serverLevel();
         level.playSound(null, p.getX(), p.getY(), p.getZ(), MovesSounds.TIME_STOP_UNWIND.get(), SoundSource.PLAYERS, 1.2f, 1f);
         for (int i = 0; i < mobs.size(); i++) flyOff(p, st, mobs.get(i), i);
@@ -179,6 +190,24 @@ public final class TimeStop {
             if (p.level().noCollision(p, p.getBoundingBox().move(at.subtract(p.position())))) return at;
         }
         return p.position();
+    }
+
+    /** The brake: how far short of his place he comes out (blocks), his speed into the skid, how long it scrapes (ticks). */
+    private static final double SKID_SHORT = 1.6, SKID_SPEED = 0.75;
+    private static final int SKID = 11;
+
+    /** The skid's dust and scrape: the ground under his feet thrown up behind him. */
+    private static void skidFx(ServerPlayer p, int tick) {
+        ServerLevel level = p.serverLevel();
+        net.minecraft.core.BlockPos under = p.blockPosition().below();
+        net.minecraft.world.level.block.state.BlockState ground = level.getBlockState(under);
+        if (ground.isAir()) return;
+        level.sendParticles(new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK, ground), p.getX(), p.getY() + 0.1,
+                p.getZ(), 6, 0.35, 0.05, 0.35, 0.15);
+        if (tick % 3 == 0) {
+            level.sendParticles(ParticleTypes.POOF, p.getX(), p.getY() + 0.1, p.getZ(), 1, 0.2, 0.0, 0.2, 0.01);
+            level.playSound(null, p.getX(), p.getY(), p.getZ(), ground.getSoundType().getStepSound(), SoundSource.PLAYERS, 0.8f, 0.7f);
+        }
     }
 
     /**
