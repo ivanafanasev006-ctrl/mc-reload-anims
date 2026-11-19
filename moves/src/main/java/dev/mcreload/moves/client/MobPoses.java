@@ -65,11 +65,24 @@ public final class MobPoses {
 
     /** How much of the pose is on: eased in from its start, out over its last ticks (the lying ones stay). */
     private static float weight(On o, float t) {
-        float in = Mth.clamp(t / EASE, 0f, 1f);
-        boolean stays = o.pose == MobPose.FALL_FACE || o.pose == MobPose.THROWN;
+        // the time stop's freeze: slowing into the pose over a second (author: "their moves slow down within 1 s")
+        float in = Mth.clamp(t / (frozen(o.pose) ? FREEZE : EASE), 0f, 1f);
+        boolean stays = o.pose == MobPose.FALL_FACE || o.pose == MobPose.THROWN || o.pose == MobPose.BLASTED
+                || o.pose == MobPose.FALL_BACK || o.pose == MobPose.STUMBLE;
         float out = stays ? 1f : Mth.clamp((o.ticks - t) / EASE, 0f, 1f);
         float k = Math.min(in, out);
         return k * k * (3 - 2 * k);
+    }
+
+    private static final int FREEZE = 20;
+
+    private static boolean frozen(MobPose p) {
+        return p == MobPose.FROZEN_RUN || p == MobPose.FROZEN_LEAP || p == MobPose.FROZEN_POUNCE || p == MobPose.FROZEN_RAGE;
+    }
+
+    /** Down from the feet like a plank, faster as it goes (from {@code t0}, over {@code ticks}), to {@code to} degrees. */
+    private static float fall(float t, float t0, float ticks, float to) {
+        return to * (float) Math.pow(Mth.clamp((t - t0) / ticks, 0f, 1f), 2);
     }
 
     private static float smooth(float t, float from, float to) {
@@ -95,6 +108,17 @@ public final class MobPoses {
             // sagging back on the blade, lifted a little by it
             case HOSTAGE -> new float[]{-8f + Mth.sin(t * 0.9f) * 1.2f, turn, 0.06f};
             case THROWN -> new float[]{78f * smooth(t, 0, 4) + 12f * smooth(t, 14, 22), turn, 0.13f * smooth(t, 14, 22)};
+            case FROZEN_RUN -> new float[]{12f, turn, 0f};
+            // in a deep leap: stretched out forward, high off the ground
+            case FROZEN_LEAP -> new float[]{38f, turn, 0.9f};
+            // jumping down from two blocks up at the player
+            case FROZEN_POUNCE -> new float[]{16f, turn, 1.4f};
+            case FROZEN_RAGE -> new float[]{-12f, turn, 0f};
+            // blown back high (its flight is the server's), onto its back
+            case BLASTED -> new float[]{-30f * smooth(t, 0, 3) - 60f * smooth(t, 6, 18), turn, 0.13f * smooth(t, 14, 18)};
+            case FALL_BACK -> new float[]{-8f * smooth(t, 0, 3) + fall(t, 3, 9, -82f), turn, 0.13f * smooth(t, 9, 12)};
+            // a stagger, then onto its face
+            case STUMBLE -> new float[]{10f * smooth(t, 0, 4) * (1 - smooth(t, 6, 8)) + 4f + fall(t, 8, 10, 86f), turn, 0.13f * smooth(t, 14, 18)};
             default -> new float[]{0f, 0f, 0f};
         };
     }
@@ -172,6 +196,16 @@ public final class MobPoses {
             // flat through the air head first: arms trailing, legs apart; then lying as it landed
             case THROWN -> mix(new float[]{-50, 0, 0, 0, 0, 0, 25, 0, 34, 25, 0, -34, 10, 0, 12, 10, 0, -12},
                     new float[]{-25, -70, 0, 0, 0, 0, -10, 0, 30, -10, 0, -30, 0, 0, 8, 0, 0, -8}, smooth(t, 14, 22));
+            case FROZEN_RUN -> new float[]{-10, 0, 0, 0, 0, 0, -55, 0, 6, 42, 0, -6, 38, 0, 2, -42, 0, -2};
+            case FROZEN_LEAP -> new float[]{-38, 0, 0, 0, 0, 0, -150, 0, 14, -150, 0, -14, 28, 0, 4, 48, 0, -4};
+            case FROZEN_POUNCE -> new float[]{-22, 0, 0, 0, 0, 0, -172, 0, 22, -168, 0, -22, -72, 0, 4, 24, 0, -4};
+            // roaring: the head up, the arms thrown back
+            case FROZEN_RAGE -> new float[]{-38, 0, 0, -8, 0, 0, 52, 0, 38, 52, 0, -38, -10, 0, 12, 10, 0, -12};
+            case BLASTED -> new float[]{-24, 0, 0, 0, 0, 0, -30, 0, 72, -30, 0, -72, 22, 0, 24, -22, 0, -24};
+            case FALL_BACK -> mix(new float[]{20, 0, 0, 0, 0, 0, -65, 0, 22, -65, 0, -22, -24, 0, 4, 10, 0, -4},
+                    new float[]{-10, 30, 0, 0, 0, 0, -12, 0, 62, -12, 0, -62, 0, 0, 10, 0, 0, -10}, smooth(t, 6, 12));
+            case STUMBLE -> mix(new float[]{16, 0, 0, 0, 0, 0, -40, 0, 30, -70, 0, -20, -40, 0, -6, 30, 0, 8},
+                    new float[]{-25, 70, 0, 0, 0, 0, -165, 0, 16, -165, 0, -16, 0, 0, 4, 0, 0, -4}, smooth(t, 9, 16));
             default -> null;
         };
     }

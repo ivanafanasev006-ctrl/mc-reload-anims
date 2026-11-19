@@ -438,6 +438,7 @@ public final class CombatScreen extends Screen {
             case XBOW_FAN -> Move.XBOW_FAN;
             case XBOW_ROLLS -> Move.XBOW_ROLL_BACK;
             case GUARD_KICK -> Move.GUARD_KICK;
+            case TIME_STOP -> Move.TS_STANCE;
             case GUARD_COUNTER -> Move.GUARD_SHOVE;
             case GUARD_FINISH -> Move.GUARD_FINISH;
         };

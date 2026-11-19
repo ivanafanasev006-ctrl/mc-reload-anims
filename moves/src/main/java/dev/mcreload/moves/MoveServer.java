@@ -74,6 +74,7 @@ public final class MoveServer {
         if (move == Move.AXE_TRIPLE) s.axeTripleCooldown = s.cooled(MovesConfig.axeTripleCooldownTicks());
         if (move == Move.SWORD_SPIN) Spin.started(p, s);
         if (move == Move.HOSTAGE_KICK) GuardAnswers.kickOff(p, s);
+        if (move == Move.TS_STANCE) TimeStop.started(p, s);
         if (move == Move.AIR_SPIN) {
             s.airSpinCooldown = s.cooled(MovesConfig.airSpinCooldownTicks());
             s.attackYaw = p.getYRot();
@@ -180,6 +181,7 @@ public final class MoveServer {
         if (move == Move.SLIDE_SHOT) return s.move == Move.SLIDE && ground && s.slideShotCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.SLIDE_SHOT_END) return s.move == Move.SLIDE_SHOT;
         if (move == Move.HOSTAGE_KICK) return s.move == Move.HOSTAGE_HOLD && s.moveTick >= 2;
+        if (move == Move.TS_STANCE) return Strikes.sword(p) && TimeStop.ready(p, s);
         // In the air: the tuck while falling far enough, the roll out of it; the ledge from a jump or a fall.
         if (move == Move.FALL_TUCK) return p.fallDistance >= Fall.TUCK_FROM - (p.level().isClientSide ? 0f : 1f);
         if (move == Move.FALL_ROLL) return s.move == Move.FALL_TUCK;

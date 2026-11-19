@@ -137,6 +137,8 @@ public final class Stamina {
     public int throwCooldown, throwHeld;
     /** The turns in the air's wait (author, 2026-11-10: 45 s). */
     public int airSpinCooldown;
+    /** The time stop's wait (TimeStop). */
+    public int timeStopCooldown;
     /** The axe's combo's wait. */
     public int axeTripleCooldown;
     /** The mob the throw is aimed at (the client's auto-aim; -1: along the look). */
@@ -177,7 +179,7 @@ public final class Stamina {
     /** The attacks' cooldowns, in the order the server sends them (MovesNet.Bars). */
     public int[] cooldowns() {
         return new int[]{dashCooldown, whirlCooldown, spinCooldown, slideAttackCooldown, markedCooldown, bowCooldown,
-                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown, throwCooldown, airSpinCooldown, axeTripleCooldown};
+                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown, throwCooldown, airSpinCooldown, axeTripleCooldown, timeStopCooldown};
     }
 
     public void setCooldowns(int[] c) {
@@ -195,6 +197,7 @@ public final class Stamina {
         throwCooldown = c[11];
         airSpinCooldown = c[12];
         axeTripleCooldown = c[13];
+        timeStopCooldown = c[14];
     }
 
     public boolean canAfford(Move m, Player p) {
@@ -285,6 +288,7 @@ public final class Stamina {
         if (chainCooldown > 0) chainCooldown--;
         if (throwCooldown > 0) throwCooldown--;
         if (airSpinCooldown > 0) airSpinCooldown--;
+        if (timeStopCooldown > 0) timeStopCooldown--;
         if (axeTripleCooldown > 0) axeTripleCooldown--;
         if (hasteTicks > 0) hasteTicks--;
         if (chainTicks > 0 && --chainTicks == 0) chainStep = 0;
@@ -507,6 +511,7 @@ public final class Stamina {
                 Hop.serverTick(sp, s);
                 Kick.serverTick(sp, s);
                 GuardAnswers.serverTick(sp, s);
+                TimeStop.serverTick(sp, s);
                 Fall.serverTick(sp, s);
                 Ledge.serverTick(sp, s);
                 FastRun.serverTick(sp, s);

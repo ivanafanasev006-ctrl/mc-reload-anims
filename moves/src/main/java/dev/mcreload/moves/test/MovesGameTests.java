@@ -424,6 +424,39 @@ public final class MovesGameTests {
         }).run(9 + dev.mcreload.moves.GuardAnswers.SHOVE_PUSH + 11);
     }
 
+    /** The time stop: five zombies about, the right button and G with a sword: each struck in turn, all dead, the player untouched. */
+    @GameTest(template = FLOOR, timeoutTicks = 400, batch = "timeStop")
+    public static void timeStop(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie[] z = new Zombie[5];
+        int[][] at = {{1, 5}, {2, 6}, {3, 6}, {4, 6}, {5, 5}};
+        for (int i = 0; i < z.length; i++) {
+            z[i] = h.spawnWithNoFreeWill(EntityType.ZOMBIE, at[i][0], 2, at[i][1]);
+            noSun(z[i]);
+        }
+        net.minecraft.world.phys.Vec3[] start = new net.minecraft.world.phys.Vec3[1];
+        int len = dev.mcreload.moves.TimeStop.STANCE_LEN + z.length * MovesConfig.timeStopRounds() * dev.mcreload.moves.TimeStop.STEP
+                + dev.mcreload.moves.TimeStop.YAWN_LEN;
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> {
+            start[0] = p.position();
+            t.check(MoveServer.request(p, Move.TS_STANCE, false), "the time stop refused with five zombies about");
+            t.check(s.timeStopCooldown > 0 && s.energy < 5f, "its wait or its energy: " + s.timeStopCooldown + ", " + s.energy);
+        });
+        t.at(3 + dev.mcreload.moves.TimeStop.STANCE_LEN + 2, () -> {
+            t.check(s.move != null && s.move.timeStopBlow(), "not striking: " + s.move);
+            p.invulnerableTime = 0;
+            p.hurt(p.damageSources().mobAttack(z[0]), 6f);
+            t.close(p.getHealth(), 20f, "the player hurt in the time stop");
+        });
+        t.at(3 + len + 2, () -> {
+            for (Zombie zz : z) t.check(!zz.isAlive(), "a zombie lived through the time stop");
+            t.check(p.position().distanceTo(start[0]) < 0.5, "not back where it began: " + p.position().distanceTo(start[0]));
+        }).run(3 + len + 3);
+    }
+
     /** A perfect parry with two near: the living shield takes a blow from the front; the right button again kicks it off. */
     @GameTest(template = FLOOR, timeoutTicks = 300, batch = "guardAnswerShield")
     public static void guardAnswerShield(GameTestHelper h) {

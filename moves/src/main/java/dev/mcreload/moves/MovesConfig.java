@@ -27,6 +27,8 @@ public final class MovesConfig {
     private static final ForgeConfigSpec.DoubleValue GR_FINISH_HEALTH, GR_KICK_STRENGTH, GR_KICK_DAMAGE, GR_SHOVE_STRENGTH, GR_SHOVE_DAMAGE,
             GR_CROWD_RANGE, GR_ARCHER_RANGE, GR_THROW_SPEED, GR_THROW_DAMAGE, GR_HOLD_MOVE, GR_COST_FINISH, GR_COST_SHOVE, GR_COST_SHIELD;
     private static final ForgeConfigSpec.IntValue GR_CROWD, GR_HOLD_SECONDS;
+    private static final ForgeConfigSpec.IntValue TS_MIN, TS_MAX, TS_COOLDOWN, TS_ROUNDS;
+    private static final ForgeConfigSpec.DoubleValue TS_RANGE, TS_SHARE;
     private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE, KNEEL_MOVE,
             VAULT_MIN_WIDTH, VAULT_MIN_HEIGHT, VAULT_MAX_HEIGHT, VAULT_SHOVE, DASH_CRIT, FINISH_HEALTH, FINISH_RANGE, FINISH_MAX_HEALTH;
     private static final ForgeConfigSpec.IntValue DASH_COOLDOWN, SLIDE_ATTACK_COOLDOWN;
@@ -468,6 +470,15 @@ public final class MovesConfig {
         GR_COST_SHOVE = b.comment("Energy: the perfect parry's shove. [default]").defineInRange("costShove", 3.0, 0.0, 100.0);
         GR_COST_SHIELD = b.comment("Energy: the living shield. [default]").defineInRange("costShield", 5.0, 0.0, 100.0);
         b.pop();
+
+        b.comment("The time stop (author, 2026-11-19): the right button and G held with a sword.").push("timeStop");
+        TS_MIN = b.comment("Enemies about it needs at least (author: 5 to 10).").defineInRange("minEnemies", 5, 1, 50);
+        TS_MAX = b.comment("Enemies it takes at most, the nearest (author: 10).").defineInRange("maxEnemies", 10, 1, 50);
+        TS_RANGE = b.comment("How near (blocks) the enemies are taken, in sight. [default]").defineInRange("range", 12.0, 2.0, 48.0);
+        TS_ROUNDS = b.comment("Blows on each enemy, round them all in turn (author: \"at least 2\").").defineInRange("blowsEach", 2, 1, 5);
+        TS_SHARE = b.comment("The share of the energy bar it takes (author: 99/100).").defineInRange("energyShare", 0.99, 0.0, 1.0);
+        TS_COOLDOWN = b.comment("Seconds before it can be made again (author: 30).").defineInRange("cooldownSeconds", 30, 0, 3600);
+        b.pop();
         SPEC = b.build();
     }
 
@@ -494,6 +505,12 @@ public final class MovesConfig {
     public static boolean dodgeOnlyOnGround() { return get(DODGE_ON_GROUND, true); }
     public static float slideBlocks() { return f(SLIDE_TAP, 5.0); }
     public static float slideHeldBlocks() { return f(SLIDE_HELD, 6.0); }
+    public static int timeStopMin() { return get(TS_MIN, 5); }
+    public static int timeStopMax() { return get(TS_MAX, 10); }
+    public static float timeStopRange() { return f(TS_RANGE, 12.0); }
+    public static int timeStopRounds() { return get(TS_ROUNDS, 2); }
+    public static float timeStopShare() { return f(TS_SHARE, 0.99); }
+    public static int timeStopCooldownTicks() { return get(TS_COOLDOWN, 30) * 20; }
     public static float guardFinishHealth() { return f(GR_FINISH_HEALTH, 0.25); }
     public static float guardKickStrength() { return f(GR_KICK_STRENGTH, 0.5); }
     public static float guardKickDamage() { return f(GR_KICK_DAMAGE, 0.0); }

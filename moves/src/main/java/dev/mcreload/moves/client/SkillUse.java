@@ -93,7 +93,7 @@ public final class SkillUse {
                 hold(g, 52);
             }
             // the right button and G held
-            case AXE_COMBO -> {
+            case AXE_COMBO, TIME_STOP -> {
                 abilityClick = true;
                 hold(g, 8);
                 hold(use, 8);

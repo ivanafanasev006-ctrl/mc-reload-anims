@@ -136,6 +136,17 @@ public final class SmoothCamera {
         }
     }
 
+    /** Puts the camera here (for the time stop's view, TimeStopView); false if it cannot. */
+    static boolean place(Camera cam, Vec3 at) {
+        if (SET_POSITION == null) return false;
+        try {
+            SET_POSITION.invoke(cam, at);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return false;
+        }
+    }
+
     private static Method setPosition() {
         try {
             return ObfuscationReflectionHelper.findMethod(Camera.class, "m_90581_", Vec3.class);

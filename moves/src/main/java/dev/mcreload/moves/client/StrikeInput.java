@@ -96,6 +96,7 @@ public final class StrikeInput {
             case THROW -> s.throwCooldown;
             case AIR_SPIN -> s.airSpinCooldown;
             case AXE_TRIPLE -> s.axeTripleCooldown;
+            case TS_STANCE -> s.timeStopCooldown;
             default -> 0;
         };
     }
@@ -203,6 +204,20 @@ public final class StrikeInput {
         // G with a sword (author, after 0.9.1: "the sword's lunge on G, and on G+ the 3 turns"): tapped, the lunge; still
         // down after HOLD_G ticks, the turns (they go on while it is held, up to 3)
         if (!Strikes.sword(p)) swordG = 0;
+        // the right button held with G: the time stop (author, 2026-11-19), if there are enemies enough about
+        if (abilityPressed && s.move == null && Strikes.sword(p) && mc.options.keyUse.isDown() && HudConfig.Moves.TIME_STOP.on()) {
+            if (MoveServer.allowed(p, s, Move.TS_STANCE) && begin(mc, p, s, Move.TS_STANCE)) {
+                swordG = 0;
+                return true;
+            }
+            if (!dev.mcreload.moves.TimeStop.ready(p, s)) {
+                MovesHud.refused(Move.TS_STANCE);
+                p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_combat.time_stop.not_ready",
+                        dev.mcreload.moves.MovesConfig.timeStopMin()), true);
+                swordG = 0;
+                return true;
+            }
+        }
         if (abilityPressed && s.move == null && swordG == 0 && Strikes.sword(p)) swordG = 1;
         if (swordG > 0) {
             swordG++;
@@ -340,6 +355,7 @@ public final class StrikeInput {
             case THROW -> HudConfig.Moves.THROW.key;
             case AIR_SPIN -> HudConfig.Moves.AIR_SPIN.key;
             case AXE_TRIPLE -> HudConfig.Moves.AXE_TRIPLE.key;
+            case TS_STANCE -> HudConfig.Moves.TIME_STOP.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }

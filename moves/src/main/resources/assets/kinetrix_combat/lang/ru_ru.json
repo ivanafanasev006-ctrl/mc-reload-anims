@@ -321,5 +321,11 @@
   "key.kinetrix_combat.skill.guardFinish": "Перк: Добивание из блока",
   "kinetrix_combat.wheel.how.guardKick": "Работает сам: поставь в перки и блокируй мечом (ПКМ)",
   "kinetrix_combat.wheel.how.guardCounter": "Работает сам: поставь в перки и блокируй мечом точно в момент удара",
-  "kinetrix_combat.wheel.how.guardFinish": "Работает сам: поставь в перки и блокируй удар слабого моба"
+  "kinetrix_combat.wheel.how.guardFinish": "Работает сам: поставь в перки и блокируй удар слабого моба",
+  "kinetrix_combat.settings.move.timeStop": "Остановка времени",
+  "kinetrix_combat.settings.move.timeStop.tip": "ПКМ и G зажаты с мечом, рядом 5–10 врагов. Время замирает для тебя и них: самурайская стойка, враги замедляются и застывают в разных позах. Ты мелькаешь от одного к другому, по 0,5 с на удар, 2 удара на каждого. Возвращаешься на место и зеваешь, а они отлетают и умирают. Камера на месте, крутится мышью на 360°. 99 % энергии, перезарядка 30 с.",
+  "kinetrix_combat.settings.move.timeStop.keys": "%5$s + %1$s зажать с мечом",
+  "kinetrix_combat.skill.timeStop.words": "остановка времени время стоп самурай ульта мелькание телепорт",
+  "key.kinetrix_combat.skill.timeStop": "Приём: Остановка времени",
+  "kinetrix_combat.time_stop.not_ready": "Остановка времени: нужно хотя бы %s врагов рядом, полная энергия и конец перезарядки"
 }

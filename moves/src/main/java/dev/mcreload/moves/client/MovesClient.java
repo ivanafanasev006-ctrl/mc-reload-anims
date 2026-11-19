@@ -130,6 +130,7 @@ public final class MovesClient {
         GuardInput.init();
         StoopFx.init();
         MobPoses.init();
+        TimeStopView.init();
         Cutscene.init();
         SmoothCamera.init();
         LedgeAim.init();
@@ -207,7 +208,7 @@ public final class MovesClient {
             if (usePressed) start(p, s, Move.HOSTAGE_KICK, s.target);
             return;
         }
-        if (s.move != null && s.move.guardAnswer()) return;
+        if (s.move != null && (s.move.guardAnswer() || s.move.timeStop())) return;
 
         // ---- the fast run: Ctrl held (the server gives the speed while sprinting and takes the energy)
         boolean run = HudConfig.Moves.FAST_RUN.on() && mc.options.keySprint.isDown();
@@ -457,6 +458,10 @@ public final class MovesClient {
         s.target = target;
         if (move == Move.DASH) s.dashCooldown = s.cooled(MovesConfig.dashCooldownTicks());
         if (move == Move.WHIRL) s.whirlCooldown = s.cooled(MovesConfig.whirlCooldownTicks());
+        if (move == Move.TS_STANCE) {
+            s.timeStopCooldown = s.cooled(MovesConfig.timeStopCooldownTicks());
+            TimeStopView.step(p, move, -1);
+        }
         if (move.volley()) dev.mcreload.moves.Bow.started(s, move);
         if (move == Move.SWORD_SPIN) {
             s.spinCooldown = s.cooled(MovesConfig.swordSpinCooldownTicks());
@@ -1059,12 +1064,14 @@ public final class MovesClient {
                 return;
             }
             if (move == null || !move.serverStarted()) return;
+            if (move.timeStop()) TimeStopView.step(p, move, extra);
             // the block's kick and shove: the blade goes up again after them if the button is still held
             if (move == Move.GUARD_KICK || move == Move.GUARD_SHOVE) GuardInput.rearm = true;
             Move was = s.move;
             s.start(p, move, false);
             moveYaw = p.getYRot();
             if (extra >= 0) s.ledgeDir = extra;
+            if (move.timeStopBlow()) s.target = extra;
             LedgeInput.pulled(mc.player, s);
             MoveAnimator.play(p, move, was);
             return;
@@ -1074,8 +1081,10 @@ public final class MovesClient {
             MoveAnimator.stop(p, 3);
         } else {
             Move was = s.move;
+            if (move.timeStop()) TimeStopView.step(p, move, extra);
             s.start(p, move, false);
             if (extra >= 0) s.ledgeDir = extra;
+            if (move.timeStopBlow()) s.target = extra;
             MoveAnimator.play(p, move, was);
         }
     }

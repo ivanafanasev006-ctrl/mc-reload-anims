@@ -385,7 +385,17 @@ public enum Move {
     /** Holding it on the blade, a living shield: walking slowly, the right button kicks it away. */
     HOSTAGE_HOLD("hostage_hold", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** Kicked off the blade like a shot. */
-    HOSTAGE_KICK("hostage_kick", 1f, GuardAnswers.THROW_LEN, -1, -1, -1, -1, Side.FRONT, () -> 0);
+    HOSTAGE_KICK("hostage_kick", 1f, GuardAnswers.THROW_LEN, -1, -1, -1, -1, Side.FRONT, () -> 0),
+
+    // ---- the time stop (author, 2026-11-19; TimeStop): the right button and G held with a sword, 5 to 10 enemies about. The
+    // stance (his samurai_mode) as they freeze; the blows, half a second each, the player put at each mob by the server;
+    // the yawn back where he began. Untouchable throughout. Animations from round23.py.
+    TS_STANCE("ts_stance", 1f, TimeStop.STANCE_LEN, 0, TimeStop.STANCE_LEN, -1, -1, Side.FRONT, () -> 0),
+    TS_SLASH("ts_slash", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
+    TS_THRUST("ts_thrust", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
+    TS_BACK("ts_back", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
+    TS_BELLY("ts_belly", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
+    TS_YAWN("ts_yawn", 1f, TimeStop.YAWN_LEN, 0, TimeStop.YAWN_LEN, -1, -1, Side.FRONT, () -> 0);
 
     /** The hops along the edge play this much faster than their animation (author: one after another). */
     public static final float HOP_SPEED = 1.4f;
@@ -521,6 +531,16 @@ public enum Move {
         return this == GUARD_FINISH || this == GUARD_KICK || this == GUARD_SHOVE || this == GUARD_GRAB || this == HOSTAGE_HOLD;
     }
 
+    /** The time stop's parts (TimeStop). */
+    public boolean timeStop() {
+        return this == TS_STANCE || this == TS_SLASH || this == TS_THRUST || this == TS_BACK || this == TS_BELLY || this == TS_YAWN;
+    }
+
+    /** A blow of the time stop, made at a mob. */
+    public boolean timeStopBlow() {
+        return this == TS_SLASH || this == TS_THRUST || this == TS_BACK || this == TS_BELLY;
+    }
+
     public boolean finisher() {
         return this == FINISHER || this == FINISHER_AXE || this == FINISHER_BOW || this == FINISHER_XBOW;
     }
@@ -645,7 +665,7 @@ public enum Move {
 
     /** Started by the server on a player who did not ask (pulled up by a friend): their own client plays it when told. */
     public boolean serverStarted() {
-        return this == LEDGE_PULLED || guardAnswer();
+        return this == LEDGE_PULLED || guardAnswer() || (timeStop() && this != TS_STANCE);
     }
 
     /**

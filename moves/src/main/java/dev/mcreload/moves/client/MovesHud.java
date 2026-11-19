@@ -259,6 +259,7 @@ public final class MovesHud {
         // the chain finisher with a sword
         if (Strikes.sword(p) && HudConfig.Moves.CHAIN.on()) out.add(Move.CHAIN_LEAP);
         if (Strikes.sword(p) && HudConfig.Moves.AIR_SPIN.on()) out.add(Move.AIR_SPIN);
+        if (Strikes.sword(p) && HudConfig.Moves.TIME_STOP.on()) out.add(Move.TS_STANCE);
         // the throw's wait (author, 2026-11-09: "2.5 s, a row of its own")
         if (dev.mcreload.moves.Thrown.throwable(p) && HudConfig.Moves.THROW.on()) out.add(Move.THROW);
         // the crossbow's rolls (by the back roll)
@@ -275,6 +276,7 @@ public final class MovesHud {
             case DASH -> MovesConfig.dashCooldownTicks();
             case WHIRL -> MovesConfig.whirlCooldownTicks();
             case AXE_TRIPLE -> MovesConfig.axeTripleCooldownTicks();
+            case TS_STANCE -> MovesConfig.timeStopCooldownTicks();
             case SWORD_SPIN -> MovesConfig.swordSpinCooldownTicks();
             case SLIDE_ATTACK -> MovesConfig.slideAttackCooldownTicks();
             case MARKED_SPIN_LEFT -> MovesConfig.markedCooldownTicks();
@@ -398,7 +400,7 @@ public final class MovesHud {
         return switch (move) {
             case DASH -> shortKey(MovesClient.ABILITY);
             case SWORD_SPIN -> shortKey(MovesClient.ABILITY) + "+";
-            case AXE_TRIPLE -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.ABILITY) + "+";
+            case AXE_TRIPLE, TS_STANCE -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.ABILITY) + "+";
             case WHIRL -> shortKey(MovesClient.ABILITY);
             case SLIDE_ATTACK -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
             case SLIDE_SHOT -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyUse);

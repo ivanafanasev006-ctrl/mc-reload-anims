@@ -21,6 +21,7 @@ public enum Skill {
     THROW("throw", Weapon.BLADE),
     WHIRL("whirlwind", Weapon.AXE),
     AXE_COMBO("axeCombo", Weapon.AXE),
+    TIME_STOP("timeStop", Weapon.SWORD),
     VOLLEY("bowVolley", Weapon.BOW),
     HAIL("bowHail", Weapon.BOW),
     MARKS("bowMarks", Weapon.BOW),
@@ -87,6 +88,7 @@ public enum Skill {
             case GUARD_KICK -> GUARD_KICK;
             case GUARD_SHOVE, GUARD_GRAB, HOSTAGE_HOLD, HOSTAGE_KICK -> GUARD_COUNTER;
             case GUARD_FINISH -> GUARD_FINISH;
+            case TS_STANCE, TS_SLASH, TS_THRUST, TS_BACK, TS_BELLY, TS_YAWN -> TIME_STOP;
             case XBOW_VOLLEY, XBOW_SPIN -> XBOW_G;
             case XBOW_FAN, XBOW_FAN_SHOT -> XBOW_FAN;
             case XBOW_ROLL_BACK, XBOW_ROLL_FRONT, XBOW_ROLL_LEFT, XBOW_ROLL_RIGHT -> XBOW_ROLLS;

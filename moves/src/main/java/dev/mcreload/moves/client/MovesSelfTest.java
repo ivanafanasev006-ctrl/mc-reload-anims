@@ -191,6 +191,7 @@ public final class MovesSelfTest {
         guardAnswer("67_guard_answer_shove", 20f, true, false);
         guardAnswer("68_guard_answer_finish", 4f, false, false);
         guardAnswer("69_guard_answer_shield", 20f, true, true);
+        timeStop("69t_time_stop");
         finisher("92_finisher_axe", Items.IRON_AXE, CameraType.THIRD_PERSON_BACK);
         finisher("95_finisher_first_person", Items.IRON_SWORD, CameraType.FIRST_PERSON);
 
@@ -728,6 +729,35 @@ public final class MovesSelfTest {
     }
 
     /** The finisher on a weakened zombie at point blank: the hint, then the left button held; with this weapon. */
+    /**
+     * Six zombies round the player, the sword, the right button and G held: the time stop. The mouse turns the camera
+     * round half-way through (the camera stays where it was).
+     */
+    private static void timeStop(String name) {
+        int len = dev.mcreload.moves.TimeStop.STANCE_LEN + 6 * 2 * dev.mcreload.moves.TimeStop.STEP + dev.mcreload.moves.TimeStop.YAWN_LEN;
+        SCENARIOS.add(new Scenario(name, len + 24, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_SWORD));
+            for (int i = 0; i < 6; i++) {
+                double a = Math.PI * (0.15 + 0.7 * i / 5.0);
+                dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, Math.cos(a) * 4.5, Math.sin(a) * 4.5 + 0.5, 20f);
+            }
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 1) mc.player.setXRot(18f);
+            boolean press = t >= 3 && t < 9;
+            mc.options.keyUse.setDown(press);
+            MovesClient.ABILITY.setDown(press);
+            if (t == 4) KeyMapping.click(MovesClient.ABILITY.getKey());
+            if (t == 8) note("time stop: move " + Stamina.of(mc.player).move);
+            if (t == 120) mc.player.setYRot(mc.player.getYRot() + 140f);
+            if (t == len - 8) note("time stop: then " + Stamina.of(mc.player).move);
+            if (t == len + 20) {
+                note("time stop: zombies left alive " + dummies(mc).stream().filter(e -> e.isAlive()).count()
+                        + ", energy " + Math.round(Stamina.of(mc.player).energy));
+            }
+        }, new int[]{12, 26, 40, 44, 62, 100, 130, len - 34, len - 20, len - 4, len + 16}, false));
+    }
+
     private static ServerPlayer answerPlayer;
 
     /**

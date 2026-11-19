@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * round.</p>
  */
 public final class MovesNet {
-    public static final String VERSION = "22";
+    public static final String VERSION = "23";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KinetrixMoves.MODID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -320,7 +320,7 @@ public final class MovesNet {
      */
     public record Bars(float energy, float shields, float maxEnergy, float maxShields, int freeTicks, int freeTotal, int hasteTicks,
                        int combatTicks, int[] cooldowns) {
-        public static final int COOLDOWNS = 14;
+        public static final int COOLDOWNS = 15;
 
         static void write(Bars m, FriendlyByteBuf b) {
             b.writeFloat(m.energy);
