@@ -749,6 +749,15 @@ public final class MovesSelfTest {
             MovesClient.ABILITY.setDown(press);
             if (t == 4) KeyMapping.click(MovesClient.ABILITY.getKey());
             if (t == 8) note("time stop: move " + Stamina.of(mc.player).move);
+            // the stance from the front (the camera turns round its place with the look)
+            if (t == 20) {
+                mc.player.setYRot(mc.player.getYRot() + 180f);
+                mc.player.setXRot(4f);
+            }
+            if (t == 34) {
+                mc.player.setYRot(mc.player.getYRot() - 180f);
+                mc.player.setXRot(18f);
+            }
             if (t == 120) mc.player.setYRot(mc.player.getYRot() + 140f);
             if (t == len - 8) note("time stop: then " + Stamina.of(mc.player).move);
             if (t == len + 20) {
@@ -757,7 +766,7 @@ public final class MovesSelfTest {
                 for (var e : dummies(mc)) if (e.isAlive()) note("time stop: alive " + e.getType().getDescriptionId() + " health "
                         + ((net.minecraft.world.entity.LivingEntity) e).getHealth() + " at " + e.blockPosition() + ", removed " + e.isRemoved());
             }
-        }, new int[]{12, 26, 40, 44, 62, 100, 130, len - 34, len - 20, len - 4, len + 16}, false));
+        }, new int[]{12, 26, 31, 40, 44, 62, 100, 130, len - 34, len - 20, len - 4, len + 16}, false));
     }
 
     private static ServerPlayer answerPlayer;

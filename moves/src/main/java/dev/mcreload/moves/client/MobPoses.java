@@ -39,6 +39,22 @@ public final class MobPoses {
     static void init() {
         MinecraftForge.EVENT_BUS.addListener(MobPoses::pre);
         MinecraftForge.EVENT_BUS.addListener(MobPoses::post);
+        MinecraftForge.EVENT_BUS.addListener(MobPoses::holderFacing);
+    }
+
+    /**
+     * Holding the living shield the body turns with the look at once (no vanilla lag of the body behind the head, no jerk
+     * when it catches up), so the arms, the blade and the mob on it all go round together (author 19.11: "you look left,
+     * your body turns left, and it stays still").
+     */
+    private static void holderFacing(net.minecraftforge.client.event.RenderPlayerEvent.Pre event) {
+        Player p = event.getEntity();
+        Stamina s = Stamina.of(p);
+        if (s.move != Move.HOSTAGE_HOLD && s.move != Move.GUARD_GRAB && s.move != Move.HOSTAGE_KICK) return;
+        p.yBodyRotO = p.yRotO;
+        p.yBodyRot = p.getYRot();
+        p.yHeadRotO = p.yRotO;
+        p.yHeadRot = p.getYRot();
     }
 
     /** The server: this mob takes this pose for {@code ticks} (turned: it faces the other way meanwhile). */

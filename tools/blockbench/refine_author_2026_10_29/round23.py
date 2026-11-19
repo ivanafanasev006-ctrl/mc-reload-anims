@@ -60,7 +60,10 @@ def ts_stance():
     shoulders and the chest up), and held, still."""
     LEN = 1.5
     hold = {'right_arm': (10.0, 47.0, 0.0), 'right_forearm': (80.0, 0.0, 0.0), 'left_arm': (4.0, -47.0, 0.0),
-            'left_forearm': (80.0, 0.0, 0.0), 'head': (-17.0, 0.0, 0.0), 'chest': (-12.0, 0.0, 0.0), 'body@p': (0.0, -0.3, 0.0)}
+            'left_forearm': (80.0, 0.0, 0.0), 'head': (-17.0, 0.0, 0.0), 'chest': (-12.0, 0.0, 0.0), 'body@p': (0.0, -0.3, 0.0),
+            # the sword's own place keyed (a hair off zero: an all-zero item is left out of the file and the game then
+            # holds it its own way, tilted and edge-on, author 19.11)
+            'right_item_sword': (0.01, 0.0, 0.0)}
     breath = {**hold, 'chest': (-9.0, 0.0, 0.0), 'head': (-19.0, 0.0, 0.0), 'right_arm': (12.0, 47.0, 0.0), 'left_arm': (6.0, -47.0, 0.0),
               'body@p': (0.0, 0.1, 0.0)}
     keys = [(0, {}), (0.35, hold, 'inout'), (0.75, breath, 'inout'), (LEN, breath)]
