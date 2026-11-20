@@ -42,7 +42,7 @@ public final class ChainInput {
     static boolean start(Minecraft mc, LocalPlayer p, Stamina s, boolean jumped) {
         if (!HudConfig.Moves.CHAIN.on() || !Strikes.sword(p) || s.move != null) return false;
         if (!mc.options.keySprint.isDown() || !mc.options.keyUp.isDown() || !jumped) return false;
-        if (StrikeInput.waits(p, s, Move.CHAIN_LEAP)) return true;
+        if (StrikeInput.waits(p, s, Move.CR_LEAP)) return true;
         return begin(p, s, Chain.FIRST_REACH, 50, -1);
     }
 
@@ -62,7 +62,35 @@ public final class ChainInput {
         LivingEntity second = next(p, mob.position(), MovesConfig.chainRange(), 180);
         DONE.clear();
         if (finished >= 0) DONE.add(finished);
-        return second != null && leap(p, s, Move.CHAIN_LEAP, mob);
+        // (author, 2026-11-20) the chain in the time stop's way: the first leap here, the rest from the server (TimeStop)
+        return second != null && MovesClient.start(p, s, Move.CR_LEAP, mob.getId());
+    }
+
+    /** A leap of the chain in the time stop's way starts (ours): from where the player is now, onto its mob. */
+    static void rushLeap(LocalPlayer p) {
+        from = p.position();
+        lastTop = null;
+    }
+
+    /**
+     * Carried by a leap of the chain in the time stop's way: an arc from where he was onto the mob (in front of it, face to
+     * face, as chain_leap lands) by TimeStop.CR_LAND, then on it until the server sends the next.
+     */
+    private static void rush(LocalPlayer p, Stamina s) {
+        if (from == null) return;
+        int t = s.moveTick;
+        p.fallDistance = 0f;
+        Entity e = p.level().getEntity(s.target);
+        if (e instanceof LivingEntity mob) {
+            Vec3 top = Chain.contact(mob, true);
+            float f = Mth.clamp(t / (float) dev.mcreload.moves.TimeStop.CR_LAND, 0f, 1f);
+            double h = 0.6 + Math.max(0, top.y - from.y) * 0.3;
+            p.setPos(t >= dev.mcreload.moves.TimeStop.CR_LAND ? top : from.lerp(top, f).add(0, h * Math.sin(Math.PI * f), 0));
+            lastTop = top;
+        } else if (lastTop != null) {
+            p.setPos(lastTop);
+        }
+        p.setDeltaMovement(Vec3.ZERO);
     }
 
     /**
@@ -122,6 +150,10 @@ public final class ChainInput {
     static void tick(LocalPlayer p, Stamina s) {
         afterFinisher(p, s);
         Move m = s.move;
+        if (m != null && m.crLeap()) {
+            rush(p, s);
+            return;
+        }
         if (m == null || !m.chain()) {
             if (m == null) from = null;
             return;

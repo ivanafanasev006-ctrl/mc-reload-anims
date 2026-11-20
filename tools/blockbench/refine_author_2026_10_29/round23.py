@@ -53,21 +53,26 @@ def samurai(t):
     return out
 
 
+#: The author's pose "last_breath" (2026-11-20, author_2026-11-20_last_breath.bbmodel), as he made it: bent low, the right
+#: leg back with the knee bent, the head to the ground, the sword brought across to the left side as if into its sheath.
+LAST_BREATH = {'body@p': (0.0, -3.0, 0.0), 'chest': (-40.0, 0.0, 0.0), 'head': (-17.5, 0.0, 0.0),
+               'right_arm': (111.3419, 40.2388, 86.366), 'right_arm@p': (-1.0, 0.0, 0.0), 'right_forearm': (27.5, 0.0, 0.0),
+               'right_item_sword': (91.4695, 61.764, -176.7677), 'right_item_sword@p': (-4.0, -3.0, 5.0),
+               'left_arm': (-15.8515, -20.7047, -9.007), 'left_arm@p': (1.0, 0.0, 0.0), 'left_forearm': (57.5, 0.0, 0.0),
+               'right_leg': (47.5, 0.0, 0.0), 'right_shin': (-50.0, 0.0, 0.0), 'left_leg': (-35.0, 0.0, 0.0), 'left_shin': (-37.5, 0.0, 0.0)}
+
+
 def ts_stance():
-    """(19.11, the second try: "the sword and the hands not quite in the middle; he should lean his head on the sword, the
-    blade turned flat outwards, and as if hold his breath, then the teleports") Up into it: the sword upright in both hands
-    right in the middle before the face, its flat to the front, the forehead bowed onto the blade; a breath in (the
-    shoulders and the chest up), and held, still."""
+    """(2026-11-20: "not that pose at the start but the new one: he bends, one leg back, the knee bent, the head to the
+    ground, as if putting the sword into its sheath, holding it at the left side") Down into his last_breath in 0.4 s (the
+    sword brought across), the blade slid on the last bit into the sheath (0.4-0.9 s), a breath in and held, still."""
     LEN = 1.5
-    hold = {'right_arm': (10.0, 47.0, 0.0), 'right_forearm': (80.0, 0.0, 0.0), 'left_arm': (4.0, -47.0, 0.0),
-            'left_forearm': (80.0, 0.0, 0.0), 'head': (-17.0, 0.0, 0.0), 'chest': (-12.0, 0.0, 0.0), 'body@p': (0.0, -0.3, 0.0),
-            # the sword's own place keyed (a hair off zero: an all-zero item is left out of the file and the game then
-            # holds it its own way, tilted and edge-on, author 19.11)
-            'right_item_sword': (0.01, 0.0, 0.0)}
-    breath = {**hold, 'chest': (-9.0, 0.0, 0.0), 'head': (-19.0, 0.0, 0.0), 'right_arm': (12.0, 47.0, 0.0), 'left_arm': (6.0, -47.0, 0.0),
-              'body@p': (0.0, 0.1, 0.0)}
-    keys = [(0, {}), (0.35, hold, 'inout'), (0.75, breath, 'inout'), (LEN, breath)]
-    feet = Feet()
+    drawn = {**LAST_BREATH, 'right_item_sword@p': (-4.0, -3.0, 3.6), 'chest': (-34.0, 0.0, 0.0), 'body@p': (0.0, -2.4, 0.0)}
+    sheathed = {**LAST_BREATH}
+    breath = {**LAST_BREATH, 'chest': (-37.0, 0.0, 0.0), 'body@p': (0.0, -2.8, 0.0)}
+    rest = {'right_arm@p': (0.0, 0.0, 0.0), 'left_arm@p': (0.0, 0.0, 0.0), 'right_item_sword@p': (0.0, 0.0, 0.0), 'body@p': (0.0, 0.0, 0.0)}
+    keys = [(0, rest), (0.4, drawn, 'inout'), (0.9, sheathed, 'inout'), (1.15, breath, 'inout'), (LEN, breath)]
+    feet = Feet().designed(-1.0, LEN + 1.0)
     return bake('ts_stance', LEN, design('ts_stance', LEN, _all(keys)), feet, level=False)
 
 

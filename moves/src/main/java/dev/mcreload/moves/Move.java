@@ -397,7 +397,21 @@ public enum Move {
     TS_BELLY("ts_belly", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
     TS_LEAP("ts_leap", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
     TS_SPIN("ts_spin", 1f, TimeStop.STEP, 0, TimeStop.STEP, -1, -1, Side.FRONT, () -> 0),
-    TS_BRAKE("ts_brake", 1f, TimeStop.BRAKE_LEN, 0, TimeStop.BRAKE_LEN, -1, -1, Side.FRONT, () -> 0);
+    TS_BRAKE("ts_brake", 1f, TimeStop.BRAKE_LEN, 0, TimeStop.BRAKE_LEN, -1, -1, Side.FRONT, () -> 0),
+
+    // ---- the chain finisher in the time stop's way (author, 2026-11-20; TimeStop, ChainInput): Ctrl + W + Space + LMB with a
+    // sword as before, 2 to 6 weak mobs about. They slow down and freeze; he leaps from one to the next 2-3 times faster than
+    // the old chain (chain_leap played 2.5 times as fast), then flickers among them at a mad pace (3 ticks a blow: "as if it
+    // hung"), then skids to a stop where he began and they all die. The camera stays put, turned with the mouse.
+    /** The first leap, from the ground (the client starts it at the mob in front). */
+    CR_LEAP("chain_leap", 2.5f, TimeStop.CR_HOP_LEN, 0, TimeStop.CR_HOP_LEN, -1, -1, Side.FRONT, MovesConfig::costChain),
+    /** Each leap on to the next (the server starts them). */
+    CR_HOP("chain_leap", 2.5f, TimeStop.CR_HOP_LEN, 0, TimeStop.CR_HOP_LEN, -1, -1, Side.FRONT, () -> 0),
+    /** The mad flickers: the time stop's blows, 3 ticks each. */
+    CR_BLINK_A("ts_slash", 2.4f, TimeStop.CR_BLINK, 0, TimeStop.CR_BLINK, -1, -1, Side.FRONT, () -> 0),
+    CR_BLINK_B("ts_spin", 2.4f, TimeStop.CR_BLINK, 0, TimeStop.CR_BLINK, -1, -1, Side.FRONT, () -> 0),
+    CR_BLINK_C("ts_back", 2.4f, TimeStop.CR_BLINK, 0, TimeStop.CR_BLINK, -1, -1, Side.FRONT, () -> 0),
+    CR_BLINK_D("ts_thrust", 2.4f, TimeStop.CR_BLINK, 0, TimeStop.CR_BLINK, -1, -1, Side.FRONT, () -> 0);
 
     /** The hops along the edge play this much faster than their animation (author: one after another). */
     public static final float HOP_SPEED = 1.4f;
@@ -519,7 +533,7 @@ public enum Move {
     /** A move made at someone (the vault, the kick, the finisher, a friend's hand): the client names them, the server checks them. */
     public boolean targeted() {
         return this == HOP || this == KICK || this == ROLL_KICK || finisher() || this == LEDGE_HELP || this == WEAPON_PULL
-                || this == CHAIN_LEAP || chainHop() || axeCombo();
+                || this == CHAIN_LEAP || this == CR_LEAP || chainHop() || axeCombo();
     }
 
     /** The axe's combo: its blows (each at a mob), not its end. */
@@ -535,12 +549,23 @@ public enum Move {
 
     /** The time stop's parts (TimeStop). */
     public boolean timeStop() {
-        return this == TS_STANCE || timeStopBlow() || this == TS_BRAKE;
+        return this == TS_STANCE || timeStopBlow() || this == TS_BRAKE || crLeap();
     }
 
     /** A blow of the time stop, made at a mob. */
     public boolean timeStopBlow() {
-        return this == TS_SLASH || this == TS_THRUST || this == TS_BACK || this == TS_BELLY || this == TS_LEAP || this == TS_SPIN;
+        return this == TS_SLASH || this == TS_THRUST || this == TS_BACK || this == TS_BELLY || this == TS_LEAP || this == TS_SPIN
+                || crBlink();
+    }
+
+    /** The chain finisher's mad flickers (the time stop's blows at 3 ticks each). */
+    public boolean crBlink() {
+        return this == CR_BLINK_A || this == CR_BLINK_B || this == CR_BLINK_C || this == CR_BLINK_D;
+    }
+
+    /** The chain finisher's leaps onto the mobs (the client carries the player). */
+    public boolean crLeap() {
+        return this == CR_LEAP || this == CR_HOP;
     }
 
     public boolean finisher() {
@@ -657,7 +682,7 @@ public enum Move {
             case THROW -> now == THROW_AIM;
             case CHAIN_HOP, CHAIN_HOP_CCW, CHAIN_HOP_STAB, CHAIN_HOP_STAB_CCW, CHAIN_FLIP -> now == CHAIN_LEAP || now.chainHop();
             // the chain on its own after the sword's finisher, more weak mobs about (author, 2026-11-09)
-            case CHAIN_LEAP -> now == FINISHER;
+            case CHAIN_LEAP, CR_LEAP -> now == FINISHER;
             // the axe's combo: each blow, and its end, from the blow before
             case AXE_COMBO_CHOP, AXE_COMBO_2, AXE_COMBO_DIAG, AXE_COMBO_3, AXE_COMBO_END -> now.axeCombo();
             case FINISHER, FINISHER_AXE -> now == WEAPON_PULL;
@@ -667,7 +692,7 @@ public enum Move {
 
     /** Started by the server on a player who did not ask (pulled up by a friend): their own client plays it when told. */
     public boolean serverStarted() {
-        return this == LEDGE_PULLED || guardAnswer() || (timeStop() && this != TS_STANCE);
+        return this == LEDGE_PULLED || guardAnswer() || (timeStop() && this != TS_STANCE && this != CR_LEAP);
     }
 
     /**

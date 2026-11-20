@@ -88,7 +88,7 @@ public final class TimeStopView {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         if (move.timeStopBlow() || move == Move.TS_BRAKE) GHOSTS.add(new Ghost(p.getId(), p.position(), p.yBodyRot, mc.level.getGameTime()));
-        if (p == mc.player && move == Move.TS_STANCE && !active) {
+        if (p == mc.player && (move == Move.TS_STANCE || move == Move.CR_LEAP) && !active) {
             active = true;
             gap = 0;
             anchor = p.getEyePosition();
@@ -115,7 +115,7 @@ public final class TimeStopView {
         for (Player p : mc.level.players()) {
             Stamina s = Stamina.of(p);
             if (s.move == null) continue;
-            boolean blow = s.move.timeStopBlow() && s.moveTick == TimeStop.HIT;
+            boolean blow = (s.move.timeStopBlow() && s.moveTick == TimeStop.hitTick(s.move)) || (s.move.crLeap() && s.moveTick == TimeStop.CR_STAB);
             boolean stab = s.move == Move.GUARD_FINISH && s.moveTick == GuardAnswers.FIN_STAB;
             if (!blow && !stab) continue;
             Entity mob = mc.level.getEntity(s.target);
@@ -151,7 +151,11 @@ public final class TimeStopView {
             case TS_SLASH -> 127f;
             case TS_LEAP -> 90f;
             case TS_THRUST -> 30f;
-            case TS_SPIN -> 172f;
+            case TS_SPIN, CR_BLINK_B -> 172f;
+            case CR_BLINK_A -> 127f;
+            case CR_BLINK_C -> 8f;
+            case CR_BLINK_D -> 30f;
+            case CR_LEAP, CR_HOP -> 62f;
             case TS_BACK -> 8f;
             case TS_BELLY -> 45f;
             default -> 18f;
@@ -177,7 +181,7 @@ public final class TimeStopView {
         if (!viewed(s.move)) return;
         float yaw;
         boolean finisherBehind = s.move == Move.GUARD_FINISH && s.moveTick >= GuardAnswers.FIN_JUMP;
-        Entity mob = s.move.timeStopBlow() || finisherBehind ? p.level().getEntity(s.target) : null;
+        Entity mob = s.move.timeStopBlow() || s.move.crLeap() || finisherBehind ? p.level().getEntity(s.target) : null;
         if (mob != null) yaw = TimeStop.facing(p.position(), mob.position());
         else if (s.move == Move.GUARD_FINISH) return;
         else if (s.move == Move.TS_BRAKE) yaw = s.target;

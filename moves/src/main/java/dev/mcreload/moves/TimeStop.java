@@ -38,6 +38,13 @@ import java.util.UUID;
 public final class TimeStop {
     /** The stance and the freeze (ticks); a blow; its hit; the brake; when the enemies die in it. */
     public static final int STANCE_LEN = 30, FREEZE = 20, STEP = 7, HIT = 3, BRAKE_LEN = 36, DIE_AT = 22;
+    /**
+     * The chain finisher in this way (author, 2026-11-20): a leap (chain_leap at 2.5 times: on the mob at tick 3, the blade
+     * in at 5); a mad flicker and its hit; the freeze (they slow down as he leaps); the flickers' rounds.
+     */
+    public static final int CR_HOP_LEN = 7, CR_LAND = 3, CR_STAB = 5, CR_BLINK = 3, CR_BLINK_HIT = 1, CR_FREEZE = 8, CR_ROUNDS = 3;
+    /** The mad flickers, in turn. */
+    private static final Move[] BLINKS = {Move.CR_BLINK_A, Move.CR_BLINK_B, Move.CR_BLINK_C, Move.CR_BLINK_D};
     /** The frozen poses, given round in turn; the poses they fly off in. */
     private static final MobPose[] FROZEN = {MobPose.FROZEN_RUN, MobPose.FROZEN_LEAP, MobPose.FROZEN_POUNCE, MobPose.FROZEN_RAGE};
     private static final MobPose[] FLY_OFF = {MobPose.BLASTED, MobPose.FALL_BACK, MobPose.FALL_FACE, MobPose.STUMBLE};
@@ -49,6 +56,9 @@ public final class TimeStop {
         final float yaw;
         final List<Integer> targets;
         int step;
+        /** The chain finisher's run (leaps, then the mad flickers), and how many leaps are made, and its ticks so far. */
+        boolean chain;
+        int leaps, age;
 
         State(Vec3 anchor, float yaw, List<Integer> targets) {
             this.anchor = anchor;
@@ -94,6 +104,42 @@ public final class TimeStop {
         level.playSound(null, p.getX(), p.getY(), p.getZ(), MovesSounds.TIME_STOP_SLOW.get(), SoundSource.PLAYERS, 1.2f, 1f);
     }
 
+    /** When a blow's blade goes through (the time stop's at HIT, the chain's mad flickers at CR_BLINK_HIT). */
+    public static int hitTick(Move m) {
+        return m.crBlink() ? CR_BLINK_HIT : HIT;
+    }
+
+    /**
+     * The chain finisher in the time stop's way starts (MoveServer: CR_LEAP let through at the weak mob in front): the
+     * weak ones about (Chain.weak, in sight), from that one on, each next the nearest to the one before, up to
+     * MovesConfig.chainMax; they slow down and freeze as he leaps.
+     */
+    static void chainStarted(ServerPlayer p, Stamina s, int first) {
+        double reach = Chain.FIRST_REACH + MovesConfig.chainRange();
+        List<LivingEntity> pool = new ArrayList<>(p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(reach),
+                e -> e != p && Chain.weak(e) && e.distanceTo(p) <= reach && Marks.seen(p, e)));
+        List<LivingEntity> order = new ArrayList<>();
+        LivingEntity at = p.level().getEntity(first) instanceof LivingEntity le && pool.contains(le) ? le : null;
+        if (at == null && !pool.isEmpty()) at = pool.get(0);
+        while (at != null && order.size() < MovesConfig.chainMax()) {
+            order.add(at);
+            pool.remove(at);
+            LivingEntity from = at;
+            at = pool.stream().min((a, b) -> Double.compare(a.distanceToSqr(from), b.distanceToSqr(from))).orElse(null);
+        }
+        List<Integer> ids = new ArrayList<>();
+        int total = order.size() * (CR_HOP_LEN + CR_ROUNDS * CR_BLINK) + BRAKE_LEN + 20;
+        for (int i = 0; i < order.size(); i++) {
+            ids.add(order.get(i).getId());
+            MovesNet.mobPose(order.get(i), FROZEN[i % FROZEN.length], total, false);
+        }
+        State st = new State(p.position(), p.getYRot(), ids);
+        st.chain = true;
+        st.leaps = 1;
+        ON.put(p.getUUID(), st);
+        p.serverLevel().playSound(null, p.getX(), p.getY(), p.getZ(), MovesSounds.TIME_STOP_SLOW.get(), SoundSource.PLAYERS, 1.2f, 1.15f);
+    }
+
     static void serverTick(ServerPlayer p, Stamina s) {
         State st = ON.get(p.getUUID());
         if (st == null) return;
@@ -114,7 +160,8 @@ public final class TimeStop {
         }
         // slowing down to a stop within the freeze, then held as they are
         for (LivingEntity mob : mobs) {
-            float k = s.move == Move.TS_STANCE ? Math.max(0f, 1f - s.moveTick / (float) FREEZE) : 0f;
+            float k = s.move == Move.TS_STANCE ? Math.max(0f, 1f - s.moveTick / (float) FREEZE)
+                    : st.chain ? Math.max(0f, 1f - st.age / (float) CR_FREEZE) : 0f;
             Vec3 v = mob.getDeltaMovement();
             mob.setDeltaMovement(v.x * k, Math.min(0, v.y) * k, v.z * k);
             mob.hurtMarked = true;
@@ -124,19 +171,29 @@ public final class TimeStop {
                 m.setTarget(null);
             }
         }
-        int steps = st.targets.size() * MovesConfig.timeStopRounds();
-        if (s.move != Move.TS_STANCE && s.moveTick == HIT) {
-            LivingEntity mob = byId(p, st.targets.get((st.step - 1) % st.targets.size()));
+        st.age++;
+        int steps = st.targets.size() * (st.chain ? CR_ROUNDS : MovesConfig.timeStopRounds());
+        if ((s.move.timeStopBlow() && s.moveTick == hitTick(s.move)) || (s.move.crLeap() && s.moveTick == CR_STAB)) {
+            LivingEntity mob = byId(p, s.target);
             if (mob != null) hitFx(p, mob);
         }
         if (s.moveTick < s.move.length - 1) return;
+        // the chain: a leap on to each in turn first (the client carries him there)
+        while (st.chain && st.leaps < st.targets.size()) {
+            LivingEntity mob = byId(p, st.targets.get(st.leaps++));
+            if (mob == null) continue;
+            s.start(p, Move.CR_HOP, false);
+            s.target = mob.getId();
+            MovesNet.force(p, Move.CR_HOP, mob.getId());
+            return;
+        }
         // the next blow: the next enemy still about (all dead or gone: the brake)
         while (st.step < steps) {
             int i = st.step % st.targets.size();
             LivingEntity mob = byId(p, st.targets.get(i));
             st.step++;
             if (mob == null) continue;
-            Move blow = BLOWS[(st.step - 1) % BLOWS.length];
+            Move blow = st.chain ? BLINKS[(st.step - 1) % BLINKS.length] : BLOWS[(st.step - 1) % BLOWS.length];
             Vec3 from = p.position();
             Vec3 spot = spot(p, st, mob, blow, st.step - 1);
             s.start(p, blow, false);
@@ -183,6 +240,7 @@ public final class TimeStop {
             default -> 0;
         };
         int round = step / Math.max(1, st.targets.size());
+        if (st.chain) side += step * 2.39996;
         double reach = mob.getBbWidth() / 2 + 1.1;
         for (int tryIt = 0; tryIt < 8; tryIt++) {
             double a = base + side + round * Math.PI / 2 + tryIt * Math.PI / 4;

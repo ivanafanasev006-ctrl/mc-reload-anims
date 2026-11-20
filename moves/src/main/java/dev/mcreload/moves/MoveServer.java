@@ -75,6 +75,7 @@ public final class MoveServer {
         if (move == Move.SWORD_SPIN) Spin.started(p, s);
         if (move == Move.HOSTAGE_KICK) GuardAnswers.kickOff(p, s);
         if (move == Move.TS_STANCE) TimeStop.started(p, s);
+        if (move == Move.CR_LEAP) TimeStop.chainStarted(p, s, target);
         if (move == Move.AIR_SPIN) {
             s.airSpinCooldown = s.cooled(MovesConfig.airSpinCooldownTicks());
             s.attackYaw = p.getYRot();
@@ -84,7 +85,8 @@ public final class MoveServer {
         if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
         if (move == Move.WEAPON_PULL || move == Move.CHAIN_LEAP || move.chainHop() || move.axeCombo()) s.target = target;
-        if (move == Move.CHAIN_LEAP) s.chainCooldown = s.cooled(MovesConfig.chainCooldownTicks());
+        if (move == Move.CHAIN_LEAP || move == Move.CR_LEAP) s.chainCooldown = s.cooled(MovesConfig.chainCooldownTicks());
+        if (move == Move.CR_LEAP) s.target = target;
         if (move == Move.DASH) {
             s.dashCooldown = s.cooled(MovesConfig.dashCooldownTicks());
             s.dashHit = false;
@@ -143,6 +145,7 @@ public final class MoveServer {
         if (move == Move.LEDGE_HELP) return e instanceof Player;
         if (move == Move.WEAPON_PULL) return Thrown.valid(p, e);
         if (move == Move.CHAIN_LEAP || move.chainHop()) return Chain.valid(p, move, e);
+        if (move == Move.CR_LEAP) return Chain.valid(p, Move.CHAIN_LEAP, e);
         if (move.axeCombo()) return Whirl.comboValid(p, e);
         if (move.finisher()) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;
@@ -220,7 +223,7 @@ public final class MoveServer {
         // The chain finisher (author, after 0.9.1): a sword, from the ground or a jump just begun (or the sword's finisher
         // ending), once its wait is over, two weak mobs about at least (2026-11-09); each next leap (or the flip) once the
         // blade is in and out
-        if (move == Move.CHAIN_LEAP) {
+        if (move == Move.CHAIN_LEAP || move == Move.CR_LEAP) {
             int grace = JUMP_GRACE + (p.level().isClientSide ? 0 : GROUND_GRACE);
             boolean finished = s.move == Move.FINISHER && s.moveTick >= Strikes.FINISH_OUT - (p.level().isClientSide ? 0 : 3);
             return Strikes.sword(p) && s.chainCooldown <= (p.level().isClientSide ? 0 : 5) && Chain.enough(p)
