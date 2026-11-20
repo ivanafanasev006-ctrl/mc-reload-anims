@@ -411,6 +411,9 @@ public final class MovesGameTests {
         float[] was = new float[1];
         t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
         t.at(3, () -> Guard.request(p, true));
+        // no crowd about (another test's mobs within reach would make it the living shield instead)
+        t.at(8, () -> p.level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, p.getBoundingBox().inflate(17),
+                m -> m != zombie).forEach(net.minecraft.world.entity.Entity::discard));
         t.at(9, () -> {
             was[0] = zombie.distanceTo(p);
             p.hurt(p.damageSources().mobAttack(zombie), 8f);
