@@ -21,7 +21,8 @@ public enum Skill {
     THROW("throw", Weapon.BLADE),
     WHIRL("whirlwind", Weapon.AXE),
     AXE_COMBO("axeCombo", Weapon.AXE),
-    TIME_STOP("timeStop", Weapon.SWORD),
+    /** The sword's ultimate (author, 2026-11-20: into the square of the class's awakening abilities). */
+    TIME_STOP("timeStop", Weapon.SWORD, Place.ULT),
     VOLLEY("bowVolley", Weapon.BOW),
     HAIL("bowHail", Weapon.BOW),
     MARKS("bowMarks", Weapon.BOW),
@@ -34,28 +35,45 @@ public enum Skill {
      * The deep jump, W + Space + R with no mob near (author, 2026-11-16: "a scroll for the deep roll"); a perk (author,
      * 2026-11-16, later: "the perks, abilities like the deep roll and the attacks we add later").
      */
-    DIVE("dive", Weapon.ANY, true),
+    DIVE("dive", Weapon.ANY, Place.PERK),
     /** The sword block's answers (author, 2026-11-19; GuardAnswers): perks, working while in the perks' row. */
-    GUARD_KICK("guardKick", Weapon.SWORD, true),
-    GUARD_COUNTER("guardCounter", Weapon.SWORD, true),
-    GUARD_FINISH("guardFinish", Weapon.SWORD, true);
+    GUARD_KICK("guardKick", Weapon.SWORD, Place.PERK),
+    GUARD_COUNTER("guardCounter", Weapon.SWORD, Place.PERK),
+    GUARD_FINISH("guardFinish", Weapon.SWORD, Place.PERK),
+    /**
+     * The axe's ultimate (author, 2026-11-20, on the right button and G held, instead of the old triple whirl): a turn about
+     * himself and he is gone; they stand lost, looking about; he comes out behind one, a blow, and it falls; a moment later
+     * at another's side, and so on until all are dead (AxeShadow).
+     */
+    AXE_SHADOW("axeShadow", Weapon.AXE, Place.ULT);
 
-    /** Moves on the wheel at most, and perks in the row of squares above it. */
-    public static final int WHEEL = 6, PERKS = 5;
+    /**
+     * Where a skill goes (author, 2026-11-20): the wheel of moves, the row of perks above it, or the square of the class's
+     * awakening abilities (the ultimates) beside it.
+     */
+    public enum Place { WHEEL, PERK, ULT }
+
+    /** Moves on the wheel at most, perks in their row, ultimates in their 2 x 2 square (author, 2026-11-20: 10 perks). */
+    public static final int WHEEL = 6, PERKS = 10, ULTS = 4;
 
     public final String key;
     public final Weapon weapon;
+    public final Place place;
     /** A perk: it goes into the perks' row, not on the wheel. */
     public final boolean perk;
+    /** An ultimate: it goes into the awakening square. */
+    public final boolean ult;
 
     Skill(String key, Weapon weapon) {
-        this(key, weapon, false);
+        this(key, weapon, Place.WHEEL);
     }
 
-    Skill(String key, Weapon weapon, boolean perk) {
+    Skill(String key, Weapon weapon, Place place) {
         this.key = key;
         this.weapon = weapon;
-        this.perk = perk;
+        this.place = place;
+        this.perk = place == Place.PERK;
+        this.ult = place == Place.ULT;
     }
 
     public static Skill byKey(String key) {
@@ -90,6 +108,7 @@ public enum Skill {
             case GUARD_SHOVE, GUARD_GRAB, HOSTAGE_HOLD, HOSTAGE_KICK -> GUARD_COUNTER;
             case GUARD_FINISH -> GUARD_FINISH;
             case TS_STANCE, TS_SLASH, TS_THRUST, TS_BACK, TS_BELLY, TS_LEAP, TS_SPIN, TS_BRAKE -> TIME_STOP;
+            case AS_SPIN, AS_HIDDEN, AS_CHOP, AS_SIDE, AS_HOOK -> AXE_SHADOW;
             case XBOW_VOLLEY, XBOW_SPIN -> XBOW_G;
             case XBOW_FAN, XBOW_FAN_SHOT -> XBOW_FAN;
             case XBOW_ROLL_BACK, XBOW_ROLL_FRONT, XBOW_ROLL_LEFT, XBOW_ROLL_RIGHT -> XBOW_ROLLS;

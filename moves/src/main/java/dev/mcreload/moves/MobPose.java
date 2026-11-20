@@ -34,7 +34,9 @@ public enum MobPose {
     /** Onto its back. */
     FALL_BACK,
     /** Tripping: a stagger, then onto its face. */
-    STUMBLE;
+    STUMBLE,
+    /** Lost (the axe's shadow: he is gone): standing, the arms half up, the head turning to look about, left, right, back. */
+    CONFUSED;
 
     public static MobPose byId(int id) {
         MobPose[] all = values();

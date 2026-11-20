@@ -249,7 +249,7 @@ public final class MovesHud {
         if (ability != null) out.add(ability);
         // the sword: the lunge on G (the ability above), its turns on G held
         if (Strikes.sword(p) && HudConfig.Moves.DASH.on() && HudConfig.Moves.SWORD_SPIN.on()) out.add(Move.SWORD_SPIN);
-        if (Strikes.axe(p) && HudConfig.Moves.AXE_TRIPLE.on()) out.add(Move.AXE_TRIPLE);
+        if (Strikes.axe(p) && HudConfig.Moves.AXE_TRIPLE.on()) out.add(Move.AS_SPIN);
         if (Strikes.slideWeapon(p) && HudConfig.Moves.SLIDE_ATTACK.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_ATTACK);
         boolean bow = dev.mcreload.moves.Bow.isBow(p.getMainHandItem());
         if (bow && HudConfig.Moves.SLIDE_SHOT.on() && HudConfig.Moves.SLIDE.on()) out.add(Move.SLIDE_SHOT);
@@ -276,6 +276,7 @@ public final class MovesHud {
             case DASH -> MovesConfig.dashCooldownTicks();
             case WHIRL -> MovesConfig.whirlCooldownTicks();
             case AXE_TRIPLE -> MovesConfig.axeTripleCooldownTicks();
+            case AS_SPIN -> MovesConfig.timeStopCooldownTicks();
             case TS_STANCE -> MovesConfig.timeStopCooldownTicks();
             case SWORD_SPIN -> MovesConfig.swordSpinCooldownTicks();
             case SLIDE_ATTACK -> MovesConfig.slideAttackCooldownTicks();
@@ -400,7 +401,7 @@ public final class MovesHud {
         return switch (move) {
             case DASH -> shortKey(MovesClient.ABILITY);
             case SWORD_SPIN -> shortKey(MovesClient.ABILITY) + "+";
-            case AXE_TRIPLE, TS_STANCE -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.ABILITY) + "+";
+            case AXE_TRIPLE, TS_STANCE, AS_SPIN -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.ABILITY) + "+";
             case WHIRL -> shortKey(MovesClient.ABILITY);
             case SLIDE_ATTACK -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
             case SLIDE_SHOT -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyUse);

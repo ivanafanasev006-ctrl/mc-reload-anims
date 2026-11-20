@@ -331,5 +331,17 @@
   "subtitles.kinetrix_combat.time_stop.slow": "Time slows down",
   "subtitles.kinetrix_combat.time_stop.unwind": "Time runs again",
   "subtitles.kinetrix_combat.time_stop.swing": "A blade flashes",
-  "subtitles.kinetrix_combat.time_stop.hit": "A blade strikes"
+  "subtitles.kinetrix_combat.time_stop.hit": "A blade strikes",
+  "kinetrix_combat.combat.ults": "Awakening %s/%s",
+  "kinetrix_combat.combat.on_ults": "Learned, in the awakening",
+  "kinetrix_combat.combat.learned_ults": "Learned — click to put it in the awakening",
+  "kinetrix_combat.combat.ult": "A class's awakening ability (ultimate): goes into the 2×2 square right of the wheel",
+  "kinetrix_combat.wheel.ults": "Awakening",
+  "kinetrix_combat.wheel.not_on_ult": "%s is not in the awakening: put it there in the menu (K)",
+  "kinetrix_combat.settings.move.axeShadow": "Axe's shadow",
+  "kinetrix_combat.settings.move.axeShadow.tip": "The right button and G held with an axe, 5 to 10 enemies about. A turn about yourself and you are gone: they freeze and look about, lost. You come out behind one — a blow from above, it falls; a moment later at another's side, as an assassin, and so on until all are dead. Where each blow fell, your pale after-image and a wave in the air. The camera stays put and turns all round with the mouse. 99 % of the energy, 30 s cooldown.",
+  "kinetrix_combat.skill.axeShadow.words": "axe shadow ultimate assassin stealth vanish awakening",
+  "subtitles.kinetrix_combat.axe_shadow.vanish": "A step into the shadow",
+  "key.kinetrix_combat.skill.axeShadow": "Move: Axe's shadow",
+  "kinetrix_combat.axe_shadow.not_ready": "Axe's shadow: at least %s enemies near, a full bar and its wait over"
 }

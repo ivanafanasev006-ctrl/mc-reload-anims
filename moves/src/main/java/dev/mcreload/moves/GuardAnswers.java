@@ -409,7 +409,7 @@ public final class GuardAnswers {
         LivingEntity hurt = event.getEntity();
         if (hurt.level().isClientSide) return;
         // the held one (or caught: its wrist on the blade) strikes no one
-        if (event.getSource().getEntity() instanceof LivingEntity by && (heldBySomeone(by) || TimeStop.frozen(by))) {
+        if (event.getSource().getEntity() instanceof LivingEntity by && (heldBySomeone(by) || TimeStop.frozen(by) || AxeShadow.lost(by))) {
             event.setCanceled(true);
             return;
         }

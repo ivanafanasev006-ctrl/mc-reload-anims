@@ -411,7 +411,19 @@ public enum Move {
     CR_BLINK_A("ts_slash", 2.4f, TimeStop.CR_BLINK, 0, TimeStop.CR_BLINK, -1, -1, Side.FRONT, () -> 0),
     CR_BLINK_B("ts_spin", 2.4f, TimeStop.CR_BLINK, 0, TimeStop.CR_BLINK, -1, -1, Side.FRONT, () -> 0),
     CR_BLINK_C("ts_back", 2.4f, TimeStop.CR_BLINK, 0, TimeStop.CR_BLINK, -1, -1, Side.FRONT, () -> 0),
-    CR_BLINK_D("ts_thrust", 2.4f, TimeStop.CR_BLINK, 0, TimeStop.CR_BLINK, -1, -1, Side.FRONT, () -> 0);
+    CR_BLINK_D("ts_thrust", 2.4f, TimeStop.CR_BLINK, 0, TimeStop.CR_BLINK, -1, -1, Side.FRONT, () -> 0),
+
+    // ---- the axe's shadow (author, 2026-11-20; AxeShadow, round24.py): the right button and G held with an axe, 5 to 10
+    // enemies about. A turn and he is gone; they look about, lost; he comes out behind one, a blow, it falls; again at
+    // another a moment later, until all are dead. Untouchable throughout.
+    /** The turn about himself, and gone (the client starts it). */
+    AS_SPIN("as_spin", 1f, AxeShadow.SPIN_LEN, 0, AxeShadow.SPIN_LEN, -1, -1, Side.FRONT, () -> 0),
+    /** Gone: not drawn, not seen (the server ends it with the next blow). */
+    AS_HIDDEN("as_hidden", 1f, Move.FOREVER, 0, Move.FOREVER, -1, -1, Side.FRONT, () -> 0),
+    /** The blows out of nowhere: from above behind it, at its side, hooked up from below. */
+    AS_CHOP("as_chop", 1f, AxeShadow.STRIKE_LEN, 0, AxeShadow.STRIKE_LEN, -1, -1, Side.FRONT, () -> 0),
+    AS_SIDE("as_side", 1f, AxeShadow.STRIKE_LEN, 0, AxeShadow.STRIKE_LEN, -1, -1, Side.FRONT, () -> 0),
+    AS_HOOK("as_hook", 1f, AxeShadow.STRIKE_LEN, 0, AxeShadow.STRIKE_LEN, -1, -1, Side.FRONT, () -> 0);
 
     /** The hops along the edge play this much faster than their animation (author: one after another). */
     public static final float HOP_SPEED = 1.4f;
@@ -549,13 +561,23 @@ public enum Move {
 
     /** The time stop's parts (TimeStop). */
     public boolean timeStop() {
-        return this == TS_STANCE || timeStopBlow() || this == TS_BRAKE || crLeap();
+        return this == TS_STANCE || timeStopBlow() || this == TS_BRAKE || crLeap() || axeShadow();
     }
 
     /** A blow of the time stop, made at a mob. */
     public boolean timeStopBlow() {
         return this == TS_SLASH || this == TS_THRUST || this == TS_BACK || this == TS_BELLY || this == TS_LEAP || this == TS_SPIN
-                || crBlink();
+                || crBlink() || asStrike();
+    }
+
+    /** The axe's shadow's blows out of nowhere. */
+    public boolean asStrike() {
+        return this == AS_CHOP || this == AS_SIDE || this == AS_HOOK;
+    }
+
+    /** The axe's shadow, any part of it. */
+    public boolean axeShadow() {
+        return this == AS_SPIN || this == AS_HIDDEN || asStrike();
     }
 
     /** The chain finisher's mad flickers (the time stop's blows at 3 ticks each). */
@@ -692,7 +714,7 @@ public enum Move {
 
     /** Started by the server on a player who did not ask (pulled up by a friend): their own client plays it when told. */
     public boolean serverStarted() {
-        return this == LEDGE_PULLED || guardAnswer() || (timeStop() && this != TS_STANCE && this != CR_LEAP);
+        return this == LEDGE_PULLED || guardAnswer() || (timeStop() && this != TS_STANCE && this != CR_LEAP && this != AS_SPIN);
     }
 
     /**

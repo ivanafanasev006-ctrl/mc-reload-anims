@@ -512,6 +512,7 @@ public final class Stamina {
                 Kick.serverTick(sp, s);
                 GuardAnswers.serverTick(sp, s);
                 TimeStop.serverTick(sp, s);
+                AxeShadow.serverTick(sp, s);
                 Fall.serverTick(sp, s);
                 Ledge.serverTick(sp, s);
                 FastRun.serverTick(sp, s);

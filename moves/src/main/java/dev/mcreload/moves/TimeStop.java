@@ -106,7 +106,7 @@ public final class TimeStop {
 
     /** When a blow's blade goes through (the time stop's at HIT, the chain's mad flickers at CR_BLINK_HIT). */
     public static int hitTick(Move m) {
-        return m.crBlink() ? CR_BLINK_HIT : HIT;
+        return m.crBlink() ? CR_BLINK_HIT : m.asStrike() ? AxeShadow.HIT : HIT;
     }
 
     /**

@@ -68,7 +68,7 @@ public final class SkillUse {
         Stamina s = Stamina.of(p);
         if (!s.progress.usable(k)) {
             p.displayClientMessage(Component.translatable(!s.progress.learned.contains(k) ? "kinetrix_combat.wheel.not_learned"
-                    : k.perk ? "kinetrix_combat.wheel.not_on_perk" : "kinetrix_combat.wheel.not_on", Scrolls.name(k)), true);
+                    : k.perk ? "kinetrix_combat.wheel.not_on_perk" : k.ult ? "kinetrix_combat.wheel.not_on_ult" : "kinetrix_combat.wheel.not_on", Scrolls.name(k)), true);
             return;
         }
         if (!armed(p, k)) return;
@@ -93,7 +93,7 @@ public final class SkillUse {
                 hold(g, 52);
             }
             // the right button and G held
-            case AXE_COMBO, TIME_STOP -> {
+            case AXE_COMBO, TIME_STOP, AXE_SHADOW -> {
                 abilityClick = true;
                 hold(g, 8);
                 hold(use, 8);

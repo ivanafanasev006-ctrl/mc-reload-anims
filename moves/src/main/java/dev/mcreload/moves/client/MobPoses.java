@@ -271,6 +271,13 @@ public final class MobPoses {
                     new float[]{-10, 30, 0, 0, 0, 0, -12, 0, 62, -12, 0, -62, 0, 0, 10, 0, 0, -10}, smooth(t, 6, 12));
             case STUMBLE -> mix(new float[]{16, 0, 0, 0, 0, 0, -40, 0, 30, -70, 0, -20, -40, 0, -6, 30, 0, 8},
                     new float[]{-25, 70, 0, 0, 0, 0, -165, 0, 16, -165, 0, -16, 0, 0, 4, 0, 0, -4}, smooth(t, 9, 16));
+            case CONFUSED -> {
+                // looking about, left and right with a hold at each side, now and then up; the arms half up ("what?")
+                float ph = t * 0.09f, side = Mth.sin(ph);
+                float yaw = 58f * Math.signum(side) * Math.min(1f, Math.abs(side) * 2.2f);
+                float up = -6f + 8f * Mth.sin(t * 0.05f + 1f);
+                yield new float[]{up, yaw, 0, 0, yaw * 0.15f, 0, -34 + s * 4, 0, 22, -30 - s * 4, 0, -22, 0, yaw * 0.1f, 2, 0, yaw * 0.1f, -2};
+            }
             default -> null;
         };
     }

@@ -95,7 +95,7 @@ public final class StrikeInput {
             case CHAIN_LEAP -> s.chainCooldown;
             case THROW -> s.throwCooldown;
             case AIR_SPIN -> s.airSpinCooldown;
-            case AXE_TRIPLE -> s.axeTripleCooldown;
+            case AXE_TRIPLE, AS_SPIN -> s.axeTripleCooldown;
             case TS_STANCE -> s.timeStopCooldown;
             default -> 0;
         };
@@ -247,15 +247,17 @@ public final class StrikeInput {
             if (!down || !use || axeG > HOLD_G) {
                 axeG = 0;
                 down = down && use;
-                // the combo: a blow for each mob about (AxeComboInput), else the whirlwind; mobs enough in sight but its wait not
-                // over: the wait shown, not the whirlwind in its place (author, 2026-11-10, 20:00: "it works every other time")
-                if (down && HudConfig.Moves.AXE_TRIPLE.on() && s.move == null
-                        && dev.mcreload.moves.Whirl.tripleTargets(p).size() >= dev.mcreload.moves.Whirl.TRIPLE_FEWEST) {
-                    if (waits(p, s, Move.AXE_TRIPLE)) return true;
-                    if (MoveServer.allowed(p, s, Move.AXE_TRIPLE) && AxeComboInput.start(p, s)) {
+                // the right button and G held with an axe: the axe's shadow (author, 2026-11-20, instead of the old triple
+                // whirl, which is no longer on the keys), if there are enemies enough about; else its wait or what it needs
+                if (down && HudConfig.Moves.AXE_TRIPLE.on() && s.move == null) {
+                    if (MoveServer.allowed(p, s, Move.AS_SPIN) && begin(mc, p, s, Move.AS_SPIN)) {
                         swallow(mc);
                         return true;
                     }
+                    MovesHud.refused(Move.AS_SPIN);
+                    p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_combat.axe_shadow.not_ready",
+                            dev.mcreload.moves.MovesConfig.timeStopMin()), true);
+                    return true;
                 }
                 Move move = ability(p);
                 if (move != null && s.move == null && begin(mc, p, s, move)) return true;
@@ -354,7 +356,7 @@ public final class StrikeInput {
             case CHAIN_LEAP -> HudConfig.Moves.CHAIN.key;
             case THROW -> HudConfig.Moves.THROW.key;
             case AIR_SPIN -> HudConfig.Moves.AIR_SPIN.key;
-            case AXE_TRIPLE -> HudConfig.Moves.AXE_TRIPLE.key;
+            case AXE_TRIPLE, AS_SPIN -> HudConfig.Moves.AXE_TRIPLE.key;
             case TS_STANCE -> HudConfig.Moves.TIME_STOP.key;
             default -> move.name().toLowerCase(java.util.Locale.ROOT);
         };

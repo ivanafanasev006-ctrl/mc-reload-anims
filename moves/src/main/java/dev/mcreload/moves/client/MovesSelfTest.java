@@ -192,6 +192,7 @@ public final class MovesSelfTest {
         guardAnswer("68_guard_answer_finish", 4f, false, false);
         guardAnswer("69_guard_answer_shield", 20f, true, true);
         timeStop("69t_time_stop");
+        axeShadow("69u_axe_shadow");
         finisher("92_finisher_axe", Items.IRON_AXE, CameraType.THIRD_PERSON_BACK);
         finisher("95_finisher_first_person", Items.IRON_SWORD, CameraType.FIRST_PERSON);
 
@@ -643,7 +644,8 @@ public final class MovesSelfTest {
             dev.mcreload.moves.Progress pr = Stamina.of(sp).progress;
             for (dev.mcreload.moves.Skill k : new dev.mcreload.moves.Skill[]{dev.mcreload.moves.Skill.WHIRL, dev.mcreload.moves.Skill.AXE_COMBO,
                     dev.mcreload.moves.Skill.DASH, dev.mcreload.moves.Skill.SWORD_SPIN, dev.mcreload.moves.Skill.VOLLEY,
-                    dev.mcreload.moves.Skill.XBOW_G, dev.mcreload.moves.Skill.THROW, dev.mcreload.moves.Skill.CHAIN, dev.mcreload.moves.Skill.DIVE}) pr.learn(k);
+                    dev.mcreload.moves.Skill.XBOW_G, dev.mcreload.moves.Skill.THROW, dev.mcreload.moves.Skill.CHAIN, dev.mcreload.moves.Skill.DIVE,
+                    dev.mcreload.moves.Skill.GUARD_KICK, dev.mcreload.moves.Skill.TIME_STOP, dev.mcreload.moves.Skill.AXE_SHADOW}) pr.learn(k);
             dev.mcreload.moves.net.MovesNet.progress(sp);
         };
         SCENARIOS.add(new Scenario("52_combat_build", 34, learn, (mc, t) -> {
@@ -767,6 +769,29 @@ public final class MovesSelfTest {
                         + ((net.minecraft.world.entity.LivingEntity) e).getHealth() + " at " + e.blockPosition() + ", removed " + e.isRemoved());
             }
         }, new int[]{12, 26, 31, 40, 44, 62, 100, 130, len - 34, len - 20, len - 4, len + 16}, false));
+    }
+
+    /** The axe's shadow (author, 2026-11-20): six zombies in an arc, an axe, the right button and G held: gone, then each in turn. */
+    private static void axeShadow(String name) {
+        int len = dev.mcreload.moves.AxeShadow.SPIN_LEN + dev.mcreload.moves.AxeShadow.LOST
+                + 6 * (dev.mcreload.moves.AxeShadow.STRIKE_LEN + dev.mcreload.moves.AxeShadow.GONE);
+        SCENARIOS.add(new Scenario(name, len + 30, sp -> {
+            place(sp, 0, new ItemStack(Items.IRON_AXE));
+            for (int i = 0; i < 6; i++) {
+                double a = Math.PI * (0.15 + 0.7 * i / 5.0);
+                dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, Math.cos(a) * 4.5, Math.sin(a) * 4.5 + 0.5, 20f);
+            }
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            if (t == 1) mc.player.setXRot(22f);
+            boolean press = t >= 3 && t < 12;
+            mc.options.keyUse.setDown(press);
+            MovesClient.ABILITY.setDown(press);
+            if (t == 4) KeyMapping.click(MovesClient.ABILITY.getKey());
+            if (t == 14 || t == 40 || t == 60) note("axe shadow: t=" + t + " move " + Stamina.of(mc.player).move);
+            if (t == len + 24) note("axe shadow: zombies left alive " + dummies(mc).stream().filter(e -> e.isAlive()).count()
+                    + ", move " + Stamina.of(mc.player).move);
+        }, new int[]{10, 22, 36, 48, 54, 62, 74, 90, len + 10}, false));
     }
 
     private static ServerPlayer answerPlayer;

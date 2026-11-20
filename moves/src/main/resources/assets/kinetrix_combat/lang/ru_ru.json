@@ -331,5 +331,17 @@
   "subtitles.kinetrix_combat.time_stop.slow": "Время замедляется",
   "subtitles.kinetrix_combat.time_stop.unwind": "Время идёт снова",
   "subtitles.kinetrix_combat.time_stop.swing": "Взмах клинка",
-  "subtitles.kinetrix_combat.time_stop.hit": "Удар клинка"
+  "subtitles.kinetrix_combat.time_stop.hit": "Удар клинка",
+  "kinetrix_combat.combat.ults": "Пробуждение %s/%s",
+  "kinetrix_combat.combat.on_ults": "Выучена, в пробуждении",
+  "kinetrix_combat.combat.learned_ults": "Выучена — нажми, чтобы поставить в пробуждение",
+  "kinetrix_combat.combat.ult": "Способность пробуждения класса (ульта): ставится в квадрат 2×2 справа от колеса",
+  "kinetrix_combat.wheel.ults": "Пробуждение",
+  "kinetrix_combat.wheel.not_on_ult": "%s не в пробуждении: поставь её в меню (K)",
+  "kinetrix_combat.settings.move.axeShadow": "Тень топора",
+  "kinetrix_combat.settings.move.axeShadow.tip": "ПКМ и G зажаты с топором, рядом 5–10 врагов. Оборот вокруг себя — и тебя нет: враги застывают и растерянно озираются. Ты появляешься за спиной одного — удар сверху, он падает; через секунду — у другого сбоку, как скрытный убийца, и так пока все не умрут. На месте каждого удара — твоё бледное отражение и воздушная волна. Камера на месте, крутится мышью на 360°. 99 % энергии, перезарядка 30 с.",
+  "kinetrix_combat.skill.axeShadow.words": "тень топора топор ульта убийца скрытный исчезновение пробуждение",
+  "subtitles.kinetrix_combat.axe_shadow.vanish": "Шаг в тень",
+  "key.kinetrix_combat.skill.axeShadow": "Приём: Тень топора",
+  "kinetrix_combat.axe_shadow.not_ready": "Тень топора: нужно хотя бы %s врагов рядом, полная энергия и конец перезарядки"
 }

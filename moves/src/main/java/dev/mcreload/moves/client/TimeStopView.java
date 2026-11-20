@@ -87,8 +87,8 @@ public final class TimeStopView {
     static void step(Player p, Move move, int target) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
-        if (move.timeStopBlow() || move == Move.TS_BRAKE) GHOSTS.add(new Ghost(p.getId(), p.position(), p.yBodyRot, mc.level.getGameTime()));
-        if (p == mc.player && (move == Move.TS_STANCE || move == Move.CR_LEAP) && !active) {
+        if ((move.timeStopBlow() && !move.asStrike()) || move == Move.TS_BRAKE || move == Move.AS_HIDDEN) GHOSTS.add(new Ghost(p.getId(), p.position(), p.yBodyRot, mc.level.getGameTime()));
+        if (p == mc.player && (move == Move.TS_STANCE || move == Move.CR_LEAP || move == Move.AS_SPIN) && !active) {
             active = true;
             gap = 0;
             anchor = p.getEyePosition();
@@ -156,6 +156,9 @@ public final class TimeStopView {
             case CR_BLINK_C -> 8f;
             case CR_BLINK_D -> 30f;
             case CR_LEAP, CR_HOP -> 62f;
+            case AS_CHOP -> 90f;
+            case AS_SIDE -> 4f;
+            case AS_HOOK -> 125f;
             case TS_BACK -> 8f;
             case TS_BELLY -> 45f;
             default -> 18f;
@@ -178,6 +181,11 @@ public final class TimeStopView {
     private static void facing(RenderPlayerEvent.Pre event) {
         Player p = event.getEntity();
         Stamina s = Stamina.of(p);
+        // the axe's shadow: gone, not drawn (his after-images are, they are drawn on purpose)
+        if (s.move == Move.AS_HIDDEN && !drawingGhost) {
+            event.setCanceled(true);
+            return;
+        }
         if (!viewed(s.move)) return;
         float yaw;
         boolean finisherBehind = s.move == Move.GUARD_FINISH && s.moveTick >= GuardAnswers.FIN_JUMP;

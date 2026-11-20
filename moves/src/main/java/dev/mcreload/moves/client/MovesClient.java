@@ -462,6 +462,10 @@ public final class MovesClient {
             s.timeStopCooldown = s.cooled(MovesConfig.timeStopCooldownTicks());
             TimeStopView.step(p, move, -1);
         }
+        if (move == Move.AS_SPIN) {
+            s.axeTripleCooldown = s.cooled(MovesConfig.timeStopCooldownTicks());
+            TimeStopView.step(p, move, -1);
+        }
         if (move == Move.CR_LEAP) {
             s.chainCooldown = s.cooled(MovesConfig.chainCooldownTicks());
             TimeStopView.step(p, move, target);
@@ -1115,9 +1119,7 @@ public final class MovesClient {
         pr.setLearnedBits(m.bits());
         pr.clearWheel();
         for (int i = 0; i < Math.min(m.wheel().length, dev.mcreload.moves.Progress.PLACES); i++) {
-            dev.mcreload.moves.Skill k = dev.mcreload.moves.Skill.byId(m.wheel()[i]);
-            if (i < dev.mcreload.moves.Skill.WHEEL) pr.wheel[i] = k;
-            else pr.perks[i - dev.mcreload.moves.Skill.WHEEL] = k;
+            pr.set(i, dev.mcreload.moves.Skill.byId(m.wheel()[i]));
         }
         pr.rank = m.rank();
     }

@@ -49,6 +49,7 @@ final class SkillPreview {
             case CHAIN -> new Move[]{Move.CHAIN_LEAP, Move.CHAIN_HOP, Move.CHAIN_HOP_STAB, Move.CHAIN_FLIP};
             case THROW -> new Move[]{Move.THROW_AIM, Move.THROW};
             case WHIRL -> new Move[]{Move.WHIRL};
+            case AXE_SHADOW -> new Move[]{Move.AS_SPIN, Move.AS_CHOP, Move.AS_SIDE, Move.AS_HOOK};
             case AXE_COMBO -> new Move[]{Move.AXE_TRIPLE, Move.AXE_COMBO_CHOP, Move.AXE_COMBO_2, Move.AXE_COMBO_DIAG, Move.AXE_COMBO_END};
             case VOLLEY -> new Move[]{Move.BARRAGE};
             case HAIL -> new Move[]{Move.HAIL};

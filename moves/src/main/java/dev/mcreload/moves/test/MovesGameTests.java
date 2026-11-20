@@ -427,6 +427,37 @@ public final class MovesGameTests {
         }).run(9 + dev.mcreload.moves.GuardAnswers.SHOVE_PUSH + 11);
     }
 
+    /** The axe's shadow: five zombies about, the right button and G with an axe: gone, then each struck from nowhere, all dead. */
+    @GameTest(template = FLOOR, timeoutTicks = 400, batch = "axeShadow")
+    public static void axeShadow(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        Zombie[] z = new Zombie[5];
+        int[][] at = {{1, 5}, {2, 6}, {3, 6}, {4, 6}, {5, 5}};
+        for (int i = 0; i < z.length; i++) {
+            z[i] = h.spawnWithNoFreeWill(EntityType.ZOMBIE, at[i][0], 2, at[i][1]);
+            noSun(z[i]);
+        }
+        int len = dev.mcreload.moves.AxeShadow.SPIN_LEN + dev.mcreload.moves.AxeShadow.LOST
+                + z.length * (dev.mcreload.moves.AxeShadow.STRIKE_LEN + dev.mcreload.moves.AxeShadow.GONE);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_AXE)));
+        t.at(3, () -> {
+            t.check(MoveServer.request(p, Move.AS_SPIN, false), "the axe's shadow refused with five zombies about");
+            t.check(s.axeTripleCooldown > 0 && s.energy < 5f, "its wait or its energy: " + s.axeTripleCooldown + ", " + s.energy);
+        });
+        t.at(3 + dev.mcreload.moves.AxeShadow.SPIN_LEN + 3, () -> {
+            t.check(s.move == Move.AS_HIDDEN && p.isInvisible(), "not gone: " + s.move + ", invisible " + p.isInvisible());
+            p.invulnerableTime = 0;
+            p.hurt(p.damageSources().mobAttack(z[0]), 6f);
+            t.close(p.getHealth(), 20f, "the player hurt in the axe's shadow");
+        });
+        t.at(3 + len + 4, () -> {
+            for (Zombie zz : z) t.check(!zz.isAlive(), "a zombie lived through the axe's shadow");
+            t.check(s.move == null && !p.isInvisible(), "not over: " + s.move + ", invisible " + p.isInvisible());
+        }).run(3 + len + 5);
+    }
+
     /** The time stop: five zombies about, the right button and G with a sword: each struck in turn, all dead, the player untouched. */
     @GameTest(template = FLOOR, timeoutTicks = 400, batch = "timeStop")
     public static void timeStop(GameTestHelper h) {
