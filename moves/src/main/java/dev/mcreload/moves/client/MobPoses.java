@@ -50,7 +50,8 @@ public final class MobPoses {
     private static void holderFacing(net.minecraftforge.client.event.RenderPlayerEvent.Pre event) {
         Player p = event.getEntity();
         Stamina s = Stamina.of(p);
-        if (s.move != Move.HOSTAGE_HOLD && s.move != Move.GUARD_GRAB && s.move != Move.HOSTAGE_KICK) return;
+        if (s.move != Move.HOSTAGE_HOLD && s.move != Move.GUARD_GRAB && s.move != Move.HOSTAGE_KICK && s.move != Move.XB_HOLD
+                && s.move != Move.XB_SHOT && s.move != Move.XB_GRAB) return;
         p.yBodyRotO = p.yRotO;
         p.yBodyRot = p.getYRot();
         p.yHeadRotO = p.yRotO;
@@ -185,7 +186,8 @@ public final class MobPoses {
         for (Player p : e.level().players()) {
             Stamina s = Stamina.of(p);
             boolean holds = s.move == Move.HOSTAGE_HOLD || (s.move == Move.GUARD_GRAB && s.moveTick >= GuardAnswers.GRAB_TURN)
-                    || (s.move == Move.HOSTAGE_KICK && s.moveTick < GuardAnswers.THROW_HIT);
+                    || (s.move == Move.HOSTAGE_KICK && s.moveTick < GuardAnswers.THROW_HIT)
+                    || s.move == Move.XB_HOLD || s.move == Move.XB_SHOT || (s.move == Move.XB_GRAB && s.moveTick >= 3);
             if (holds && p.distanceToSqr(e) <= 16.0) return p;
         }
         return null;

@@ -46,7 +46,7 @@ public final class TimeStop {
     /** The mad flickers, in turn. */
     private static final Move[] BLINKS = {Move.CR_BLINK_A, Move.CR_BLINK_B, Move.CR_BLINK_C, Move.CR_BLINK_D};
     /** The frozen poses, given round in turn; the poses they fly off in. */
-    private static final MobPose[] FROZEN = {MobPose.FROZEN_RUN, MobPose.FROZEN_LEAP, MobPose.FROZEN_POUNCE, MobPose.FROZEN_RAGE};
+    static final MobPose[] FROZEN = {MobPose.FROZEN_RUN, MobPose.FROZEN_LEAP, MobPose.FROZEN_POUNCE, MobPose.FROZEN_RAGE};
     private static final MobPose[] FLY_OFF = {MobPose.BLASTED, MobPose.FALL_BACK, MobPose.FALL_FACE, MobPose.STUMBLE};
     /** The blows, in turn (author 19.11: "the blows and the look of the player varied"). */
     public static final Move[] BLOWS = {Move.TS_SLASH, Move.TS_LEAP, Move.TS_THRUST, Move.TS_SPIN, Move.TS_BACK, Move.TS_BELLY};

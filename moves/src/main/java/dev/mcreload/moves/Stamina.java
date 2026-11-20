@@ -139,6 +139,8 @@ public final class Stamina {
     public int airSpinCooldown;
     /** The time stop's wait (TimeStop). */
     public int timeStopCooldown;
+    /** The moves of 2026-11-20, night (HeavyMoves): their waits. */
+    public int slamCooldown, heavyCooldown, axeChainCooldown, chargeCooldown, kneeCooldown, holdCooldown, backSlideCooldown, rainCooldown;
     /** The axe's combo's wait. */
     public int axeTripleCooldown;
     /** The mob the throw is aimed at (the client's auto-aim; -1: along the look). */
@@ -179,7 +181,8 @@ public final class Stamina {
     /** The attacks' cooldowns, in the order the server sends them (MovesNet.Bars). */
     public int[] cooldowns() {
         return new int[]{dashCooldown, whirlCooldown, spinCooldown, slideAttackCooldown, markedCooldown, bowCooldown,
-                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown, throwCooldown, airSpinCooldown, axeTripleCooldown, timeStopCooldown};
+                slideShotCooldown, legolasCooldown, xbowCooldown, xbowRollsCooldown, chainCooldown, throwCooldown, airSpinCooldown, axeTripleCooldown, timeStopCooldown,
+                slamCooldown, heavyCooldown, axeChainCooldown, chargeCooldown, kneeCooldown, holdCooldown, backSlideCooldown, rainCooldown};
     }
 
     public void setCooldowns(int[] c) {
@@ -198,6 +201,14 @@ public final class Stamina {
         airSpinCooldown = c[12];
         axeTripleCooldown = c[13];
         timeStopCooldown = c[14];
+        slamCooldown = c[15];
+        heavyCooldown = c[16];
+        axeChainCooldown = c[17];
+        chargeCooldown = c[18];
+        kneeCooldown = c[19];
+        holdCooldown = c[20];
+        backSlideCooldown = c[21];
+        rainCooldown = c[22];
     }
 
     public boolean canAfford(Move m, Player p) {
@@ -289,6 +300,14 @@ public final class Stamina {
         if (throwCooldown > 0) throwCooldown--;
         if (airSpinCooldown > 0) airSpinCooldown--;
         if (timeStopCooldown > 0) timeStopCooldown--;
+        if (slamCooldown > 0) slamCooldown--;
+        if (heavyCooldown > 0) heavyCooldown--;
+        if (axeChainCooldown > 0) axeChainCooldown--;
+        if (chargeCooldown > 0) chargeCooldown--;
+        if (kneeCooldown > 0) kneeCooldown--;
+        if (holdCooldown > 0) holdCooldown--;
+        if (backSlideCooldown > 0) backSlideCooldown--;
+        if (rainCooldown > 0) rainCooldown--;
         if (axeTripleCooldown > 0) axeTripleCooldown--;
         if (hasteTicks > 0) hasteTicks--;
         if (chainTicks > 0 && --chainTicks == 0) chainStep = 0;
@@ -513,6 +532,7 @@ public final class Stamina {
                 GuardAnswers.serverTick(sp, s);
                 TimeStop.serverTick(sp, s);
                 AxeShadow.serverTick(sp, s);
+                HeavyMoves.serverTick(sp, s);
                 Fall.serverTick(sp, s);
                 Ledge.serverTick(sp, s);
                 FastRun.serverTick(sp, s);

@@ -78,6 +78,8 @@ public final class StrikeInput {
 
     /** Ticks left before the move may be made again (0: ready). */
     public static int cooldown(Stamina s, Move move) {
+        int heavy = dev.mcreload.moves.HeavyMoves.cooldown(s, move);
+        if (heavy >= 0) return heavy;
         return switch (move) {
             case DASH -> s.dashCooldown;
             case WHIRL -> s.whirlCooldown;
@@ -218,6 +220,12 @@ public final class StrikeInput {
                 return true;
             }
         }
+        // Ctrl + W + G with a sword: the charge (author, 2026-11-20)
+        if (abilityPressed && s.move == null && Strikes.sword(p) && mc.options.keySprint.isDown() && mc.options.keyUp.isDown()
+                && !mc.options.keyJump.isDown() && s.progress.usable(dev.mcreload.moves.Skill.SWORD_CHARGE)) {
+            if (waits(p, s, Move.SW_CHARGE)) return true;
+            if (begin(mc, p, s, Move.SW_CHARGE)) return true;
+        }
         if (abilityPressed && s.move == null && swordG == 0 && Strikes.sword(p)) swordG = 1;
         if (swordG > 0) {
             swordG++;
@@ -246,6 +254,16 @@ public final class StrikeInput {
             boolean down = MovesClient.held(mc, MovesClient.ABILITY), use = MovesClient.held(mc, mc.options.keyUse);
             if (!down || !use || axeG > HOLD_G) {
                 axeG = 0;
+                // W + Space with G: the slam (author, 2026-11-20); G held alone: the three heavy blows
+                boolean jump = mc.options.keyUp.isDown() && (mc.options.keyJump.isDown() || MovesClient.sinceJump() <= 8);
+                if (!use && jump && s.move == null && s.progress.usable(dev.mcreload.moves.Skill.AXE_SLAM)) {
+                    if (waits(p, s, Move.AX_SLAM)) return true;
+                    if (begin(mc, p, s, Move.AX_SLAM)) return true;
+                }
+                if (down && !use && s.move == null && s.progress.usable(dev.mcreload.moves.Skill.AXE_HEAVY)) {
+                    if (waits(p, s, Move.AX_HEAVY)) return true;
+                    if (begin(mc, p, s, Move.AX_HEAVY)) return true;
+                }
                 down = down && use;
                 // the right button and G held with an axe: the axe's shadow (author, 2026-11-20, instead of the old triple
                 // whirl, which is no longer on the keys), if there are enemies enough about; else its wait or what it needs
@@ -264,6 +282,21 @@ public final class StrikeInput {
             }
         }
         // G: the others' abilities (the bow's and the crossbow's make their own)
+        // the right button held with G and a bow: the rain (the bow's ultimate, author 2026-11-20)
+        if (abilityPressed && s.move == null && dev.mcreload.moves.Bow.isBow(p.getMainHandItem()) && mc.options.keyUse.isDown()
+                && s.progress.usable(dev.mcreload.moves.Skill.BOW_RAIN)) {
+            if (MoveServer.allowed(p, s, Move.BW_RAIN)) {
+                p.releaseUsingItem();
+                if (MovesClient.start(p, s, Move.BW_RAIN, -1)) {
+                    swallow(mc);
+                    return true;
+                }
+            }
+            MovesHud.refused(Move.BW_RAIN);
+            p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_combat.bow_rain.not_ready",
+                    dev.mcreload.moves.MovesConfig.timeStopMin()), true);
+            return true;
+        }
         if (abilityPressed && s.move == null && !Strikes.sword(p) && !Strikes.axe(p)) {
             Move move = ability(p);
             if (move != null && !move.volley() && !move.crossbowSkill() && begin(mc, p, s, move)) return true;
@@ -358,7 +391,7 @@ public final class StrikeInput {
             case AIR_SPIN -> HudConfig.Moves.AIR_SPIN.key;
             case AXE_TRIPLE, AS_SPIN -> HudConfig.Moves.AXE_TRIPLE.key;
             case TS_STANCE -> HudConfig.Moves.TIME_STOP.key;
-            default -> move.name().toLowerCase(java.util.Locale.ROOT);
+            default -> dev.mcreload.moves.Skill.of(move) != null ? dev.mcreload.moves.Skill.of(move).key : move.name().toLowerCase(java.util.Locale.ROOT);
         };
     }
 

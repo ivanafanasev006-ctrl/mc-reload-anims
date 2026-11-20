@@ -423,7 +423,38 @@ public enum Move {
     /** The blows out of nowhere: from above behind it, at its side, hooked up from below. */
     AS_CHOP("as_chop", 1f, AxeShadow.STRIKE_LEN, 0, AxeShadow.STRIKE_LEN, -1, -1, Side.FRONT, () -> 0),
     AS_SIDE("as_side", 1f, AxeShadow.STRIKE_LEN, 0, AxeShadow.STRIKE_LEN, -1, -1, Side.FRONT, () -> 0),
-    AS_HOOK("as_hook", 1f, AxeShadow.STRIKE_LEN, 0, AxeShadow.STRIKE_LEN, -1, -1, Side.FRONT, () -> 0);
+    AS_HOOK("as_hook", 1f, AxeShadow.STRIKE_LEN, 0, AxeShadow.STRIKE_LEN, -1, -1, Side.FRONT, () -> 0),
+
+    // ---- the moves of 2026-11-20, night (author; HeavyMoves, round25.py)
+    /** The axe: W + Space + G: up and down onto the ground, a wave 7 blocks round throwing them up out of the ground. */
+    AX_SLAM("ax_slam", 1f, 20, 0, 12, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    /** The axe: G held: three heavy blows, each with a big slash (down along, level, up along). */
+    AX_HEAVY("ax_heavy", 1f, 36, -1, -1, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    /** The axe's chain (Ctrl + W + Space + LMB): into the skull (the first, the client's; then the server's), the kick, the spin, the uppercut. */
+    AXC_OPEN("axc_skull", 1f, 12, 0, 12, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    AXC_SKULL("axc_skull", 1f, 12, 0, 12, -1, -1, Side.FRONT, () -> 0),
+    AXC_KICK("axc_kick", 1f, 10, 0, 10, -1, -1, Side.FRONT, () -> 0),
+    AXC_SPIN("axc_spin", 1f, 12, 0, 12, -1, -1, Side.FRONT, () -> 0),
+    AXC_UPPER("axc_upper", 1f, 12, 0, 12, -1, -1, Side.FRONT, () -> 0),
+    /** The sword: Ctrl + W + G: the run up, 3 s; one in its way is run through. */
+    SW_CHARGE("sw_charge", 1f, 60, -1, -1, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    /** Running on with it on the blade, a second (the server starts it). */
+    SW_SKEWER("sw_skewer", 1f, 20, 0, 20, -1, -1, Side.FRONT, () -> 0),
+    /** It thrown off the blade forward (the server starts it). */
+    SW_FLING("sw_fling", 1f, 12, 0, 12, -1, -1, Side.FRONT, () -> 0),
+    /** The sword: Ctrl + W + Space + R at a mob under a fifth of its health: the flying knee into its head, slowed. */
+    SW_KNEE("sw_knee", 1f, 32, 0, 32, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    /** The crossbow: its own key: one caught by the left hand as a living shield (the grab, then held). */
+    XB_GRAB("xb_hold", 1f, 6, 0, 6, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    XB_HOLD("xb_hold", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** Holding it, the right button: a bolt, and a second to load the next. */
+    XB_SHOT("xb_hold", 1f, 20, -1, -1, -1, -1, Side.FRONT, () -> 0),
+    /** The crossbow or the bow: Ctrl + W + C + LMB: the long slide on the back. */
+    XB_BACKSLIDE("xb_backslide", 1f, 48, 0, 34, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    /** One fallen onto him in the slide: the shot up into its belly, up with a kip (the server starts it). */
+    XB_BELLY("xb_belly", 1f, 24, 0, 24, -1, -1, Side.FRONT, () -> 0),
+    /** The bow's ultimate (RMB + G held): they freeze facing him, up into the air, turns loosing arrows that hang, the landing, all fly. */
+    BW_RAIN("bw_rain", 1f, 60, 0, 60, -1, -1, Side.FRONT, () -> 0);
 
     /** The hops along the edge play this much faster than their animation (author: one after another). */
     public static final float HOP_SPEED = 1.4f;
@@ -545,7 +576,7 @@ public enum Move {
     /** A move made at someone (the vault, the kick, the finisher, a friend's hand): the client names them, the server checks them. */
     public boolean targeted() {
         return this == HOP || this == KICK || this == ROLL_KICK || finisher() || this == LEDGE_HELP || this == WEAPON_PULL
-                || this == CHAIN_LEAP || this == CR_LEAP || chainHop() || axeCombo();
+                || this == CHAIN_LEAP || this == CR_LEAP || this == AXC_OPEN || this == SW_KNEE || this == XB_GRAB || chainHop() || axeCombo();
     }
 
     /** The axe's combo: its blows (each at a mob), not its end. */
@@ -561,13 +592,18 @@ public enum Move {
 
     /** The time stop's parts (TimeStop). */
     public boolean timeStop() {
-        return this == TS_STANCE || timeStopBlow() || this == TS_BRAKE || crLeap() || axeShadow();
+        return this == TS_STANCE || timeStopBlow() || this == TS_BRAKE || crLeap() || axeShadow() || axeChain() || this == BW_RAIN;
     }
 
     /** A blow of the time stop, made at a mob. */
     public boolean timeStopBlow() {
         return this == TS_SLASH || this == TS_THRUST || this == TS_BACK || this == TS_BELLY || this == TS_LEAP || this == TS_SPIN
                 || crBlink() || asStrike();
+    }
+
+    /** The axe's chain's blows. */
+    public boolean axeChain() {
+        return this == AXC_OPEN || this == AXC_SKULL || this == AXC_KICK || this == AXC_SPIN || this == AXC_UPPER;
     }
 
     /** The axe's shadow's blows out of nowhere. */
@@ -705,6 +741,8 @@ public enum Move {
             case CHAIN_HOP, CHAIN_HOP_CCW, CHAIN_HOP_STAB, CHAIN_HOP_STAB_CCW, CHAIN_FLIP -> now == CHAIN_LEAP || now.chainHop();
             // the chain on its own after the sword's finisher, more weak mobs about (author, 2026-11-09)
             case CHAIN_LEAP, CR_LEAP -> now == FINISHER;
+            case XB_SHOT -> now == XB_HOLD;
+            case XB_BACKSLIDE -> now == SLIDE;
             // the axe's combo: each blow, and its end, from the blow before
             case AXE_COMBO_CHOP, AXE_COMBO_2, AXE_COMBO_DIAG, AXE_COMBO_3, AXE_COMBO_END -> now.axeCombo();
             case FINISHER, FINISHER_AXE -> now == WEAPON_PULL;
@@ -714,7 +752,8 @@ public enum Move {
 
     /** Started by the server on a player who did not ask (pulled up by a friend): their own client plays it when told. */
     public boolean serverStarted() {
-        return this == LEDGE_PULLED || guardAnswer() || (timeStop() && this != TS_STANCE && this != CR_LEAP && this != AS_SPIN);
+        return this == LEDGE_PULLED || guardAnswer() || (timeStop() && this != TS_STANCE && this != CR_LEAP && this != AS_SPIN && this != AXC_OPEN && this != BW_RAIN)
+                || this == SW_SKEWER || this == SW_FLING || this == XB_HOLD || this == XB_BELLY;
     }
 
     /**

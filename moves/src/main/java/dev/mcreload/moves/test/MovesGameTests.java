@@ -427,6 +427,140 @@ public final class MovesGameTests {
         }).run(9 + dev.mcreload.moves.GuardAnswers.SHOVE_PUSH + 11);
     }
 
+    // ------------------------------------------------------------------ the moves of 2026-11-20, night (HeavyMoves)
+
+    private static Zombie[] arc(GameTestHelper h, int n, float health) {
+        Zombie[] z = new Zombie[n];
+        int[][] at = {{1, 5}, {2, 6}, {3, 6}, {4, 6}, {5, 5}, {3, 4}};
+        for (int i = 0; i < n; i++) {
+            z[i] = h.spawnWithNoFreeWill(EntityType.ZOMBIE, at[i][0], 2, at[i][1]);
+            noSun(z[i]);
+            z[i].setHealth(health);
+        }
+        return z;
+    }
+
+    /** The axe's slam: the zombie in front thrown up and hurt by the wave. */
+    @GameTest(template = FLOOR, timeoutTicks = 120, batch = "axeSlam")
+    public static void axeSlam(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_AXE)));
+        t.at(3, () -> t.check(MoveServer.request(p, Move.AX_SLAM, false), "the slam refused"));
+        t.at(3 + dev.mcreload.moves.HeavyMoves.SLAM_HIT + 4, () -> {
+            t.check(zombie.getHealth() < 20f - MovesConfig.slamDamage() + 0.5f, "the wave did not hurt it: " + zombie.getHealth());
+            t.check(zombie.getDeltaMovement().y > 0.1 || zombie.getY() > p.getY() + 0.3, "not thrown up: " + zombie.getDeltaMovement());
+        }).run(3 + dev.mcreload.moves.HeavyMoves.SLAM_HIT + 5);
+    }
+
+    /** The axe's three heavy blows: the zombie in front hurt by each. */
+    @GameTest(template = FLOOR, timeoutTicks = 120, batch = "axeHeavy")
+    public static void axeHeavy(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_AXE));
+            zombie.setHealth(40f);
+        });
+        t.at(3, () -> t.check(MoveServer.request(p, Move.AX_HEAVY, false), "the heavy blows refused"));
+        t.at(3 + dev.mcreload.moves.HeavyMoves.HEAVY_HITS[0] + 1,
+                () -> t.check(zombie.getHealth() < 40f - MovesConfig.heavyDamage() + 0.5f, "the first blow did not land: " + zombie.getHealth()))
+                .run(3 + dev.mcreload.moves.HeavyMoves.HEAVY_HITS[0] + 2);
+    }
+
+    /** The flying knee: a weak zombie in front, dead and thrown off. */
+    @GameTest(template = FLOOR, timeoutTicks = 120, batch = "swordKnee")
+    public static void swordKnee(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD));
+            zombie.setHealth(3f);
+        });
+        t.at(3, () -> t.check(MoveServer.request(p, Move.SW_KNEE, false, zombie.getId()), "the knee refused"));
+        t.at(3 + dev.mcreload.moves.HeavyMoves.KNEE_HIT + 2, () -> t.check(!zombie.isAlive(), "the zombie lived through the knee"))
+                .run(3 + dev.mcreload.moves.HeavyMoves.KNEE_HIT + 3);
+    }
+
+    /** The sword's charge: a zombie right in front run through, carried, thrown off and hurt. */
+    @GameTest(template = FLOOR, timeoutTicks = 160, batch = "swordCharge")
+    public static void swordCharge(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD));
+            zombie.setHealth(40f);
+        });
+        t.at(3, () -> t.check(MoveServer.request(p, Move.SW_CHARGE, false), "the charge refused"));
+        // (no client here to run him at it: it is put in his way)
+        t.at(4, () -> {
+            net.minecraft.world.phys.Vec3 at = p.position().add(dev.mcreload.moves.Strikes.flat(p.getViewVector(1f)).normalize().scale(1.3));
+            zombie.moveTo(at.x, p.getY(), at.z);
+        });
+        t.at(8, () -> t.check(s.move == Move.SW_SKEWER, "not run through: " + s.move));
+        t.at(8 + Move.SW_SKEWER.length + dev.mcreload.moves.HeavyMoves.FLING_HIT + 3,
+                () -> t.check(zombie.getHealth() < 40f - MovesConfig.chargeDamage() + 0.5f, "not thrown off hurt: " + zombie.getHealth()))
+                .run(8 + Move.SW_SKEWER.length + dev.mcreload.moves.HeavyMoves.FLING_HIT + 4);
+    }
+
+    /** The crossbow's living shield: caught, held, a shot; the blow from the front lands on it. */
+    @GameTest(template = FLOOR, timeoutTicks = 160, batch = "xbowHostage")
+    public static void xbowHostage(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> {
+            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CROSSBOW));
+            p.getInventory().add(new ItemStack(Items.ARROW, 8));
+        });
+        t.at(3, () -> t.check(MoveServer.request(p, Move.XB_GRAB, false, zombie.getId()), "the grab refused"));
+        t.at(3 + Move.XB_GRAB.length + 2, () -> {
+            t.check(s.move == Move.XB_HOLD, "not held: " + s.move);
+            t.check(MoveServer.request(p, Move.XB_SHOT, false), "the shot refused");
+        });
+        t.at(3 + Move.XB_GRAB.length + 6, () -> t.check(p.getInventory().countItem(Items.ARROW) == 7, "no arrow spent: "
+                + p.getInventory().countItem(Items.ARROW))).run(3 + Move.XB_GRAB.length + 7);
+    }
+
+    /** The axe's chain: weak zombies about, each struck and thrown off dead. */
+    @GameTest(template = FLOOR, timeoutTicks = 300, batch = "axeChain")
+    public static void axeChain(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie[] z = arc(h, 3, 6f);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_AXE)));
+        t.at(3, () -> t.check(MoveServer.request(p, Move.AXC_OPEN, false, z[0].getId()), "the axe's chain refused"));
+        t.at(120, () -> {
+            for (Zombie zz : z) t.check(!zz.isAlive(), "a zombie lived through the axe's chain");
+        }).run(121);
+    }
+
+    /** The bow's rain: enemies about, the arrows hang, then fly and hit. */
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "bowRain")
+    public static void bowRain(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie[] z = arc(h, 5, 20f);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW)));
+        t.at(3, () -> t.check(MoveServer.request(p, Move.BW_RAIN, false), "the rain refused"));
+        t.at(3 + dev.mcreload.moves.HeavyMoves.RAIN_LOOSE + 30, () -> {
+            int hurt = 0;
+            for (Zombie zz : z) if (!zz.isAlive() || zz.getHealth() < 20f) hurt++;
+            t.check(hurt >= 3, "the arrows hit too few: " + hurt);
+        }).run(3 + dev.mcreload.moves.HeavyMoves.RAIN_LOOSE + 31);
+    }
+
     /** The axe's shadow: five zombies about, the right button and G with an axe: gone, then each struck from nowhere, all dead. */
     @GameTest(template = FLOOR, timeoutTicks = 400, batch = "axeShadow")
     public static void axeShadow(GameTestHelper h) {

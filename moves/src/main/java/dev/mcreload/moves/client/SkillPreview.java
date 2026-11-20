@@ -49,6 +49,14 @@ final class SkillPreview {
             case CHAIN -> new Move[]{Move.CHAIN_LEAP, Move.CHAIN_HOP, Move.CHAIN_HOP_STAB, Move.CHAIN_FLIP};
             case THROW -> new Move[]{Move.THROW_AIM, Move.THROW};
             case WHIRL -> new Move[]{Move.WHIRL};
+            case AXE_SLAM -> new Move[]{Move.AX_SLAM};
+            case AXE_HEAVY -> new Move[]{Move.AX_HEAVY};
+            case AXE_CHAIN -> new Move[]{Move.AXC_SKULL, Move.AXC_KICK, Move.AXC_SPIN, Move.AXC_UPPER};
+            case SWORD_CHARGE -> new Move[]{Move.SW_CHARGE, Move.SW_SKEWER, Move.SW_FLING};
+            case SWORD_KNEE -> new Move[]{Move.SW_KNEE};
+            case XBOW_HOSTAGE -> new Move[]{Move.XB_HOLD};
+            case BACK_SLIDE -> new Move[]{Move.XB_BACKSLIDE, Move.XB_BELLY};
+            case BOW_RAIN -> new Move[]{Move.BW_RAIN};
             case AXE_SHADOW -> new Move[]{Move.AS_SPIN, Move.AS_CHOP, Move.AS_SIDE, Move.AS_HOOK};
             case AXE_COMBO -> new Move[]{Move.AXE_TRIPLE, Move.AXE_COMBO_CHOP, Move.AXE_COMBO_2, Move.AXE_COMBO_DIAG, Move.AXE_COMBO_END};
             case VOLLEY -> new Move[]{Move.BARRAGE};
@@ -73,7 +81,7 @@ final class SkillPreview {
             case SWORD, BLADE -> Items.IRON_SWORD;
             case AXE -> Items.IRON_AXE;
             case BOW -> Items.BOW;
-            case CROSSBOW -> Items.CROSSBOW;
+            case CROSSBOW, RANGED -> Items.CROSSBOW;
             case ANY -> Items.AIR;
         });
     }

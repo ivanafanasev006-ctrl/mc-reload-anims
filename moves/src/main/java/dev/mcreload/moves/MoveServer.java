@@ -76,6 +76,7 @@ public final class MoveServer {
         if (move == Move.HOSTAGE_KICK) GuardAnswers.kickOff(p, s);
         if (move == Move.TS_STANCE) TimeStop.started(p, s);
         if (move == Move.AS_SPIN) AxeShadow.started(p, s);
+        HeavyMoves.started(p, s, move, target);
         if (move == Move.CR_LEAP) TimeStop.chainStarted(p, s, target);
         if (move == Move.AIR_SPIN) {
             s.airSpinCooldown = s.cooled(MovesConfig.airSpinCooldownTicks());
@@ -146,7 +147,9 @@ public final class MoveServer {
         if (move == Move.LEDGE_HELP) return e instanceof Player;
         if (move == Move.WEAPON_PULL) return Thrown.valid(p, e);
         if (move == Move.CHAIN_LEAP || move.chainHop()) return Chain.valid(p, move, e);
-        if (move == Move.CR_LEAP) return Chain.valid(p, Move.CHAIN_LEAP, e);
+        if (move == Move.CR_LEAP || move == Move.AXC_OPEN) return Chain.valid(p, Move.CHAIN_LEAP, e);
+        if (move == Move.SW_KNEE) return HeavyMoves.kneeTarget(p, e);
+        if (move == Move.XB_GRAB) return HeavyMoves.grabTarget(p, e);
         if (move.axeCombo()) return Whirl.comboValid(p, e);
         if (move.finisher()) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;
@@ -162,7 +165,7 @@ public final class MoveServer {
         // The bow's G and the volley at the marked take the bow over, drawn or not; the shot out of a slide
         // draws it (vanilla's draw, started by the same right click), and its ending looses it.
         boolean hands = move.ledge() || move == Move.FALL_TUCK || move == Move.FALL_ROLL || move == Move.PLUNGE_FALL || move == Move.PLUNGE
-                || move == Move.SLIDE_SHOT_END || move.crossbowSkill() || move.thrown();
+                || move == Move.SLIDE_SHOT_END || move.crossbowSkill() || move.thrown() || move == Move.BW_RAIN || move == Move.XB_SHOT;
         boolean bow = move.volley() || move.marked() || move == Move.SLIDE_SHOT;
         if (bow && !Bow.volleyReady(p)) return false;
         if (!hands && !bow && (move.drawnBow() ? !Bow.drawing(p) : p.isUsingItem())) return false;
@@ -170,6 +173,8 @@ public final class MoveServer {
         // once if it follows from it (the attack out of a slide, the moves on a ledge...).
         if (s.move != null && s.moveTick < s.move.freeFrom() && !move.follows(s.move)) return false;
         if (!s.canAfford(move, p)) return false;
+        // the moves of 2026-11-20, night (HeavyMoves)
+        if (HeavyMoves.cooldown(s, move) >= 0 || move == Move.XB_SHOT) return HeavyMoves.allowed(p, s, move);
         boolean ground = p.onGround() || p.tickCount - lastGround(p) <= GROUND_GRACE;
         boolean sprint = p.isSprinting() || p.tickCount - lastSprint(p) <= GROUND_GRACE;
         if (move == Move.SLIDE) return ground && sprint;

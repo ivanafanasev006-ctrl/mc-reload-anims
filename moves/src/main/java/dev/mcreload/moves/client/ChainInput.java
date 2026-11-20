@@ -40,6 +40,12 @@ public final class ChainInput {
      * at the weak mob in front. Returns whether the button was taken.
      */
     static boolean start(Minecraft mc, LocalPlayer p, Stamina s, boolean jumped) {
+        // with an axe: the axe's chain (author, 2026-11-20)
+        if (Strikes.axe(p) && s.move == null && mc.options.keySprint.isDown() && mc.options.keyUp.isDown() && jumped
+                && s.progress.usable(dev.mcreload.moves.Skill.AXE_CHAIN)) {
+            if (StrikeInput.waits(p, s, Move.AXC_OPEN)) return true;
+            return HeavyInput.axeChain(p, s);
+        }
         if (!HudConfig.Moves.CHAIN.on() || !Strikes.sword(p) || s.move != null) return false;
         if (!mc.options.keySprint.isDown() || !mc.options.keyUp.isDown() || !jumped) return false;
         if (StrikeInput.waits(p, s, Move.CR_LEAP)) return true;

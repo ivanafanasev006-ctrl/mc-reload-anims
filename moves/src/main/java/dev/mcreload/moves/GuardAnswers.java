@@ -409,14 +409,15 @@ public final class GuardAnswers {
         LivingEntity hurt = event.getEntity();
         if (hurt.level().isClientSide) return;
         // the held one (or caught: its wrist on the blade) strikes no one
-        if (event.getSource().getEntity() instanceof LivingEntity by && (heldBySomeone(by) || TimeStop.frozen(by) || AxeShadow.lost(by))) {
+        if (event.getSource().getEntity() instanceof LivingEntity by && (heldBySomeone(by) || TimeStop.frozen(by) || AxeShadow.lost(by) || HeavyMoves.frozen(by))) {
             event.setCanceled(true);
             return;
         }
         if (!(hurt instanceof ServerPlayer p)) return;
         Stamina s = Stamina.of(p);
         boolean shielded = s.move == Move.HOSTAGE_HOLD || (s.move == Move.GUARD_GRAB && s.moveTick >= GRAB_STAB)
-                || (s.move == Move.HOSTAGE_KICK && s.moveTick < THROW_HIT);
+                || (s.move == Move.HOSTAGE_KICK && s.moveTick < THROW_HIT)
+                || s.move == Move.XB_HOLD || s.move == Move.XB_SHOT || (s.move == Move.XB_GRAB && s.moveTick >= 3);
         if (!shielded || !Guard.fromFront(p, event.getSource())) return;
         if (!(p.level().getEntity(s.target) instanceof LivingEntity mob) || !mob.isAlive()) return;
         event.setCanceled(true);

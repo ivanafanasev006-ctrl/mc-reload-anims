@@ -260,6 +260,12 @@ public final class MovesHud {
         if (Strikes.sword(p) && HudConfig.Moves.CHAIN.on()) out.add(Move.CHAIN_LEAP);
         if (Strikes.sword(p) && HudConfig.Moves.AIR_SPIN.on()) out.add(Move.AIR_SPIN);
         if (Strikes.sword(p) && HudConfig.Moves.TIME_STOP.on()) out.add(Move.TS_STANCE);
+        // the moves of 2026-11-20 (HeavyMoves), those on the wheel
+        dev.mcreload.moves.Progress progress = Stamina.of(p).progress;
+        for (Move m : new Move[]{Move.AX_SLAM, Move.AX_HEAVY, Move.AXC_OPEN, Move.SW_CHARGE, Move.SW_KNEE, Move.XB_GRAB, Move.XB_BACKSLIDE, Move.BW_RAIN}) {
+            dev.mcreload.moves.Skill k = dev.mcreload.moves.Skill.of(m);
+            if (k != null && k.weapon.in(p) && progress.equipped(k)) out.add(m);
+        }
         // the throw's wait (author, 2026-11-09: "2.5 s, a row of its own")
         if (dev.mcreload.moves.Thrown.throwable(p) && HudConfig.Moves.THROW.on()) out.add(Move.THROW);
         // the crossbow's rolls (by the back roll)
@@ -277,6 +283,14 @@ public final class MovesHud {
             case WHIRL -> MovesConfig.whirlCooldownTicks();
             case AXE_TRIPLE -> MovesConfig.axeTripleCooldownTicks();
             case AS_SPIN -> MovesConfig.timeStopCooldownTicks();
+            case AX_SLAM -> MovesConfig.slamCooldownTicks();
+            case AX_HEAVY -> MovesConfig.heavyCooldownTicks();
+            case AXC_OPEN -> MovesConfig.axeChainCooldownTicks();
+            case SW_CHARGE -> MovesConfig.chargeCooldownTicks();
+            case SW_KNEE -> MovesConfig.kneeCooldownTicks();
+            case XB_GRAB -> MovesConfig.holdCooldownTicks();
+            case XB_BACKSLIDE -> MovesConfig.backSlideCooldownTicks();
+            case BW_RAIN -> MovesConfig.rainCooldownTicks();
             case TS_STANCE -> MovesConfig.timeStopCooldownTicks();
             case SWORD_SPIN -> MovesConfig.swordSpinCooldownTicks();
             case SLIDE_ATTACK -> MovesConfig.slideAttackCooldownTicks();
@@ -401,7 +415,16 @@ public final class MovesHud {
         return switch (move) {
             case DASH -> shortKey(MovesClient.ABILITY);
             case SWORD_SPIN -> shortKey(MovesClient.ABILITY) + "+";
-            case AXE_TRIPLE, TS_STANCE, AS_SPIN -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.ABILITY) + "+";
+            case AX_SLAM -> shortKey(mc.options.keyUp) + "+" + shortKey(mc.options.keyJump) + "+" + shortKey(MovesClient.ABILITY);
+            case AX_HEAVY -> shortKey(MovesClient.ABILITY) + "+";
+            case AXC_OPEN -> shortKey(mc.options.keySprint) + "+" + shortKey(mc.options.keyUp) + "+" + shortKey(mc.options.keyJump) + "+"
+                    + shortKey(mc.options.keyAttack);
+            case SW_CHARGE -> shortKey(mc.options.keySprint) + "+" + shortKey(mc.options.keyUp) + "+" + shortKey(MovesClient.ABILITY);
+            case SW_KNEE -> shortKey(mc.options.keySprint) + "+" + shortKey(mc.options.keyUp) + "+" + shortKey(mc.options.keyJump) + "+"
+                    + shortKey(MovesClient.DODGE);
+            case XB_GRAB -> shortKey(MovesClient.SKILL_KEYS[dev.mcreload.moves.Skill.XBOW_HOSTAGE.ordinal()]);
+            case XB_BACKSLIDE -> shortKey(mc.options.keySprint) + "+" + shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
+            case AXE_TRIPLE, TS_STANCE, AS_SPIN, BW_RAIN -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.ABILITY) + "+";
             case WHIRL -> shortKey(MovesClient.ABILITY);
             case SLIDE_ATTACK -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
             case SLIDE_SHOT -> shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyUse);

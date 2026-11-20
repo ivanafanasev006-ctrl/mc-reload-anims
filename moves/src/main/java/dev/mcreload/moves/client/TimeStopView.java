@@ -88,7 +88,8 @@ public final class TimeStopView {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         if ((move.timeStopBlow() && !move.asStrike()) || move == Move.TS_BRAKE || move == Move.AS_HIDDEN) GHOSTS.add(new Ghost(p.getId(), p.position(), p.yBodyRot, mc.level.getGameTime()));
-        if (p == mc.player && (move == Move.TS_STANCE || move == Move.CR_LEAP || move == Move.AS_SPIN) && !active) {
+        if (p == mc.player && (move == Move.TS_STANCE || move == Move.CR_LEAP || move == Move.AS_SPIN || move == Move.AXC_OPEN || move == Move.BW_RAIN)
+                && !active) {
             active = true;
             gap = 0;
             anchor = p.getEyePosition();
@@ -104,6 +105,7 @@ public final class TimeStopView {
         if (mc.level == null) {
             GHOSTS.clear();
             SLASHES.clear();
+            RINGS.clear();
             active = false;
             lastSelf = null;
             return;
@@ -112,9 +114,11 @@ public final class TimeStopView {
         GHOSTS.removeIf(g -> now - g.born > GHOST_TICKS || now < g.born);
         SLASHES.removeIf(s -> now - s.born > SLASH_TICKS || now < s.born);
         // the slashes where the blows cut (each client sees every player's)
+        RINGS.removeIf(r -> now - r.born > RING_TICKS || now < r.born);
         for (Player p : mc.level.players()) {
             Stamina s = Stamina.of(p);
             if (s.move == null) continue;
+            heavyFx(p, s, now);
             boolean blow = (s.move.timeStopBlow() && s.moveTick == TimeStop.hitTick(s.move)) || (s.move.crLeap() && s.moveTick == TimeStop.CR_STAB);
             boolean stab = s.move == Move.GUARD_FINISH && s.moveTick == GuardAnswers.FIN_STAB;
             if (!blow && !stab) continue;
@@ -201,7 +205,102 @@ public final class TimeStopView {
 
     private static void draw(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) ghosts(event);
-        else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) slashes(event);
+        else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            slashes(event);
+            rings(event);
+        }
+    }
+
+    // ------------------------------------------------------------------ the moves of 2026-11-20 (HeavyMoves)
+
+    private record Ring(Vec3 at, float reach, long born) {}
+
+    private static final List<Ring> RINGS = new ArrayList<>();
+    /** A shock ring: how long it runs out and fades (ticks). */
+    private static final int RING_TICKS = 12;
+
+    /** Their slashes and shock rings, at their hits, seen by every client. */
+    private static void heavyFx(Player p, Stamina s, long now) {
+        Move m = s.move;
+        int t = s.moveTick;
+        Vec3 look = p.getViewVector(1f);
+        look = new Vec3(look.x, 0, look.z).normalize();
+        if (m == Move.AX_SLAM && t == dev.mcreload.moves.HeavyMoves.SLAM_HIT) {
+            RINGS.add(new Ring(p.position(), dev.mcreload.moves.MovesConfig.slamRadius(), now));
+            RINGS.add(new Ring(p.position(), 2.5f, now));
+        }
+        if (m == Move.AX_HEAVY) {
+            // the three big ones (author: "the first along from above, the second from the side, the last from below upwards")
+            float[] rolls = {127f, 6f, 53f};
+            for (int i = 0; i < 3; i++) {
+                if (t != dev.mcreload.moves.HeavyMoves.HEAVY_HITS[i]) continue;
+                SLASHES.add(new Slash(p.getEyePosition().add(look.scale(1.9)).subtract(0, 0.35, 0), rolls[i], 2.3f, now));
+            }
+        }
+        Entity mob = s.target >= 0 ? p.level().getEntity(s.target) : null;
+        if (m.axeChain() && t == dev.mcreload.moves.HeavyMoves.chainHit(m) && mob != null) {
+            float roll = switch (m) {
+                case AXC_SPIN -> 172f;
+                case AXC_UPPER -> 70f;
+                case AXC_KICK -> 20f;
+                default -> 95f;
+            };
+            SLASHES.add(new Slash(mob.position().add(0, mob.getBbHeight() * 0.6, 0), roll, 1.5f, now));
+            RINGS.add(new Ring(mob.position(), 2.6f, now));
+        }
+        if (m == Move.SW_KNEE && t == dev.mcreload.moves.HeavyMoves.KNEE_HIT && mob != null) {
+            Vec3 head = mob.position().add(0, mob.getBbHeight() * 0.85, 0);
+            SLASHES.add(new Slash(head, 90f, 1.8f, now));
+            SLASHES.add(new Slash(head, 30f, 1.5f, now));
+            SLASHES.add(new Slash(head, 150f, 1.5f, now));
+            RINGS.add(new Ring(mob.position(), 3.5f, now));
+        }
+        if (m == Move.SW_FLING && t == dev.mcreload.moves.HeavyMoves.FLING_HIT && mob != null) {
+            SLASHES.add(new Slash(mob.position().add(0, mob.getBbHeight() * 0.5, 0), 40f, 1.4f, now));
+        }
+        if (m == Move.XB_BELLY && t == dev.mcreload.moves.HeavyMoves.BELLY_HIT) RINGS.add(new Ring(p.position(), 2.2f, now));
+        if (m == Move.BW_RAIN && t == dev.mcreload.moves.HeavyMoves.RAIN_LAND) RINGS.add(new Ring(p.position(), 4f, now));
+    }
+
+    /** The shock rings: a ring of pixel squares on the ground running out and fading, in the slashes' look. */
+    private static void rings(RenderLevelStageEvent event) {
+        if (RINGS.isEmpty()) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        long now = mc.level.getGameTime();
+        float pt = event.getPartialTick();
+        Vec3 cam = event.getCamera().getPosition();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer vc = buffers.getBuffer(RenderType.lightning());
+        org.joml.Matrix4f m = event.getPoseStack().last().pose();
+        for (Ring r : RINGS) {
+            float f = Math.min(1f, (now - r.born + pt) / RING_TICKS);
+            float reach = r.reach * (1f - (1f - f) * (1f - f));
+            int alpha = Math.round(200 * (1f - f));
+            if (alpha <= 2 || reach < 0.2f) continue;
+            float px = 0.16f;
+            int n = Math.max(12, (int) (2 * Math.PI * reach / 0.32f));
+            float y = (float) (r.at.y - cam.y) + 0.06f;
+            for (int i = 0; i < n; i++) {
+                double a = Math.PI * 2 * i / n;
+                // every pixel on the ring, and a ragged second row inside it now and then
+                for (int row = 0; row < 2; row++) {
+                    if (row == 1 && (i * 7 + (int) (f * 10)) % 3 != 0) continue;
+                    float rr = reach - row * px * 1.4f;
+                    float x = (float) (r.at.x + Math.cos(a) * rr - cam.x), z = (float) (r.at.z + Math.sin(a) * rr - cam.z);
+                    int c = row == 0 ? 255 : 190;
+                    vc.vertex(m, x - px, y, z - px).color(c, c, c, alpha).endVertex();
+                    vc.vertex(m, x - px, y, z + px).color(c, c, c, alpha).endVertex();
+                    vc.vertex(m, x + px, y, z + px).color(c, c, c, alpha).endVertex();
+                    vc.vertex(m, x + px, y, z - px).color(c, c, c, alpha).endVertex();
+                    vc.vertex(m, x + px, y, z - px).color(c, c, c, alpha).endVertex();
+                    vc.vertex(m, x + px, y, z + px).color(c, c, c, alpha).endVertex();
+                    vc.vertex(m, x - px, y, z + px).color(c, c, c, alpha).endVertex();
+                    vc.vertex(m, x - px, y, z - px).color(c, c, c, alpha).endVertex();
+                }
+            }
+        }
+        buffers.endBatch(RenderType.lightning());
     }
 
     // ------------------------------------------------------------------ the after-images

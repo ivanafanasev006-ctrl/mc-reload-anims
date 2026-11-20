@@ -28,6 +28,10 @@ public final class MovesConfig {
             GR_CROWD_RANGE, GR_ARCHER_RANGE, GR_THROW_SPEED, GR_THROW_BLOCKS, GR_THROW_DAMAGE, GR_HOLD_MOVE, GR_COST_FINISH, GR_COST_SHOVE, GR_COST_SHIELD;
     private static final ForgeConfigSpec.IntValue GR_CROWD, GR_HOLD_SECONDS;
     private static final ForgeConfigSpec.IntValue TS_MIN, TS_MAX, TS_COOLDOWN, TS_ROUNDS;
+    private static final ForgeConfigSpec.DoubleValue NM_SLAM_RADIUS, NM_SLAM_DAMAGE, NM_HEAVY_DAMAGE, NM_CHARGE_SPEED, NM_CHARGE_DAMAGE,
+            NM_KNEE_HEALTH, NM_RAIN_DAMAGE, NM_COST;
+    private static final ForgeConfigSpec.IntValue NM_HOLD_SECONDS, NM_COOLDOWN_SLAM, NM_COOLDOWN_HEAVY, NM_COOLDOWN_AXE_CHAIN, NM_COOLDOWN_CHARGE,
+            NM_COOLDOWN_KNEE, NM_COOLDOWN_HOLD, NM_COOLDOWN_BACK, NM_COOLDOWN_RAIN;
     private static final ForgeConfigSpec.DoubleValue TS_RANGE, TS_SHARE;
     private static final ForgeConfigSpec.DoubleValue GUARD_MOVE, DEFLECT_SHIELDS, HOP_RANGE, KNEEL_MOVE,
             VAULT_MIN_WIDTH, VAULT_MIN_HEIGHT, VAULT_MAX_HEIGHT, VAULT_SHOVE, DASH_CRIT, FINISH_HEALTH, FINISH_RANGE, FINISH_MAX_HEALTH;
@@ -481,6 +485,28 @@ public final class MovesConfig {
         TS_SHARE = b.comment("The share of the energy bar it takes (author: 99/100).").defineInRange("energyShare", 0.99, 0.0, 1.0);
         TS_COOLDOWN = b.comment("Seconds before it can be made again (author: 30).").defineInRange("cooldownSeconds", 30, 0, 3600);
         b.pop();
+        b.comment("The moves of 2026-11-20, night (HeavyMoves): the axe's slam, heavy blows and chain, the sword's charge and flying",
+                "knee, the crossbow's living shield, the slide on the back, the bow's rain.").push("newMoves");
+        NM_SLAM_RADIUS = b.comment("The axe's slam: the wave's reach, blocks (author: 7).").defineInRange("slamRadius", 7.0, 1.0, 32.0);
+        NM_SLAM_DAMAGE = b.comment("The axe's slam: its damage. [default]").defineInRange("slamDamage", 6.0, 0.0, 1000.0);
+        NM_HEAVY_DAMAGE = b.comment("The axe's heavy blows: each one's damage. [default]").defineInRange("heavyDamage", 8.0, 0.0, 1000.0);
+        NM_CHARGE_SPEED = b.comment("The sword's charge: its speed, blocks a tick. [default]").defineInRange("chargeSpeed", 0.55, 0.1, 2.0);
+        NM_CHARGE_DAMAGE = b.comment("The sword's charge: the damage of the one run through and thrown off. [default]")
+                .defineInRange("chargeDamage", 12.0, 0.0, 1000.0);
+        NM_KNEE_HEALTH = b.comment("The flying knee: works on a mob with this share of its health or less (author: 20 %).")
+                .defineInRange("kneeHealth", 0.2, 0.0, 1.0);
+        NM_HOLD_SECONDS = b.comment("The crossbow's living shield: how long it is held at most, seconds. [default]").defineInRange("holdSeconds", 10, 1, 120);
+        NM_RAIN_DAMAGE = b.comment("The bow's rain: each hanging arrow's damage. [default]").defineInRange("rainDamage", 6.0, 0.0, 1000.0);
+        NM_COOLDOWN_SLAM = b.comment("Seconds of wait: the slam. [default]").defineInRange("slamCooldown", 12, 0, 3600);
+        NM_COOLDOWN_HEAVY = b.comment("Seconds of wait: the heavy blows. [default]").defineInRange("heavyCooldown", 10, 0, 3600);
+        NM_COOLDOWN_AXE_CHAIN = b.comment("Seconds of wait: the axe's chain. [default]").defineInRange("axeChainCooldown", 60, 0, 3600);
+        NM_COOLDOWN_CHARGE = b.comment("Seconds of wait: the charge. [default]").defineInRange("chargeCooldown", 15, 0, 3600);
+        NM_COOLDOWN_KNEE = b.comment("Seconds of wait: the flying knee. [default]").defineInRange("kneeCooldown", 8, 0, 3600);
+        NM_COOLDOWN_HOLD = b.comment("Seconds of wait: the crossbow's living shield. [default]").defineInRange("holdCooldown", 20, 0, 3600);
+        NM_COOLDOWN_BACK = b.comment("Seconds of wait: the slide on the back. [default]").defineInRange("backSlideCooldown", 8, 0, 3600);
+        NM_COOLDOWN_RAIN = b.comment("Seconds of wait: the bow's rain (as the time stop's). [default]").defineInRange("rainCooldown", 30, 0, 3600);
+        NM_COST = b.comment("Energy each of these moves costs (the ultimates take the time stop's share). [default]").defineInRange("cost", 15.0, 0.0, 100.0);
+        b.pop();
         SPEC = b.build();
     }
 
@@ -508,6 +534,23 @@ public final class MovesConfig {
     public static float slideBlocks() { return f(SLIDE_TAP, 5.0); }
     public static float slideHeldBlocks() { return f(SLIDE_HELD, 6.0); }
     public static int timeStopMin() { return get(TS_MIN, 5); }
+    public static float slamRadius() { return f(NM_SLAM_RADIUS, 7.0); }
+    public static float slamDamage() { return f(NM_SLAM_DAMAGE, 6.0); }
+    public static float heavyDamage() { return f(NM_HEAVY_DAMAGE, 8.0); }
+    public static float chargeSpeed() { return f(NM_CHARGE_SPEED, 0.55); }
+    public static float chargeDamage() { return f(NM_CHARGE_DAMAGE, 12.0); }
+    public static float kneeHealth() { return f(NM_KNEE_HEALTH, 0.2); }
+    public static int holdTicks() { return get(NM_HOLD_SECONDS, 10) * 20; }
+    public static float rainDamage() { return f(NM_RAIN_DAMAGE, 6.0); }
+    public static double costNewMove() { return f(NM_COST, 15.0); }
+    public static int slamCooldownTicks() { return get(NM_COOLDOWN_SLAM, 12) * 20; }
+    public static int heavyCooldownTicks() { return get(NM_COOLDOWN_HEAVY, 10) * 20; }
+    public static int axeChainCooldownTicks() { return get(NM_COOLDOWN_AXE_CHAIN, 60) * 20; }
+    public static int chargeCooldownTicks() { return get(NM_COOLDOWN_CHARGE, 15) * 20; }
+    public static int kneeCooldownTicks() { return get(NM_COOLDOWN_KNEE, 8) * 20; }
+    public static int holdCooldownTicks() { return get(NM_COOLDOWN_HOLD, 20) * 20; }
+    public static int backSlideCooldownTicks() { return get(NM_COOLDOWN_BACK, 8) * 20; }
+    public static int rainCooldownTicks() { return get(NM_COOLDOWN_RAIN, 30) * 20; }
     public static int timeStopMax() { return get(TS_MAX, 10); }
     public static float timeStopRange() { return f(TS_RANGE, 12.0); }
     public static int timeStopRounds() { return get(TS_ROUNDS, 2); }

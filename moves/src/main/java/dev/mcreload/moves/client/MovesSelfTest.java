@@ -193,6 +193,14 @@ public final class MovesSelfTest {
         guardAnswer("69_guard_answer_shield", 20f, true, true);
         timeStop("69t_time_stop");
         axeShadow("69u_axe_shadow");
+        heavyScene("69v_axe_slam", Items.IRON_AXE, Move.AX_SLAM, 4, 20f, false, 40, new int[]{6, 11, 13, 16, 30});
+        heavyScene("69w_axe_heavy", Items.IRON_AXE, Move.AX_HEAVY, 2, 40f, false, 46, new int[]{11, 20, 22, 31, 33});
+        heavyScene("69x_axe_chain", Items.IRON_AXE, Move.AXC_OPEN, 4, 6f, true, 150, new int[]{8, 16, 30, 45, 60, 80, 100});
+        heavyScene("69y_sword_knee", Items.IRON_SWORD, Move.SW_KNEE, 1, 3f, true, 50, new int[]{8, 14, 18, 24, 30, 40});
+        heavyScene("69z_sword_charge", Items.IRON_SWORD, Move.SW_CHARGE, 1, 40f, false, 70, new int[]{6, 14, 22, 30, 40});
+        heavyScene("70a_back_slide", Items.CROSSBOW, Move.XB_BACKSLIDE, 1, 20f, false, 60, new int[]{6, 12, 18, 26, 40});
+        heavyScene("70b_xbow_hold", Items.CROSSBOW, Move.XB_GRAB, 1, 20f, true, 50, new int[]{10, 20, 30});
+        heavyScene("70c_bow_rain", Items.BOW, Move.BW_RAIN, 5, 20f, false, 80, new int[]{8, 16, 26, 36, 47, 52, 60});
         finisher("92_finisher_axe", Items.IRON_AXE, CameraType.THIRD_PERSON_BACK);
         finisher("95_finisher_first_person", Items.IRON_SWORD, CameraType.FIRST_PERSON);
 
@@ -792,6 +800,49 @@ public final class MovesSelfTest {
             if (t == len + 24) note("axe shadow: zombies left alive " + dummies(mc).stream().filter(e -> e.isAlive()).count()
                     + ", move " + Stamina.of(mc.player).move);
         }, new int[]{10, 22, 36, 48, 54, 62, 74, 90, len + 10}, false));
+    }
+
+    /**
+     * A move of 2026-11-20 (HeavyMoves) played at once: zombies in an arc ahead, the move started straight (at the nearest
+     * when it takes one), the camera behind.
+     */
+    private static void heavyScene(String name, net.minecraft.world.item.Item item, Move move, int zombies, float health, boolean target,
+                                   int len, int[] shots) {
+        SCENARIOS.add(new Scenario(name, len, sp -> {
+            place(sp, 0, new ItemStack(item));
+            sp.getInventory().add(new ItemStack(Items.ARROW, 16));
+            for (int i = 0; i < zombies; i++) {
+                double a = zombies == 1 ? Math.PI / 2 : Math.PI * (0.2 + 0.6 * i / (zombies - 1.0));
+                double r = move == Move.SW_CHARGE ? 7.0 : move == Move.XB_BACKSLIDE ? 5.0 : move == Move.XB_GRAB || move == Move.SW_KNEE ? 2.6 : 3.5;
+                dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, Math.cos(a) * r, Math.sin(a) * r + 0.5, health);
+            }
+        }, (mc, t) -> {
+            camera(mc, CameraType.THIRD_PERSON_BACK);
+            Stamina st = Stamina.of(mc.player);
+            if (t == 1) mc.player.setXRot(16f);
+            if (t == 3) {
+                int id = -1;
+                double best = Double.MAX_VALUE;
+                for (var e : dummies(mc)) {
+                    double d = e.distanceTo(mc.player);
+                    if (d < best) {
+                        best = d;
+                        id = e.getId();
+                    }
+                }
+                boolean ok = MovesClient.start(mc.player, st, move, target ? id : -1);
+                note(name + ": started " + ok + " " + st.move);
+            }
+            if (move == Move.XB_GRAB && (t == 16 || t == 32)) {
+                MovesClient.start(mc.player, st, Move.XB_SHOT, st.target);
+                note(name + ": shot, " + st.move);
+            }
+            if (t == len - 2) {
+                note(name + ": then " + st.move + ", zombies alive " + dummies(mc).stream().filter(e -> e.isAlive()).count());
+                if (st.move != null) MovesClient.cancel(mc.player, st, 1);
+                dummyReport(mc, name, true);
+            }
+        }, shots, false));
     }
 
     private static ServerPlayer answerPlayer;

@@ -69,8 +69,10 @@ public final class MovesClient {
 
     static {
         for (dev.mcreload.moves.Skill k : dev.mcreload.moves.Skill.values()) {
+            // the crossbow's living shield has a key of its own (author, 2026-11-20: "a separate button"; V a default)
             SKILL_KEYS[k.ordinal()] = new KeyMapping("key.kinetrix_combat.skill." + k.key, KeyConflictContext.IN_GAME,
-                    InputConstants.UNKNOWN, "key.categories.kinetrix_combat.skills");
+                    k == dev.mcreload.moves.Skill.XBOW_HOSTAGE ? InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_V) : InputConstants.UNKNOWN,
+                    "key.categories.kinetrix_combat.skills");
         }
     }
 
@@ -131,6 +133,7 @@ public final class MovesClient {
         StoopFx.init();
         MobPoses.init();
         TimeStopView.init();
+        HeavyInput.init();
         Cutscene.init();
         SmoothCamera.init();
         LedgeAim.init();
@@ -209,6 +212,8 @@ public final class MovesClient {
             return;
         }
         if (s.move != null && (s.move.guardAnswer() || s.move.timeStop())) return;
+        // holding the crossbow's living shield: the right button shoots (HeavyInput), nothing else
+        if (s.move == Move.XB_HOLD || s.move == Move.XB_SHOT || s.move == Move.XB_GRAB) return;
 
         // ---- the fast run: Ctrl held (the server gives the speed while sprinting and takes the energy)
         boolean run = HudConfig.Moves.FAST_RUN.on() && mc.options.keySprint.isDown();
@@ -262,6 +267,14 @@ public final class MovesClient {
             if (s.moveTick <= Move.SLIDE_CRAWL_TICK) s.held &= slideDown;
             airTicks = p.onGround() ? 0 : airTicks + 1;
             // The left button with a sword or an axe: the attack out of the slide (after its cooldown).
+            // the crossbow or the bow: the long slide on the back instead (author, 2026-11-20: Ctrl + W + C + LMB)
+            if (attackPressed && dev.mcreload.moves.Skill.Weapon.RANGED.in(p) && s.progress.usable(dev.mcreload.moves.Skill.BACK_SLIDE)) {
+                if (StrikeInput.waits(p, s, Move.XB_BACKSLIDE)) attackPressed = false;
+                else if (start(p, s, Move.XB_BACKSLIDE, false, -1)) {
+                    StrikeInput.swallow(mc);
+                    attackPressed = false;
+                }
+            }
             if (attackPressed && HudConfig.Moves.SLIDE_ATTACK.on() && dev.mcreload.moves.Strikes.slideWeapon(p)) {
                 if (s.slideAttackCooldown > 0) {
                     MovesHud.refused(Move.SLIDE_ATTACK);
@@ -364,6 +377,9 @@ public final class MovesClient {
                 // the mob with the others down): the vault with a kick; with no mob near, the dive.
                 net.minecraft.world.entity.LivingEntity enemy = move == Move.DODGE_FRONT ? dev.mcreload.moves.Hop.target(p, true) : null;
                 boolean jump = move == Move.DODGE_FRONT && (mc.options.keyJump.isDown() || sinceJump <= JUMP_WITH_R);
+                // with Ctrl and a sword at a mob under a fifth of its health a little way off: the flying knee (author, 2026-11-20)
+                if (jump && mc.options.keySprint.isDown() && dev.mcreload.moves.Strikes.sword(p)
+                        && s.progress.usable(dev.mcreload.moves.Skill.SWORD_KNEE) && HeavyInput.knee(p, s)) return;
                 // with Ctrl (the fast run) down too: the roll kick, over it in a flip (author's draft; the keys a default)
                 if (jump && enemy != null && mc.options.keySprint.isDown() && HudConfig.Moves.ROLL_KICK.on()
                         && start(p, s, Move.ROLL_KICK, false, enemy.getId())) return;
@@ -462,6 +478,8 @@ public final class MovesClient {
             s.timeStopCooldown = s.cooled(MovesConfig.timeStopCooldownTicks());
             TimeStopView.step(p, move, -1);
         }
+        HeavyInput.started(s, move);
+        if (move == Move.AXC_OPEN || move == Move.BW_RAIN) TimeStopView.step(p, move, target);
         if (move == Move.AS_SPIN) {
             s.axeTripleCooldown = s.cooled(MovesConfig.timeStopCooldownTicks());
             TimeStopView.step(p, move, -1);
@@ -524,6 +542,7 @@ public final class MovesClient {
             if (p == Minecraft.getInstance().player && p instanceof LocalPlayer lp) {
                 LedgeInput.place(lp, s);
                 ChainInput.tick(lp, s);
+                HeavyInput.tick(lp, s);
                 AxeComboInput.tick(lp, s);
                 kickTurn(lp, s);
                 MoveServer.seen(p);
