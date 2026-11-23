@@ -52,11 +52,11 @@ final class SkillPreview {
             case AXE_SLAM -> new Move[]{Move.AX_SLAM};
             case AXE_HEAVY -> new Move[]{Move.AX_HEAVY};
             case AXE_CHAIN -> new Move[]{Move.AXC_SKULL, Move.AXC_KICK, Move.AXC_SPIN, Move.AXC_UPPER};
-            case SWORD_CHARGE -> new Move[]{Move.SW_CHARGE, Move.SW_SKEWER, Move.SW_FLING};
+            case SWORD_CHARGE -> new Move[]{Move.SW_CHARGE, Move.SW_SKEWER, Move.SW_CUT};
             case SWORD_KNEE -> new Move[]{Move.SW_KNEE};
-            case XBOW_HOSTAGE -> new Move[]{Move.XB_HOLD};
+            case HOSTAGE -> new Move[]{Move.GUARD_GRAB, Move.HOSTAGE_HOLD, Move.HOSTAGE_KICK};
             case BACK_SLIDE -> new Move[]{Move.XB_BACKSLIDE, Move.XB_BELLY};
-            case BOW_RAIN -> new Move[]{Move.BW_RAIN};
+            case BOW_RAIN -> new Move[]{Move.BW_RAIN, Move.BW_AIM, Move.BW_JUMP, Move.BW_FALLBACK, Move.BW_FLIP, Move.BW_TURN, Move.BW_BRAKE};
             case AXE_SHADOW -> new Move[]{Move.AS_SPIN, Move.AS_CHOP, Move.AS_SIDE, Move.AS_HOOK};
             case AXE_COMBO -> new Move[]{Move.AXE_TRIPLE, Move.AXE_COMBO_CHOP, Move.AXE_COMBO_2, Move.AXE_COMBO_DIAG, Move.AXE_COMBO_END};
             case VOLLEY -> new Move[]{Move.BARRAGE};
@@ -70,7 +70,7 @@ final class SkillPreview {
             case DIVE -> new Move[]{Move.DIVE};
             case GUARD_KICK -> new Move[]{Move.GUARD_KICK};
             case TIME_STOP -> new Move[]{Move.TS_STANCE, Move.TS_SLASH, Move.TS_LEAP, Move.TS_THRUST, Move.TS_SPIN, Move.TS_BACK, Move.TS_BELLY, Move.TS_BRAKE};
-            case GUARD_COUNTER -> new Move[]{Move.GUARD_SHOVE, Move.GUARD_GRAB, Move.HOSTAGE_HOLD, Move.HOSTAGE_KICK};
+            case GUARD_COUNTER -> new Move[]{Move.GUARD_SHOVE};
             case GUARD_FINISH -> new Move[]{Move.GUARD_FINISH};
         };
     }
@@ -78,7 +78,7 @@ final class SkillPreview {
     /** What the preview holds for a skill made with this weapon (nothing for one made with any). */
     static ItemStack weapon(Skill.Weapon w) {
         return new ItemStack(switch (w) {
-            case SWORD, BLADE -> Items.IRON_SWORD;
+            case SWORD, BLADE, GRAB -> Items.IRON_SWORD;
             case AXE -> Items.IRON_AXE;
             case BOW -> Items.BOW;
             case CROSSBOW, RANGED -> Items.CROSSBOW;

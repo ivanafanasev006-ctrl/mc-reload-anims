@@ -193,14 +193,16 @@ public final class MovesSelfTest {
         guardAnswer("69_guard_answer_shield", 20f, true, true);
         timeStop("69t_time_stop");
         axeShadow("69u_axe_shadow");
-        heavyScene("69v_axe_slam", Items.IRON_AXE, Move.AX_SLAM, 4, 20f, false, 40, new int[]{6, 11, 13, 16, 30});
-        heavyScene("69w_axe_heavy", Items.IRON_AXE, Move.AX_HEAVY, 2, 40f, false, 46, new int[]{11, 20, 22, 31, 33});
+        heavyScene("69v_axe_slam", Items.IRON_AXE, Move.AX_SLAM, 4, 20f, false, 44, new int[]{6, 11, 14, 18, 20, 23, 32});
+        heavyScene("69w_axe_heavy", Items.IRON_AXE, Move.AX_HEAVY, 2, 40f, false, 64, new int[]{11, 15, 30, 32, 47, 49});
         heavyScene("69x_axe_chain", Items.IRON_AXE, Move.AXC_OPEN, 4, 6f, true, 150, new int[]{8, 16, 30, 45, 60, 80, 100});
-        heavyScene("69y_sword_knee", Items.IRON_SWORD, Move.SW_KNEE, 1, 3f, true, 50, new int[]{8, 14, 18, 24, 30, 40});
-        heavyScene("69z_sword_charge", Items.IRON_SWORD, Move.SW_CHARGE, 1, 40f, false, 70, new int[]{6, 14, 22, 30, 40});
-        heavyScene("70a_back_slide", Items.CROSSBOW, Move.XB_BACKSLIDE, 1, 20f, false, 60, new int[]{6, 12, 18, 26, 40});
+        heavyScene("69y_sword_knee", Items.IRON_SWORD, Move.SW_KNEE, 1, 3f, true, 86, new int[]{10, 16, 26, 36, 48, 60, 62, 66, 78});
+        heavyScene("69z_sword_charge", Items.IRON_SWORD, Move.SW_CHARGE, 1, 40f, false, 50, new int[]{6, 12, 18, 26, 30, 34, 42});
+        heavyScene("69z2_sword_charge_miss", Items.IRON_SWORD, Move.SW_CHARGE, 0, 40f, false, 100, new int[]{30, 64, 68, 74, 84});
+        heavyScene("70a_back_slide", Items.CROSSBOW, Move.XB_BACKSLIDE, 1, 20f, false, 60, new int[]{4, 8, 14, 20, 26, 34, 44});
         heavyScene("70b_xbow_hold", Items.CROSSBOW, Move.XB_GRAB, 1, 20f, true, 50, new int[]{10, 20, 30});
-        heavyScene("70c_bow_rain", Items.BOW, Move.BW_RAIN, 5, 20f, false, 80, new int[]{8, 16, 26, 36, 47, 52, 60});
+        heavyScene("70c_bow_rain", Items.BOW, Move.BW_RAIN, 5, 20f, false, 140, new int[]{8, 18, 28, 41, 53, 65, 77, 90, 98, 106});
+        heavyScene("70d_sword_grab", Items.IRON_SWORD, Move.GUARD_GRAB, 1, 20f, true, 44, new int[]{8, 16, 28, 40});
         finisher("92_finisher_axe", Items.IRON_AXE, CameraType.THIRD_PERSON_BACK);
         finisher("95_finisher_first_person", Items.IRON_SWORD, CameraType.FIRST_PERSON);
 
@@ -813,7 +815,7 @@ public final class MovesSelfTest {
             sp.getInventory().add(new ItemStack(Items.ARROW, 16));
             for (int i = 0; i < zombies; i++) {
                 double a = zombies == 1 ? Math.PI / 2 : Math.PI * (0.2 + 0.6 * i / (zombies - 1.0));
-                double r = move == Move.SW_CHARGE ? 7.0 : move == Move.XB_BACKSLIDE ? 5.0 : move == Move.XB_GRAB || move == Move.SW_KNEE ? 2.6 : 3.5;
+                double r = move == Move.SW_CHARGE ? 7.0 : move == Move.XB_BACKSLIDE ? 5.0 : move == Move.XB_GRAB || move == Move.GUARD_GRAB || move == Move.SW_KNEE ? 2.6 : 3.5;
                 dummy(sp, net.minecraft.world.entity.EntityType.ZOMBIE, Math.cos(a) * r, Math.sin(a) * r + 0.5, health);
             }
         }, (mc, t) -> {
@@ -833,6 +835,7 @@ public final class MovesSelfTest {
                 boolean ok = MovesClient.start(mc.player, st, move, target ? id : -1);
                 note(name + ": started " + ok + " " + st.move);
             }
+            if (move == Move.BW_RAIN && t % 4 == 1) note(name + ": t=" + t + " " + st.move + " " + st.moveTick + " invisible " + mc.player.isInvisible());
             if (move == Move.XB_GRAB && (t == 16 || t == 32)) {
                 MovesClient.start(mc.player, st, Move.XB_SHOT, st.target);
                 note(name + ": shot, " + st.move);

@@ -472,8 +472,8 @@ public final class MovesGameTests {
                 .run(3 + dev.mcreload.moves.HeavyMoves.HEAVY_HITS[0] + 2);
     }
 
-    /** The flying knee: a weak zombie in front, dead and thrown off. */
-    @GameTest(template = FLOOR, timeoutTicks = 120, batch = "swordKnee")
+    /** The kick finisher: a weak zombie in front, held through the wind-up, dead and thrown off at the kick. */
+    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "swordKnee")
     public static void swordKnee(GameTestHelper h) {
         Script t = new Script(h).settle();
         ServerPlayer p = t.player();
@@ -484,7 +484,8 @@ public final class MovesGameTests {
             zombie.setHealth(3f);
         });
         t.at(3, () -> t.check(MoveServer.request(p, Move.SW_KNEE, false, zombie.getId()), "the knee refused"));
-        t.at(3 + dev.mcreload.moves.HeavyMoves.KNEE_HIT + 2, () -> t.check(!zombie.isAlive(), "the zombie lived through the knee"))
+        t.at(3 + dev.mcreload.moves.HeavyMoves.KNEE_HIT - 4, () -> t.check(zombie.isAlive(), "dead before the kick"));
+        t.at(3 + dev.mcreload.moves.HeavyMoves.KNEE_HIT + 2, () -> t.check(!zombie.isAlive(), "the zombie lived through the kick"))
                 .run(3 + dev.mcreload.moves.HeavyMoves.KNEE_HIT + 3);
     }
 
@@ -507,9 +508,38 @@ public final class MovesGameTests {
             zombie.moveTo(at.x, p.getY(), at.z);
         });
         t.at(8, () -> t.check(s.move == Move.SW_SKEWER, "not run through: " + s.move));
-        t.at(8 + Move.SW_SKEWER.length + dev.mcreload.moves.HeavyMoves.FLING_HIT + 3,
-                () -> t.check(zombie.getHealth() < 40f - MovesConfig.chargeDamage() + 0.5f, "not thrown off hurt: " + zombie.getHealth()))
-                .run(8 + Move.SW_SKEWER.length + dev.mcreload.moves.HeavyMoves.FLING_HIT + 4);
+        t.at(8 + Move.SW_SKEWER.length + dev.mcreload.moves.HeavyMoves.CUT_HIT + 3,
+                () -> t.check(!zombie.isAlive(), "not cut dead off the blade: " + zombie.getHealth()))
+                .run(8 + Move.SW_SKEWER.length + dev.mcreload.moves.HeavyMoves.CUT_HIT + 4);
+    }
+
+    /** The sword's charge with nobody in the way: run out, it ends in the skid (author, 2026-11-23). */
+    @GameTest(template = FLOOR, timeoutTicks = 160, batch = "swordChargeMiss")
+    public static void swordChargeMiss(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Stamina s = Stamina.of(p);
+        for (Zombie other : h.getLevel().getEntitiesOfClass(Zombie.class, p.getBoundingBox().inflate(30))) other.discard();
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> t.check(MoveServer.request(p, Move.SW_CHARGE, false), "the charge refused"));
+        t.at(3 + Move.SW_CHARGE.length + 1, () -> t.check(s.move == Move.SW_HALT, "no skid at the end of the run: " + s.move))
+                .run(3 + Move.SW_CHARGE.length + 2);
+    }
+
+    /** The living shield on V with a sword (a perk now, not the perfect block): caught, the blade in, held. */
+    @GameTest(template = FLOOR, timeoutTicks = 120, batch = "swordGrab")
+    public static void swordGrab(GameTestHelper h) {
+        Script t = new Script(h).settle();
+        ServerPlayer p = t.player();
+        Zombie zombie = t.zombieInFront();
+        noSun(zombie);
+        Stamina s = Stamina.of(p);
+        t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
+        t.at(3, () -> t.check(MoveServer.request(p, Move.GUARD_GRAB, false, zombie.getId()), "the grab on V refused"));
+        t.at(3 + dev.mcreload.moves.GuardAnswers.GRAB_LEN + 3, () -> {
+            t.check(s.move == Move.HOSTAGE_HOLD, "not holding it: " + s.move);
+            t.check(zombie.distanceTo(p) < 1.6f, "the shield not in front: " + zombie.distanceTo(p));
+        }).run(3 + dev.mcreload.moves.GuardAnswers.GRAB_LEN + 4);
     }
 
     /** The crossbow's living shield: caught, held, a shot; the blow from the front lands on it. */
@@ -554,11 +584,14 @@ public final class MovesGameTests {
         Zombie[] z = arc(h, 5, 20f);
         t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW)));
         t.at(3, () -> t.check(MoveServer.request(p, Move.BW_RAIN, false), "the rain refused"));
-        t.at(3 + dev.mcreload.moves.HeavyMoves.RAIN_LOOSE + 30, () -> {
-            int hurt = 0;
-            for (Zombie zz : z) if (!zz.isAlive() || zz.getHealth() < 20f) hurt++;
-            t.check(hurt >= 3, "the arrows hit too few: " + hurt);
-        }).run(3 + dev.mcreload.moves.HeavyMoves.RAIN_LOOSE + 31);
+        Stamina s = Stamina.of(p);
+        int end = 3 + Move.BW_RAIN.length + 4 + z.length * (Move.BW_AIM.length + dev.mcreload.moves.BowPhantoms.GAP + 1)
+                + dev.mcreload.moves.BowPhantoms.DIE + 6;
+        t.at(3 + Move.BW_RAIN.length + 8, () -> t.check(s.move != null && s.move.bowPhantom(), "no phantom at the first: " + s.move));
+        t.at(end, () -> {
+            for (Zombie zz : z) t.check(!zz.isAlive(), "a zombie lived through the phantoms");
+            t.check(!p.isInvisible(), "still unseen at the end");
+        }).run(end + 1);
     }
 
     /** The axe's shadow: five zombies about, the right button and G with an axe: gone, then each struck from nowhere, all dead. */
@@ -635,12 +668,16 @@ public final class MovesGameTests {
         noSun(zombie);
         noSun(other);
         Stamina s = Stamina.of(p);
-        int held = 9 + dev.mcreload.moves.GuardAnswers.GRAB_LEN + 4;
+        int held = 9 + dev.mcreload.moves.GuardAnswers.SHOVE_LEN + 2 + dev.mcreload.moves.GuardAnswers.GRAB_LEN + 4;
         t.at(1, () -> p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD)));
         t.at(3, () -> Guard.request(p, true));
         t.at(9, () -> {
             p.hurt(p.damageSources().mobAttack(zombie), 8f);
-            t.check(s.move == Move.GUARD_GRAB, "no grab from the parry with two near: " + s.move);
+            t.check(s.move == Move.GUARD_SHOVE, "the perfect block with two near: not the shove (the shield is on V now): " + s.move);
+        });
+        t.at(9 + dev.mcreload.moves.GuardAnswers.SHOVE_LEN + 2, () -> {
+            zombie.moveTo(p.position().add(dev.mcreload.moves.Strikes.flat(p.getViewVector(1f)).normalize().scale(1.4)));
+            t.check(MoveServer.request(p, Move.GUARD_GRAB, false, zombie.getId()), "the grab on V refused");
         });
         t.at(held, () -> {
             t.check(s.move == Move.HOSTAGE_HOLD, "not holding it: " + s.move);

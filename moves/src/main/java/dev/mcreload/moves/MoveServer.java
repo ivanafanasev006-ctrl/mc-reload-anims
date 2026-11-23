@@ -74,6 +74,7 @@ public final class MoveServer {
         if (move == Move.AXE_TRIPLE) s.axeTripleCooldown = s.cooled(MovesConfig.axeTripleCooldownTicks());
         if (move == Move.SWORD_SPIN) Spin.started(p, s);
         if (move == Move.HOSTAGE_KICK) GuardAnswers.kickOff(p, s);
+        if (move == Move.GUARD_GRAB) GuardAnswers.grabStarted(p, s, enemy);
         if (move == Move.TS_STANCE) TimeStop.started(p, s);
         if (move == Move.AS_SPIN) AxeShadow.started(p, s);
         HeavyMoves.started(p, s, move, target);
@@ -149,7 +150,7 @@ public final class MoveServer {
         if (move == Move.CHAIN_LEAP || move.chainHop()) return Chain.valid(p, move, e);
         if (move == Move.CR_LEAP || move == Move.AXC_OPEN) return Chain.valid(p, Move.CHAIN_LEAP, e);
         if (move == Move.SW_KNEE) return HeavyMoves.kneeTarget(p, e);
-        if (move == Move.XB_GRAB) return HeavyMoves.grabTarget(p, e);
+        if (move == Move.XB_GRAB || move == Move.GUARD_GRAB) return HeavyMoves.grabTarget(p, e);
         if (move.axeCombo()) return Whirl.comboValid(p, e);
         if (move.finisher()) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;

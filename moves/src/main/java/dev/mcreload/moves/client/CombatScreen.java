@@ -466,7 +466,7 @@ public final class CombatScreen extends Screen {
             case AXE_CHAIN -> Move.AXC_OPEN;
             case SWORD_CHARGE -> Move.SW_CHARGE;
             case SWORD_KNEE -> Move.SW_KNEE;
-            case XBOW_HOSTAGE -> Move.XB_GRAB;
+            case HOSTAGE -> Move.XB_GRAB;
             case BACK_SLIDE -> Move.XB_BACKSLIDE;
             case BOW_RAIN -> Move.BW_RAIN;
             case VOLLEY, HAIL -> Move.BARRAGE;

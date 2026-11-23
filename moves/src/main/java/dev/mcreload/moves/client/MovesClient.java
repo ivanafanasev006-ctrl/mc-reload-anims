@@ -71,7 +71,7 @@ public final class MovesClient {
         for (dev.mcreload.moves.Skill k : dev.mcreload.moves.Skill.values()) {
             // the crossbow's living shield has a key of its own (author, 2026-11-20: "a separate button"; V a default)
             SKILL_KEYS[k.ordinal()] = new KeyMapping("key.kinetrix_combat.skill." + k.key, KeyConflictContext.IN_GAME,
-                    k == dev.mcreload.moves.Skill.XBOW_HOSTAGE ? InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_V) : InputConstants.UNKNOWN,
+                    k == dev.mcreload.moves.Skill.HOSTAGE ? InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_V) : InputConstants.UNKNOWN,
                     "key.categories.kinetrix_combat.skills");
         }
     }
@@ -269,7 +269,12 @@ public final class MovesClient {
             // The left button with a sword or an axe: the attack out of the slide (after its cooldown).
             // the crossbow or the bow: the long slide on the back instead (author, 2026-11-20: Ctrl + W + C + LMB)
             if (attackPressed && dev.mcreload.moves.Skill.Weapon.RANGED.in(p) && s.progress.usable(dev.mcreload.moves.Skill.BACK_SLIDE)) {
-                if (StrikeInput.waits(p, s, Move.XB_BACKSLIDE)) attackPressed = false;
+                // (author, 2026-11-23: "works when there is at least 1 arrow in the inventory")
+                if (!dev.mcreload.moves.HeavyMoves.hasArrow(p)) {
+                    MovesHud.refused(Move.XB_BACKSLIDE);
+                    p.displayClientMessage(net.minecraft.network.chat.Component.translatable("kinetrix_combat.back_slide.no_arrow"), true);
+                    attackPressed = false;
+                } else if (StrikeInput.waits(p, s, Move.XB_BACKSLIDE)) attackPressed = false;
                 else if (start(p, s, Move.XB_BACKSLIDE, false, -1)) {
                     StrikeInput.swallow(mc);
                     attackPressed = false;
@@ -950,8 +955,15 @@ public final class MovesClient {
         if (s.move == Move.SLIDE && s.moveTick < Move.PUSH_TICK) return;
         if (s.move == Move.FALL_TUCK || s.move == Move.PLUNGE_FALL) return;     // in the air: the little steering vanilla gives stays
         if (s.move == Move.SWORD_SPIN || s.move == Move.SPIN_END) return;     // the sword's turns walk with the keys
-        // holding the living shield: walking slowly with it (GuardAnswers)
-        if (s.move == Move.HOSTAGE_HOLD) {
+        // the axe's three heavy blows: walking on, slower (author, 2026-11-23: "they stun you in place, they should not")
+        if (s.move == Move.AX_HEAVY) {
+            event.getInput().forwardImpulse *= 0.55f;
+            event.getInput().leftImpulse *= 0.55f;
+            return;
+        }
+        // holding the living shield, the sword's or the crossbow's: walking slowly with it (author, 2026-11-23: the
+        // crossbow's "as with the sword's grab")
+        if (s.move == Move.HOSTAGE_HOLD || s.move == Move.XB_HOLD || s.move == Move.XB_SHOT || s.move == Move.XB_GRAB) {
             event.getInput().forwardImpulse *= MovesConfig.shieldMove();
             event.getInput().leftImpulse *= MovesConfig.shieldMove();
             event.getInput().jumping = false;
@@ -1099,7 +1111,8 @@ public final class MovesClient {
             s.start(p, move, false);
             moveYaw = p.getYRot();
             if (extra >= 0) s.ledgeDir = extra;
-            if (move.timeStopBlow() || move.crLeap() || move == Move.GUARD_FINISH || move == Move.TS_BRAKE) s.target = extra;
+            if (move.timeStopBlow() || move.crLeap() || move == Move.GUARD_FINISH || move == Move.TS_BRAKE || move.bowPhantom() || move == Move.BW_BRAKE
+                    || move == Move.SW_HALT || move == Move.SW_SKEWER || move == Move.SW_CUT || move == Move.XB_BELLY) s.target = extra;
             LedgeInput.pulled(mc.player, s);
             if (move.crLeap()) ChainInput.rushLeap(mc.player);
             MoveAnimator.play(p, move, was);
@@ -1113,7 +1126,8 @@ public final class MovesClient {
             if (move.timeStop() || move == Move.GUARD_FINISH) TimeStopView.step(p, move, extra);
             s.start(p, move, false);
             if (extra >= 0) s.ledgeDir = extra;
-            if (move.timeStopBlow() || move.crLeap() || move == Move.GUARD_FINISH || move == Move.TS_BRAKE) s.target = extra;
+            if (move.timeStopBlow() || move.crLeap() || move == Move.GUARD_FINISH || move == Move.TS_BRAKE || move.bowPhantom() || move == Move.BW_BRAKE
+                    || move == Move.SW_HALT || move == Move.SW_SKEWER || move == Move.SW_CUT || move == Move.XB_BELLY) s.target = extra;
             MoveAnimator.play(p, move, was);
         }
     }

@@ -381,7 +381,7 @@ public enum Move {
     /** A perfect parry: caught mid-blade, the body gives back, then body and blade drive it 5 blocks away. */
     GUARD_SHOVE("guard_shove", 1f, GuardAnswers.SHOVE_LEN, 0, GuardAnswers.SHOVE_PUSH, -1, -1, Side.FRONT, () -> 0),
     /** A perfect parry in a crowd or under arrows: the wrist caught, a turn, the blade into its back, the hand on its shoulder. */
-    GUARD_GRAB("guard_grab", 1f, GuardAnswers.GRAB_LEN, 0, GuardAnswers.GRAB_LEN, -1, -1, Side.FRONT, () -> 0),
+    GUARD_GRAB("guard_grab", 1f, GuardAnswers.GRAB_LEN, 0, GuardAnswers.GRAB_LEN, -1, -1, Side.FRONT, MovesConfig::costLivingShield),
     /** Holding it on the blade, a living shield: walking slowly, the right button kicks it away. */
     HOSTAGE_HOLD("hostage_hold", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** Kicked off the blade like a shot. */
@@ -426,35 +426,50 @@ public enum Move {
     AS_HOOK("as_hook", 1f, AxeShadow.STRIKE_LEN, 0, AxeShadow.STRIKE_LEN, -1, -1, Side.FRONT, () -> 0),
 
     // ---- the moves of 2026-11-20, night (author; HeavyMoves, round25.py)
-    /** The axe: W + Space + G: up and down onto the ground, a wave 7 blocks round throwing them up out of the ground. */
-    AX_SLAM("ax_slam", 1f, 20, 0, 12, -1, -1, Side.FRONT, MovesConfig::costNewMove),
-    /** The axe: G held: three heavy blows, each with a big slash (down along, level, up along). */
-    AX_HEAVY("ax_heavy", 1f, 36, -1, -1, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    /** The axe: W + Space + G: up off both feet, the axe over the head, down onto the ground: a wave 7 blocks round (2026-11-23: livelier). */
+    AX_SLAM("ax_slam", 1f, 26, 0, 16, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    /** The axe: G held: three heavy blows, each with a big slash; slower, walking on (2026-11-23: "they stun you in place"). */
+    AX_HEAVY("ax_heavy", 1f, 54, -1, -1, -1, -1, Side.FRONT, MovesConfig::costNewMove),
     /** The axe's chain (Ctrl + W + Space + LMB): into the skull (the first, the client's; then the server's), the kick, the spin, the uppercut. */
     AXC_OPEN("axc_skull", 1f, 12, 0, 12, -1, -1, Side.FRONT, MovesConfig::costNewMove),
     AXC_SKULL("axc_skull", 1f, 12, 0, 12, -1, -1, Side.FRONT, () -> 0),
     AXC_KICK("axc_kick", 1f, 10, 0, 10, -1, -1, Side.FRONT, () -> 0),
     AXC_SPIN("axc_spin", 1f, 12, 0, 12, -1, -1, Side.FRONT, () -> 0),
     AXC_UPPER("axc_upper", 1f, 12, 0, 12, -1, -1, Side.FRONT, () -> 0),
-    /** The sword: Ctrl + W + G: the run up, 3 s; one in its way is run through. */
+    /** The sword: Ctrl + W + G: the run up in the thrust's hold, 3 s; one in its way is run through. */
     SW_CHARGE("sw_charge", 1f, 60, -1, -1, -1, -1, Side.FRONT, MovesConfig::costNewMove),
-    /** Running on with it on the blade, a second (the server starts it). */
-    SW_SKEWER("sw_skewer", 1f, 20, 0, 20, -1, -1, Side.FRONT, () -> 0),
-    /** It thrown off the blade forward (the server starts it). */
-    SW_FLING("sw_fling", 1f, 12, 0, 12, -1, -1, Side.FRONT, () -> 0),
-    /** The sword: Ctrl + W + Space + R at a mob under a fifth of its health: the flying knee into its head, slowed. */
-    SW_KNEE("sw_knee", 1f, 32, 0, 32, -1, -1, Side.FRONT, MovesConfig::costNewMove),
-    /** The crossbow: its own key: one caught by the left hand as a living shield (the grab, then held). */
+    /** Running on with it on the blade, frozen there (the server starts it). */
+    SW_SKEWER("sw_skewer", 1f, 16, 0, 16, -1, -1, Side.FRONT, () -> 0),
+    /** The level cut out of it with a half turn, his back to it; it falls dead (the server starts it). */
+    SW_CUT("sw_cut", 1f, 20, 0, 20, -1, -1, Side.FRONT, () -> 0),
+    /** Nobody run through: the run ends in the time stop's skid, forward, a moment's stun (the server starts it). */
+    SW_HALT("ts_brake", 1.4f, 26, 0, 26, -1, -1, Side.FRONT, () -> 0),
+    /** The sword's finisher (a perk): Ctrl + W + Space + R at a mob under a fifth of its health: the leap, all stops, a turn, the kick. */
+    SW_KNEE("sw_kick", 1f, 76, 0, 76, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    /** The crossbow: V (the living shield's perk): one caught by the left hand and held off at the left as a shield. */
     XB_GRAB("xb_hold", 1f, 6, 0, 6, -1, -1, Side.FRONT, MovesConfig::costNewMove),
     XB_HOLD("xb_hold", 1f, Move.FOREVER, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /** Holding it, the right button: a bolt, and a second to load the next. */
     XB_SHOT("xb_hold", 1f, 20, -1, -1, -1, -1, Side.FRONT, () -> 0),
-    /** The crossbow or the bow: Ctrl + W + C + LMB: the long slide on the back. */
-    XB_BACKSLIDE("xb_backslide", 1f, 48, 0, 34, -1, -1, Side.FRONT, MovesConfig::costNewMove),
+    /** The crossbow or the bow, out of the slide (Ctrl + W + C, then LMB): down onto the back, 5-7 blocks more. */
+    XB_BACKSLIDE("xb_backslide", 1f, 40, 0, 32, -1, -1, Side.FRONT, MovesConfig::costNewMove),
     /** One fallen onto him in the slide: the shot up into its belly, up with a kip (the server starts it). */
-    XB_BELLY("xb_belly", 1f, 24, 0, 24, -1, -1, Side.FRONT, () -> 0),
-    /** The bow's ultimate (RMB + G held): they freeze facing him, up into the air, turns loosing arrows that hang, the landing, all fly. */
-    BW_RAIN("bw_rain", 1f, 60, 0, 60, -1, -1, Side.FRONT, () -> 0);
+    XB_BELLY("xb_belly", 1f, 30, 0, 30, -1, -1, Side.FRONT, () -> 0),
+    // ---- the bow's ultimate (2026-11-23, BowPhantoms): RMB + G held, the time stop's conditions. He shakes and is gone;
+    // at each enemy in turn a phantom of his, half a second each, in a pose of its own, loosing an arrow that hangs; then he
+    // is back where he began skidding backwards, and the arrows fly all at once: all dead.
+    /** The shaking, then gone (the client starts it). */
+    BW_RAIN("bw_shake", 1f, 18, 0, 18, -1, -1, Side.FRONT, () -> 0),
+    /** Gone between the phantoms (the server ends it with the next). */
+    BW_HIDDEN("as_hidden", 1f, Move.FOREVER, 0, Move.FOREVER, -1, -1, Side.FRONT, () -> 0),
+    /** The phantoms: the archer's draw in front; from above in a jump; falling back from its back; upside down from the sky; out of a turn. */
+    BW_AIM("bw_aim", 1f, 10, 0, 10, -1, -1, Side.FRONT, () -> 0),
+    BW_JUMP("bw_jump", 1f, 10, 0, 10, -1, -1, Side.FRONT, () -> 0),
+    BW_FALLBACK("bw_fallback", 1f, 10, 0, 10, -1, -1, Side.FRONT, () -> 0),
+    BW_FLIP("bw_flip", 1f, 10, 0, 10, -1, -1, Side.FRONT, () -> 0),
+    BW_TURN("bw_turn", 1f, 10, 0, 10, -1, -1, Side.FRONT, () -> 0),
+    /** Back where he began, skidding backwards, the bow low in both hands; the arrows fly. */
+    BW_BRAKE("bw_brake", 1f, 36, 0, 36, -1, -1, Side.FRONT, () -> 0);
 
     /** The hops along the edge play this much faster than their animation (author: one after another). */
     public static final float HOP_SPEED = 1.4f;
@@ -576,7 +591,7 @@ public enum Move {
     /** A move made at someone (the vault, the kick, the finisher, a friend's hand): the client names them, the server checks them. */
     public boolean targeted() {
         return this == HOP || this == KICK || this == ROLL_KICK || finisher() || this == LEDGE_HELP || this == WEAPON_PULL
-                || this == CHAIN_LEAP || this == CR_LEAP || this == AXC_OPEN || this == SW_KNEE || this == XB_GRAB || chainHop() || axeCombo();
+                || this == CHAIN_LEAP || this == CR_LEAP || this == AXC_OPEN || this == SW_KNEE || this == XB_GRAB || this == GUARD_GRAB || chainHop() || axeCombo();
     }
 
     /** The axe's combo: its blows (each at a mob), not its end. */
@@ -592,7 +607,7 @@ public enum Move {
 
     /** The time stop's parts (TimeStop). */
     public boolean timeStop() {
-        return this == TS_STANCE || timeStopBlow() || this == TS_BRAKE || crLeap() || axeShadow() || axeChain() || this == BW_RAIN;
+        return this == TS_STANCE || timeStopBlow() || this == TS_BRAKE || crLeap() || axeShadow() || axeChain() || bowRain();
     }
 
     /** A blow of the time stop, made at a mob. */
@@ -609,6 +624,16 @@ public enum Move {
     /** The axe's shadow's blows out of nowhere. */
     public boolean asStrike() {
         return this == AS_CHOP || this == AS_SIDE || this == AS_HOOK;
+    }
+
+    /** The bow's ultimate, any part of it. */
+    public boolean bowRain() {
+        return this == BW_RAIN || this == BW_HIDDEN || bowPhantom() || this == BW_BRAKE;
+    }
+
+    /** A phantom of the bow's ultimate, at a mob. */
+    public boolean bowPhantom() {
+        return this == BW_AIM || this == BW_JUMP || this == BW_FALLBACK || this == BW_FLIP || this == BW_TURN;
     }
 
     /** The axe's shadow, any part of it. */
@@ -752,8 +777,8 @@ public enum Move {
 
     /** Started by the server on a player who did not ask (pulled up by a friend): their own client plays it when told. */
     public boolean serverStarted() {
-        return this == LEDGE_PULLED || guardAnswer() || (timeStop() && this != TS_STANCE && this != CR_LEAP && this != AS_SPIN && this != AXC_OPEN && this != BW_RAIN)
-                || this == SW_SKEWER || this == SW_FLING || this == XB_HOLD || this == XB_BELLY;
+        return this == LEDGE_PULLED || (guardAnswer() && this != GUARD_GRAB) || (timeStop() && this != TS_STANCE && this != CR_LEAP && this != AS_SPIN && this != AXC_OPEN && this != BW_RAIN)
+                || this == SW_SKEWER || this == SW_CUT || this == SW_HALT || this == XB_HOLD || this == XB_BELLY;
     }
 
     /**

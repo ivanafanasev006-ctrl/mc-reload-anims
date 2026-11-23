@@ -51,9 +51,11 @@ public enum Skill {
     AXE_HEAVY("axeHeavy", Weapon.AXE),
     AXE_CHAIN("axeChain", Weapon.AXE),
     SWORD_CHARGE("swordCharge", Weapon.SWORD),
-    SWORD_KNEE("swordKnee", Weapon.SWORD),
-    XBOW_HOSTAGE("crossbowHostage", Weapon.CROSSBOW),
-    BACK_SLIDE("backSlide", Weapon.RANGED),
+    /** Perks (author, 2026-11-23: "the grab on V or the sword's advanced finisher: not skills but perks"). */
+    SWORD_KNEE("swordKnee", Weapon.SWORD, Place.PERK),
+    /** The living shield on V: with a sword the blade into its back (GuardAnswers), with a crossbow held at the left hand (HeavyMoves). */
+    HOSTAGE("hostage", Weapon.GRAB, Place.PERK),
+    BACK_SLIDE("backSlide", Weapon.RANGED, Place.PERK),
     /** The bow's ultimate (the awakening square). */
     BOW_RAIN("bowRain", Weapon.BOW, Place.ULT);
 
@@ -115,18 +117,18 @@ public enum Skill {
             case SLIDE_SHOT, SLIDE_SHOT_END -> SLIDE_SHOT;
             case DIVE -> DIVE;
             case GUARD_KICK -> GUARD_KICK;
-            case GUARD_SHOVE, GUARD_GRAB, HOSTAGE_HOLD, HOSTAGE_KICK -> GUARD_COUNTER;
+            case GUARD_SHOVE -> GUARD_COUNTER;
+            case GUARD_GRAB, HOSTAGE_HOLD, HOSTAGE_KICK, XB_GRAB, XB_HOLD, XB_SHOT -> HOSTAGE;
             case GUARD_FINISH -> GUARD_FINISH;
             case TS_STANCE, TS_SLASH, TS_THRUST, TS_BACK, TS_BELLY, TS_LEAP, TS_SPIN, TS_BRAKE -> TIME_STOP;
             case AS_SPIN, AS_HIDDEN, AS_CHOP, AS_SIDE, AS_HOOK -> AXE_SHADOW;
             case AX_SLAM -> AXE_SLAM;
             case AX_HEAVY -> AXE_HEAVY;
             case AXC_OPEN, AXC_SKULL, AXC_KICK, AXC_SPIN, AXC_UPPER -> AXE_CHAIN;
-            case SW_CHARGE, SW_SKEWER, SW_FLING -> SWORD_CHARGE;
+            case SW_CHARGE, SW_SKEWER, SW_CUT, SW_HALT -> SWORD_CHARGE;
             case SW_KNEE -> SWORD_KNEE;
-            case XB_GRAB, XB_HOLD, XB_SHOT -> XBOW_HOSTAGE;
             case XB_BACKSLIDE, XB_BELLY -> BACK_SLIDE;
-            case BW_RAIN -> BOW_RAIN;
+            case BW_RAIN, BW_HIDDEN, BW_AIM, BW_JUMP, BW_FALLBACK, BW_FLIP, BW_TURN, BW_BRAKE -> BOW_RAIN;
             case XBOW_VOLLEY, XBOW_SPIN -> XBOW_G;
             case XBOW_FAN, XBOW_FAN_SHOT -> XBOW_FAN;
             case XBOW_ROLL_BACK, XBOW_ROLL_FRONT, XBOW_ROLL_LEFT, XBOW_ROLL_RIGHT -> XBOW_ROLLS;
@@ -136,7 +138,7 @@ public enum Skill {
 
     /** What a skill is made with. */
     public enum Weapon {
-        SWORD, AXE, BLADE, BOW, CROSSBOW, RANGED, ANY;
+        SWORD, AXE, BLADE, BOW, CROSSBOW, RANGED, GRAB, ANY;
 
         public boolean in(Player p) {
             ItemStack hand = p.getMainHandItem();
@@ -147,6 +149,7 @@ public enum Skill {
                 case BOW -> Bow.isBow(hand);
                 case CROSSBOW -> hand.getItem() instanceof CrossbowItem;
                 case RANGED -> hand.getItem() instanceof CrossbowItem || Bow.isBow(hand);
+                case GRAB -> Strikes.sword(p) || hand.getItem() instanceof CrossbowItem;
                 case ANY -> true;
             };
         }

@@ -173,9 +173,12 @@ public final class MobPoses {
         Player p = holder(e);
         if (p != null) {
             float yaw = p.getViewYRot(partial);
-            Vec3 at = p.getPosition(partial).add(-Mth.sin(yaw * D) * GuardAnswers.SHIELD_AT, 0, Mth.cos(yaw * D) * GuardAnswers.SHIELD_AT);
+            Move m = Stamina.of(p).move;
+            Vec3 at = p.getPosition(partial).add(dev.mcreload.moves.HeavyMoves.heldAt(p, m, yaw));
             Vec3 drawn = e.getPosition(partial);
             ps.translate(at.x - drawn.x, at.y - drawn.y, at.z - drawn.z);
+            // run through on the blade it faces him; held as a shield it faces the way he does
+            if (m == Move.SW_SKEWER || m == Move.SW_CUT) yaw += 180f;
             e.yBodyRot = e.yBodyRotO = yaw;
             e.yHeadRot = e.yHeadRotO = yaw;
         }
@@ -187,7 +190,8 @@ public final class MobPoses {
             Stamina s = Stamina.of(p);
             boolean holds = s.move == Move.HOSTAGE_HOLD || (s.move == Move.GUARD_GRAB && s.moveTick >= GuardAnswers.GRAB_TURN)
                     || (s.move == Move.HOSTAGE_KICK && s.moveTick < GuardAnswers.THROW_HIT)
-                    || s.move == Move.XB_HOLD || s.move == Move.XB_SHOT || (s.move == Move.XB_GRAB && s.moveTick >= 3);
+                    || s.move == Move.XB_HOLD || s.move == Move.XB_SHOT || (s.move == Move.XB_GRAB && s.moveTick >= 3)
+                    || s.move == Move.SW_SKEWER || (s.move == Move.SW_CUT && s.moveTick < dev.mcreload.moves.HeavyMoves.CUT_HIT);
             if (holds && p.distanceToSqr(e) <= 16.0) return p;
         }
         return null;

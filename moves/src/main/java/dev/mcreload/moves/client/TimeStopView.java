@@ -76,6 +76,7 @@ public final class TimeStopView {
         MinecraftForge.EVENT_BUS.addListener(TimeStopView::camera);
         MinecraftForge.EVENT_BUS.addListener(TimeStopView::facing);
         MinecraftForge.EVENT_BUS.addListener(TimeStopView::draw);
+        MinecraftForge.EVENT_BUS.addListener(TimeStopView::shaken);
     }
 
     /** Ours: a move with this view (the time stop, the block's finisher). */
@@ -106,6 +107,9 @@ public final class TimeStopView {
             GHOSTS.clear();
             SLASHES.clear();
             RINGS.clear();
+            QUAKES.clear();
+            BURSTS.clear();
+            shakeTicks = 0;
             active = false;
             lastSelf = null;
             return;
@@ -115,6 +119,9 @@ public final class TimeStopView {
         SLASHES.removeIf(s -> now - s.born > SLASH_TICKS || now < s.born);
         // the slashes where the blows cut (each client sees every player's)
         RINGS.removeIf(r -> now - r.born > RING_TICKS || now < r.born);
+        QUAKES.removeIf(q -> now - q.born > q.reach + QUAKE_LIFT + 2 || now < q.born);
+        BURSTS.removeIf(b -> now - b.born > BURST_TICKS || now < b.born);
+        if (shakeTicks > 0) shakeTicks--;
         for (Player p : mc.level.players()) {
             Stamina s = Stamina.of(p);
             if (s.move == null) continue;
@@ -186,17 +193,24 @@ public final class TimeStopView {
         Player p = event.getEntity();
         Stamina s = Stamina.of(p);
         // the axe's shadow: gone, not drawn (his after-images are, they are drawn on purpose)
-        if (s.move == Move.AS_HIDDEN && !drawingGhost) {
+        // the bow's phantoms are drawn pale by themselves (ghosts)
+        if (s.move != null && (s.move == Move.AS_HIDDEN || s.move == Move.BW_HIDDEN || s.move.bowPhantom()) && !drawingGhost) {
             event.setCanceled(true);
+            return;
+        }
+        // the sword's charge run out: the skid, side-on to the way he went (as the time stop's)
+        if (s.move == Move.SW_HALT) {
+            p.yBodyRot = p.yBodyRotO = s.target;
+            p.yHeadRot = p.yHeadRotO = s.target;
             return;
         }
         if (!viewed(s.move)) return;
         float yaw;
         boolean finisherBehind = s.move == Move.GUARD_FINISH && s.moveTick >= GuardAnswers.FIN_JUMP;
-        Entity mob = s.move.timeStopBlow() || s.move.crLeap() || finisherBehind ? p.level().getEntity(s.target) : null;
+        Entity mob = s.move.timeStopBlow() || s.move.crLeap() || s.move.bowPhantom() || finisherBehind ? p.level().getEntity(s.target) : null;
         if (mob != null) yaw = TimeStop.facing(p.position(), mob.position());
         else if (s.move == Move.GUARD_FINISH) return;
-        else if (s.move == Move.TS_BRAKE) yaw = s.target;
+        else if (s.move == Move.TS_BRAKE || s.move == Move.BW_BRAKE) yaw = s.target;
         else if (p == Minecraft.getInstance().player && anchor != null) yaw = anchorYaw;
         else return;
         p.yBodyRot = p.yBodyRotO = yaw;
@@ -204,10 +218,13 @@ public final class TimeStopView {
     }
 
     private static void draw(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) ghosts(event);
-        else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+            ghosts(event);
+            quakes(event);
+        } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             slashes(event);
             rings(event);
+            bursts(event);
         }
     }
 
@@ -228,6 +245,10 @@ public final class TimeStopView {
         if (m == Move.AX_SLAM && t == dev.mcreload.moves.HeavyMoves.SLAM_HIT) {
             RINGS.add(new Ring(p.position(), dev.mcreload.moves.MovesConfig.slamRadius(), now));
             RINGS.add(new Ring(p.position(), 2.5f, now));
+            // the ground jumps as the wave runs out (author, 2026-11-23: "the blocks do not jump"), the screen shakes
+            QUAKES.add(new Quake(p.position(), dev.mcreload.moves.MovesConfig.slamRadius(), now));
+            Player self = Minecraft.getInstance().player;
+            if (self != null && self.distanceToSqr(p) < 16 * 16) shake(p == self ? 12 : 8, p == self ? 2.6f : 1.4f);
         }
         if (m == Move.AX_HEAVY) {
             // the three big ones (author: "the first along from above, the second from the side, the last from below upwards")
@@ -249,17 +270,21 @@ public final class TimeStopView {
             RINGS.add(new Ring(mob.position(), 2.6f, now));
         }
         if (m == Move.SW_KNEE && t == dev.mcreload.moves.HeavyMoves.KNEE_HIT && mob != null) {
-            Vec3 head = mob.position().add(0, mob.getBbHeight() * 0.85, 0);
-            SLASHES.add(new Slash(head, 90f, 1.8f, now));
-            SLASHES.add(new Slash(head, 30f, 1.5f, now));
-            SLASHES.add(new Slash(head, 150f, 1.5f, now));
-            RINGS.add(new Ring(mob.position(), 3.5f, now));
+            // the air struck by the foot (author: not the sword's slashes): a burst of white streaks, a ring under it
+            BURSTS.add(new Burst(mob.position().add(0, mob.getBbHeight() * 0.7, 0), now));
+            RINGS.add(new Ring(mob.position(), 3.0f, now));
+            Player self = Minecraft.getInstance().player;
+            if (self == p) shake(8, 1.6f);
         }
-        if (m == Move.SW_FLING && t == dev.mcreload.moves.HeavyMoves.FLING_HIT && mob != null) {
-            SLASHES.add(new Slash(mob.position().add(0, mob.getBbHeight() * 0.5, 0), 40f, 1.4f, now));
+        if (m == Move.SW_CUT && t == dev.mcreload.moves.HeavyMoves.CUT_HIT && mob != null) {
+            // the level cut out of it: the air's line across (the time stop's slash, level)
+            Vec3 mid = mob.position().add(0, mob.getBbHeight() * 0.55, 0);
+            SLASHES.add(new Slash(mid, 3f, 2.0f, now));
+            SLASHES.add(new Slash(mid.add(0, 0.15, 0), 177f, 1.5f, now));
+            RINGS.add(new Ring(mob.position(), 2.2f, now));
         }
         if (m == Move.XB_BELLY && t == dev.mcreload.moves.HeavyMoves.BELLY_HIT) RINGS.add(new Ring(p.position(), 2.2f, now));
-        if (m == Move.BW_RAIN && t == dev.mcreload.moves.HeavyMoves.RAIN_LAND) RINGS.add(new Ring(p.position(), 4f, now));
+        if (m == Move.BW_BRAKE && t == dev.mcreload.moves.BowPhantoms.FLY) RINGS.add(new Ring(p.position(), 4f, now));
     }
 
     /** The shock rings: a ring of pixel squares on the ground running out and fading, in the slashes' look. */
@@ -303,13 +328,146 @@ public final class TimeStopView {
         buffers.endBatch(RenderType.lightning());
     }
 
+    // ------------------------------------------------------------------ the slam's ground, the shake, the kick's air
+
+    /** The ground jumping as a wave runs out from {@code at}: a block a tick, each up and down again in QUAKE_LIFT ticks. */
+    private record Quake(Vec3 at, float reach, long born) {}
+
+    /** The kick's air: white streaks bursting out of the point struck. */
+    private record Burst(Vec3 at, long born) {}
+
+    private static final List<Quake> QUAKES = new ArrayList<>();
+    private static final List<Burst> BURSTS = new ArrayList<>();
+    private static final int QUAKE_LIFT = 6, BURST_TICKS = 10;
+    private static int shakeTicks, shakeFull;
+    private static float shakeStrength;
+
+    /** The camera shaken for {@code ticks} ticks, {@code strength} degrees at first. */
+    static void shake(int ticks, float strength) {
+        shakeTicks = shakeFull = ticks;
+        shakeStrength = strength;
+    }
+
+    private static void shaken(ViewportEvent.ComputeCameraAngles event) {
+        if (shakeTicks <= 0 || shakeFull <= 0) return;
+        float f = shakeStrength * (shakeTicks - (float) event.getPartialTick()) / shakeFull;
+        if (f <= 0f) return;
+        double time = (Minecraft.getInstance().level == null ? 0 : Minecraft.getInstance().level.getGameTime()) + event.getPartialTick();
+        event.setPitch(event.getPitch() + (float) Math.sin(time * 2.9) * f);
+        event.setYaw(event.getYaw() + (float) Math.sin(time * 2.3 + 1.3) * f * 0.7f);
+        event.setRoll(event.getRoll() + (float) Math.sin(time * 3.7 + 0.4) * f * 0.8f);
+    }
+
+    /** The ground's top blocks drawn again a little up as the wave passes them (the real ones stay where they are). */
+    private static void quakes(RenderLevelStageEvent event) {
+        if (QUAKES.isEmpty()) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        long now = mc.level.getGameTime();
+        float pt = event.getPartialTick();
+        Vec3 cam = event.getCamera().getPosition();
+        PoseStack ps = event.getPoseStack();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        net.minecraft.core.BlockPos.MutableBlockPos pos = new net.minecraft.core.BlockPos.MutableBlockPos();
+        for (Quake q : QUAKES) {
+            float front = now - q.born + pt;
+            int r = (int) Math.ceil(q.reach);
+            int baseY = net.minecraft.util.Mth.floor(q.at.y - 0.5);
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    int bx = net.minecraft.util.Mth.floor(q.at.x) + dx, bz = net.minecraft.util.Mth.floor(q.at.z) + dz;
+                    double d = Math.sqrt((bx + 0.5 - q.at.x) * (bx + 0.5 - q.at.x) + (bz + 0.5 - q.at.z) * (bz + 0.5 - q.at.z));
+                    float phase = front - (float) d;
+                    if (d < 1.2 || d > q.reach + 0.5 || phase < 0 || phase > QUAKE_LIFT) continue;
+                    // the top block of this column near the ground he stood on
+                    net.minecraft.world.level.block.state.BlockState state = null;
+                    for (int y = baseY + 1; y >= baseY - 1; y--) {
+                        pos.set(bx, y, bz);
+                        net.minecraft.world.level.block.state.BlockState here = mc.level.getBlockState(pos);
+                        if (here.isAir() || !here.isSolidRender(mc.level, pos)) continue;
+                        if (!mc.level.getBlockState(pos.above()).getCollisionShape(mc.level, pos.above()).isEmpty()) break;
+                        state = here;
+                        break;
+                    }
+                    if (state == null) continue;
+                    long seed = (bx * 3129871L) ^ (bz * 116129781L);
+                    float rnd = 0.75f + ((seed >>> 16) & 255) / 255f * 0.5f;
+                    float lift = (float) (0.45 * Math.sin(Math.PI * phase / QUAKE_LIFT) * (1.0 - 0.45 * d / q.reach) * rnd);
+                    float tilt = (((seed >>> 8) & 255) / 255f - 0.5f) * 14f * lift / 0.45f;
+                    ps.pushPose();
+                    ps.translate(pos.getX() - cam.x, pos.getY() - cam.y + lift, pos.getZ() - cam.z);
+                    ps.translate(0.5, 0.5, 0.5);
+                    ps.mulPose(com.mojang.math.Axis.XP.rotationDegrees(tilt));
+                    ps.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-tilt * 0.6f));
+                    ps.translate(-0.5, -0.5, -0.5);
+                    int light = net.minecraft.client.renderer.LevelRenderer.getLightColor(mc.level, pos.above());
+                    mc.getBlockRenderer().renderSingleBlock(state, ps, buffers, light, OverlayTexture.NO_OVERLAY);
+                    ps.popPose();
+                }
+            }
+        }
+        buffers.endBatch();
+    }
+
+    /** The kick's air: white pixel streaks shooting out of the point every way (facing the camera), and gone. */
+    private static void bursts(RenderLevelStageEvent event) {
+        if (BURSTS.isEmpty()) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        long now = mc.level.getGameTime();
+        float pt = event.getPartialTick();
+        Camera camera = event.getCamera();
+        Vec3 cam = camera.getPosition();
+        Vector3f left = new Vector3f(camera.getLeftVector()), up = new Vector3f(camera.getUpVector());
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer vc = buffers.getBuffer(RenderType.lightning());
+        org.joml.Matrix4f m = event.getPoseStack().last().pose();
+        for (Burst b : BURSTS) {
+            float f = Math.min(1f, (now - b.born + pt) / BURST_TICKS);
+            int alpha = Math.round(230 * (1f - f));
+            if (alpha <= 2) continue;
+            Vector3f c = new Vector3f((float) (b.at.x - cam.x), (float) (b.at.y - cam.y), (float) (b.at.z - cam.z));
+            int n = 16;
+            for (int i = 0; i < n; i++) {
+                double a = Math.PI * 2 * (i + ((i * 7) % 3) * 0.21) / n;
+                float near = 0.3f + 1.6f * (1f - (1f - f) * (1f - f)) * (0.7f + ((i * 5) % 4) * 0.12f);
+                float len = 0.5f * (1f - f) + 0.12f, px = 0.07f;
+                // a streak along its ray: from near to near + len, a pixel wide, in squares
+                for (float along = 0; along < len; along += px * 2) {
+                    float rr = near + along;
+                    Vector3f at = new Vector3f(c).add(new Vector3f(left).mul((float) Math.cos(a) * rr)).add(new Vector3f(up).mul((float) Math.sin(a) * rr));
+                    Vector3f l = new Vector3f(left).mul(px), u = new Vector3f(up).mul(px);
+                    int w = along < len * 0.5f ? 255 : 215;
+                    quad(vc, m, at, l, u, w, alpha);
+                }
+            }
+        }
+        buffers.endBatch(RenderType.lightning());
+    }
+
+    private static void quad(VertexConsumer vc, org.joml.Matrix4f m, Vector3f at, Vector3f l, Vector3f u, int c, int alpha) {
+        vc.vertex(m, at.x - l.x - u.x, at.y - l.y - u.y, at.z - l.z - u.z).color(c, c, c, alpha).endVertex();
+        vc.vertex(m, at.x - l.x + u.x, at.y - l.y + u.y, at.z - l.z + u.z).color(c, c, c, alpha).endVertex();
+        vc.vertex(m, at.x + l.x + u.x, at.y + l.y + u.y, at.z + l.z + u.z).color(c, c, c, alpha).endVertex();
+        vc.vertex(m, at.x + l.x - u.x, at.y + l.y - u.y, at.z + l.z - u.z).color(c, c, c, alpha).endVertex();
+        vc.vertex(m, at.x + l.x - u.x, at.y + l.y - u.y, at.z + l.z - u.z).color(c, c, c, alpha).endVertex();
+        vc.vertex(m, at.x + l.x + u.x, at.y + l.y + u.y, at.z + l.z + u.z).color(c, c, c, alpha).endVertex();
+        vc.vertex(m, at.x - l.x + u.x, at.y - l.y + u.y, at.z - l.z + u.z).color(c, c, c, alpha).endVertex();
+        vc.vertex(m, at.x - l.x - u.x, at.y - l.y - u.y, at.z - l.z - u.z).color(c, c, c, alpha).endVertex();
+    }
+
     // ------------------------------------------------------------------ the after-images
 
     /** The after-images: the player's body drawn again where they were, pale, fading out. */
     private static void ghosts(RenderLevelStageEvent event) {
-        if (GHOSTS.isEmpty() || drawingGhost) return;
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return;
+        if (mc.level == null || drawingGhost) return;
+        List<AbstractClientPlayer> phantoms = new ArrayList<>();
+        for (AbstractClientPlayer pl : mc.level.players()) {
+            Move m = Stamina.of(pl).move;
+            if (m != null && m.bowPhantom()) phantoms.add(pl);
+        }
+        if (GHOSTS.isEmpty() && phantoms.isEmpty()) return;
         long now = mc.level.getGameTime();
         float pt = event.getPartialTick();
         Vec3 cam = event.getCamera().getPosition();
@@ -327,6 +485,12 @@ public final class TimeStopView {
                         new Pale(buffers, p.getSkinTextureLocation().toString(), alpha), 0xF000F0);
                 p.yBodyRot = bodyWas;
                 p.yBodyRotO = bodyWasO;
+            }
+            // the bow's phantoms (author, 2026-11-23): his body seen pale where it is, playing its pose
+            for (AbstractClientPlayer p : phantoms) {
+                Vec3 at = p.getPosition(pt);
+                mc.getEntityRenderDispatcher().render(p, at.x - cam.x, at.y - cam.y, at.z - cam.z, p.getViewYRot(pt), pt, ps,
+                        new Pale(buffers, p.getSkinTextureLocation().toString(), 0.55f), 0xF000F0);
             }
             buffers.endBatch();
         } finally {

@@ -422,7 +422,7 @@ public final class MovesHud {
             case SW_CHARGE -> shortKey(mc.options.keySprint) + "+" + shortKey(mc.options.keyUp) + "+" + shortKey(MovesClient.ABILITY);
             case SW_KNEE -> shortKey(mc.options.keySprint) + "+" + shortKey(mc.options.keyUp) + "+" + shortKey(mc.options.keyJump) + "+"
                     + shortKey(MovesClient.DODGE);
-            case XB_GRAB -> shortKey(MovesClient.SKILL_KEYS[dev.mcreload.moves.Skill.XBOW_HOSTAGE.ordinal()]);
+            case XB_GRAB -> shortKey(MovesClient.SKILL_KEYS[dev.mcreload.moves.Skill.HOSTAGE.ordinal()]);
             case XB_BACKSLIDE -> shortKey(mc.options.keySprint) + "+" + shortKey(MovesClient.slideKey(mc)) + "+" + shortKey(mc.options.keyAttack);
             case AXE_TRIPLE, TS_STANCE, AS_SPIN, BW_RAIN -> shortKey(mc.options.keyUse) + "+" + shortKey(MovesClient.ABILITY) + "+";
             case WHIRL -> shortKey(MovesClient.ABILITY);

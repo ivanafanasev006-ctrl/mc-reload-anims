@@ -108,18 +108,26 @@ public final class GuardAnswers {
             MovesNet.mobPose(mob, MobPose.CAUGHT, FIN_JUMP + 2, false);
             return true;
         }
+        // the perfect parry only shoves now; the living shield is caught on V (author, 2026-11-23: "the grab on V instead of
+        // the perfect RMB"), grabStarted
         if (!parry || !s.progress.usable(Skill.GUARD_COUNTER)) return false;
-        if (catchable(mob) && crowded(p, mob) && s.canAfford(MovesConfig.costLivingShield(), p)) {
-            s.spend(MovesConfig.costLivingShield(), p);
-            begin(p, s, Move.GUARD_GRAB, mob);
-            MovesNet.mobPose(mob, MobPose.CAUGHT, GRAB_STAB, false);
-            return true;
-        }
         if (!s.canAfford(MovesConfig.costGuardShove(), p)) return false;
         s.spend(MovesConfig.costGuardShove(), p);
         begin(p, s, Move.GUARD_SHOVE, mob);
         MovesNet.mobPose(mob, MobPose.CAUGHT, SHOVE_PUSH + 1, false);
         return true;
+    }
+
+    /** The living shield caught on V with a sword (the client's GUARD_GRAB let through, MoveServer): the wrist, the turn, the blade. */
+    static void grabStarted(ServerPlayer p, Stamina s, net.minecraft.world.entity.Entity e) {
+        if (!(e instanceof LivingEntity mob)) return;
+        s.target = mob.getId();
+        s.combatTicks = MovesConfig.combatTicks();
+        MovesNet.mobPose(mob, MobPose.CAUGHT, GRAB_STAB, false);
+        ServerLevel level = p.serverLevel();
+        Vec3 at = p.getEyePosition().add(p.getViewVector(1f).scale(0.7)).subtract(0, 0.3, 0);
+        level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 0.3f, 1.9f);
+        level.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 10, 0.15, 0.15, 0.15, 0.35);
     }
 
     /** A blow blocked (not perfectly; Guard.hurt): the kick, if the perk is in its row. */

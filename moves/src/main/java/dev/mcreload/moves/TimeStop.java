@@ -255,7 +255,7 @@ public final class TimeStop {
     private static final int SKID = 11;
 
     /** The skid's dust and scrape: the ground under his feet thrown up behind him. */
-    private static void skidFx(ServerPlayer p, int tick) {
+    static void skidFx(ServerPlayer p, int tick) {
         ServerLevel level = p.serverLevel();
         net.minecraft.core.BlockPos under = p.blockPosition().below();
         net.minecraft.world.level.block.state.BlockState ground = level.getBlockState(under);
