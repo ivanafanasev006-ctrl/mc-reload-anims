@@ -96,7 +96,7 @@ public final class SkillUse {
             case AXE_SLAM, AXE_HEAVY, AXE_CHAIN, SWORD_CHARGE, SWORD_KNEE, HOSTAGE, BACK_SLIDE -> {
                 if (!HeavyInput.use(p, s, k)) p.displayClientMessage(Component.translatable("kinetrix_combat.wheel.how." + k.key), true);
             }
-            case AXE_COMBO, TIME_STOP, AXE_SHADOW, BOW_RAIN -> {
+            case TIME_STOP, AXE_SHADOW, BOW_RAIN -> {
                 abilityClick = true;
                 hold(g, 8);
                 hold(use, 8);

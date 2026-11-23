@@ -69,7 +69,7 @@
   "kinetrix_combat.settings.move.rollKick": "Roll kick",
   "kinetrix_combat.settings.move.rollKick.tip": "Ctrl, W and Space down, R at a mob: a flip over it, a kick into its back, a roll back away from it.",
   "kinetrix_combat.settings.move.whirlwind": "Axe whirlwind",
-  "kinetrix_combat.settings.move.whirlwind.tip": "G with an axe: four turns, the axe in both hands, carried forward the way the camera looks (A, S, D do nothing), hitting everything round. The right button and G held with 3 to 6 mobs about: the axe combo.",
+  "kinetrix_combat.settings.move.whirlwind.tip": "G with an axe: four turns, the axe in both hands, carried forward the way the camera looks (A, S, D do nothing), hitting everything round..",
   "kinetrix_combat.settings.move.plunge": "Blade into the ground",
   "kinetrix_combat.settings.move.plunge.tip": "Falling with a sword or an axe: the blade goes into the ground on landing, 20% less fall damage, 1 HP to everything round.",
   "key.kinetrix_combat.ability": "Ability (sword: turn, axe: whirlwind)",
@@ -135,9 +135,6 @@
   "kinetrix_combat.settings.move.airSpin": "Turns in the air",
   "kinetrix_combat.settings.move.airSpin.tip": "A sword in hand, W + Space + G held: up head down, 5 turns of the blade the way you look (no steering), hitting all around as the usual turns; down to the ground into a slide of 3.5 blocks, as Ctrl + C, and up. 45 s cooldown, 25 energy.",
   "kinetrix_combat.settings.move.airSpin.keys": "W + Space + %1$s held, a sword",
-  "kinetrix_combat.settings.move.axeCombo": "Axe combo",
-  "kinetrix_combat.settings.move.axeCombo.tip": "An axe in hand, 3 to 6 mobs within 8 blocks in sight (not behind walls): hold the right button and G: a blow for each of them in turn, whirls and chops taking turns, each losing 80% of its greatest health (not bosses); untouchable meanwhile. 40 s cooldown, 20 energy.",
-  "kinetrix_combat.settings.move.axeCombo.keys": "RMB + %1$s held, an axe",
   "kinetrix_combat.settings.move.throw": "Sword and axe throw",
   "kinetrix_combat.settings.move.throw.tip": "A sword or an axe in hand: hold the left and the right button to draw back (walking slowly), let go of either to throw; it flies as a trident, the further the longer it was drawn (up to 1 s). Auto-aim: a red cross on the mob near the crosshair, the throw goes into it. The thrown weapon glows, to be found. A hit mob has it stuck half in: the left or the right button at point blank pulls it out (a little damage, a short stun), and a weak mob is finished at once: the sword under the ribs, the axe from above. Killed by the throw, the weapon falls and sticks in the ground; walk over it to pick it up. 2.5 s cooldown.",
   "kinetrix_combat.settings.move.throw.keys": "%4$s + %5$s, let go of %4$s",
@@ -218,8 +215,6 @@
   "key.kinetrix_combat.skill.throw": "Move: Sword and axe throw",
   "kinetrix_combat.skill.whirlwind.words": "whirl spin top berserker tornado",
   "key.kinetrix_combat.skill.whirlwind": "Move: Axe whirlwind",
-  "kinetrix_combat.skill.axeCombo.words": "combo chops series",
-  "key.kinetrix_combat.skill.axeCombo": "Move: Axe combo",
   "kinetrix_combat.skill.bowVolley.words": "volley arrows",
   "key.kinetrix_combat.skill.bowVolley": "Move: Arrow hail (G)",
   "kinetrix_combat.skill.bowHail.words": "storm hail rain arrows",
@@ -387,5 +382,6 @@
   "kinetrix_combat.xbow_hostage.none": "No enemy near to grab",
   "kinetrix_combat.bow_rain.not_ready": "Rain of arrows: at least %s enemies near, a full bar and its wait over",
   "kinetrix_combat.weapon.take.grab": "a sword or a crossbow",
-  "kinetrix_combat.back_slide.no_arrow": "You need at least one arrow"
+  "kinetrix_combat.back_slide.no_arrow": "You need at least one arrow",
+  "kinetrix_combat.settings.move.axeShadow.keys": "RMB + %1$s held, an axe"
 }

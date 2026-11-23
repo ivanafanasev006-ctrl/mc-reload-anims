@@ -228,24 +228,6 @@ public enum Move {
     /** The whirlwind's ending, in place of its next turn when G is up: the slow-down and the stance (0.45 s). */
     WHIRL_END("axe_whirlwind_end", 1f, 9, -1, -1, -1, -1, Side.FRONT, () -> 0),
     /**
-     * G held with an axe, 3 to 6 mobs about (author, 2026-11-10; in the evening: "EACH one 70 % of his health", the animation
-     * built anew from his example; 20:00: "no second of the stance at the start; each blow a different one, the poses taking
-     * turns as in the sword's chain finisher"): the combo, a blow for each mob, one after another (round19.py). This is its
-     * first blow, a whole turn of the body, at once from the stance (axe_combo_open); then in turn the overhead chop, the
-     * second turning blow, the chop across, the third, the chop again (Whirl.comboNext), one a mob, and AXE_COMBO_END. The
-     * client turns and steps the player to each mob (AxeComboInput); Whirl.tripleTick its blows. 21:06: untouchable all
-     * through, as the chain finisher; a little slower (round19.py).
-     */
-    AXE_TRIPLE("axe_combo_open", 1f, 15, 0, 15, -1, -1, Side.FRONT, MovesConfig::costAxeTriple),
-    /** The combo's blows after the first, one a mob, from the ready pose to it: the overhead chop, the second turning blow, the chop
-     * down across from the right, the third turning blow (axe_combo_chop, _2, _diag, _3). */
-    AXE_COMBO_CHOP("axe_combo_chop", 1f, 8, 0, 8, -1, -1, Side.FRONT, () -> 0),
-    AXE_COMBO_2("axe_combo_2", 1f, 14, 0, 14, -1, -1, Side.FRONT, () -> 0),
-    AXE_COMBO_DIAG("axe_combo_diag", 1f, 9, 0, 9, -1, -1, Side.FRONT, () -> 0),
-    AXE_COMBO_3("axe_combo_3", 1f, 14, 0, 14, -1, -1, Side.FRONT, () -> 0),
-    /** The combo's end: from the ready pose back to the stance (axe_combo_end). */
-    AXE_COMBO_END("axe_combo_end", 1f, 11, 0, 4, -1, -1, Side.FRONT, () -> 0),
-    /**
      * G with a sword in hand (author, 2026-10-30: "a quick turn round on the spot, the sword held out
      * turned flat"; and, after his video: "no stun: he just turns round and strikes in the moment; G
      * held, he may move any way and makes up to 3 turns, for more energy"): the sword's turn
@@ -591,12 +573,7 @@ public enum Move {
     /** A move made at someone (the vault, the kick, the finisher, a friend's hand): the client names them, the server checks them. */
     public boolean targeted() {
         return this == HOP || this == KICK || this == ROLL_KICK || finisher() || this == LEDGE_HELP || this == WEAPON_PULL
-                || this == CHAIN_LEAP || this == CR_LEAP || this == AXC_OPEN || this == SW_KNEE || this == XB_GRAB || this == GUARD_GRAB || chainHop() || axeCombo();
-    }
-
-    /** The axe's combo: its blows (each at a mob), not its end. */
-    public boolean axeCombo() {
-        return this == AXE_TRIPLE || this == AXE_COMBO_CHOP || this == AXE_COMBO_2 || this == AXE_COMBO_DIAG || this == AXE_COMBO_3;
+                || this == CHAIN_LEAP || this == CR_LEAP || this == AXC_OPEN || this == SW_KNEE || this == XB_GRAB || this == GUARD_GRAB || chainHop();
     }
 
     /** The finisher: the sword's stab or the axe's chop. */
@@ -661,7 +638,7 @@ public enum Move {
      */
     public boolean strike() {
         return this == DASH || finisher() || this == SLIDE_ATTACK || turning() || crossbow() || crossbowSkill() || thrown() || chain()
-                || this == AIR_SPIN || axeCombo() || this == AXE_COMBO_END;
+                || this == AIR_SPIN;
     }
 
     /** The chain finisher's leaps and its flip. */
@@ -768,8 +745,6 @@ public enum Move {
             case CHAIN_LEAP, CR_LEAP -> now == FINISHER;
             case XB_SHOT -> now == XB_HOLD;
             case XB_BACKSLIDE -> now == SLIDE;
-            // the axe's combo: each blow, and its end, from the blow before
-            case AXE_COMBO_CHOP, AXE_COMBO_2, AXE_COMBO_DIAG, AXE_COMBO_3, AXE_COMBO_END -> now.axeCombo();
             case FINISHER, FINISHER_AXE -> now == WEAPON_PULL;
             default -> false;
         };

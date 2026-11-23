@@ -97,7 +97,7 @@ public final class StrikeInput {
             case CHAIN_LEAP -> s.chainCooldown;
             case THROW -> s.throwCooldown;
             case AIR_SPIN -> s.airSpinCooldown;
-            case AXE_TRIPLE, AS_SPIN -> s.axeTripleCooldown;
+            case AS_SPIN -> s.axeTripleCooldown;
             case TS_STANCE -> s.timeStopCooldown;
             default -> 0;
         };
@@ -267,7 +267,7 @@ public final class StrikeInput {
                 down = down && use;
                 // the right button and G held with an axe: the axe's shadow (author, 2026-11-20, instead of the old triple
                 // whirl, which is no longer on the keys), if there are enemies enough about; else its wait or what it needs
-                if (down && HudConfig.Moves.AXE_TRIPLE.on() && s.move == null) {
+                if (down && HudConfig.Moves.AXE_SHADOW.on() && s.move == null) {
                     if (MoveServer.allowed(p, s, Move.AS_SPIN) && begin(mc, p, s, Move.AS_SPIN)) {
                         swallow(mc);
                         return true;
@@ -389,7 +389,7 @@ public final class StrikeInput {
             case CHAIN_LEAP -> HudConfig.Moves.CHAIN.key;
             case THROW -> HudConfig.Moves.THROW.key;
             case AIR_SPIN -> HudConfig.Moves.AIR_SPIN.key;
-            case AXE_TRIPLE, AS_SPIN -> HudConfig.Moves.AXE_TRIPLE.key;
+            case AS_SPIN -> HudConfig.Moves.AXE_SHADOW.key;
             case TS_STANCE -> HudConfig.Moves.TIME_STOP.key;
             default -> dev.mcreload.moves.Skill.of(move) != null ? dev.mcreload.moves.Skill.of(move).key : move.name().toLowerCase(java.util.Locale.ROOT);
         };

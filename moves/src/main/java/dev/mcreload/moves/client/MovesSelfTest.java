@@ -652,7 +652,7 @@ public final class MovesSelfTest {
         java.util.function.Consumer<net.minecraft.server.level.ServerPlayer> learn = sp -> {
             place(sp, 0, new ItemStack(Items.IRON_AXE));
             dev.mcreload.moves.Progress pr = Stamina.of(sp).progress;
-            for (dev.mcreload.moves.Skill k : new dev.mcreload.moves.Skill[]{dev.mcreload.moves.Skill.WHIRL, dev.mcreload.moves.Skill.AXE_COMBO,
+            for (dev.mcreload.moves.Skill k : new dev.mcreload.moves.Skill[]{dev.mcreload.moves.Skill.WHIRL, dev.mcreload.moves.Skill.AXE_SLAM,
                     dev.mcreload.moves.Skill.DASH, dev.mcreload.moves.Skill.SWORD_SPIN, dev.mcreload.moves.Skill.VOLLEY,
                     dev.mcreload.moves.Skill.XBOW_G, dev.mcreload.moves.Skill.THROW, dev.mcreload.moves.Skill.CHAIN, dev.mcreload.moves.Skill.DIVE,
                     dev.mcreload.moves.Skill.GUARD_KICK, dev.mcreload.moves.Skill.TIME_STOP, dev.mcreload.moves.Skill.AXE_SHADOW}) pr.learn(k);
@@ -661,7 +661,7 @@ public final class MovesSelfTest {
         SCENARIOS.add(new Scenario("52_combat_build", 34, learn, (mc, t) -> {
             camera(mc, CameraType.FIRST_PERSON);
             if (t == 3) mc.setScreen(new CombatScreen(null, CombatScreen.Tab.BUILD));
-            if (t == 4 && mc.screen instanceof CombatScreen c) c.focus(dev.mcreload.moves.Skill.AXE_COMBO);
+            if (t == 4 && mc.screen instanceof CombatScreen c) c.focus(dev.mcreload.moves.Skill.AXE_SHADOW);
             if (t == 20) {
                 mc.options.guiScale().set(4);
                 mc.resizeDisplay();

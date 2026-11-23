@@ -42,7 +42,7 @@ public final class Cutscene {
         // the chain finisher too (author: "as for Ctrl + W + Space + R"), the axe's combo on RMB + G+ (2026-11-11: "as the
         // sword's chain finisher or W + Space + R") and the sword's five turns in the air on W + Space + G+ (2026-11-14)
         boolean kicking = p != null && (((s.move == Move.KICK || s.move == Move.ROLL_KICK) && s.moveTick < Kick.land(s.move))
-                || (s.move != null && (s.move.chain() || s.move.axeCombo() || s.move == Move.AXE_COMBO_END || s.move == Move.AIR_SPIN
+                || (s.move != null && (s.move.chain() || s.move == Move.AIR_SPIN
                         || s.move == Move.GUARD_FINISH || s.move == Move.SW_KNEE)));
         // G and G held with a bow: from behind when marked mobs are in sight as it starts (it aims at them by
         // itself), else in first person, aimed by the player (author, 2026-10-31)

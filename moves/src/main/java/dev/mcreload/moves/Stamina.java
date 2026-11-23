@@ -538,7 +538,6 @@ public final class Stamina {
                 FastRun.serverTick(sp, s);
                 Plunge.serverTick(sp, s);
                 Whirl.serverTick(sp, s);
-                Whirl.tripleTick(sp, s);
                 Spin.serverTick(sp, s);
                 Strikes.serverTick(sp, s);
                 Crossbow.serverTick(sp, s);

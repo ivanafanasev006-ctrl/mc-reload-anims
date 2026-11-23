@@ -71,7 +71,6 @@ public final class MoveServer {
         if (move == Move.HOP) Hop.started(p, s, enemy);
         if (move == Move.KICK || move == Move.ROLL_KICK) Kick.started(p, s, enemy);
         if (move == Move.WHIRL) Whirl.started(p, s);
-        if (move == Move.AXE_TRIPLE) s.axeTripleCooldown = s.cooled(MovesConfig.axeTripleCooldownTicks());
         if (move == Move.SWORD_SPIN) Spin.started(p, s);
         if (move == Move.HOSTAGE_KICK) GuardAnswers.kickOff(p, s);
         if (move == Move.GUARD_GRAB) GuardAnswers.grabStarted(p, s, enemy);
@@ -87,7 +86,7 @@ public final class MoveServer {
         Crossbow.started(p, s, move);
         if (move.volley()) Bow.started(s, move);
         if (move.finisher()) Strikes.finisherStarted(p, s, enemy);
-        if (move == Move.WEAPON_PULL || move == Move.CHAIN_LEAP || move.chainHop() || move.axeCombo()) s.target = target;
+        if (move == Move.WEAPON_PULL || move == Move.CHAIN_LEAP || move.chainHop()) s.target = target;
         if (move == Move.CHAIN_LEAP || move == Move.CR_LEAP) s.chainCooldown = s.cooled(MovesConfig.chainCooldownTicks());
         if (move == Move.CR_LEAP) s.target = target;
         if (move == Move.DASH) {
@@ -151,7 +150,6 @@ public final class MoveServer {
         if (move == Move.CR_LEAP || move == Move.AXC_OPEN) return Chain.valid(p, Move.CHAIN_LEAP, e);
         if (move == Move.SW_KNEE) return HeavyMoves.kneeTarget(p, e);
         if (move == Move.XB_GRAB || move == Move.GUARD_GRAB) return HeavyMoves.grabTarget(p, e);
-        if (move.axeCombo()) return Whirl.comboValid(p, e);
         if (move.finisher()) return e instanceof net.minecraft.world.entity.LivingEntity le && Strikes.finishable(p, le, false);
         return true;
     }
@@ -274,15 +272,6 @@ public final class MoveServer {
         // They wait out their cooldowns (the server lets a client a few ticks ahead of it through).
         if (move == Move.DASH) return ground && s.dashCooldown <= (p.level().isClientSide ? 0 : 5);
         if (move == Move.WHIRL) return ground && s.whirlCooldown <= (p.level().isClientSide ? 0 : 5);
-        // G held with an axe (author, 2026-11-10): 3 to 6 mobs about (the nearest 6 of more), from the ground, once its wait is over
-        if (move == Move.AXE_TRIPLE) {
-            return Strikes.axe(p) && ground && s.axeTripleCooldown <= (p.level().isClientSide ? 0 : 5)
-                    && Whirl.comboMobs(p, Whirl.TRIPLE_REACH + (p.level().isClientSide ? 0 : 1.5)).size() >= Whirl.TRIPLE_FEWEST;
-        }
-        // its next blows and its end: from the blow before, once that is over (the client a few ticks ahead)
-        if (move != Move.AXE_TRIPLE && (move.axeCombo() || move == Move.AXE_COMBO_END)) {
-            return s.move != null && s.move.axeCombo() && s.moveTick >= s.move.length - 1 - (p.level().isClientSide ? 0 : 3);
-        }
         if (move == Move.SWORD_SPIN) return ground && s.spinCooldown <= (p.level().isClientSide ? 0 : 5);
         // W + Space + G held with a sword (author, 2026-11-10): from the ground or a jump just begun, once its wait is over
         if (move == Move.AIR_SPIN) {

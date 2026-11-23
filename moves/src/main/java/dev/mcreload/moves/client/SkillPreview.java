@@ -58,7 +58,6 @@ final class SkillPreview {
             case BACK_SLIDE -> new Move[]{Move.XB_BACKSLIDE, Move.XB_BELLY};
             case BOW_RAIN -> new Move[]{Move.BW_RAIN, Move.BW_AIM, Move.BW_JUMP, Move.BW_FALLBACK, Move.BW_FLIP, Move.BW_TURN, Move.BW_BRAKE};
             case AXE_SHADOW -> new Move[]{Move.AS_SPIN, Move.AS_CHOP, Move.AS_SIDE, Move.AS_HOOK};
-            case AXE_COMBO -> new Move[]{Move.AXE_TRIPLE, Move.AXE_COMBO_CHOP, Move.AXE_COMBO_2, Move.AXE_COMBO_DIAG, Move.AXE_COMBO_END};
             case VOLLEY -> new Move[]{Move.BARRAGE};
             case HAIL -> new Move[]{Move.HAIL};
             case MARKS -> new Move[]{Move.MARKED_SPIN_LEFT, Move.MARKED_CROUCH, Move.MARKED_SPIN_RIGHT};

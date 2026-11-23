@@ -1592,54 +1592,6 @@ public final class MovesGameTests {
     }
 
     /**
-     * The axe's combo (author, 2026-11-10; evening: "EACH one 70 % of his health", then 80 %): RMB + G held with an axe, 3 to 6
-     * mobs about: refused with two; with three, a blow for each in turn, each taking 80 % of that one's health (through its armour)
-     * and no other's.
-     */
-    @GameTest(template = FLOOR, timeoutTicks = 200, batch = "axeTriple")
-    public static void axeTriple(GameTestHelper h) {
-        Script t = new Script(h).settle();
-        ServerPlayer p = t.player();
-        Stamina s = Stamina.of(p);
-        Zombie[] z = {h.spawnWithNoFreeWill(EntityType.ZOMBIE, 3, 2, 5), h.spawnWithNoFreeWill(EntityType.ZOMBIE, 5, 2, 3),
-                h.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 2, 3)};
-        noSun(z);
-        t.at(2, () -> {
-            p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
-            s.energy = 100f;
-            z[2].teleportTo(z[2].getX() + 20, z[2].getY(), z[2].getZ());
-            t.check(!MoveServer.request(p, Move.AXE_TRIPLE, false, z[0].getId()), "the combo with two mobs about");
-        });
-        t.at(3, () -> {
-            z[2].teleportTo(h.absoluteVec(new Vec3(1.5, 2, 3.5)).x, z[1].getY(), h.absoluteVec(new Vec3(1.5, 2, 3.5)).z);
-            t.check(MoveServer.request(p, Move.AXE_TRIPLE, false, z[0].getId()), "the combo refused with three");
-            t.check(s.axeTripleCooldown == MovesConfig.axeTripleCooldownTicks(), "its wait: " + s.axeTripleCooldown);
-        });
-        float blow = 20f * MovesConfig.axeTripleShare();
-        int open = 3, second = open + Move.AXE_TRIPLE.length - 1, third = second + Move.AXE_COMBO_CHOP.length - 1;
-        int end = third + Move.AXE_COMBO_2.length - 1;
-        t.at(open + dev.mcreload.moves.Whirl.comboHit(Move.AXE_TRIPLE) + 2, () -> {
-            blow(t, 20f - z[0].getHealth(), blow, "the first blow");
-            t.check(z[1].getHealth() > 18f, "the second zombie hit by the first blow: " + z[1].getHealth());
-            t.check(z[2].getHealth() > 18f, "the third zombie hit by the first blow: " + z[2].getHealth());
-        });
-        t.at(second, () -> t.check(MoveServer.request(p, Move.AXE_COMBO_CHOP, false, z[1].getId()), "the second blow refused"));
-        t.at(second + dev.mcreload.moves.Whirl.comboHit(Move.AXE_COMBO_CHOP) + 2, () -> {
-            blow(t, 20f - z[1].getHealth(), blow, "the second blow");
-            t.check(z[2].getHealth() > 18f, "the third zombie hit by the second blow: " + z[2].getHealth());
-            t.check(z[0].getHealth() > 2f, "the first zombie hit again: " + z[0].getHealth());
-        });
-        float[] was = new float[1];
-        t.at(third, () -> {
-            was[0] = z[2].getHealth();
-            t.check(MoveServer.request(p, Move.AXE_COMBO_2, false, z[2].getId()), "the third blow refused");
-        });
-        t.at(third + dev.mcreload.moves.Whirl.comboHit(Move.AXE_COMBO_2) + 2, () -> blow(t, was[0] - z[2].getHealth(), blow, "the third blow"));
-        t.at(end, () -> t.check(MoveServer.request(p, Move.AXE_COMBO_END, false), "the end refused"));
-        t.at(end + 2, () -> t.check(s.move == Move.AXE_COMBO_END, "not ending: " + s.move)).run(end + 3);
-    }
-
-    /**
      * Learning (author, 2026-11-16): a novice has the dodges, not the whirlwind; a scroll read teaches it and puts it on the
      * wheel, off the wheel it does not work; the copper bar makes a dodge cost three times as much, bronze twice; the brass
      * scroll does nothing before the bronze one; armour weighs a little.

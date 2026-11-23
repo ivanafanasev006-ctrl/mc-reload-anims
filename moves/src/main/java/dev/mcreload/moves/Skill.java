@@ -20,7 +20,6 @@ public enum Skill {
     CHAIN("chainFinisher", Weapon.SWORD),
     THROW("throw", Weapon.BLADE),
     WHIRL("whirlwind", Weapon.AXE),
-    AXE_COMBO("axeCombo", Weapon.AXE),
     /** The sword's ultimate (author, 2026-11-20: into the square of the class's awakening abilities). */
     TIME_STOP("timeStop", Weapon.SWORD, Place.ULT),
     VOLLEY("bowVolley", Weapon.BOW),
@@ -108,7 +107,6 @@ public enum Skill {
                  CR_BLINK_C, CR_BLINK_D -> CHAIN;
             case THROW_AIM, THROW, WEAPON_PULL -> THROW;
             case WHIRL, WHIRL_END -> WHIRL;
-            case AXE_TRIPLE, AXE_COMBO_CHOP, AXE_COMBO_2, AXE_COMBO_DIAG, AXE_COMBO_3, AXE_COMBO_END -> AXE_COMBO;
             case BARRAGE -> VOLLEY;
             case HAIL -> HAIL;
             case MARKED_SPIN_LEFT, MARKED_SPIN_RIGHT, MARKED_ROLL_LEFT, MARKED_ROLL_RIGHT, MARKED_BACKSTEP, MARKED_CROUCH,
