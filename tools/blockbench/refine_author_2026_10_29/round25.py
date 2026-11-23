@@ -228,8 +228,10 @@ def bw_rain():
 
 
 def made():
-    a = [ax_slam(), ax_heavy(), axc_skull(), axc_kick(), axc_spin(), axc_upper(), sw_charge(), sw_skewer(), sw_fling(), sw_knee(),
-         xb_hold(), xb_backslide(), xb_belly(), bw_rain()]
+    # (2026-11-23: sw_fling, sw_knee and bw_rain left out, their moves made again in round26.py; the others round26 remakes
+    # are kept here as they were, its file read after this one)
+    a = [ax_slam(), ax_heavy(), axc_skull(), axc_kick(), axc_spin(), axc_upper(), sw_charge(), sw_skewer(),
+         xb_hold(), xb_backslide(), xb_belly()]
     for x in a:
         kit.soften(x, round9.SOFTEN, round9.LEGS)
     return a
